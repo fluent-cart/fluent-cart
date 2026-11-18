@@ -20,12 +20,12 @@ class RateLimitedEntryPointsTest extends DatabaseTestCase
 {
     use BindsFluentRequest;
 
+    private bool $hadExtObjectCache;
+
     public function setUp(): void
     {
         parent::setUp();
-        if (wp_using_ext_object_cache()) {
-            $this->markTestSkipped('These cases cover stores without an external object cache.');
-        }
+        $this->hadExtObjectCache = (bool) wp_using_ext_object_cache(false);
         $this->clearLimiterWindows();
         CartResource::resetCartCache();
     }
@@ -33,6 +33,7 @@ class RateLimitedEntryPointsTest extends DatabaseTestCase
     public function tearDown(): void
     {
         $this->clearLimiterWindows();
+        wp_using_ext_object_cache($this->hadExtObjectCache);
         parent::tearDown();
     }
 

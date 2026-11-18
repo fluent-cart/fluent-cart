@@ -1,4 +1,5 @@
-@config "./modal-checkout.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./modal-checkout.config.mjs";
 
 .hidden {
   display: none;
@@ -137,7 +138,7 @@ html, body {
 
   .fct_checkout_input_group {
     input {
-      @apply appearance-none w-full min-h-10 m-0 rounded-none text-sm leading-none outline-none ring-0 shadow-none placeholder:text-sm border-[0.5px] border-x-[1px] border-solid focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:outline-none focus:shadow-none box-border;
+      @apply appearance-none w-full min-h-10 m-0 rounded-none text-sm leading-none outline-hidden ring-0 shadow-none placeholder:text-sm border-[0.5px] border-x-[1px] border-solid focus:border-[0.5px] focus:border-x-[1px] focus:border-solid focus:outline-hidden focus:shadow-none box-border;
       padding-left: var(--fct-input-padding-x, theme('spacing.4'));
       padding-right: var(--fct-input-padding-x, theme('spacing.4'));
       padding-top: var(--fct-input-padding-y, theme('spacing[2.5]'));
@@ -734,8 +735,11 @@ html, body {
     padding-right: 0;
     &.active {
       grid-template-rows: 1fr;
-      &.fct-payment-loading {
+      // A skeleton wrapper animates its own two rows (checkout.scss).
+      &.fct-payment-loading:not(.fct-has-skeleton) {
         grid-template-rows: 0fr;
+      }
+      &.fct-payment-loading {
         .fct-modal-payment-method-instructions {
           display: none;
         }

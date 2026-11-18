@@ -21,7 +21,7 @@ const props = defineProps({
 <!--        </div>&lt;!&ndash; .fct-admin-summary-item &ndash;&gt;-->
 
         <div class="fct-admin-summary-item" v-for="taxonomy of product.taxonomies" :key="taxonomy.id" >
-          <h4>{{taxonomy.labels.name}}</h4>
+          <h3>{{taxonomy.labels.name}}</h3>
           <TermInput :product_id="product.ID" :taxonomy="taxonomy" v-model="product.product_terms[taxonomy.name]"/>
         </div>
       </Card.Body>

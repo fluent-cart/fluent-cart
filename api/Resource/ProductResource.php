@@ -313,16 +313,36 @@ class ProductResource extends BaseResourceApi
                     $db = App::db();
                     $db->beginTransaction();
                     try {
-                        ProductVariation::query()->batchUpdate($variantData);
-                        $db->commit();
+                        $clearedSkuIds = [];
+                        foreach ($variantData as $variant) {
+                            if (array_key_exists('sku', $variant) && $variant['sku'] === null) {
+                                $clearedSkuIds[] = (int) Arr::get($variant, 'id');
+                            }
+                        }
+                        // Release cleared SKUs before assignment; unique indexes are checked per row.
+                        if ($clearedSkuIds) {
+                            ProductVariation::query()->where('post_id', $postId)
+                                ->whereIn('id', $clearedSkuIds)->update(['sku' => null]);
+                        }
+                        $written = ProductVariation::query()->batchUpdate($variantData);
                     } catch (\Exception $e) {
                         $db->rollBack();
                         throw $e;
                     }
-                    do_action('fluent_cart/product/variants_updated', [
-                        'post_id'  => $postId,
-                        'variants' => $variantData,
-                    ]);
+                    // wpdb reports a failed write as false, it does not throw.
+                    if ($written === false) {
+                        $db->rollBack();
+                        return static::makeErrorResponse([
+                            ['code' => 500, 'message' => __('The product variations could not be saved.', 'fluent-cart')]
+                        ]);
+                    }
+                    $db->commit();
+                    static::notifyAfterCommit(function () use ($postId, $variantData) {
+                        do_action('fluent_cart/product/variants_updated', [
+                            'post_id'  => $postId,
+                            'variants' => $variantData,
+                        ]);
+                    }, $postId);
                 }
             }
 
@@ -348,7 +368,9 @@ class ProductResource extends BaseResourceApi
 
         ProductDetailResource::update($detail, Arr::get($detail, 'id'), ['action' => 'variant_modified']);
 
-        (new StockChanged([$postId]))->dispatch();
+        static::notifyAfterCommit(function () use ($postId) {
+            (new StockChanged([$postId]))->dispatch();
+        }, $postId);
 
         static::updateWpPost($postId, $product);
         if (Arr::has($product, 'gallery')) {
@@ -376,6 +398,33 @@ class ProductResource extends BaseResourceApi
             $product,
             __('Product has been updated', 'fluent-cart')
         );
+    }
+
+    protected static function notifyAfterCommit(callable $callback, int $postId): void
+    {
+        $db = App::db();
+        if ($db->transactionLevel() === 0) {
+            $callback();
+            return;
+        }
+
+        $db->afterCommit(function () use ($callback, $postId) {
+            try {
+                $callback();
+            } catch (\Throwable $e) {
+                // Listener failures cannot undo the committed product or require a save retry.
+                try {
+                    fluent_cart_add_log(
+                        __('Product notification failed', 'fluent-cart'),
+                        $e->getMessage(),
+                        'error',
+                        ['module_name' => 'product', 'module_id' => $postId]
+                    );
+                } catch (\Throwable $loggingError) {
+                    // Logging is best effort after commit; other notifications must still run.
+                }
+            }
+        });
     }
 
     public static function partialUpdate(array $data, $postId)

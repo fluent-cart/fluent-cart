@@ -77,16 +77,9 @@
       </VueDraggableNext>
 
       <div v-if="item.conditions?.length > 0" class="logic-container" style="transform: translateY(-50%)">
-        <el-select popper-class="logic-container-popover" class="w-full el-select--x-small" v-model="item.type">
-          <el-option key="and"
-                     label="And"
-                     value="and"
-          />
-          <el-option key="or"
-                     label="Or"
-                     value="or"
-          />
-        </el-select>
+        <fct-select popper-class="logic-container-popover" class="w-full" size="x-small" v-model="item.type"
+            :options="[{label: 'And', value: 'and'}, {label: 'Or', value: 'or'}]"
+        />
       </div>
     </div>
 

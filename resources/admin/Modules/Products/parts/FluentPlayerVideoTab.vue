@@ -369,15 +369,15 @@ const createVideo = () => {
           ? translate('Ask an administrator to activate it for you.')
           : translate('Ask an administrator to install it for you.') }}
       </p>
-      <el-button
+      <fct-button
         v-else-if="activated"
         type="primary"
         data-fct-fp-video-reload
         @click="reloadPage"
       >
         {{ translate('Reload Page') }}
-      </el-button>
-      <el-button
+      </fct-button>
+      <fct-button
         v-else
         type="primary"
         :loading="installing"
@@ -386,7 +386,7 @@ const createVideo = () => {
         @click="installFluentPlayer"
       >
         {{ isInstalled ? translate('Activate FluentPlayer') : translate('Install & Activate FluentPlayer') }}
-      </el-button>
+      </fct-button>
     </div>
 
     <template v-else>
@@ -399,20 +399,20 @@ const createVideo = () => {
         <div class="fct-fp-video__block" data-fct-fp-video-create>
           <label class="fct-fp-video__section-title" for="fct-fp-video-src">{{ attachedVideos.length ? translate('Add another video') : translate('Add a video') }}</label>
           <div class="fct-fp-video__source">
-            <el-input
+            <fct-input
               id="fct-fp-video-src"
               v-model="form.src"
               :placeholder="translate('Paste a YouTube, Vimeo or direct video URL')"
               @input="onSourceInput"
             />
-            <el-tooltip :content="translate('Choose from the Media Library')" placement="top">
-              <el-button class="fct-fp-video__icon-only" data-fct-fp-video-library :aria-label="translate('Choose from the Media Library')" @click="chooseFromLibrary">
+            <fct-tooltip :content="translate('Choose from the Media Library')" placement="top">
+              <fct-button class="fct-fp-video__icon-only" data-fct-fp-video-library :aria-label="translate('Choose from the Media Library')" @click="chooseFromLibrary">
                 <DynamicIcon name="VideoAdd" />
-              </el-button>
-            </el-tooltip>
-            <el-button type="primary" :loading="creating" :disabled="!canCreate" data-fct-fp-video-create-btn @click="createVideo">
+              </fct-button>
+            </fct-tooltip>
+            <fct-button type="primary" :loading="creating" :disabled="!canCreate" data-fct-fp-video-create-btn @click="createVideo">
               {{ translate('Add Video') }}
-            </el-button>
+            </fct-button>
           </div>
           <span v-if="fetchingMetadata" class="fct-fp-video__hint">{{ translate('Reading the video details...') }}</span>
           <span v-else-if="detectedLabel" class="fct-fp-video__hint" data-fct-fp-video-detected>
@@ -431,7 +431,7 @@ const createVideo = () => {
         <div class="fct-fp-video__block" data-fct-fp-video-existing>
           <span class="fct-fp-video__section-title">{{ translate('Pick an existing FluentPlayer video') }}</span>
           <div class="fct-fp-video__source">
-            <el-select
+            <fct-select
               v-model="selectedExisting"
               filterable
               remote
@@ -440,13 +440,12 @@ const createVideo = () => {
               :loading="searching"
               :placeholder="translate('Search videos by title or ID...')"
               class="fct-fp-video__select"
+              :options="availableOptions.map(item => ({label: `#${item.id} — ${item.title}`, value: item.id}))"
               @visible-change="visible => visible && !searchOptions.length && searchMedia('')"
-            >
-              <el-option v-for="item in availableOptions" :key="item.id" :label="`#${item.id} — ${item.title}`" :value="item.id" />
-            </el-select>
-            <el-button type="primary" :disabled="!selectedExisting" data-fct-fp-video-use-existing @click="useExisting">
+            />
+            <fct-button type="primary" :disabled="!selectedExisting" data-fct-fp-video-use-existing @click="useExisting">
               {{ translate('Use Video') }}
-            </el-button>
+            </fct-button>
           </div>
         </div>
       </div>
@@ -466,11 +465,9 @@ const createVideo = () => {
             :aria-busy="video.loading ? 'true' : null" :aria-label="video.loading ? translate('Loading...') : null"
         >
           <div class="fct-fp-video__card-thumb">
-            <el-skeleton v-if="video.loading" animated>
-              <template #template>
-                <el-skeleton-item variant="image" class="fct-fp-video__card-thumb-skeleton" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton v-if="video.loading" animated>
+              <fct-skeleton variant="image" class="fct-fp-video__card-thumb-skeleton" />
+            </fct-skeleton>
             <template v-else>
               <img v-if="video.poster" :src="video.poster" :alt="video.title || ''" />
               <div class="fct-fp-video__card-play" aria-hidden="true">
@@ -479,14 +476,12 @@ const createVideo = () => {
             </template>
           </div>
           <div class="fct-fp-video__card-body">
-            <el-skeleton v-if="video.loading" animated :rows="0" data-fct-fp-video-loading>
-              <template #template>
-                <div class="fct-fp-video__card-lines">
-                  <el-skeleton-item variant="h3" class="fct-fp-video__card-title-skeleton" />
-                  <el-skeleton-item variant="text" class="fct-fp-video__card-meta-skeleton" />
-                </div>
-              </template>
-            </el-skeleton>
+            <fct-skeleton v-if="video.loading" animated :rows="0">
+              <div class="fct-fp-video__card-lines" data-fct-fp-video-loading>
+                <fct-skeleton variant="h3" class="fct-fp-video__card-title-skeleton" />
+                <fct-skeleton variant="text" class="fct-fp-video__card-meta-skeleton" />
+              </div>
+            </fct-skeleton>
             <template v-else>
               <span class="fct-fp-video__card-title" data-fct-fp-video-title>{{ video.title }}</span>
               <span class="fct-fp-video__card-meta">
@@ -518,7 +513,7 @@ const createVideo = () => {
           </div>
 
           <div class="fct-fp-video__card-actions">
-            <el-tooltip v-if="editUrlFor(video.id)" :content="translate('Edit in FluentPlayer')" placement="top">
+            <fct-tooltip v-if="editUrlFor(video.id)" :content="translate('Edit in FluentPlayer')" placement="top">
               <a
                 :href="editUrlFor(video.id)"
                 target="_blank"
@@ -529,8 +524,8 @@ const createVideo = () => {
               >
                 <DynamicIcon name="Edit" />
               </a>
-            </el-tooltip>
-            <el-tooltip :content="translate('Remove video')" placement="top">
+            </fct-tooltip>
+            <fct-tooltip :content="translate('Remove video')" placement="top">
               <button
                 type="button"
                 class="fct-fp-video__icon-btn fct-fp-video__icon-btn--danger"
@@ -540,7 +535,7 @@ const createVideo = () => {
               >
                 <DynamicIcon name="Delete" />
               </button>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </div>
       </div>

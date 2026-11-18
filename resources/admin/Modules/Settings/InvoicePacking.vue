@@ -1,11 +1,11 @@
 <script setup>
-import * as Card from '@/Bits/Components/Card/Card.js';
 import translate from "@/utils/translator/Translator";
 import {onMounted, ref} from "vue";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
+import SettingsPage from "./Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 
 import { useSaveShortcut } from "@/mixin/saveButtonShortcutMixin";
 import Alert from "@/Bits/Components/Alert.vue";
@@ -83,61 +83,44 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :heading="translate('Invoice & Packing')"
-        :show-save-button="false"
-    />
-
-    <div class="setting-wrap-inner">
+  <SettingsPage
+      :heading="translate('Invoice & Packing')"
+      :show-save-button="false"
+  >
     <AdminNotice/>
 
-      <Alert
-          class="mb-5"
-          type="information"
-          :content="translate('It will be available soon!')"
+    <Alert
+        type="information"
+        :content="translate('It will be available soon!')"
+    />
 
+    <template v-if="loading">
+      <Section v-for="(template, index) in availableTemplates" :key="index" :title="template" divided>
+        <fct-skeleton animated :rows="6" />
+      </Section>
+    </template>
 
-      />
-
-      <template v-if="loading">
-        <Card.Container v-for="(template, index) in availableTemplates" :key="index">
-          <Card.Header :title="template" border_bottom/>
-          <Card.Body>
-            <el-skeleton animated :rows="6" />
-          </Card.Body>
-        </Card.Container>
-      </template>
-
-      <template v-if="!loading && invoicePacking.length > 0">
-        <Card.Container v-for="(template, i) in invoicePacking" :key="i">
-          <Card.Header :title="template.title + ' (Under Development)'" border_bottom/>
-          <Card.Body>
-            <div class="setting-confirmation-content">
-              <div class="custom-wp-editor-wrapper">
-                <WpEditor
-                    :short-codes="confirmationShortcodes"
-                    v-model="template.content"
-                    @update="(val) => {
-                    template.content = val;
-                        // updateVal(val)
-                    }
-                  "
-                />
-              </div>
-            </div>
-          </Card.Body>
-        </Card.Container>
-        <div class="setting-save-action">
-          <el-button @click="saveTemplate()" type="primary" :loading="Saving" v-if="false">
-            {{translate('Save')}}
-          </el-button>
+    <template v-if="!loading && invoicePacking.length > 0">
+      <Section v-for="(template, i) in invoicePacking" :key="i" :title="template.title + ' (Under Development)'" divided>
+        <div class="setting-confirmation-content">
+          <div class="custom-wp-editor-wrapper">
+            <WpEditor
+                :short-codes="confirmationShortcodes"
+                v-model="template.content"
+                @update="(val) => {
+                template.content = val;
+                    // updateVal(val)
+                }
+              "
+            />
+          </div>
         </div>
-      </template>
-    </div>
-  </div>
+      </Section>
+      <div class="setting-save-action" v-if="false">
+        <fct-button @click="saveTemplate()" type="primary" :loading="Saving">
+          {{translate('Save')}}
+        </fct-button>
+      </div>
+    </template>
+  </SettingsPage>
 </template>
-
-<style scoped>
-
-</style>

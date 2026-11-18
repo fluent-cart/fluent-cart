@@ -4,12 +4,13 @@ import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
-import * as Card from "@/Bits/Components/Card/Card.js";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import MailingSettingsLoader from "@/Modules/Settings/EmailNotification/MailingSettingsLoader.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import SettingsHeader from "../Parts/SettingsHeader.vue";
+import SettingsPage from "../Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const settingsForm = ref({
@@ -80,176 +81,139 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :heading="translate('Mailing Settings')"
-        :loading="saving"
-        @on-save="saveEmailSettings"
-    />
+  <SettingsPage
+      :heading="translate('Mailing Settings')"
+      :loading="saving"
+      @on-save="saveEmailSettings"
+  >
+    <AdminNotice/>
 
-
-    <div class="setting-wrap-inner">
-      <AdminNotice/>
-
-      <Card.Container>
-        <Card.Header
-            :title="translate('Email Configuration')"
-            :text="
-            /* translators: %s is the plugin name */
-            translate('Settings_Set_Name', 'FluentCart')
-          "
-            border_bottom />
-        <MailingSettingsLoader v-if="saving" />
-        <Card.Body v-else>
-
-          <el-row :gutter="15">
-            <el-col :lg="12">
-              <el-form-item :label="translate('From Name')" label-position="top">
-                <el-input v-model="settingsForm.from_name"/>
-                <br>
-                <div>
-                  <ValidationError
-                      :validation-errors="validationErrors.from_name||{}"
-                      field-key="from_name"
-                  />
-                  <div class="form-note">
-                    <p>{{ translate('Name that will be used to send emails') }}</p>
-                  </div>
-                </div>
-
-              </el-form-item>
-            </el-col>
-            <el-col :lg="12">
-              <el-form-item :label="translate('From Email')" label-position="top">
-                <el-input v-model="settingsForm.from_email"/>
-                <div>
-                  <ValidationError
-                      :validation-errors="validationErrors.from_email||{}"
-                      field-key="from_email"
-                  />
-                  <div class="form-note">
-                    <p>{{
-                        translate('Settings_Provide_Valid')
-                      }}</p>
-                  </div>
-                </div>
-
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="15">
-            <el-col :lg="12">
-              <el-form-item :label="translate('Reply to name (Optional)')" label-position="top">
-                <el-input v-model="settingsForm.reply_to_name"/>
+    <!-- The loader brings its own Card.Body padding. -->
+    <Section
+        :title="translate('Email Configuration')"
+        :description="
+          /* translators: %s is the plugin name */
+          translate('Settings_Set_Name', 'FluentCart')
+        "
+        divided
+        :flush="saving"
+    >
+      <MailingSettingsLoader v-if="saving" />
+      <template v-else>
+        <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+            <Field :label="translate('From Name')" v-slot="{id}">
+              <fct-input :id="id" v-model="settingsForm.from_name"/>
+              <div>
+                <ValidationError
+                    :validation-errors="validationErrors.from_name||{}"
+                    field-key="from_name"
+                />
                 <div class="form-note">
-                  <p>{{ translate('Name that will be used for reply to attribute') }}</p>
+                  <p>{{ translate('Name that will be used to send emails') }}</p>
                 </div>
-
-              </el-form-item>
-            </el-col>
-            <el-col :lg="12">
-              <el-form-item :label="translate('Reply to email (Optional)')" label-position="top">
-                <el-input v-model="settingsForm.reply_to_email"/>
-                <div>
-                  <ValidationError
-                      :validation-errors="validationErrors.reply_to_email||{}"
-                      field-key="reply_to_email"
-                  />
-                  <div class="form-note">
-                    <p>{{
-                        translate('Settings_Someone_Replies')
-                      }}</p>
-                  </div>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="15">
-            <el-col>
-
-              <div class="el-form-item__label">
-                {{ translate('Email Footer') }}
               </div>
 
-              <WpEditor
-                  :short-codes="shortcodes"
-                  v-model="settingsForm.email_footer"
-                  @update="(val) => {
-                settingsForm.email_footer = val;
-              }"
-              ></WpEditor>
-              <div class="mt-2 mb-2">
+            </Field>
+            <Field :label="translate('From Email')" v-slot="{id}">
+              <fct-input :id="id" v-model="settingsForm.from_email"/>
+              <div>
                 <ValidationError
-                    :validation-errors="validationErrors.email_footer||{}"
-                    field-key="email_footer"
+                    :validation-errors="validationErrors.from_email||{}"
+                    field-key="from_email"
                 />
                 <div class="form-note">
                   <p>{{
-                      translate('Settings_Email_Footer')
+                      translate('Settings_Provide_Valid')
                     }}</p>
                 </div>
               </div>
 
-              <div class="fct-powered-by-email-footer-checkbox">
-                <el-checkbox
-                    v-model="settingsForm.show_email_footer"
-                    true-value="yes"
-                    false-value="no"
-                    :disabled="!hasPro"
-                >
-                  {{ translate('Enable powered by FluentCart in the email footer') }}
-
-                  <el-tooltip
-                      v-if="!hasPro"
-                      popper-class="fct-tooltip"
-                      placement="top"
-                  >
-                    <template #content>
-                      {{ translate('This feature is available in pro version only.') }}
-                    </template>
-
-                    <DynamicIcon name="Crown" class="fct-pro-icon"/>
-                  </el-tooltip>
-                </el-checkbox>
+            </Field>
+            <fct-input v-model="settingsForm.reply_to_name" :label="translate('Reply to name (Optional)')" :help="translate('Name that will be used for reply to attribute')"/>
+            <Field :label="translate('Reply to email (Optional)')" v-slot="{id}">
+              <fct-input :id="id" v-model="settingsForm.reply_to_email"/>
+              <div>
+                <ValidationError
+                    :validation-errors="validationErrors.reply_to_email||{}"
+                    field-key="reply_to_email"
+                />
+                <div class="form-note">
+                  <p>{{
+                      translate('Settings_Someone_Replies')
+                    }}</p>
+                </div>
               </div>
+            </Field>
+        </div>
+
+        <div>
+
+            <div class="el-form-item__label">
+              {{ translate('Email Footer') }}
+            </div>
+
+            <WpEditor
+                :short-codes="shortcodes"
+                v-model="settingsForm.email_footer"
+                @update="(val) => {
+              settingsForm.email_footer = val;
+            }"
+            ></WpEditor>
+            <div class="mt-2 mb-2">
+              <ValidationError
+                  :validation-errors="validationErrors.email_footer||{}"
+                  field-key="email_footer"
+              />
+              <div class="form-note">
+                <p>{{
+                    translate('Settings_Email_Footer')
+                  }}</p>
+              </div>
+            </div>
+
+            <div class="fct-powered-by-email-footer-checkbox">
+              <fct-choice
+                  v-model="settingsForm.show_email_footer"
+                  true-value="yes"
+                  false-value="no"
+                  :disabled="!hasPro"
+              >
+                {{ translate('Enable powered by FluentCart in the email footer') }}
+
+                <fct-tooltip
+                    v-if="!hasPro"
+                    placement="top"
+                >
+                  <template #content>
+                    {{ translate('This feature is available in pro version only.') }}
+                  </template>
+
+                  <DynamicIcon name="Crown" class="fct-pro-icon"/>
+                </fct-tooltip>
+              </fct-choice>
+            </div>
 
 
-            </el-col>
-          </el-row>
+        </div>
 
-          <el-row :gutter="15">
-            <el-col>
-              <el-form-item>
+        <div class="mb-[18px] grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+            <div class="setting-html-wrapper">
+              <span class="setting-label">{{ translate('Admin Email Address') }}</span>
+              <div class="form-note"><p>
+                {{ translate('FluentCart will send admin notification to this email address.') }}</p></div>
+            </div>
+            <div class="setting-fields-inner w-full">
+              <fct-input v-model="settingsForm.admin_email"/>
+            </div>
+        </div>
 
-                <el-row :gutter="15" class="w-full">
-                  <el-col :lg="12">
-                    <div class="setting-html-wrapper">
-                      <span class="setting-label">{{ translate('Admin Email Address') }}</span>
-                      <div class="form-note"><p>
-                        {{ translate('FluentCart will send admin notification to this email address.') }}</p></div>
-                    </div>
-                  </el-col>
-                  <el-col :lg="12">
-                    <div class="setting-fields-inner w-full">
-                      <el-input v-model="settingsForm.admin_email"/>
-                    </div>
-                  </el-col>
-                </el-row>
+      </template>
+    </Section>
 
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-        </Card.Body>
-      </Card.Container>
-
-      <div class="setting-save-action">
-        <el-button type="primary" @click="saveEmailSettings()" :loading="saving">
-          {{ translate('Save Settings') }}
-        </el-button>
-      </div>
+    <div class="setting-save-action">
+      <fct-button type="primary" @click="saveEmailSettings()" :loading="saving">
+        {{ translate('Save Settings') }}
+      </fct-button>
     </div>
-  </div>
+  </SettingsPage>
 </template>

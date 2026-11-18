@@ -1,5 +1,6 @@
-@config "./product-image-block-editor.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-image-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
 
 // === Frontend: Product Image Block with overlay badges ===
 // overflow: clip clips to border-radius like overflow: hidden but doesn't
@@ -15,7 +16,7 @@
         @apply block w-full h-auto;
     }
     .fct-product-card-image-wrap {
-        @apply m-0 !important;
+        @apply m-0!;
     }
 }
 
@@ -44,6 +45,16 @@
         pointer-events: auto;
     }
 
+    // A discounted, sold-out product shows both badges; stack the second one 7px under the first,
+    // however tall a merchant's sale badge is. Without anchor support, a default badge's offset.
+    .fct-sale-badge--top-left {
+        anchor-name: --fct-sale-badge;
+    }
+    .fct-sale-badge--top-left ~ .fct-sold-out-badge--top-left {
+        top: 2.25rem;
+        top: calc(anchor(--fct-sale-badge bottom, 29px) + 7px);
+    }
+
     // Product title overlay — anchored to the top of the image
     .fct-product-card-title {
         @apply absolute top-2 left-2 right-2 m-0;
@@ -60,6 +71,11 @@
 // relative to their small wrapper instead of the full image area.
 // CSS Grid stacks all blocks in the same cell so each stretches to fill the image.
 [data-type="fluent-cart/product-image"] {
+    // Each badge is placed inside its block's relative wrapper, so a second badge moves its wrapper.
+    .wp-block-fluent-cart-sale-badge:has(.fct-sale-badge--top-left) ~ .wp-block-fluent-cart-sold-out-badge:has(.fct-sold-out-badge--top-left) {
+        top: 1.75rem;
+    }
+
     .block-editor-inner-blocks {
         height: 100%;
     }

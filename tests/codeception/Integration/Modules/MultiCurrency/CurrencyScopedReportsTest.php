@@ -18,8 +18,8 @@ use Tests\Support\Factory\OrderItemFactory;
 use Tests\Support\Factory\SubscriptionFactory;
 
 /**
- * Tier A reporting: every report is in exactly one currency.
- * dev-docs/multi-currency/plan.md §2.4, §13. The test store's base is USD.
+ * One-currency reports: every report is in exactly one currency.
+ * dev-docs/multi-currency/07-reports.md. The test store's base is USD.
  */
 class CurrencyScopedReportsTest extends DatabaseTestCase
 {

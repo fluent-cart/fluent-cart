@@ -17,8 +17,6 @@
 <script setup>
 import {
   ref,
-  defineProps,
-  defineEmits,
   computed,
   watch,
   getCurrentInstance,

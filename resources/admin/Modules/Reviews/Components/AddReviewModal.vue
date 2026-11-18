@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <fct-dialog
       v-model="visible"
       class="fct-add-review-modal"
       :title="translate('Add Review')"
@@ -112,7 +112,7 @@
         <label class="fct-add-review-label" for="fct_add_review_variation">
           {{ translate('Variation') }}
         </label>
-        <el-select
+        <fct-select
             id="fct_add_review_variation"
             v-model="form.item_id"
             class="w-full"
@@ -121,15 +121,9 @@
             clearable
             filterable
             :placeholder="translate('Whole product (no specific variation)')"
+            :options="variations.map((variation) => ({label: variation.title, value: variation.id}))"
             @focus="clearValidationError('item_id')"
-        >
-          <el-option
-              v-for="variation in variations"
-              :key="variation.id"
-              :label="variation.title"
-              :value="variation.id"
-          />
-        </el-select>
+        />
         <ValidationError :validation-errors="validationErrors" field-key="item_id"/>
       </div>
 
@@ -149,7 +143,7 @@
 
       <div class="fct-add-review-field">
         <label class="fct-add-review-label" for="fct_add_review_title">{{ translate('Review title') }}</label>
-        <el-input
+        <fct-input
             id="fct_add_review_title"
             v-model="form.title"
             maxlength="192"
@@ -165,7 +159,7 @@
         <label class="fct-add-review-label" for="fct_add_review_content">
           {{ translate('Your review') }} <span class="fct-add-review-required">*</span>
         </label>
-        <el-input
+        <fct-input
             id="fct_add_review_content"
             v-model="form.content"
             type="textarea"
@@ -185,7 +179,7 @@
           <label class="fct-add-review-label" for="fct_add_review_name">
             {{ translate('Reviewer name') }} <span class="fct-add-review-required">*</span>
           </label>
-          <el-input
+          <fct-input
               id="fct_add_review_name"
               v-model="form.reviewer_name"
               maxlength="100"
@@ -199,7 +193,7 @@
 
         <div class="fct-add-review-field">
           <label class="fct-add-review-label" for="fct_add_review_email">{{ translate('Reviewer email') }}</label>
-          <el-input
+          <fct-input
               id="fct_add_review_email"
               v-model="form.reviewer_email"
               type="email"
@@ -220,10 +214,12 @@
       <div class="fct-add-review-row" :class="{'fct-add-review-row-single': !showVerifiedBadge}">
         <div class="fct-add-review-field">
           <label class="fct-add-review-label" for="fct_add_review_status">{{ translate('Status') }}</label>
-          <el-select id="fct_add_review_status" v-model="form.status" class="w-full">
-            <el-option :label="translate('Approved')" value="approved"/>
-            <el-option :label="_x('Pending', 'Review status')" value="pending"/>
-          </el-select>
+          <fct-select
+              id="fct_add_review_status"
+              v-model="form.status"
+              class="w-full"
+              :options="[{label: translate('Approved'), value: 'approved'}, {label: _x('Pending', 'Review status'), value: 'pending'}]"
+          />
         </div>
 
         <!-- No label of its own: the toggle's own text says what it does,
@@ -235,7 +231,7 @@
              set something no shopper ever sees. -->
         <div v-if="showVerifiedBadge" class="fct-add-review-field fct-add-review-field-inline">
           <div class="fct-add-review-switch">
-            <el-switch v-model="form.is_verified" :aria-label="translate('Mark as verified purchase')"/>
+            <fct-switch v-model="form.is_verified" :aria-label="translate('Mark as verified purchase')"/>
             <span class="fct-add-review-label">{{ translate('Verified purchase') }}</span>
           </div>
         </div>
@@ -303,10 +299,10 @@
         </template>
 
         <div v-else class="fct-add-review-locked">
-          <el-button disabled class="fct-add-review-locked-btn">
+          <fct-button disabled class="fct-add-review-locked-btn">
             <DynamicIcon name="Crown"/>
             {{ translate('Add attachment') }}
-          </el-button>
+          </fct-button>
           <span class="fct-add-review-hint">
             {{ lockedHint }}
             <a
@@ -325,12 +321,12 @@
     </div>
 
     <template #footer>
-      <el-button :disabled="saving" @click="visible = false">{{ translate('Cancel') }}</el-button>
-      <el-button type="primary" :loading="saving" :disabled="saving" @click="submit">
+      <fct-button :disabled="saving" @click="visible = false">{{ translate('Cancel') }}</fct-button>
+      <fct-button type="primary" :loading="saving" :disabled="saving" @click="submit">
         {{ translate('Add Review') }}
-      </el-button>
+      </fct-button>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>

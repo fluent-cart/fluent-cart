@@ -1,7 +1,6 @@
 <script setup>
 import {onMounted, ref} from "vue";
 import Rest from "@/utils/http/Rest";
-import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import Arr from "@/utils/support/Arr";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
@@ -61,59 +60,46 @@ onMounted(() => {
     <DynamicIcon class="w-4" name="Link" />
   </el-link>
 
-  <el-dialog v-model="showModal" :title="translate('Attach User')" @closed="closeModal">
+  <fct-dialog v-model="showModal" :title="translate('Attach User')" @closed="closeModal">
 
-    <el-form label-position="top">
-      <el-form-item :label="$t('Select User')">
-        <el-select
-            id="user_id"
-            v-model="selectedUser"
-            filterable
-            :placeholder="$t('Select a user')"
-            class="w-full"
-        >
-          <el-option
-              v-for="user in users"
-              :key="user.ID"
-              :label="user.display_name"
-              :value="user.ID"
-          >
-            <div class="select-use-option">
-              <span>{{ user.display_name }}</span>
-              <span>
-                  {{ user.user_email }}
-                </span>
-            </div>
-
-          </el-option>
-        </el-select>
-
-        <ValidationError
-            v-if="validationErrors.hasOwnProperty('user_id')"
-            :validation-errors="validationErrors"
-            field-key="user_id"
-        />
-      </el-form-item>
-
-    </el-form>
+    <fct-select
+        id="user_id"
+        v-model="selectedUser"
+        filterable
+        :label="$t('Select User')"
+        :placeholder="$t('Select a user')"
+        class="w-full"
+        :options="users.map((user) => ({label: user.display_name, value: user.ID, email: user.user_email}))"
+        :validation-errors="validationErrors"
+        field-key="user_id"
+    >
+      <template #option="{option}">
+        <div class="select-use-option">
+          <span>{{ option.label }}</span>
+          <span>
+              {{ option.email }}
+            </span>
+        </div>
+      </template>
+    </fct-select>
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="closeModal">
+        <fct-button @click="closeModal">
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             type="primary"
             @click="attachUser"
             :loading="submitting"
             :disabled="submitting"
         >
           {{ translate('Attach User') }}
-        </el-button>
+        </fct-button>
       </span>
     </template>
 
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <style scoped>

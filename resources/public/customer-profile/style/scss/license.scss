@@ -12,7 +12,7 @@
 }
 
 .license-meta-list{
-  @apply flex items-center #{!important};
+  @apply flex! items-center!;
   li {
     @apply flex items-center gap-1 me-3 pe-3 relative last:me-0 last:pe-0 last:after:hidden;
     &:after{

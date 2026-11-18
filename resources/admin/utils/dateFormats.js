@@ -143,6 +143,30 @@ export function toStoreTimezone(dateTime) {
 }
 
 /**
+ * Read a zone-less wall-clock string ('YYYY-MM-DD HH:mm:ss') typed in the
+ * store's timezone and return that instant as a UTC Day.js instance.
+ *
+ * The inverse of toStoreTimezone(): date pickers hand back wall-clock text,
+ * and it must be read in the same zone the value was rendered in.
+ */
+export function storeWallToUtc(wall) {
+    const timezone = (AppConfig.get('datei18') || {}).timezone || {};
+
+    if (timezone.source === 'wordpress' && timezone.site) {
+        try {
+            // An offset keeps the typed clock time and only re-labels its zone.
+            return (UTC_OFFSET_PATTERN.test(timezone.site)
+                ? dayjs.utc(wall).utcOffset(timezone.site, true)
+                : dayjs.tz(wall, timezone.site)).utc();
+        } catch (e) {
+            // Unusable zone: same fallback as toStoreTimezone().
+        }
+    }
+
+    return dayjs(wall).utc();
+}
+
+/**
  * The current instant, in the timezone the store renders in.
  *
  * Anything comparing a rendered date against "now" has to read now through the

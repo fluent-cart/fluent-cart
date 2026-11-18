@@ -39,7 +39,7 @@
     .el-input{
         &__inner {
             @apply text-left w-[90px] m-0 font-medium text-system-mid;
-            @apply dark:text-gray-300 #{!important};
+            @apply dark:text-gray-300!;
         }
         &__suffix-inner{
             .el-icon{
@@ -53,7 +53,7 @@
     button{
         @apply min-h-[32px] min-w-[32px] pt-0.5 h-auto text-system-mid dark:text-gray-300;
         &:disabled{
-            @apply text-system-light hover:text-system-light #{!important};
+            @apply text-system-light! hover:text-system-light!;
         }
     }
     &.is-background{
@@ -80,17 +80,29 @@
 
                 &.number {
                     &:hover:before {
-                        @apply bg-gray-50 text-system-dark dark:text-gray-50 dark:bg-dark-600 dark:text-gray-50;
+                        @apply bg-gray-50 text-system-dark;
+                    }
+                    .fluent_theme_dark &:hover:before {
+                        @apply text-gray-50 bg-dark-600;
                     }
                     &.is-active {
                         &:before {
-                            @apply text-white bg-primary-500 dark:bg-dark-500 border-primary-500 hover:bg-primary-500 hover:border-primary-500;
+                            @apply text-white bg-primary-500 border-primary-500;
+                        }
+                        &:hover:before {
+                            @apply bg-primary-500 border-primary-500;
+                        }
+                        .fluent_theme_dark &:before {
+                            @apply bg-dark-500;
                         }
                     }
 
                     &::before {
                         content: var(--translated-number);
-                        @apply absolute flex items-center justify-center left-0 top-0 w-full h-full bg-white dark:bg-primary-700 rounded;
+                        @apply absolute flex items-center justify-center left-0 top-0 w-full h-full bg-white rounded;
+                    }
+                    .fluent_theme_dark &::before {
+                        @apply bg-primary-700;
                     }
                 }
             }

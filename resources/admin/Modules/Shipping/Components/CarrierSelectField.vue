@@ -21,7 +21,7 @@
 
       <div v-if="open" class="fct-carrier-dd__pop">
         <div class="fct-carrier-dd__search">
-          <el-input
+          <fct-input
               ref="searchEl"
               v-model="query"
               :placeholder="field.search_placeholder || translate('Search')"

@@ -12,14 +12,14 @@
         />
 
         <div class="dialog-footer">
-            <el-button
+            <fct-button
                 :disabled="!hasValidTitle || loading"
                 :loading="loading"
                 type="primary"
                 @click="createTerm"
             >
                 {{ translate('Add term') }}
-            </el-button>
+            </fct-button>
         </div>
     </div>
 </template>

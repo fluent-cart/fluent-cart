@@ -1,42 +1,25 @@
 <template>
 	<div class="fct-shipping-modal">
-		<el-form label-position='top' require-asterisk-position="right">
-			<el-row :gutter="20">
-				<el-col :md="24" :sm="24" :xs="24">
-					<el-form-item :label="$t('')" required>
-						<el-radio-group v-model="shippingType">
-							<el-radio v-for="(item, itemIndex) in availableOptions" :value="item.value" :key="itemIndex">
-								{{ item.label }}
-							</el-radio>
-						</el-radio-group>
-					</el-form-item>
-				</el-col>
-			</el-row>
-			<el-row v-if="shippingType === 'custom'" :gutter="15">
-				<el-col :md="12" :sm="12" :xs="24">
-					<el-form-item :label="$t('Name')">
-						<el-input type="text" v-model="shipping.rate_name"/>
-					</el-form-item>
-				</el-col>
-				<el-col :md="12" :sm="12" :xs="24">
-					<el-form-item :label="$t('Price')">
-						<el-input type="number" :min="1" v-model.number="shipping.custom_price" @keyup="isDisabledApplyButton">
-							<template #prefix>
-								<span v-html="appVars.shop.currency_sign"></span>
-							</template>
-						</el-input>
-					</el-form-item>
-				</el-col>
-
-			</el-row>
-		</el-form>
+		<div>
+			<div class="mb-[18px]">
+				<fct-choice type="radio" v-model="shippingType" :options="availableOptions"/>
+			</div>
+			<div v-if="shippingType === 'custom'" class="grid grid-cols-1 md:grid-cols-2 gap-x-[15px]">
+				<fct-input :label="$t('Name')" type="text" v-model="shipping.rate_name"/>
+				<fct-input :label="$t('Price')" type="number" :controls="false" :min="1" v-model.number="shipping.custom_price" @keyup="isDisabledApplyButton">
+					<template #prefix>
+						<span v-html="appVars.shop.currency_sign"></span>
+					</template>
+				</fct-input>
+			</div>
+		</div>
 		<div class="dialog-footer">
-			<el-button type="danger" v-if="shipping.type" @click="removeShipping">
+			<fct-button type="danger" v-if="shipping.type" @click="removeShipping">
 				{{ $t('Remove Shipping')}}
-			</el-button>
-			<el-button type="primary" @click="updatingIsDone" :disabled="isDisabledApplyButton()">
+			</fct-button>
+			<fct-button type="primary" @click="updatingIsDone" :disabled="isDisabledApplyButton()">
 				{{ $t('Apply')}}
-			</el-button>
+			</fct-button>
 		</div>
 	</div>
 </template>

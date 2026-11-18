@@ -7,6 +7,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
+use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -261,6 +262,66 @@ class RenewalOrderPricingHookTest extends DatabaseTestCase
         foreach ($rows as $row) {
             $this->assertSame((int) $row->total_tax, (int) $row->order_tax + (int) $row->shipping_tax, 'Each row still adds up within itself');
         }
+    }
+
+    public function test_a_renewal_uses_the_saved_shipping_base_with_its_own_shipping_rate(): void
+    {
+        $subscription = $this->dueSubscription(['recurring_amount' => 10000, 'recurring_tax_total' => 2000, 'recurring_total' => 12000]);
+
+        // 15.00 of tax on 100.00 at 15%, and 5.00 on 50.00 of shipping taxed at 10%.
+        (new OrderTaxRateFactory())->create(['order_id' => $subscription->parent_order_id, 'tax_rate_id' => 1, 'order_tax' => 1500, 'shipping_tax' => 500, 'total_tax' => 2000, 'meta' => ['label' => 'VAT', 'rate_percent' => 15, 'shipping_taxable_amount' => 5000]]);
+
+        $invoice = Order::query()->find(RenewalService::createRenewalOrders($subscription)[0]->id);
+        $rows = TaxSummaryHelper::computeTaxSummary($invoice)['foldedRateLines'];
+
+        $this->assertSame(2000, (int) $rows[0]['tax'], 'Fixture: the renewal keeps the parent row');
+        // 20.00 / 15% would read 133.33.
+        $this->assertSame(15000, (int) $rows[0]['base']);
+    }
+
+    public function test_a_lowered_tax_does_not_keep_the_parent_shipping_base(): void
+    {
+        $subscription = $this->dueSubscription(['recurring_amount' => 10000, 'recurring_tax_total' => 2000, 'recurring_total' => 12000]);
+
+        // A shipping-only rate: 5.00 of tax on 50.00 of shipping at 10%.
+        (new OrderTaxRateFactory())->create(['order_id' => $subscription->parent_order_id, 'tax_rate_id' => 1, 'order_tax' => 1500, 'total_tax' => 1500, 'meta' => ['label' => 'VAT', 'rate_percent' => 15]]);
+        (new OrderTaxRateFactory())->create(['order_id' => $subscription->parent_order_id, 'tax_rate_id' => 2, 'shipping_tax' => 500, 'total_tax' => 500, 'meta' => ['label' => 'Ship', 'rate_percent' => 10, 'shipping_taxable_amount' => 5000]]);
+
+        add_filter('fluent_cart/renewal/before_create_order', function ($pricing) {
+            $pricing['discount_total'] = 1000;
+            $pricing['tax_total'] = 1800;
+
+            return $pricing;
+        });
+
+        $invoice = Order::query()->find(RenewalService::createRenewalOrders($subscription)[0]->id);
+        $rows = TaxSummaryHelper::computeTaxSummary($invoice)['foldedRateLines'];
+        $shippingRow = end($rows);
+
+        $this->assertSame(450, (int) $shippingRow['tax'], 'Fixture: the shipping tax is lowered with the rest');
+        $this->assertSame(4500, (int) $shippingRow['base'], 'The base follows the lowered tax, not the parent\'s 50.00');
+    }
+
+    public function test_a_lowered_tax_scales_the_saved_shipping_base(): void
+    {
+        $subscription = $this->dueSubscription(['recurring_amount' => 10000, 'recurring_tax_total' => 2000, 'recurring_total' => 12000]);
+
+        // 15.00 of tax on 100.00 at 15%, and 5.00 on 50.00 of shipping taxed at 10%.
+        (new OrderTaxRateFactory())->create(['order_id' => $subscription->parent_order_id, 'tax_rate_id' => 1, 'order_tax' => 1500, 'shipping_tax' => 500, 'total_tax' => 2000, 'meta' => ['label' => 'VAT', 'rate_percent' => 15, 'shipping_taxable_amount' => 5000]]);
+
+        add_filter('fluent_cart/renewal/before_create_order', function ($pricing) {
+            $pricing['discount_total'] = 1000;
+            $pricing['tax_total'] = 1800;
+
+            return $pricing;
+        });
+
+        $invoice = Order::query()->find(RenewalService::createRenewalOrders($subscription)[0]->id);
+        $rows = TaxSummaryHelper::computeTaxSummary($invoice)['foldedRateLines'];
+
+        $this->assertSame(1800, (int) $rows[0]['tax'], 'Fixture: 13.50 item tax and 4.50 shipping tax');
+        // 13.50 / 15% + 4.50 / 10%. Dividing all 18.00 by 15% would read 120.00.
+        $this->assertSame(13500, (int) $rows[0]['base']);
     }
 
     public function test_a_tiny_tax_split_over_many_rates_never_goes_negative(): void

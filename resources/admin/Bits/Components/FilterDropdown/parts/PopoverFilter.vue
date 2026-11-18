@@ -1,6 +1,6 @@
 <template>
   <div class="fct-applied-filter-popover-wrap">
-    <el-popover
+    <fct-popover
         v-if="filterItem.value.length > 1"
         placement="bottom"
         trigger="click"
@@ -32,7 +32,7 @@
           />
         </li>
       </ul>
-    </el-popover>
+    </fct-popover>
 
     <div v-else class="fct-applied-filter-value-inner-label">
       <div class="truncate max-w-[300px]">{{ filterItem.value[0].label }}</div>

@@ -107,6 +107,9 @@ class OnboardingController extends Controller
             ];
 
             $pageId = (string)wp_insert_post($page);
+            if ($content === 'shop' && $pageId) {
+                Pages::markLayoutCardStore();
+            }
 
             if ($saveSettings) {
                 (new StoreSettings())->save([

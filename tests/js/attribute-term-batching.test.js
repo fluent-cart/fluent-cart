@@ -11,8 +11,6 @@ import {
  * the whole save — and, because the cap message arrives in the 422 errors bag
  * rather than in `data.message`, the merchant saw only "Failed to create option
  * values" and never learned about the cap.
- *
- * See dev-docs/framework-update-2.12.6-qa.md finding 6.
  */
 
 const titles = (count) => Array.from({length: count}, (_, index) => 'Value ' + (index + 1));

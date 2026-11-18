@@ -38,7 +38,9 @@ use FluentCart\App\Models\LabelRelationship;
 use FluentCart\App\Models\OrderDownloadPermission;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\MultiCurrency\Services\MultiCurrencyAdmin;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Services\AdminOrderPricing;
 use FluentCart\App\Services\CustomerIdentity\EmailVerificationService;
 use FluentCart\App\Services\Filter\OrderFilter;
@@ -150,6 +152,7 @@ class OrderController extends Controller
             'order_items'           => array_values($pricing['items']),
             'applied_coupons'       => $pricing['applied_coupons'],
             'shipping_total'        => $pricing['shipping_total'],
+            'shipping'              => $pricing['shipping'],
             'subtotal'              => $pricing['subtotal'],
             'coupon_discount_total' => $pricing['coupon_discount_total'],
             'manual_discount_total' => $pricing['manual_discount_total'],
@@ -925,6 +928,91 @@ class OrderController extends Controller
 
     public function markAsPaid(Request $request, Order $order)
     {
+        $markPaidAs = sanitize_text_field($request->get('mark_paid_as', ''));
+        $paymentMethod = sanitize_text_field($request->payment_method);
+        $vendorChargeId = sanitize_text_field($request->vendor_charge_id);
+        $paymentNote = sanitize_textarea_field($request->get('mark_paid_note', ''));
+
+        // An open gateway charge (a PayPay intent waiting on Stripe) is either confirmed
+        // in place or paid separately on purpose, so the late gateway success never doubles it.
+        $openCharges = OrderTransaction::query()
+            ->where('order_id', $order->id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_CHARGE)
+            ->whereIn('status', [Status::TRANSACTION_PENDING, Status::TRANSACTION_FAILED])
+            ->whereNotNull('vendor_charge_id')
+            ->where('vendor_charge_id', '!=', '')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($openCharges->count() && !in_array($markPaidAs, ['confirm', 'separate'], true)) {
+            return $this->sendError([
+                'message' => __('Choose whether to confirm the open payment or record a separate one.', 'fluent-cart')
+            ], 422);
+        }
+
+        $confirmCharge = null;
+        $verification = 'not_checked';
+        $gatewayMessage = '';
+        if ($markPaidAs === 'confirm') {
+            $transactionId = (int) $request->get('transaction_id', 0);
+            if (!$transactionId && $openCharges->count() > 1) {
+                return $this->sendError([
+                    'message' => __('Select the open payment to confirm.', 'fluent-cart')
+                ], 422);
+            }
+
+            $confirmCharge = $openCharges->first(function ($charge) use ($transactionId) {
+                return !$transactionId || (int) $charge->id === $transactionId;
+            });
+
+            if (!$confirmCharge) {
+                return $this->sendError([
+                    'message' => __('This payment is no longer open. Reload the order.', 'fluent-cart')
+                ], 422);
+            }
+
+            // The gateway's late success skips renewal and activation work on an already-succeeded row.
+            if ($confirmCharge->subscription_id) {
+                return $this->sendError([
+                    'message' => __('A subscription payment cannot be confirmed here. Record a separate payment instead.', 'fluent-cart')
+                ], 422);
+            }
+
+            // A gateway success on the sync below would move a canceled order to processing.
+            if ($order->status === Status::ORDER_CANCELED) {
+                return $this->sendError([
+                    'message' => __('Unable to mark paid for canceled order', 'fluent-cart')
+                ], 423);
+            }
+
+            if ($confirmCharge->status === Status::TRANSACTION_PENDING) {
+                $synced = $confirmCharge->syncPendingTransaction();
+                $confirmCharge = OrderTransaction::query()->find($confirmCharge->id);
+
+                if (in_array($confirmCharge->status, Status::getTransactionSuccessStatuses(), true)) {
+                    return $this->gatewayReceivedResponse($confirmCharge);
+                }
+
+                $verification = 'not_completed';
+                if (is_wp_error($synced)) {
+                    if (in_array($synced->get_error_code(), ['amount_mismatch', 'currency_mismatch'], true)) {
+                        return $this->sendError([
+                            'message' => __('The gateway reports a different amount or currency. Record a separate payment instead.', 'fluent-cart')
+                        ], 422);
+                    }
+
+                    $gatewayMessage = $synced->get_error_message();
+                    $verification = Arr::get([
+                        'still_processing'       => 'processing',
+                        'still_pending'          => 'processing',
+                        'charge_not_completed'   => 'not_completed',
+                        'not_implemented'        => 'unsupported',
+                        'invalid_payment_method' => 'unsupported',
+                    ], $synced->get_error_code(), 'unreachable');
+                }
+            }
+        }
+
         $db = Order::query()->getConnection();
         $db->beginTransaction();
 
@@ -941,19 +1029,39 @@ class OrderController extends Controller
                 ], 404);
             }
 
-            $dueAmount = intval($locked->total_amount - $locked->total_paid);
+            $rowsPaid = (int) OrderTransaction::query()
+                ->where('order_id', $locked->id)
+                ->whereIn('status', Status::getTransactionSuccessStatuses())
+                ->sum('total');
 
-            if ($dueAmount <= 0) {
-                $db->rollBack();
-                return $this->sendError([
-                    'message' => __('Order has already been paid', 'fluent-cart')
-                ], 423);
-            }
+            $dueAmount = intval($locked->total_amount - max($rowsPaid, $locked->total_paid));
 
             if ($locked->status === Status::ORDER_CANCELED) {
                 $db->rollBack();
                 return $this->sendError([
                     'message' => __('Unable to mark paid for canceled order', 'fluent-cart')
+                ], 423);
+            }
+
+            if ($dueAmount <= 0) {
+                // Settled charges already cover the order but its totals were never synced.
+                if ($rowsPaid >= $locked->total_amount && $locked->total_paid < $locked->total_amount) {
+                    $db->commit();
+                    $latest = OrderTransaction::query()
+                        ->where('order_id', $locked->id)
+                        ->whereIn('status', Status::getTransactionSuccessStatuses())
+                        ->orderBy('id', 'desc')
+                        ->first();
+                    (new StatusHelper($locked))->setPaymentSource(OrderPaid::SOURCE_ADMIN)->syncOrderStatuses($latest);
+
+                    return $this->response->sendSuccess([
+                        'message' => __('Order has been marked as paid', 'fluent-cart')
+                    ]);
+                }
+
+                $db->rollBack();
+                return $this->sendError([
+                    'message' => __('Order has already been paid', 'fluent-cart')
                 ], 423);
             }
 
@@ -974,15 +1082,49 @@ class OrderController extends Controller
             $newTransactionData = [
                 'total'               => $dueAmount,
                 'status'              => Status::TRANSACTION_SUCCEEDED,
-                'payment_method'      => sanitize_text_field($request->payment_method),
-                'vendor_charge_id'    => sanitize_text_field($request->vendor_charge_id),
+                'payment_method'      => $paymentMethod,
+                'vendor_charge_id'    => $vendorChargeId,
                 'payment_mode'        => sanitize_text_field($locked->mode),
-                'payment_method_type' => sanitize_text_field($request->payment_method),
+                'payment_method_type' => $paymentMethod,
                 'order_type'          => sanitize_text_field($locked->type),
                 'currency'            => sanitize_text_field($locked->currency),
             ];
 
-            if ($transaction) {
+            if ($confirmCharge) {
+                $transaction = OrderTransaction::query()
+                    ->where('id', $confirmCharge->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $error = '';
+                if (!$transaction || !in_array($transaction->status, [Status::TRANSACTION_PENDING, Status::TRANSACTION_FAILED], true)) {
+                    $error = __('This payment is no longer open. Reload the order.', 'fluent-cart');
+                } else if ((int) $transaction->total !== $dueAmount || strtoupper((string) $transaction->currency) !== strtoupper((string) $locked->currency)) {
+                    $error = __('This payment does not match the amount due. Record a separate payment instead.', 'fluent-cart');
+                } else if (($paymentMethod && $paymentMethod !== $transaction->payment_method) || ($vendorChargeId && $vendorChargeId !== $transaction->vendor_charge_id)) {
+                    $error = __('The payment method and reference must match the payment you confirm.', 'fluent-cart');
+                }
+
+                if ($error) {
+                    $db->rollBack();
+                    return $this->sendError(['message' => $error], 422);
+                }
+
+                // Gateway, method type and charge ID stay, so refunds and the late webhook
+                // still resolve to this row.
+                $transaction->meta = array_merge((array) $transaction->meta, [
+                    'mark_paid' => [
+                        'by'              => get_current_user_id(),
+                        'at'              => current_time('mysql', true),
+                        'previous_status' => $transaction->status,
+                        'verification'    => $verification,
+                        'gateway_message' => $gatewayMessage,
+                        'note'            => $paymentNote,
+                    ]
+                ]);
+                $transaction->status = Status::TRANSACTION_SUCCEEDED;
+                $transaction->save();
+            } else if ($transaction) {
                 // Don't include transaction_type in the update — the existing value is always 'charge'
                 // and overwriting it with the request value would break syncSubscriptionStates bill_count.
                 $transaction->update($newTransactionData);
@@ -1016,7 +1158,6 @@ class OrderController extends Controller
 
         (new StatusHelper($locked))->setPaymentSource(OrderPaid::SOURCE_ADMIN)->syncOrderStatuses($transaction);
 
-        $paymentNote = sanitize_textarea_field($request->get('mark_paid_note', ''));
         if ($paymentNote) {
             $locked->addLog(
                 __('Payment note', 'fluent-cart'),
@@ -1026,9 +1167,73 @@ class OrderController extends Controller
             );
         }
 
+        if ($confirmCharge) {
+            // A racing gateway webhook can rewrite the row's meta, so the order log keeps the record.
+            $locked->addLog(
+                __('Payment confirmed by admin', 'fluent-cart'),
+                /* translators: 1: payment reference */
+                sprintf(__('Open payment %1$s marked as paid.', 'fluent-cart'), esc_html($transaction->vendor_charge_id)),
+                'info',
+                wp_get_current_user()->display_name
+            );
+
+            return $this->response->sendSuccess([
+                'outcome' => 'confirmed',
+                /* translators: 1: payment gateway name */
+                'message' => sprintf(__('Payment confirmed. %1$s has not settled it yet.', 'fluent-cart'), $this->gatewayTitle($transaction->payment_method))
+            ]);
+        }
+
+        if ($markPaidAs === 'separate') {
+            return $this->response->sendSuccess([
+                'outcome' => 'separate',
+                'message' => __('Separate payment recorded.', 'fluent-cart')
+            ]);
+        }
+
         return $this->response->sendSuccess([
             'message' => __('Order has been marked as paid', 'fluent-cart')
         ]);
+    }
+
+    private function gatewayReceivedResponse(OrderTransaction $charge)
+    {
+        $order = Order::query()->find($charge->order_id);
+        $title = $this->gatewayTitle($charge->payment_method);
+        $dueAmount = intval($order->total_amount - $order->total_paid);
+
+        if ($dueAmount <= 0) {
+            return $this->response->sendSuccess([
+                'outcome' => 'gateway_paid',
+                /* translators: 1: payment gateway name */
+                'message' => sprintf(__('%1$s already received this payment.', 'fluent-cart'), $title)
+            ]);
+        }
+
+        Order::query()
+            ->where('id', $order->id)
+            ->where('total_paid', '>', 0)
+            ->whereIn('payment_status', [Status::PAYMENT_PENDING, Status::PAYMENT_FAILED])
+            ->update(['payment_status' => Status::PAYMENT_PARTIALLY_PAID]);
+
+        return $this->response->sendSuccess([
+            'outcome' => 'gateway_partial',
+            'message' => sprintf(
+                /* translators: 1: payment gateway name, 2: amount received, 3: amount still due */
+                __('%1$s received %2$s. %3$s is still due.', 'fluent-cart'),
+                $title,
+                Helper::toDecimal($charge->total, true, $order->currency),
+                Helper::toDecimal($dueAmount, true, $order->currency)
+            )
+        ]);
+    }
+
+    private function gatewayTitle($method)
+    {
+        $gateway = GatewayManager::getInstance((string) $method);
+        $meta = $gateway ? $gateway->meta() : [];
+
+        return Arr::get($meta, 'admin_title') ?: Arr::get($meta, 'title') ?: $method;
     }
 
     public function handleBulkActions(Request $request)
@@ -1197,7 +1402,7 @@ class OrderController extends Controller
         }
 
         // Money already counted into the order cannot be changed from a dropdown; returning
-        // it is a refund, which records a refund transaction through the refund action (FC-SEC-09).
+        // it is a refund, which records a refund transaction through the refund action.
         if ($transaction->status === Status::TRANSACTION_SUCCEEDED) {
             return $this->sendError([
                 'message' => __('A succeeded transaction cannot be changed here. Use the refund action to return the payment.', 'fluent-cart')
@@ -1290,12 +1495,17 @@ class OrderController extends Controller
     public function updateShipping(Request $request)
     {
         $orderItems = $request->get('order_items');
-        $shippingMethodId = $request->get('shipping_id');
+        $shippingMethodId = $request->getInt('shipping_id');
 
         $orderItems = $this->prepareOrderItemsWithVariations($orderItems);
 
 
-        $method = ShippingMethod::query()->find($shippingMethodId);
+        $method = ShippingMethod::query()->where('is_enabled', 1)->find($shippingMethodId);
+        if (!$method) {
+            return $this->sendError([
+                'message' => __('The selected shipping method is unavailable.', 'fluent-cart'),
+            ], 422);
+        }
 
         $totalShippingCharge = CartHelper::calculateShippingMethodCharge($method, $orderItems);
 

@@ -1,0 +1,63 @@
+// Same rhythm as the Getting Started block above it (onboarding.scss): dashed divider, 15px title, 16px gaps.
+.fct-addon-reco {
+	@apply pb-6 mb-6 border-[1px] border-l-0 border-t-0 border-r-0 border-dashed border-gray-200 dark:border-dark-500;
+
+	&__heading {
+		@apply m-0;
+	}
+	&__toggle {
+		@apply flex w-full items-center justify-between gap-2 p-0 bg-transparent border-0 cursor-pointer rounded text-left text-[15px] font-medium leading-6 text-system-dark dark:text-gray-25;
+		&:hover .fct-addon-reco__chevron {
+			@apply text-system-dark dark:text-gray-25;
+		}
+		&:focus-visible {
+			@apply [outline-width:2px] outline-offset-2 outline-primary-500;
+		}
+	}
+	&__chevron {
+		@apply flex w-3 shrink-0 text-system-mid dark:text-gray-500 transition-transform duration-200;
+		svg {
+			@apply w-full h-auto;
+		}
+		&.is-collapsed {
+			@apply -rotate-90;
+		}
+	}
+	&__text {
+		@apply mt-1 mb-0 text-[13px] leading-5 text-system-mid dark:text-gray-400;
+	}
+	&__list {
+		@apply flex flex-col gap-4 mt-4 mb-0 p-0 list-none;
+	}
+	&__item {
+		@apply flex items-start gap-3 m-0;
+	}
+	&__logo {
+		@apply flex shrink-0 items-center justify-center w-8 h-8 rounded-md border border-solid border-gray-100 bg-gray-25 dark:border-transparent dark:bg-gray-100;
+		img {
+			@apply w-[18px] h-[18px] object-contain;
+		}
+	}
+	&__body {
+		@apply flex flex-col items-start min-w-0;
+	}
+	&__name {
+		@apply flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium leading-5 text-system-dark dark:text-gray-25;
+	}
+	&__reason {
+		@apply mt-0.5 mb-0 text-[13px] leading-[18px] text-system-mid dark:text-gray-400;
+	}
+	&__action {
+		@apply mt-2;
+	}
+	&__all {
+		@apply mt-4 px-0 no-underline;
+	}
+	&__all-icon {
+		@apply flex ml-1;
+	}
+	// Beats the house .el-button.is-text .icon svg (14px) for this card only.
+	& &__all.is-text .icon svg {
+		@apply w-3 h-3;
+	}
+}

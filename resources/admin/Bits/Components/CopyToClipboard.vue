@@ -10,21 +10,20 @@
     <div class="fct-copy-basic-wrap" v-else-if="showMode === 'icon_with_text'">
       <div class="fct-copy-basic">
         <span ref="copyTooltip" class="copy-tooltip">{{ tooltipText }}</span>
-        <el-button class="fct-copy-text-btn" text @click="copyToClipboard">
+        <fct-button class="fct-copy-text-btn" text @click="copyToClipboard">
           <DynamicIcon name="Copy"/>
           {{ buttonText }}
-        </el-button>
+        </fct-button>
       </div>
-      <el-tooltip
+      <fct-tooltip
           v-if="tooltipContent"
-          popper-class="fct-tooltip"
           :content="tooltipContent"
           :placement="placement"
           :show-after="400"
           :hide-after="0"
       >
         <span><DynamicIcon name="InformationFill" class="w-4.5 h-4.5"/></span>
-      </el-tooltip>
+      </fct-tooltip>
     </div>
 
     <div v-else class="fct-copy-advanced flex">
@@ -39,7 +38,7 @@
 </template>
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {ref, defineProps, watch} from "vue";
+import {ref, watch} from "vue";
 import Clipboard from "@/utils/Clipboard";
 import translate from "@/utils/translator/Translator";
 

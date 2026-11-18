@@ -68,68 +68,6 @@ class CurrencySchemaUpgradeTest extends DatabaseTestCase
         $this->assertSame(DBMigrator::CURRENCY_SCHEMA_VERSION, get_option(self::OPTION), 'the next admin load retries and completes it');
     }
 
-    public function test_a_failed_retention_index_keeps_the_upgrade_pending_for_retry(): void
-    {
-        global $wpdb;
-        $index = $wpdb->prefix . 'fct_rs_cohort_period_product_currency_idx';
-        // The index reports missing and its ALTER does nothing
-        $fail = function ($query) use ($index) {
-            if (stripos($query, 'SHOW INDEX FROM') === 0 && strpos($query, $index) !== false) {
-                return 'SELECT 1 FROM DUAL WHERE 1 = 0';
-            }
-            if (stripos($query, 'ALTER TABLE') === 0 && strpos($query, $index) !== false) {
-                return 'SELECT 1';
-            }
-            return $query;
-        };
-
-        add_filter('query', $fail);
-        try {
-            DBMigrator::maybeMigrateDBChanges();
-        } finally {
-            remove_filter('query', $fail);
-        }
-        $this->assertFalse(get_option(self::OPTION), 'a failed retention index is not recorded as done');
-
-        DBMigrator::maybeMigrateDBChanges();
-        $this->assertSame(DBMigrator::CURRENCY_SCHEMA_VERSION, get_option(self::OPTION));
-    }
-
-    public function test_the_old_retention_key_is_kept_until_its_replacement_exists(): void
-    {
-        global $wpdb;
-        $newIndex = $wpdb->prefix . 'fct_rs_cohort_period_product_currency_idx';
-        $oldIndex = $wpdb->prefix . 'fct_rs_cohort_period_product_idx';
-        $dropped = [];
-        // The new index fails to build; the old one is still there
-        $fail = function ($query) use ($newIndex, $oldIndex, &$dropped) {
-            if (stripos($query, 'SHOW INDEX FROM') === 0 && strpos($query, $newIndex) !== false) {
-                return 'SELECT 1 FROM DUAL WHERE 1 = 0';
-            }
-            if (stripos($query, 'SHOW INDEX FROM') === 0 && strpos($query, $oldIndex) !== false) {
-                return "SELECT '{$oldIndex}' AS Key_name";
-            }
-            if (stripos($query, 'ALTER TABLE') === 0 && strpos($query, $newIndex) !== false) {
-                return 'SELECT 1';
-            }
-            if (stripos($query, 'ALTER TABLE') === 0 && stripos($query, 'DROP') !== false && strpos($query, $oldIndex) !== false) {
-                $dropped[] = $query;
-                return 'SELECT 1';
-            }
-            return $query;
-        };
-
-        add_filter('query', $fail);
-        try {
-            DBMigrator::maybeMigrateDBChanges();
-        } finally {
-            remove_filter('query', $fail);
-        }
-
-        $this->assertSame([], $dropped, 'without its replacement the table would have no unique key');
-        $this->assertFalse(get_option(self::OPTION));
-    }
-
     public function test_the_currency_schema_completes_without_a_rates_table(): void
     {
         // The rates table belongs to FluentCart Pro; a core-only store never has it

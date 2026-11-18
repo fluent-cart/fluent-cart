@@ -1,5 +1,5 @@
 <template>
-    <el-popover :visible="visible" popper-class="fct-stock-dropdown fct-inventory-stock-dropdown" trigger="click" placement="bottom-end">
+    <fct-popover :visible="visible" popper-class="fct-stock-dropdown fct-inventory-stock-dropdown" trigger="click" placement="bottom-end">
         <div class="fct-adjust-by-wrap">
             <!-- Adjust By -->
             <div class="fct-adjust-by-row">
@@ -7,11 +7,12 @@
                     <span class="title">
                         {{ translate('Adjust by') }}
                     </span>
-                    <el-input
+                    <fct-input
                         ref="adjustByInput"
                         size="small"
                         :placeholder="translate('Quantity')"
                         type="number"
+                        :controls="false"
                         v-model.number="adjustedQuantity"
                         @input="handleAdjustChange"
                     />
@@ -20,10 +21,11 @@
                     <span class="title">
                         {{ translate('New Stock') }}
                     </span>
-                    <el-input
+                    <fct-input
                         size="small"
                         :placeholder="translate('New Stock')"
                         type="number"
+                        :controls="false"
                         v-model.number="newStock"
                         @input="handleNewStockChange"
                     />
@@ -49,15 +51,15 @@
 
             <!-- Action Buttons -->
             <div class="fct-adjust-by-action">
-                <el-button
+                <fct-button
                     size="small"
                     type="info"
                     soft
                     @click="handleCancel"
                 >
                     {{ translate('Cancel') }}
-                </el-button>
-                <el-button
+                </fct-button>
+                <fct-button
                     size="small"
                     type="primary"
                     @click="handleApply"
@@ -65,7 +67,7 @@
                     :loading="isSavePending"
                 >
                     {{ translate('Apply') }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
 
@@ -77,7 +79,7 @@
                 <DynamicIcon name="Configuration"/>
             </div>
         </template>
-    </el-popover>
+    </fct-popover>
 </template>
 
 <script setup>

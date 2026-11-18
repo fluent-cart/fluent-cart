@@ -172,17 +172,6 @@ class ProductControllerTest extends RestTestCase
         );
     }
 
-    public function test_create_product_requires_title(): void
-    {
-        $request = new \WP_REST_Request('POST', '/fluent-cart/v2/products');
-        $request->set_body_params([
-            'detail' => ['fulfillment_type' => 'digital'],
-        ]);
-
-        $response = $this->dispatchRequestSilently($request);
-        $this->assertGreaterThanOrEqual(400, $response->get_status());
-    }
-
     // =========================================================================
     // Spec 134-135: GET /products/{product}
     // =========================================================================

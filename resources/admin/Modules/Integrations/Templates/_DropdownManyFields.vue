@@ -16,14 +16,7 @@
             <tbody>
             <tr v-for="(item, itemIndex) in settings[field.key]" :key="'item_'+itemIndex">
                 <td>
-                    <el-select v-model="item.label">
-                        <el-option
-                            v-for="(optionLabel, optionValue) in field.options"
-                            :key="optionValue"
-                            :label="optionLabel"
-                            :value="optionValue"
-                        ></el-option>
-                    </el-select>
+                    <fct-select v-model="item.label" :options="toOptions(field.options)"/>
                 </td>
                 <td>
                     <!--need to fix the defaultValue object issue-->
@@ -52,10 +45,10 @@
         </table>
 
       <div class="dropdown_label_repeater_footer">
-        <el-button text @click.prevent="addNewItem">
+        <fct-button text @click.prevent="addNewItem">
           <DynamicIcon name="Plus" />
           {{$t('Add More')}}
-        </el-button>
+        </fct-button>
       </div>
     </div>
 </template>
@@ -99,6 +92,9 @@
             }
         },
         methods: {
+            toOptions(options) {
+            return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+        },
             addNewItem() {
               this.settings[this.field.key].push({
                 item_value: '',

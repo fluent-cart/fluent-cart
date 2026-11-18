@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-@config "../../../styles/tailwind/radius.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../styles/tailwind/radius.config.mjs";
 
 .fluent-cart-registration{
   &-wrap{
@@ -21,7 +22,7 @@
       @apply text-base text-[#565865] font-normal leading-[24px] m-0;
     }
     .fluent-cart-registration-button{
-      @apply p-2 w-full mt-5 text-base cursor-pointer text-white border-0 font-medium hover:bg-[#253241] !important;
+      @apply p-2! w-full! mt-5! text-base! cursor-pointer! text-white! border-0! font-medium! hover:bg-[#253241]!;
       border-radius: var(--fct-btn-radius, theme('borderRadius[2.5]')) !important;
 
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #1C2732 !important;
@@ -33,7 +34,7 @@
       }
     }
     .fluent-cart-registration-footer-action {
-      @apply text-center text-sm mt-5 text-[#565865] !important;
+      @apply text-center! text-sm! mt-5! text-[#565865]!;
       a{
         @apply text-[#253241] font-medium;
       }
@@ -55,7 +56,7 @@
       @apply flex flex-col gap-2;
       &.has-error{
         .fluent-cart-checkout-page-form-input{
-          @apply border-red-500 !important;
+          @apply border-red-500!;
         }
       }
     }
@@ -66,7 +67,7 @@
       @apply text-sm font-medium text-[#2F3448] mb-0 leading-[20px];
     }
     .fluent-cart-checkout-page-form-input{
-      @apply bg-white text-[#2F3448] shadow-none w-full text-sm border border-solid border-[#D6DAE1] transition-all duration-200 leading-[20px] focus:border-[#253241] focus:outline-none placeholder:text-[#9D9FAC] focus:shadow-none !important;
+      @apply bg-white! text-[#2F3448]! shadow-none! w-full! text-sm! border! border-solid! border-[#D6DAE1]! transition-all! duration-200! leading-[20px]! focus:border-[#253241]! focus:outline-hidden! placeholder:text-[#9D9FAC]! focus:shadow-none!;
       border-radius: var(--fct-input-radius, theme('borderRadius[2.5]')) !important;
       padding-top: var(--fct-input-padding-y, theme('spacing[2.5]')) !important;
       padding-bottom: var(--fct-input-padding-y, theme('spacing[2.5]')) !important;

@@ -71,9 +71,7 @@ class RetentionSnapshotsUpgradeTest extends DatabaseTestCase
 
     public function test_the_upgrade_cancels_queued_background_builds(): void
     {
-        if (!function_exists('as_schedule_single_action')) {
-            $this->markTestSkipped('Action Scheduler is not loaded');
-        }
+        $this->assertTrue(function_exists('as_schedule_single_action'), 'FluentCart bundles Action Scheduler and loads it on plugins_loaded');
         // The background build is gone; a run queued before the update would fail with no handler
         as_schedule_single_action(time() + 60, 'fluent_cart_generate_retention_snapshots', [], 'fluent-cart-snapshots');
 

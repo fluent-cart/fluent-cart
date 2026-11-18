@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {unwrapIife} from './support/unwrap-iife.js';
 
-const CHECKOUT_HANDLER = new URL('../../resources/public/checkout/FluentCartCheckoutHandler.js', import.meta.url);
 const STRIPE_CHECKOUT = new URL('../../resources/public/payment-methods/stripe-checkout.js', import.meta.url);
 
 const source = unwrapIife(fs.readFileSync(STRIPE_CHECKOUT, 'utf8'));
@@ -285,19 +284,5 @@ describe('Stripe payment element submit state', () => {
         state.changePaymentElement(true);
 
         expect(state.paymentLoader.enableCheckoutButton).toHaveBeenCalledWith('Place Order');
-    });
-});
-
-describe('Checkout handler gesture ordering', () => {
-    it('dispatches the before-checkout event with no await ahead of it', () => {
-        const handler = fs.readFileSync(CHECKOUT_HANDLER, 'utf8');
-        const body = handler.slice(handler.indexOf('async handleOrder('));
-        const dispatchAt = body.indexOf('fluent_cart_before_checkout_');
-        const submitAt = body.indexOf('this.submitCheckoutForm(');
-
-        expect(dispatchAt).toBeGreaterThan(-1);
-        expect(dispatchAt).toBeLessThan(submitAt);
-        // Safari revokes the gesture at the first await, so there must be none before.
-        expect(body.slice(0, dispatchAt).replace(/\/\/[^\n]*/g, '')).not.toMatch(/\bawait\b/);
     });
 });

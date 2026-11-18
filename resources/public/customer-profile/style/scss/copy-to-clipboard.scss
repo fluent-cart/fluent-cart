@@ -2,14 +2,17 @@
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-se-none rounded-ee-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
+    @apply border! border-solid! border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)]! rounded-se-none! rounded-ee-none! bg-[var(--fct-customer-dashboard-input-bg,#ffffff)]! shadow-none! outline-hidden! m-0! text-sm! truncate! text-[var(--fct-customer-dashboard-input-text,#2F3448)]! min-h-9.5! dark:text-gray-300! dark:bg-transparent! dark:border-dark-400!;
     border-start-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
     padding-right: var(--fct-input-padding-x, theme('spacing.3')) !important;
     width: calc(100% - 70px);
     &::-webkit-input-placeholder{
-      @apply text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] text-sm dark:text-gray-800 opacity-50;
+      @apply text-[var(--fct-customer-dashboard-input-placeholder,#9D9FAC)] text-sm opacity-50;
+    }
+    .fluent_theme_dark &::-webkit-input-placeholder {
+      @apply text-gray-800;
     }
   }
   .copy-tooltip{

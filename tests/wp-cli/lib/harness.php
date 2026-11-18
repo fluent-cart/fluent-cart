@@ -55,8 +55,8 @@ class FcTest
     /** @var int */
     public static $passed = 0;
 
-    /** @var int */
-    public static $skipped = 0;
+    /** @var array<int,string> Context lines that print only when the tier fails. */
+    private static $notes = [];
 
     /** @var array<int,string> PHP diagnostics captured during the current case. */
     private static $diagnostics = [];
@@ -195,7 +195,7 @@ class FcTest
             }
         }
 
-        WP_CLI::log('Environment axis strict-sql: session sql_mode=' . implode(',', $verified));
+        self::note('Environment axis strict-sql: session sql_mode=' . implode(',', $verified));
     }
 
     /**
@@ -236,7 +236,7 @@ class FcTest
             );
         }
 
-        WP_CLI::log(sprintf(
+        self::note(sprintf(
             'Environment axis non-utc: offset=%s local=%s utc=%s delta_seconds=%d',
             (string) $offset,
             current_time('mysql'),
@@ -246,9 +246,35 @@ class FcTest
     }
 
     /**
+     * Record a context line (inventory, fixture ids, throughput). It prints
+     * only when the tier fails, because a passing tier has no use for it.
+     */
+    public static function note($line)
+    {
+        self::$notes[] = (string) $line;
+    }
+
+    /**
+     * Whether the run expects FluentCart Pro to be loaded. Only
+     * --axis=pro-absent keeps it out, and Pro-only cases are not registered then.
+     */
+    public static function proExpected()
+    {
+        return getenv('WP_PLUGIN_TEST_ENVIRONMENT_AXIS') !== 'pro-absent';
+    }
+
+    /**
+     * One result line for a tier: name, passed count, failed count, seconds.
+     */
+    public static function summaryLine($suiteName, $passed, $failed, $elapsed)
+    {
+        return sprintf('%s: %d passed, %d failed  (%ss)', $suiteName, $passed, $failed, $elapsed);
+    }
+
+    /**
      * Print the summary and exit with a non-zero code if anything failed.
      * Every runner MUST end with this — the exit code is what makes the suite
-     * usable from a script or a git hook.
+     * usable from a script or a git hook. A passing tier prints one line.
      */
     public static function finish($suiteName)
     {
@@ -263,16 +289,11 @@ class FcTest
         restore_error_handler();
 
         $elapsed = round(microtime(true) - self::$startedAt, 1);
-        $total   = self::$passed + count(self::$failures);
-
-        WP_CLI::log('');
-        WP_CLI::log(str_repeat('=', 72));
-        WP_CLI::log(sprintf(
-            '%s: %d/%d passed, %d failed, %d skipped  (%ss)',
-            $suiteName, self::$passed, $total, count(self::$failures), self::$skipped, $elapsed
-        ));
 
         if (self::$failures) {
+            foreach (self::$notes as $note) {
+                WP_CLI::log($note);
+            }
             WP_CLI::log('');
             foreach (self::$failures as $i => $f) {
                 WP_CLI::log(sprintf('%d) %s', $i + 1, $f['name']));
@@ -281,12 +302,10 @@ class FcTest
                 }
                 WP_CLI::log('');
             }
-            WP_CLI::log(str_repeat('=', 72));
-            WP_CLI::halt(1);
         }
 
-        WP_CLI::log(str_repeat('=', 72));
-        WP_CLI::halt(0);
+        WP_CLI::log(self::summaryLine($suiteName, self::$passed, count(self::$failures), $elapsed));
+        WP_CLI::halt(self::$failures ? 1 : 0);
     }
 
     // -----------------------------------------------------------------
@@ -369,12 +388,6 @@ class FcTest
             'name'   => self::$currentCase ?: '(no case)',
             'detail' => $detail,
         ];
-    }
-
-    public static function skip($reason)
-    {
-        self::$skipped++;
-        WP_CLI::log('  SKIP ' . (self::$currentCase ?: '') . ' — ' . $reason);
     }
 
     public static function assert($condition, $detail)

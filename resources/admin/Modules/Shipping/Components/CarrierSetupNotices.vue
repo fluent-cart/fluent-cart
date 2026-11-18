@@ -40,6 +40,8 @@ const items = computed(() => carrierNotices(props.carrier).map((notice) => ({
 </script>
 
 <style scoped lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
 .fct-carrier-notices {
   @apply grid gap-2 mb-5;
 }

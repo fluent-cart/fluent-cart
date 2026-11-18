@@ -14,7 +14,7 @@ code{
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply py-0 border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-se-none rounded-ee-none bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] shadow-none outline-none m-0 text-sm truncate text-[var(--fct-customer-dashboard-input-text,#2F3448)] min-h-9.5 #{!important};
+    @apply py-0! border! border-solid! border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)]! rounded-se-none! rounded-ee-none! bg-[var(--fct-customer-dashboard-input-bg,#ffffff)]! shadow-none! outline-hidden! m-0! text-sm! truncate! text-[var(--fct-customer-dashboard-input-text,#2F3448)]! min-h-9.5!;
     border-start-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     padding-left: var(--fct-input-padding-x, theme('spacing.3')) !important;
@@ -34,7 +34,7 @@ code{
     }
   }
   .fct-copy-btn{
-    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] text-sm font-medium rounded-ss-none rounded-es-none min-h-9.5 flex px-2 py-1 cursor-pointer z-[1] gap-1 items-center bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)] border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-s-0 h-full hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)] #{!important};
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! text-sm! font-medium! rounded-ss-none! rounded-es-none! min-h-9.5! flex! px-2! py-1! cursor-pointer! z-[1]! gap-1! items-center! bg-[var(--fct-customer-dashboard-surface-neutral,#FAFAFA)]! border! border-solid! border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)]! border-s-0! h-full! hover:bg-[var(--fct-customer-dashboard-hover-strong-bg,#EAECF0)]!;
     border-start-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     border-end-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     &:disabled{

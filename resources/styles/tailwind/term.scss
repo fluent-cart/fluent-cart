@@ -9,7 +9,7 @@
 .fct-term-label{
   @apply text-system-dark flex gap-2.5 py-2 px-2.5 rounded cursor-pointer items-center hover:bg-gray-50 dark:hover:bg-dark-400 dark:text-gray-50;
   input[type=checkbox]{
-    @apply m-0 border-gray-outline shadow-none focus:outline-none focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
+    @apply m-0 border-gray-outline shadow-none focus:outline-hidden focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
     &[type=checkbox]:checked{
       @apply bg-dark-500 border-dark-500;
       &::before{
@@ -22,9 +22,12 @@
 .fct-term-search-result{
   @apply absolute top-full left-0 w-full bg-white border border-solid border-gray-divider p-3 rounded z-10 shadow-xl mt-2.5 dark:bg-dark-500 dark:border-dark-400;
   &:after{
-    @apply absolute -top-[2px] border border-solid border-gray-divider w-2.5 h-2.5 bg-white left-1/2 border-r-0 border-b-0 dark:border-dark-400 dark:bg-dark-500;
+    @apply absolute -top-[2px] border border-solid border-gray-divider w-2.5 h-2.5 bg-white left-1/2 border-r-0 border-b-0;
     content: '';
     transform: rotate(45deg) translateX(-50%);
+  }
+  .fluent_theme_dark &:after {
+      @apply border-dark-400 bg-dark-500;
   }
   &-list{
     @apply p-0 m-0 list-none;
@@ -34,7 +37,7 @@
     label{
       @apply text-system-dark flex gap-2.5 py-2 px-2.5 rounded cursor-pointer items-center hover:bg-gray-50 dark:hover:bg-dark-400 dark:text-gray-50;
       input{
-        @apply m-0 border-gray-outline shadow-none focus:outline-none focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
+        @apply m-0 border-gray-outline shadow-none focus:outline-hidden focus:shadow-none focus:border-gray-outline dark:bg-dark-500 dark:border-dark-300;
         &[type=checkbox]:checked{
           @apply bg-dark-500 border-dark-500;
           &::before{
@@ -51,10 +54,16 @@
         @apply visible;
       }
       &::-webkit-scrollbar-thumb {
-        @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+        @apply bg-gray-200 rounded-[6px] invisible;
+      }
+      .fluent_theme_dark &::-webkit-scrollbar-thumb {
+        @apply bg-dark-400;
       }
       &::-webkit-scrollbar-thumb:hover {
-        @apply bg-gray-200 dark:bg-dark-500;
+        @apply bg-gray-200;
+      }
+      .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+        @apply bg-dark-500;
       }
       &::-webkit-scrollbar {
         @apply h-1 w-1;
@@ -64,7 +73,7 @@
   &-button-wrap{
     .el-button {
       @apply w-full justify-start text-[13px] font-semibold;
-      @apply dark:bg-dark-400  #{!important};
+      @apply dark:bg-dark-400!;
       .search-text{
         @apply text-system-dark-light font-normal dark:text-gray-500;
       }
@@ -83,7 +92,7 @@
     }
   }
 
-  @apply w-full inline-flex bg-gray-50 text-system-dark-light text-xs font-medium rounded leading-none py-1.5 ps-2 pe-1 items-center gap-2.5 dark:bg-dark-500 dark:text-gray-50 #{!important};
+  @apply w-full! inline-flex! bg-gray-50! text-system-dark-light! text-xs! font-medium! rounded! leading-none! py-1.5! ps-2! pe-1! items-center! gap-2.5! dark:bg-dark-500! dark:text-gray-50!;
   .text{
     @apply truncate;
   }
@@ -105,10 +114,16 @@
         @apply visible;
       }
       &::-webkit-scrollbar-thumb {
-        @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+        @apply bg-gray-200 rounded-[6px] invisible;
+      }
+      .fluent_theme_dark &::-webkit-scrollbar-thumb {
+        @apply bg-dark-400;
       }
       &::-webkit-scrollbar-thumb:hover {
-        @apply bg-gray-200 dark:bg-dark-500;
+        @apply bg-gray-200;
+      }
+      .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+        @apply bg-dark-500;
       }
       &::-webkit-scrollbar {
         @apply h-1 w-1;
@@ -130,7 +145,7 @@
       @apply pt-5 -ms-2.5;
       .el-button {
         @apply w-full justify-start text-sm font-semibold;
-        @apply text-dark-500 bg-transparent border-0 dark:hover:bg-dark-400  #{!important};
+        @apply text-dark-500! bg-transparent! border-0! dark:hover:bg-dark-400!;
         svg{
           @apply w-3.5 h-3.5;
         }

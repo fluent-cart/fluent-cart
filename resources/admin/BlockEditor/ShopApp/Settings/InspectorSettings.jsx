@@ -22,7 +22,7 @@ const {
 } = wp.components
 
 const InspectorSettings = (props) => {
-    const {attributes, setAttributes, blockEditorData} = props;
+    const {attributes, setAttributes, blockEditorData, hideViewMode = false} = props;
 
     const setSearchGridSize = (size) => {
         setAttributes({search_grid_size: size});
@@ -48,33 +48,35 @@ const InspectorSettings = (props) => {
                     />
 
                     <BlockEditorControl title={blocktranslate('Product Grid Option')}>
-                        <div className="fct-block-editor-control-item">
-                            <div className="fct-inspector-control-row">
-                                <span className="label">{blocktranslate('View Mode')}</span>
-                                <div className="actions">
-                                    <CustomSelect
-                                        customKeys={{
-                                            key: 'value',
-                                            label: 'label'
-                                        }}
-                                        defaultValue={attributes.view_mode}
-                                        options={[
-                                            // {label: blocktranslate('Default'), value: 'default'},
-                                            {label: blocktranslate('Grid'), value: 'grid'},
-                                            {label: blocktranslate('List'), value: 'list'},
-                                        ]}
-                                        onChange={function (value) {
-                                            // if (typeof value === "object") {
-                                            //     setAttributes({view_mode: value});
-                                            // } else {
-                                            //     // setAttributes({view_mode: 'default'});
-                                            // }
-                                            setAttributes({view_mode: value});
-                                        }}
-                                    />
+                        {!hideViewMode && (
+                            <div className="fct-block-editor-control-item">
+                                <div className="fct-inspector-control-row">
+                                    <span className="label">{blocktranslate('View Mode')}</span>
+                                    <div className="actions">
+                                        <CustomSelect
+                                            customKeys={{
+                                                key: 'value',
+                                                label: 'label'
+                                            }}
+                                            defaultValue={attributes.view_mode}
+                                            options={[
+                                                // {label: blocktranslate('Default'), value: 'default'},
+                                                {label: blocktranslate('Grid'), value: 'grid'},
+                                                {label: blocktranslate('List'), value: 'list'},
+                                            ]}
+                                            onChange={function (value) {
+                                                // if (typeof value === "object") {
+                                                //     setAttributes({view_mode: value});
+                                                // } else {
+                                                //     // setAttributes({view_mode: 'default'});
+                                                // }
+                                                setAttributes({view_mode: value});
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="fct-block-editor-control-item">
                             <div className="fct-inspector-control-row">
@@ -115,6 +117,7 @@ const InspectorSettings = (props) => {
                                         onChange={setBoxGridSize}
                                         min={0}
                                         max={5}
+                                        help={blocktranslate("Layout cards show fewer per row where each would be under 220px wide.")}
                                     />
                                 </div>
                             </div>

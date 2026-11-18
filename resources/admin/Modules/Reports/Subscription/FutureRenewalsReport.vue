@@ -3,19 +3,17 @@
         <div class="fct-future-renewals-page">
           <PageHeading>
             <template #title>
-              <h1 class="page-title">
+              <h2 class="page-title">
                 {{ translate('Future Renewals') }}
-                <el-tooltip popper-class="fct-tooltip" placement="top" :content="pageInfo">
+                <fct-tooltip placement="top" :content="pageInfo">
                   <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this report')">
                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
                   </button>
-                </el-tooltip>
-              </h1>
+                </fct-tooltip>
+              </h2>
             </template>
             <template #action>
-              <el-select v-model="horizon" size="small" class="w-[170px]" :aria-label="translate('Horizon')" @change="fetchData(reportFilter.applicableFilters)">
-                <el-option v-for="option in horizonOptions" :key="option.value" :label="option.label" :value="option.value" />
-              </el-select>
+              <fct-select v-model="horizon" size="small" class="w-[170px]" :aria-label="translate('Horizon')" @change="fetchData(reportFilter.applicableFilters)" :options="horizonOptions"/>
             </template>
           </PageHeading>
 
@@ -26,11 +24,11 @@
                 <div class="value"><div class="inner-value">{{ card.value }}</div></div>
                 <div class="title">
                   {{ card.title }}
-                  <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+                  <fct-tooltip :content="card.info" placement="top" :trigger="['hover', 'focus']">
                     <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
                       <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
                     </button>
-                  </el-tooltip>
+                  </fct-tooltip>
                 </div>
                 <div v-if="card.sub" class="text-xs text-system-light dark:text-gray-400 mt-1">{{ card.sub }}</div>
               </div>
@@ -41,16 +39,16 @@
             <Card.Header title_size="small" border_bottom>
               <template #title>
                 <div class="flex items-center gap-2">
-                  <h4 class="fct-card-header-title is-small">{{ translate('Renewal rate assumptions') }}</h4>
-                  <el-tooltip popper-class="fct-tooltip" placement="top" :content="ratesInfo">
+                  <h2 class="fct-card-header-title is-small">{{ translate('Renewal rate assumptions') }}</h2>
+                  <fct-tooltip placement="top" :content="ratesInfo">
                     <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this setting')">
                       <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
                     </button>
-                  </el-tooltip>
+                  </fct-tooltip>
                 </div>
               </template>
               <template #action>
-                <el-button size="small" :disabled="!changed" @click="resetRates">{{ translate('Reset to your history') }}</el-button>
+                <fct-button size="small" :disabled="!changed" @click="resetRates">{{ translate('Reset to your history') }}</fct-button>
               </template>
             </Card.Header>
             <Card.Body>
@@ -70,11 +68,11 @@
           <Card.Container class="overflow-hidden">
             <Card.Header title_size="small" border_bottom>
               <template #title>
-                <h4 class="fct-card-header-title is-small">{{ translate('Renewals by month') }}</h4>
+                <h2 class="fct-card-header-title is-small">{{ translate('Renewals by month') }}</h2>
               </template>
             </Card.Header>
             <Card.Body>
-              <el-skeleton v-if="loading" animated :rows="6" />
+              <fct-skeleton v-if="loading" animated :rows="6" />
               <div v-else-if="!data.totalRenewals" class="py-10 text-center text-sm text-system-light dark:text-gray-400">
                 {{ translate('No renewal is scheduled in this horizon') }}
               </div>

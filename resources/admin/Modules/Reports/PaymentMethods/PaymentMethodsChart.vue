@@ -78,7 +78,7 @@ onUnmounted(() => {
   <Card.Container>
     <Card.Header :title="translate('Net Sales by Payment Method')" :text="translate('Net sales of the orders each gateway took, by period.')" title_size="small" border_bottom/>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="6"/>
+      <fct-skeleton v-if="loading" animated :rows="6"/>
       <el-empty v-else-if="!gateways.length" :description="translate('No orders in this period')"/>
       <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 300px"></div>
     </Card.Body>

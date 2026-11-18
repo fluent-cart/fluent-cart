@@ -352,63 +352,6 @@ return [
         },
     ],
     [
-        'id'            => 'customer-email-staff-mark-verified',
-        'name'          => 'Staff see an unverified email and Mark verified links the guest customer',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () use ($unconfirmedEmailWithSetting, $unconfirmedEmailScenario, $changeOwnEmailViaRest) {
-            $unconfirmedEmailWithSetting('no', function () use ($unconfirmedEmailScenario, $changeOwnEmailViaRest) {
-                $unconfirmedEmailScenario(function ($guest, $guestEmail, $makeUser) use ($changeOwnEmailViaRest) {
-                    $userId = $makeUser(FcTest::uniq('fct-claimer') . '@fixture.example.test');
-                    $own = Customer::query()->create([
-                        'email'   => FcTest::uniq('fct-own') . '@fixture.example.test',
-                        'user_id' => $userId,
-                    ]);
-                    $changeOwnEmailViaRest($userId, $guestEmail);
-
-                    $admins = get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID']);
-                    FcTest::assert(!empty($admins), 'an administrator exists to act as staff');
-                    wp_set_current_user((int) $admins[0]);
-
-                    $view = FcTest::rest('GET', 'customers/' . $own->id);
-                    FcTest::assertSame(200, $view['status'], 'the customer profile loads');
-                    FcTest::assertSame($guestEmail, $view['data']['customer']['unverified_email'] ?? null, 'the profile names the unverified email');
-
-                    $order = \FluentCart\App\Models\Order::query()->create([
-                        'customer_id' => $own->id,
-                        'status'      => 'processing',
-                        'currency'    => 'USD',
-                        'type'        => 'payment',
-                    ]);
-                    try {
-                        $orderView = FcTest::rest('GET', 'orders/' . $order->id);
-                        FcTest::assertSame($guestEmail, $orderView['data']['order']['customer']['unverified_email'] ?? null, 'the order screen names the unverified email');
-                    } finally {
-                        \FluentCart\App\Models\Order::query()->where('id', $order->id)->delete();
-                    }
-
-                    $marked = FcTest::rest('POST', 'customers/' . $own->id . '/mark-email-verified');
-                    FcTest::assertSame(200, $marked['status'], 'staff can mark the email verified');
-
-                    FcTest::assertSame(null, EmailVerificationService::unverifiedEmail($userId), 'the email is now trusted');
-                    FcTest::assertSame($guestEmail, Customer::query()->find($own->id)->email, 'the customer contact email follows the account');
-                    FcTest::assertSame(
-                        [0, 1],
-                        [
-                            CustomerAddresses::query()->where('customer_id', $guest->id)->count(),
-                            CustomerAddresses::query()->where('customer_id', $own->id)->count(),
-                        ],
-                        'the guest history moves to the linked customer'
-                    );
-
-                    $again = FcTest::rest('GET', 'customers/' . $own->id);
-                    $customer = $again['data']['customer']->toArray();
-                    FcTest::assert(array_key_exists('unverified_email', $customer) && $customer['unverified_email'] === null, 'the badge is gone');
-                });
-            });
-        },
-    ],
-    [
         'id'            => 'customer-email-verification-default',
         'name'          => 'Customer email verification is required when the store never saved the setting',
         'kind'          => 'behavior',

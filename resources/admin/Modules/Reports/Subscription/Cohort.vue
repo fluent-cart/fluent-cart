@@ -3,35 +3,33 @@
         <div class="fct-cohort-report-page">
           <PageHeading>
             <template #title>
-              <h1 class="page-title">
+              <h2 class="page-title">
                 {{ translate('Subscription Cohorts') }}
 
-                <el-tooltip popper-class="fct-tooltip"
+                <fct-tooltip
                             :content="translate('SubRpt_Row_Customers')"
                             placement="top">
                   <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this report')">
                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
                   </button>
-                </el-tooltip>
-              </h1>
+                </fct-tooltip>
+              </h2>
             </template>
             <template #action>
               <div class="flex items-center gap-3">
                 <!-- The data source sits with the page, not with one table -->
                 <span v-if="cohortData.generated_at" class="text-xs text-gray-500 dark:text-gray-400">{{ generatedText }}</span>
-                <el-button size="small" @click="generateSnapshots" :loading="generating">
+                <fct-button size="small" @click="generateSnapshots" :loading="generating">
                   <template v-if="generating && buildProgress">
                     <!-- translators: %1$s is the finished step count, %2$s is the total step count -->
                     {{ translate('Building snapshots %1$s/%2$s', buildProgress.step, buildProgress.steps) }}
                   </template>
                   <template v-else>{{ translate('Generate Snapshots') }}</template>
-                </el-button>
+                </fct-button>
                 <!-- Mixed stores read each billing interval apart: a monthly plan churns monthly, a yearly one at renewal -->
-                <el-select v-if="isFull && intervals.length > 1" v-model="billingInterval" size="small" class="w-[160px]"
-                           :aria-label="translate('Billing interval')" @change="fetchData()">
-                  <el-option value="all" :label="translate('All intervals')" />
-                  <el-option v-for="key in intervals" :key="key" :value="key" :label="intervalLabel(key)" />
-                </el-select>
+                <fct-select v-if="isFull && intervals.length > 1" v-model="billingInterval" size="small" class="w-[160px]"
+                           :aria-label="translate('Billing interval')" @change="fetchData()"
+                           :options="[{label: translate('All intervals'), value: 'all'}, ...intervals.map(key => ({label: intervalLabel(key), value: key}))]"/>
               </div>
             </template>
           </PageHeading>
@@ -39,7 +37,7 @@
           <el-alert v-if="!loading && isStale" type="warning" :closable="false" show-icon class="mb-4">
             <template #title>
               {{ staleText }}
-              <el-button link type="primary" class="ms-1" @click="generateSnapshots">{{ translate('Generate now') }}</el-button>
+              <fct-button link type="primary" class="ms-1" @click="generateSnapshots">{{ translate('Generate now') }}</fct-button>
             </template>
           </el-alert>
 
@@ -47,30 +45,21 @@
             <Card.Header>
               <div class="fct-cohort-settings">
                 <div class="fct-cohort-settings-group">
-                  <el-radio-group v-model="groupBy" size="small" @change="fetchData()">
-                    <el-radio-button value="year">{{ translate('Yearly') }}</el-radio-button>
-                    <el-radio-button value="month">{{ translate('Monthly') }}</el-radio-button>
-                  </el-radio-group>
+                  <fct-choice v-model="groupBy" size="small" @change="fetchData()" type="radio" button :options="[{label: translate('Yearly'), value: 'year'}, {label: translate('Monthly'), value: 'month'}]"/>
 
-                  <el-radio-group v-if="isFull" v-model="metric" size="small">
-                    <el-radio-button value="subscribers">{{ translate('Customers') }}</el-radio-button>
-                    <el-radio-button value="mrr">{{ translate('MRR') }}</el-radio-button>
-                  </el-radio-group>
+                  <fct-choice v-if="isFull" v-model="metric" size="small" type="radio" button :options="[{label: translate('Customers'), value: 'subscribers'}, {label: translate('MRR'), value: 'mrr'}]"/>
 
-                  <el-radio-group v-model="displayMode" size="small">
-                    <el-radio-button value="percent">{{ translate('% of start') }}</el-radio-button>
-                    <el-radio-button value="value">{{ translate('Values') }}</el-radio-button>
-                  </el-radio-group>
+                  <fct-choice v-model="displayMode" size="small" type="radio" button :options="[{label: translate('% of start'), value: 'percent'}, {label: translate('Values'), value: 'value'}]"/>
 
                   <div v-if="isFull" class="flex items-center gap-1.5">
-                    <el-switch v-model="rebuyAdjusted" size="small" :aria-label="translate('Count rebuys as retained')" @change="fetchData()" />
+                    <fct-switch v-model="rebuyAdjusted" size="small" :aria-label="translate('Count rebuys as retained')" @change="fetchData()" />
                     <span class="text-sm text-system-dark dark:text-gray-300">{{ translate('Count rebuys as retained') }}</span>
-                    <el-tooltip popper-class="fct-tooltip" placement="top"
+                    <fct-tooltip placement="top"
                                 :content="translate('SubRpt_Customer_Whose')">
                       <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this setting')">
                         <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
                       </button>
-                    </el-tooltip>
+                    </fct-tooltip>
                   </div>
                 </div>
 
@@ -79,33 +68,33 @@
             </Card.Header>
             <Card.Body class="px-0 pb-0">
               <div v-if="loading" class="px-4 pb-4">
-                <el-skeleton animated :rows="10" />
+                <fct-skeleton animated :rows="10" />
               </div>
 
               <div v-if="!loading && hasError" class="text-center pb-6">
                 <Empty icon="Empty/ListView" :has-dark="true" :text="translate('This report could not be loaded.')" class="fct-report-empty-state" />
-                <el-button size="small" @click="fetchData()">{{ translate('Retry') }}</el-button>
+                <fct-button size="small" @click="fetchData()">{{ translate('Retry') }}</fct-button>
               </div>
 
-              <el-table v-if="!loading && !hasError && !isEmpty" :data="tableData" border class="fct-cohort-el-table text-sm"
+              <fct-table v-if="!loading && !hasError && !isEmpty" :data="tableData" border class="fct-cohort-el-table text-sm"
                         :cell-style="cellStyle" :span-method="spanMethod">
-                <el-table-column prop="cohort_label" :label="translate('First paid')" fixed="left" width="130">
+                <fct-table-column prop="cohort_label" :label="translate('First paid')" fixed="left" width="130">
                   <template #default="scope">
                     <span :class="{ 'font-bold': scope.row.is_average }">{{ scope.row.cohort_label }}</span>
                   </template>
-                </el-table-column>
+                </fct-table-column>
 
-                <el-table-column prop="start_value" :label="_x('Start', 'Cohort column: starting count')" align="right" width="110" />
+                <fct-table-column prop="start_value" :label="_x('Start', 'Cohort column: starting count')" align="right" width="110" />
 
-                <el-table-column v-for="i in maxPeriods" :key="i" :label="periodLabel(i)" min-width="96" align="center">
+                <fct-table-column v-for="i in maxPeriods" :key="i" :label="periodLabel(i)" min-width="96" align="center">
                   <template #default="scope">
-                    <el-tooltip v-if="scope.row['tip_' + i]" placement="top" popper-class="fct-tooltip" :content="scope.row['tip_' + i]">
+                    <fct-tooltip v-if="scope.row['tip_' + i]" placement="top" :content="scope.row['tip_' + i]">
                       <span :class="{ 'font-bold': scope.row.is_average, 'text-white': isDark(scope.row['rate_' + i]) }">{{ scope.row['cell_' + i] }}</span>
-                    </el-tooltip>
+                    </fct-tooltip>
                     <span v-else :class="{ 'font-bold': scope.row.is_average, 'text-white': isDark(scope.row['rate_' + i]) }">{{ scope.row['cell_' + i] }}</span>
                   </template>
-                </el-table-column>
-              </el-table>
+                </fct-table-column>
+              </fct-table>
 
               <Empty v-if="!loading && !hasError && isEmpty" icon="Empty/ListView" :has-dark="true"
                      :text="cohortData.generated_at ? translate('No cohorts to show.') : translate('Click Generate Snapshots above to view cohort data.')"

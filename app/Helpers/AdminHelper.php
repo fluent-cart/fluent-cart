@@ -29,6 +29,13 @@ class AdminHelper
 
         $baseUrl = apply_filters('fluent_cart/admin_base_url', admin_url('admin.php?page=fluent-cart#/'), []);
 
+        /**
+         * Product admin tabs. Each item: `label`, `link`, and an optional `icon`
+         * (inline SVG string, printed as given).
+         *
+         * @param array $menuItems
+         * @param array $context   product_id, base_url
+         */
         $menuItems = apply_filters('fluent_cart/product_admin_items', [
             'product_edit'          => [
                 'label' => __('Edit Product', 'fluent-cart'),

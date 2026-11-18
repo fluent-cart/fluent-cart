@@ -2,6 +2,9 @@
 
 namespace FluentCart\App\Modules\Templating\BlockTemplates;
 
+use FluentCart\App\CPT\Pages;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
+
 /**
  * ProductCategoryTemplate class.
  *
@@ -48,6 +51,62 @@ class ProductCategoryTemplate
         return __('Displays products filtered by a category.', 'fluent-cart');
     }
 
+    /**
+     * Stores that created their Shop page after layout cards shipped get the filters on, which
+     * the Shop page uses: the Sort control only renders with them.
+     */
+    private function productsAttributes(): string
+    {
+        if (get_option(Pages::LAYOUT_CARD_OPTION) !== 'yes') {
+            return '{"colors":{}}';
+        }
+
+        // The page is already in one category, so a category filter would only leave it.
+        return Pages::productsBlockAttributes(['product-categories']);
+    }
+
+    /**
+     * Stores that created their Shop page after layout cards shipped get the Shop page's action bar
+     * (Grid/List and Sort). Other stores keep the switcher alone.
+     */
+    private function actionBar(): string
+    {
+        if (get_option(Pages::LAYOUT_CARD_OPTION) !== 'yes') {
+            return '<!-- wp:fluent-cart/shopapp-product-view-switcher {"className":"fluent-product-view-switcher","metadata":{"name":"View Switcher"}} /-->';
+        }
+
+        return '<!-- wp:fluent-cart/shopapp-product-action-container -->'
+            . '<div class="wp-block-fluent-cart-shopapp-product-action-container fluent-cart-shop-app-view-switcher">'
+            . '<!-- wp:fluent-cart/shopapp-product-view-switcher /-->'
+            . '<!-- wp:fluent-cart/shopapp-product-filter-sort-by /--></div>'
+            . '<!-- /wp:fluent-cart/shopapp-product-action-container -->';
+    }
+
+    /**
+     * Stores that created their Shop page after layout cards shipped get the Classic layout card, as the
+     * Products block inserts it. Other stores keep the legacy card (see Pages::LAYOUT_CARD_OPTION).
+     */
+    private function loopCard(): string
+    {
+        if (get_option(Pages::LAYOUT_CARD_OPTION) === 'yes') {
+            return ProductCardLayoutPresets::classicLoopMarkup();
+        }
+
+        ob_start();
+        ?>
+                            <div class="fluent-cart-product-loop fct-product-block-editor-product-card"><!-- wp:fluent-cart/shopapp-product-image -->
+                                <div class="fluent-cart-product-image"></div>
+                                <!-- /wp:fluent-cart/shopapp-product-image -->
+
+                                <!-- wp:fluent-cart/shopapp-product-title /-->
+
+                                <!-- wp:fluent-cart/shopapp-product-price /-->
+
+                                <!-- wp:fluent-cart/shopapp-product-buttons /--></div>
+        <?php
+        return ob_get_clean();
+    }
+
     public function getDefaultTemplate()
     {
         ob_start();
@@ -60,8 +119,8 @@ class ProductCategoryTemplate
             <!-- wp:term-description {"align":"wide"} /-->
 
             <!-- wp:group {"className":"alignwide","layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
-            <div class="wp-block-group alignwide"><!-- wp:fluent-cart/products {"colors":{}} -->
-                <div class="wp-block-fluent-cart-products"><div class="fct-products-wrapper" data-fluent-cart-shop-app="true" data-fluent-cart-product-wrapper=""><!-- wp:fluent-cart/shopapp-product-view-switcher {"className":"fluent-product-view-switcher","metadata":{"name":"View Switcher"}} /-->
+            <div class="wp-block-group alignwide"><!-- wp:fluent-cart/products <?php echo $this->productsAttributes(); // phpcs:ignore WordPress.Security.EscapeOutput ?> -->
+                <div class="wp-block-fluent-cart-products"><div class="fct-products-wrapper" data-fluent-cart-shop-app="true" data-fluent-cart-product-wrapper=""><?php echo $this->actionBar(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
 
                         <!-- wp:fluent-cart/shopapp-product-container {"className":"fluent-product-container"} -->
                         <div class="wp-block-fluent-cart-shopapp-product-container fluent-product-container" data-fluent-cart-shop-app-product-list=""><!-- wp:fluent-cart/shopapp-product-filter -->
@@ -77,15 +136,7 @@ class ProductCategoryTemplate
                             <!-- /wp:fluent-cart/shopapp-product-filter -->
 
                             <!-- wp:fluent-cart/shopapp-product-loop {"wp_client_id":"694667c7-282b-4595-9acd-98b8c2e13c6e","last_changed":"2025-09-28T09:02:35.262Z","className":"fluent-product-loop","metadata":{"name":"Product Loop"}} -->
-                            <div class="fluent-cart-product-loop fct-product-block-editor-product-card"><!-- wp:fluent-cart/shopapp-product-image -->
-                                <div class="fluent-cart-product-image"></div>
-                                <!-- /wp:fluent-cart/shopapp-product-image -->
-
-                                <!-- wp:fluent-cart/shopapp-product-title /-->
-
-                                <!-- wp:fluent-cart/shopapp-product-price /-->
-
-                                <!-- wp:fluent-cart/shopapp-product-buttons /--></div>
+                            <?php echo $this->loopCard(); // phpcs:ignore WordPress.Security.EscapeOutput ?>
                             <!-- /wp:fluent-cart/shopapp-product-loop --></div>
                         <!-- /wp:fluent-cart/shopapp-product-container -->
 

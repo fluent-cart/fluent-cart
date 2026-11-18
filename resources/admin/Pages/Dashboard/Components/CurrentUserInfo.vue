@@ -6,7 +6,7 @@
       </div>
       <div class="content">
 
-        <h4> {{ Greeting.greeting() }} {{ user.full_name }} 👋🏻</h4>
+        <h1> {{ Greeting.greeting() }} {{ user.full_name }} 👋🏻</h1>
         <p>{{
             /* translators: %1$s - store name, %2$s - emoji */
             translate(
@@ -19,19 +19,19 @@
 
     <UserCan permission="products/create">
       <div v-if="totalProducts == 0" class="fct-current-user-info-action">
-        <el-button
+        <fct-button
             @click="isAddProductModalVisible = true"
             type="primary">
           {{ translate('Add Product') }}
-        </el-button>
+        </fct-button>
       </div>
     </UserCan>
 
 
-    <el-dialog :append-to-body="true" v-model="isAddProductModalVisible" @close="isAddProductModalVisible = false"
+    <fct-dialog :append-to-body="true" v-model="isAddProductModalVisible" @close="isAddProductModalVisible = false"
                :title="translate('Add New Product')">
       <AddProductModal/>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

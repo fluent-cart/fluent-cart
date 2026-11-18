@@ -1,5 +1,9 @@
-@config "./shop-app.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./shop-app.config.mjs";
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+.fct-products-wrapper {
+    @tailwind utilities source(none);
+}
 
 :root {
   --fct-shop-primary-text-color: var(--fct-primary-text-color);
@@ -67,10 +71,15 @@
 .wp-block-fluent-cart-products {
   @apply w-full block;
 }
-.fct-products-wrapper {
-  * {
+// Themes that keep content-box (Twenty Twenty-Five) pushed full-width boxes with padding past
+// their edge. The filter drawer holds the same form but sits on <body>, outside the wrapper.
+.fct-products-wrapper,
+.fct-shop-responsive-filter-wrapper {
+  &, * {
     box-sizing: border-box !important;
   }
+}
+.fct-products-wrapper {
   @apply w-full block;
   .admin_bar_enabled{
     .fluent-cart-shop-app-filter-wrapper{
@@ -162,10 +171,12 @@
       .fct-products-container {
         grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
         @media (min-width: 600px) {
-          .fct-product-card {
+          .fct-product-card:not(:has(> .fct-card-layout)) {
+            display: grid;
             grid-template-areas:
             "image title"
             "image rating"
+            "image swatches"
             "image excerpt"
             "image price"
             "image button";
@@ -175,7 +186,7 @@
             // re-sizes such a column once the rows are known, other engines
             // collapse it to nothing. The content stacks from the top and the
             // last row takes the slack.
-            @apply grid grid-cols-[140px_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pe-2.5;
+            @apply grid grid-cols-[140px_1fr] grid-rows-[auto_auto_auto_auto_auto_1fr] gap-x-4 gap-y-0 items-start pb-0 pe-2.5;
             // The image column runs the card's full height, and the photo fills
             // it: a square left a gap below once the text (e.g. a rating row)
             // grew taller than the 140px minimum.
@@ -245,7 +256,8 @@
               grid-area: price;
               @apply px-0 me-auto;
             }
-            button,
+            // Not the option and Quick View buttons a template card holds: they keep their own place and size.
+            button:not(:is(.fct-card-swatches, .fct-card-quick-view) button),
             .fct-product-view-button,
             .fct-dynamic-product-button {
               grid-area: button;
@@ -364,6 +376,12 @@
   @apply flex items-center justify-center h-[36px] w-[36px] p-0 rounded border-[1px] border-solid;
 }
 
+// A Bricks container is a flex column, so the Products element shrank to its content and its grid with it.
+// :where() keeps the element's own width control in charge.
+:where(.brxe-fct-products) {
+  width: 100%;
+}
+
 .fct-brick-products-wrapper .fct-products-container {
   --grid-columns: 4;
 
@@ -401,7 +419,7 @@
 .fct-shop-product-search {
   @apply relative mb-4;
   input {
-    @apply ps-9 w-full text-sm border border-solid focus:outline-none focus:shadow-none leading-[1.5];
+    @apply ps-9 w-full text-sm border border-solid focus:outline-hidden focus:shadow-none leading-[1.5];
     padding-top: var(--fct-input-padding-y, theme('spacing.2'));
     padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
     padding-inline-end: var(--fct-input-padding-x, theme('spacing.3'));
@@ -491,9 +509,10 @@
 
 .fct-shop-paginator {
   .fct-shop-paginator-pager {
-    @apply flex gap-1.5 m-0 border border-solid rounded;
+    // Wraps on a very narrow screen instead of running off it.
+    @apply flex flex-wrap max-w-full gap-1.5 m-0 border border-solid rounded;
 
-    @apply list-none p-[9px] leading-normal !important;
+    @apply list-none! p-[9px]! leading-normal!;
 
     button {
       @apply bg-transparent min-w-5.5 flex justify-center items-center rounded-full cursor-pointer p-1 leading-none text-sm max-h-5.5 gap-1 font-medium border-0;
@@ -577,7 +596,7 @@
   }
 
   .noUi-handle {
-    @apply w-4 h-4 -end-2.5 -top-[5px] rounded-full shadow-none #{!important};
+    @apply w-4! h-4! -end-2.5! -top-[5px]! rounded-full! shadow-none!;
     &::before,
     &::after {
       @apply hidden;
@@ -698,12 +717,12 @@
 
 /*==== fluent-cart-shop-app-single-product-modal =====*/
 .fluent-cart-shop-app-single-product-modal{
-  @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5;
+  @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5 box-border;
   &-overlay{
     @apply bg-system-dark opacity-50 absolute top-0 left-0 w-full h-full;
   }
   &-body{
-    @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden;
+    @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden box-border;
     border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
     &:active::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
@@ -785,7 +804,7 @@
 .fc_price_range_input{
   // Display-only (pointer-events-none): no field background or shadow, so a
   // theme's input styles never paint them as editable boxes.
-  @apply border-0 bg-transparent shadow-none pointer-events-none rounded-none p-0 min-h-[10px] text-[15px] font-medium  #{!important};
+  @apply border-0! bg-transparent! shadow-none! pointer-events-none! rounded-none! p-0! min-h-[10px]! text-[15px]! font-medium!;
 }
 
 .fct-shop-checkbox-child-group {
@@ -1111,7 +1130,7 @@ body:not(.fluent-cart-no-colors) {
     }
 
     .fc_price_range_input {
-        @apply text-[var(--fct-shop-primary-text-color)] #{!important};
+        @apply text-[var(--fct-shop-primary-text-color)]!;
     }
 
 }
@@ -1162,5 +1181,143 @@ body:not(.fluent-cart-no-colors) {
     label {
       @apply text-[var(--fct-shop-primary-text-color,#2F3448)] hover:text-[var(--fct-shop-active-text-color,#017EF3)];
     }
+  }
+}
+
+/*======= attribute filters (size boxes, colour swatches) ========*/
+.fct-shop-attribute-options {
+  // The group's inner wrapper clips overflow, so leave room for the checked rings.
+  @apply m-0 p-1 border-0 flex flex-wrap gap-2;
+  min-width: 0;
+
+  // Two columns only where a name and its count fit; a narrow sidebar gets one.
+  &.is-color {
+    @apply grid gap-x-2 gap-y-2.5;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.25rem), 1fr));
+  }
+}
+
+.fct-shop-attribute-option {
+  @apply relative inline-flex items-center gap-2 cursor-pointer text-sm min-w-0;
+  color: var(--fct-shop-primary-text-color, #2F3448);
+}
+
+// Hidden visually, still reachable by keyboard and screen readers.
+.fct-shop-attribute-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+}
+
+.fct-shop-attribute-swatch {
+  @apply inline-block w-5 h-5 rounded-full shrink-0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.fct-shop-attribute-image {
+  @apply w-8 h-8 rounded object-cover shrink-0;
+}
+
+// A name too long for its column wraps; cut to "Charc…" it no longer says which colour it is.
+.fct-shop-attribute-label {
+  @apply min-w-0 break-words;
+}
+
+.fct-shop-attribute-count {
+  color: var(--fct-shop-secondary-text-color, #565865);
+}
+
+.fct-shop-attribute-option:hover .fct-shop-attribute-input:not(:checked) ~ .fct-shop-attribute-swatch {
+  outline: 1.5px solid var(--fct-shop-border-color, #D6DAE1);
+  outline-offset: 2px;
+}
+
+// An outline leaves a see-through gap, so the ring works on any background.
+.fct-shop-attribute-input:checked ~ .fct-shop-attribute-swatch,
+.fct-shop-attribute-input:checked ~ .fct-shop-attribute-image {
+  outline: 1.5px solid var(--fct-shop-checkmark-active-bg, #253241);
+  outline-offset: 2px;
+}
+
+.fct-shop-attribute-input:checked ~ .fct-shop-attribute-label {
+  @apply font-semibold;
+}
+
+// Focus goes on the swatch only; a box around the name looked like a second selection.
+.fct-shop-attribute-input:focus-visible ~ .fct-shop-attribute-swatch,
+.fct-shop-attribute-input:focus-visible ~ .fct-shop-attribute-image {
+  outline: 2px solid var(--fct-shop-checkmark-active-bg, #253241);
+  outline-offset: 4px;
+}
+
+// Image attributes: a bordered box with a thumbnail, name and count.
+.fct-shop-attribute-options.is-image {
+  .fct-shop-attribute-option {
+    @apply max-w-full gap-1.5 py-1 ps-1 pe-2 text-xs border border-solid rounded-md transition-colors duration-150;
+    border-color: var(--fct-shop-border-color, #D6DAE1);
+
+    &:hover {
+      border-color: var(--fct-shop-secondary-text-color, #565865);
+    }
+
+    // Same thin ring with a gap as a selected colour swatch.
+    &:has(.fct-shop-attribute-input:checked) {
+      outline: 1.5px solid var(--fct-shop-checkmark-active-bg, #253241);
+      outline-offset: 2px;
+    }
+
+    &:has(.fct-shop-attribute-input:focus-visible) {
+      outline: 2px solid var(--fct-shop-checkmark-active-bg, #253241);
+      outline-offset: 4px;
+    }
+  }
+
+  .fct-shop-attribute-image {
+    @apply w-6 h-6 rounded-sm;
+
+    &.is-empty {
+      background-color: var(--fct-shop-border-color, #D6DAE1);
+    }
+  }
+
+  // The box border shows selection and focus, not a ring on the thumbnail.
+  .fct-shop-attribute-input:checked ~ .fct-shop-attribute-image,
+  .fct-shop-attribute-input:focus-visible ~ .fct-shop-attribute-image {
+    outline: none;
+  }
+}
+
+// Options attributes (sizes and other plain values): a row of boxes.
+.fct-shop-attribute-options.is-options {
+  .fct-shop-attribute-option {
+    @apply justify-center px-3 py-2 border border-solid rounded;
+    min-width: 44px;
+    border-color: var(--fct-shop-border-color, #D6DAE1);
+    @apply transition-colors duration-150;
+
+    &:hover {
+      border-color: var(--fct-shop-secondary-text-color, #565865);
+    }
+
+    &:has(.fct-shop-attribute-input:checked) {
+      background-color: var(--fct-shop-checkmark-active-bg, #253241);
+      border-color: var(--fct-shop-checkmark-active-bg, #253241);
+      color: var(--fct-shop-btn-text-color, #fff);
+
+      .fct-shop-attribute-count {
+        color: inherit;
+      }
+    }
+
+    &:has(.fct-shop-attribute-input:focus-visible) {
+      outline: 2px solid var(--fct-shop-checkmark-active-bg, #253241);
+      outline-offset: 2px;
+    }
+  }
+
+  .fct-shop-attribute-count {
+    @apply text-xs;
   }
 }

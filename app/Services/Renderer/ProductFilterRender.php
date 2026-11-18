@@ -10,6 +10,7 @@ use FluentCart\App\Helpers\CurrenciesHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Services\Filter\ShopAttributeFilter;
 use FluentCart\App\Vite;
 use FluentCart\Framework\Support\Arr;
 
@@ -127,6 +128,10 @@ class ProductFilterRender
                 </div>
             <?php endif ?>
 
+            <?php if ($filter['filter_type'] === 'attribute') : ?>
+                <?php $this->renderAttributeFilter($filter, $key); ?>
+            <?php endif; ?>
+
             <?php if ($filter['filter_type'] === 'range') : ?>
                 <?php $this->renderPriceRange($filter); ?>
             <?php endif; ?>
@@ -190,6 +195,80 @@ class ProductFilterRender
         </label>
         <?php
 
+    }
+
+    /**
+     * Colour groups as swatches, image groups as image tiles, the rest (sizes...) as boxes.
+     * Each option is a real checkbox, so the form, keyboard and screen readers work unchanged.
+     */
+    public function renderAttributeFilter($filter, $key)
+    {
+        $groupType = Arr::get($filter, 'group_type', '');
+        $style = in_array($groupType, ['color', 'image'], true) ? $groupType : 'options';
+        $fieldName = Arr::get($filter, 'field_name', $key);
+        $showCount = Arr::get($filter, 'show_count', true);
+        // Unique per render: a page can hold several Products blocks filtering on the same attribute.
+        $listId = wp_unique_id('filter-' . $key . '-');
+        ?>
+        <div class="fct-shop-filter-item fct-shop-attribute-filter">
+            <div
+                    class="fct-shop-item-collapse-wrap"
+                    data-fluent-cart-shop-app-filter-form-item-collapse
+                    role="button"
+                    aria-expanded="false"
+                    aria-controls="<?php echo esc_attr($listId); ?>"
+                    tabindex="0"
+            >
+                <h3 class="item-heading"><?php echo esc_html($filter['label']); ?></h3>
+
+                <button type="button" class="toggle-icon"
+                        aria-label="<?php echo esc_attr__('Toggle filter', 'fluent-cart'); ?>">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="7"
+                         viewBox="0 0 12 7" fill="none">
+                        <path d="M11 1.5L6.70711 5.79289C6.37377 6.12623 6.20711 6.29289 6 6.29289C5.79289 6.29289 5.62623 6.12623 5.29289 5.79289L1 1.5"
+                              stroke="#565865" stroke-width="1.25" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="<?php echo esc_attr($listId); ?>" class="fct-shop-checkbox-group">
+                <div class="fct-shop-checkbox-group-inner">
+                    <fieldset class="fct-shop-attribute-options is-<?php echo esc_attr($style); ?>">
+                        <legend class="sr-only"><?php echo esc_html($filter['label']); ?></legend>
+                        <?php foreach ($filter['options'] as $option) :
+                            $inputId = $listId . '-' . $option['value'];
+                            $color = $style === 'color' ? AdvancedVariationRenderer::safeCssColor($option['color']) : '';
+                            ?>
+                            <label class="fct-shop-attribute-option" for="<?php echo esc_attr($inputId); ?>">
+                                <input
+                                        id="<?php echo esc_attr($inputId); ?>"
+                                        class="fct-shop-attribute-input"
+                                        type="checkbox"
+                                        name="<?php echo esc_attr($fieldName); ?>"
+                                        value="<?php echo esc_attr($option['value']); ?>"
+                                    <?php checked(!empty($option['checked'])); ?>
+                                >
+                                <?php if ($style === 'color') : ?>
+                                    <span class="fct-shop-attribute-swatch" aria-hidden="true"
+                                          style="<?php echo $color ? esc_attr('background-color: ' . $color) : ''; ?>"></span>
+                                <?php elseif ($style === 'image' && $option['image']) : ?>
+                                    <img class="fct-shop-attribute-image" src="<?php echo esc_url($option['image']); ?>"
+                                         alt="" loading="lazy" width="24" height="24">
+                                <?php elseif ($style === 'image') : ?>
+                                    <span class="fct-shop-attribute-image is-empty" aria-hidden="true"></span>
+                                <?php endif; ?>
+                                <span class="fct-shop-attribute-label"><?php echo esc_html($option['label']); ?></span>
+                                <?php if ($showCount) : ?>
+                                    <span class="fct-shop-attribute-count"><?php echo esc_html($option['count']); ?></span>
+                                <?php endif; ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+        <?php
     }
 
     public function renderPriceRange($filter = [])
@@ -289,7 +368,21 @@ class ProductFilterRender
             return strcmp(Arr::get($a, 'filter_type'), Arr::get($b, 'filter_type'));
         });
 
-        foreach ($config ?? [] as $key => $val) {
+        $attributeGroupIds = [];
+        $groupIdsHidingUnusedTerms = [];
+        foreach ($config as $val) {
+            if (Arr::get($val, 'filter_type') === 'attribute' && in_array(Arr::get($val, 'enabled'), [true, '1', 'true'], true)) {
+                $attributeGroupIds[] = (int) Arr::get($val, 'group_id', 0);
+                if (Arr::get($val, 'show_empty', false) !== true) {
+                    $groupIdsHidingUnusedTerms[] = (int) Arr::get($val, 'group_id', 0);
+                }
+            }
+        }
+        // Same cap as the selection a URL can carry; the rest would each cost their own queries.
+        $attributeGroupIds = array_slice(array_values(array_unique($attributeGroupIds)), 0, ShopAttributeFilter::maxGroups());
+        ShopAttributeFilter::preload($attributeGroupIds, $groupIdsHidingUnusedTerms);
+
+        foreach ($config as $key => $val) {
             //Filter Out The filters are disabled
             $enabled = Arr::get($val, 'enabled', false);
 
@@ -312,6 +405,27 @@ class ProductFilterRender
                     $formattedFilters[$key]['options'] = $this->getMetaFilterOptions($key, $prefilled, $hideEmpty);
                 }
             }
+            if ($formattedFilters[$key]['filter_type'] === 'attribute') {
+                $groupId = (int) Arr::get($val, 'group_id', 0);
+                if (!in_array($groupId, $attributeGroupIds, true)) {
+                    unset($formattedFilters[$key]);
+                    continue;
+                }
+                $checked = (array) Arr::get($this->urlFilters, ShopAttributeFilter::filterKey($groupId), []);
+                $attributeFilter = $groupId ? ShopAttributeFilter::filterOptions($groupId, $checked, Arr::get($val, 'show_empty', false) !== true) : null;
+
+                if (!$attributeFilter) {
+                    unset($formattedFilters[$key]);
+                    continue;
+                }
+
+                // The form field name is what ShopResource reads, whatever the config key.
+                $formattedFilters[$key] = array_merge($formattedFilters[$key], $attributeFilter, [
+                    'field_name' => ShopAttributeFilter::filterKey($groupId),
+                    'show_count' => in_array(Arr::get($val, 'show_count', false), [true, '1', 'true'], true),
+                ]);
+            }
+
             if ($formattedFilters[$key]['filter_type'] === 'range') {
                 $this->shouldLoadRangePlugin = true;
                 // Slider bounds in the visitor's currency; ShopResource converts

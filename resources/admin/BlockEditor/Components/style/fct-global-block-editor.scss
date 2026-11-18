@@ -1,8 +1,16 @@
-@config "./fct-global-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./fct-global-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 
+
+// Each panel section is its own stacking layer (z-index: 0), so an open dropdown would sit
+// under the sections after it. Lift the section that holds one.
+.fct-block-editor-panel > .components-panel:has(.fct-custom-select-result-list) {
+  z-index: 1;
+}
 
 // inspector control
 .fct-inspector-control{
@@ -17,35 +25,35 @@
     }
     .components-form-toggle{
       .components-form-toggle__track{
-        @apply bg-gray-outline border-gray-outline #{!important};
+        @apply bg-gray-outline! border-gray-outline!;
       }
       .components-form-toggle__thumb{
-        @apply bg-white #{!important};
+        @apply bg-white!;
       }
       &.is-checked {
         .components-form-toggle__track{
-          @apply bg-primary-500 border-primary-500 #{!important};
+          @apply bg-primary-500! border-primary-500!;
         }
       }
       .components-form-toggle__input:focus+.components-form-toggle__track{
-        @apply shadow-none #{!important};
+        @apply shadow-none!;
       }
     }
     .components-flex.components-h-stack{
-      @apply justify-end #{!important};
+      @apply justify-end!;
     }
     .components-toggle-control__label{
-      @apply hidden #{!important};
+      @apply hidden!;
     }
     .components-base-control,
     .components-base-control__field {
-      @apply mb-0 #{!important};
+      @apply mb-0!;
     }
     .components-text-control__input {
       @apply w-[138px];
     }
     input{
-      @apply border border-solid border-gray-outline rounded m-0 py-2 px-3 text-[13px] text-system-dark focus:shadow-none focus:outline-none focus:border-primary-500;
+      @apply border border-solid border-gray-outline rounded m-0 py-2 px-3 text-[13px] text-system-dark focus:shadow-none focus:outline-hidden focus:border-primary-500;
     }
     .components-dropdown{
       @apply w-full;
@@ -84,6 +92,10 @@
   }
   &-row{
     @apply flex gap-2.5 items-start justify-between;
+    // A label stacked on its own control, e.g. a full-width range slider.
+    &.is-tight {
+      @apply gap-1;
+    }
     + .fct-inspector-control-row{
       @apply mt-2.5;
     }
@@ -92,7 +104,7 @@
     }
     .components-base-control {
       input:not(.components-checkbox-control__input) {
-        @apply block w-full rounded border border-solid border-gray-outline outline-none focus:outline-none focus:shadow-none focus:border-primary-500;
+        @apply block w-full rounded border border-solid border-gray-outline outline-hidden focus:outline-hidden focus:shadow-none focus:border-primary-500;
       }
       &__label{
         @apply mb-0;
@@ -118,15 +130,15 @@
         @apply w-auto;
       }
       .fct-custom-select-wrap {
-        @apply max-w-full !important;
+        @apply max-w-full!;
       }
     }
     .components-select-control {
       .components-select-control__input{
-        @apply focus:shadow-none focus:outline-none focus:ring-0 focus:border-primary-500 !important;
+        @apply focus:shadow-none! focus:outline-hidden! focus:ring-0! focus:border-primary-500!;
       }
       .components-input-control__backdrop{
-        @apply rounded border-gray-outline focus:shadow-none focus:outline-none focus:ring-0 focus:border-primary-500 !important;
+        @apply rounded! border-gray-outline! focus:shadow-none! focus:outline-hidden! focus:ring-0! focus:border-primary-500!;
       }
     }
   }
@@ -152,11 +164,15 @@
     }
   }
   &-input-wrap {
-    @apply w-full border rounded bg-white min-h-[36px] cursor-text relative;
+    @apply w-full [border-width:1px] rounded bg-white min-h-[36px] cursor-text relative;
     .fct-custom-select-selected-items {
       @apply absolute h-7.5 flex flex-wrap gap-0.5 left-1 top-1 max-w-[calc(100%-8px)];
       &.single {
         @apply w-full;
+      }
+      // Grows with the chips so the input below can be sized to fit every row.
+      &.multi {
+        @apply h-auto;
       }
       span {
         @apply flex items-center bg-gray-50 text-xs px-2 py-1 rounded ;
@@ -169,11 +185,11 @@
       }
     }
     input {
-      @apply py-1 pr-1 px-2.5 outline-none text-sm min-h-[36px] w-full rounded border border-solid border-gray-outline placeholder:text-xs;
+      @apply py-1 pr-1 px-2.5 outline-hidden text-sm min-h-[36px] w-full rounded border border-solid border-gray-outline placeholder:text-xs;
     }
   }
   &-result-list {
-    @apply absolute bg-white border rounded w-full border-[1px] border-solid border-gray-outline max-h-[300px] overflow-auto mt-1 top-full mb-0 z-[9999] flex flex-col p-2 gap-0.5 list-none shadow;
+    @apply absolute bg-white border rounded w-full border-[1px] border-solid border-gray-outline max-h-[300px] overflow-auto mt-1 top-full mb-0 z-[9999] flex flex-col p-2 gap-0.5 list-none shadow-sm;
     li {
       @apply px-2 py-1 cursor-pointer text-xs m-0 rounded hover:bg-gray-100 transition duration-[200ms] ease-in-out relative z-[1];
       &.selected {
@@ -230,7 +246,7 @@
 
 
 .components-select-control__input{
-  @apply text-sm !important;
+  @apply text-sm!;
 }
 .components-select-control__input option{
   @apply py-1 px-2 rounded-[2px] capitalize;
@@ -264,13 +280,13 @@
   @apply bg-gray-50 rounded p-1;
 }
 .fct-block-editor-radio-group button{
-  @apply px-[11px] py-1.5 m-0 max-h-7 min-h-7 bg-transparent border-0 rounded-[6px] shadow-none text-xs font-medium text-system-mid transition duration-150 !important;
+  @apply px-[11px]! py-1.5! m-0! max-h-7! min-h-7! bg-transparent! border-0! rounded-[6px]! shadow-none! text-xs! font-medium! text-system-mid! transition! duration-150!;
 }
 .fct-block-editor-radio-group button.components-button.is-primary{
-  @apply bg-white shadow-sm !important;
+  @apply bg-white! shadow-xs!;
 }
 .fct-block-editor-control .components-panel__body{
-  @apply border-t-0 border border-solid border-l-0 border-r-0 mt-0 border-gray-divider !important;
+  @apply border-t-0! border! border-solid! border-l-0! border-r-0! mt-0! border-gray-divider!;
 }
 .fct-block-editor-control .components-panel__body>.components-panel__body-title:hover{
   @apply bg-gray-25;
@@ -313,7 +329,7 @@
   transform: translateX(13px);
 }
 .fct-block-editor-control .components-form-toggle .components-form-toggle__input:focus+.components-form-toggle__track{
-  @apply shadow-none outline-none;
+  @apply shadow-none outline-hidden;
 }
 
 .fct-block-editor-control .components-panel__body .components-base-control__field{
@@ -326,28 +342,28 @@
   @apply items-start;
 }
 .fct-block-editor-control-item .components-base-control{
-  @apply mb-0 !important;
+  @apply mb-0!;
 }
 .fct-block-editor-control .components-range-control{
-  @apply flex-1 mb-0 !important;
+  @apply flex-1! mb-0!;
 }
 .fct-block-editor-control .components-base-control__field{
-  @apply mb-0 !important;
+  @apply mb-0!;
 }
 .fct-block-editor-control .components-range-control__root {
-  @apply flex-row-reverse gap-x-2 w-[140px] ml-auto !important;
+  @apply flex-row-reverse! gap-x-2! w-[140px]! ml-auto!;
 }
 .fct-block-editor-control .components-range-control__number {
-  @apply ml-0 !important;
+  @apply ml-0!;
 }
 .fct-block-editor-control .components-input-control__input {
-  @apply pl-2.5 !important;
+  @apply pl-2.5!;
 }
 .fct-block-editor-control .components-range-control__slider + span {
-  @apply bg-gray-200 !important;
+  @apply bg-gray-200!;
 }
 .fct-block-editor-control .components-range-control__track{
-  @apply bg-dark-500 !important;
+  @apply bg-dark-500!;
 }
 .fct-block-editor-control .components-range-control__thumb-wrapper{
   @apply bg-transparent;
@@ -357,10 +373,10 @@
   box-shadow: 0 2px 5px rgba(0,0,0, 0.3);
 }
 .fct-block-editor-control .components-input-control__container {
-  @apply w-12.5 !important;
+  @apply w-12.5!;
 }
 .fct-block-editor-control .components-input-control__backdrop {
-  @apply border-gray-outline rounded shadow-none !important;
+  @apply border-gray-outline! rounded! shadow-none!;
 }
 .fct-block-editor-control .label{
   @apply text-xs font-medium text-system-mid;
@@ -455,15 +471,15 @@
 
 // button
 .fct-button{
-  @apply inline-flex items-center justify-center py-1.5 px-4 rounded text-sm font-semibold text-system-dark bg-white border border-solid border-gray-outline cursor-pointer leading-[1.6] duration-200 transition hover:bg-gray-50 #{!important};
+  @apply inline-flex! items-center! justify-center! py-1.5! px-4! rounded! text-sm! font-semibold! text-system-dark! bg-white! border! border-solid! border-gray-outline! cursor-pointer! leading-[1.6]! duration-200! transition! hover:bg-gray-50!;
   &[disabled] {
-    @apply cursor-not-allowed opacity-50 #{!important};
+    @apply cursor-not-allowed! opacity-50!;
   }
   &-info-soft{
-    @apply bg-gray-50 border-gray-50 hover:bg-gray-100 hover:border-gray-100 #{!important};
+    @apply bg-gray-50! border-gray-50! hover:bg-gray-100! hover:border-gray-100!;
   }
   &-primary{
-    @apply bg-primary-500 text-white border-primary-500 hover:bg-primary-500 #{!important};
+    @apply bg-primary-500! text-white! border-primary-500! hover:bg-primary-500!;
   }
 }
 
@@ -610,7 +626,7 @@
   .input-icon{
     @apply text-system-mid w-10 absolute top-0 left-0 h-full flex items-center justify-center;
     + .fct-input{
-      @apply pl-[36px] #{!important};
+      @apply pl-[36px]!;
     }
   }
 }
@@ -639,7 +655,7 @@
   &-head{
     @apply p-5 flex items-center justify-between border border-x-0 border-t-0 border-solid border-gray-divider;
     .fct-popup-head-title{
-      @apply text-base font-semibold leading-[24px] text-system-dark m-0 #{!important};
+      @apply text-base! font-semibold! leading-[24px]! text-system-dark! m-0!;
     }
   }
   &-close {
@@ -669,9 +685,9 @@
 // collapsible list
 .fct-collapsible{
   &-list{
-    @apply m-0 p-0 list-none #{!important};
+    @apply m-0! p-0! list-none!;
     li{
-      @apply m-0 border border-solid border-gray-divider border-l-0 border-r-0 border-t-0 #{!important};
+      @apply m-0! border! border-solid! border-gray-divider! border-l-0! border-r-0! border-t-0!;
     }
     .components-base-control__field{
       @apply mb-0;
@@ -683,7 +699,7 @@
       @apply m-0 w-4 h-4;
     }
     .components-checkbox-control__input[type=checkbox]{
-      @apply border border-solid border-gray-outline w-4 h-4 rounded-xs focus:shadow-none focus:outline-none checked:bg-primary-500 checked:border-primary-500 checked:shadow-none;
+      @apply border border-solid border-gray-outline w-4 h-4 rounded-xs focus:shadow-none focus:outline-hidden checked:bg-primary-500 checked:border-primary-500 checked:shadow-none;
     }
     .components-checkbox-control__checked{
       @apply h-5;
@@ -703,9 +719,9 @@
         }
       }
       &-inner{
-        @apply m-0 overflow-hidden p-0 list-none #{!important};
+        @apply m-0! overflow-hidden! p-0! list-none!;
         li{
-          @apply m-0 pl-6 border-t border-b-0 #{!important};
+          @apply m-0! pl-6! [border-top-width:1px]! border-b-0!;
         }
         .fct-collapsible-item{
           @apply pl-[76px];
@@ -767,35 +783,588 @@
 // selectrix
 .react-selectrix{
   .rs-header{
-    @apply rounded border-gray-outline #{!important};
+    @apply rounded! border-gray-outline!;
   }
   .rs-toggle{
-    @apply h-9.5 bg-transparent m-0 border-0 text-xs font-medium placeholder:text-system-mid #{!important};
+    @apply h-9.5! bg-transparent! m-0! border-0! text-xs! font-medium! placeholder:text-system-mid!;
     padding: 12px 50px 12px 14px !important;
     &.rs-focused {
-      @apply shadow-none #{!important};
+      @apply shadow-none!;
     }
   }
   .rs-arrow-indicator {
     border-width: 4px 4px 0 4px !important;
   }
   .rs-body {
-    @apply rounded p-1.5 #{!important};
+    @apply rounded! p-1.5!;
   }
   .rs-option{
-    @apply text-[13px] text-system-mid py-2 px-3 mb-0.5 rounded-sm last:mb-0 #{!important};
+    @apply text-[13px]! text-system-mid! py-2! px-3! mb-0.5! rounded-sm! last:mb-0!;
     &:not(.disabled).selected,
     &:not(.disabled).focused {
-      @apply bg-gray-50 text-system-dark #{!important};
+      @apply bg-gray-50! text-system-dark!;
     }
   }
 }
 
 .fct-input {
-  @apply border border-solid border-gray-outline rounded text-sm p-2.5 leading-[1] text-system-dark focus:shadow-none focus:outline-none focus:border-primary-500 !important;
+  @apply border! border-solid! border-gray-outline! rounded! text-sm! p-2.5! leading-[1]! text-system-dark! focus:shadow-none! focus:outline-hidden! focus:border-primary-500!;
 }
 .fct-popup-search-wrap {
   .fct-input {
     @apply w-full;
+  }
+}
+
+// Product Swatches: one tab per product type.
+.fct-swatch-tabs .components-tab-panel__tabs {
+  // A segmented control, as in the swatches design: a bordered grey track, the open tab's half white,
+  // flush to the edges (the track clips it to its rounded corners).
+  @apply relative mx-4 mt-3 p-0 rounded-lg overflow-hidden border border-solid border-gray-outline bg-gray-50;
+  // Something in the editor makes the tab list 100% wide, so mx-4 alone overflowed the sidebar by 16px.
+  width: calc(100% - theme('spacing.8'));
+
+  // One white half on the track, sliding under the open tab. It assumes exactly two tabs.
+  &::before {
+    content: "";
+    @apply absolute inset-y-0 w-1/2 bg-white pointer-events-none;
+    inset-inline-start: 0;
+    transition: transform 220ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  &:has(> .components-tab-panel__tabs-item:nth-child(2).is-active)::before {
+    transform: translateX(100%);
+  }
+
+  // Right to left, the first tab sits on the right, so the white half slides left.
+  .rtl &:has(> .components-tab-panel__tabs-item:nth-child(2).is-active)::before {
+    transform: translateX(-100%);
+  }
+
+  .components-tab-panel__tabs-item {
+    // 12px (the design's 13px is for a 300px sidebar) so "Attribute products" fits the editor's 280px
+    // sidebar on one line; a longer translation wraps.
+    @apply relative z-[1] flex-1 min-w-0 justify-center gap-1 px-1 rounded-none text-center text-xs leading-tight font-normal text-system-mid bg-transparent;
+    // WordPress fixes tabs at 48px (!important), with an underline (::after) and an inset focus ring (::before).
+    height: auto !important;
+    min-height: 36px;
+    transition: color 220ms cubic-bezier(0.2, 0, 0, 1);
+
+    &::after,
+    &::before {
+      display: none;
+    }
+
+    // Beats WordPress's equally specific hover colour, which loads first, so the other tab reacts.
+    &:not(.is-active):hover {
+      @apply text-system-dark;
+    }
+
+    &.is-active {
+      @apply font-semibold text-system-dark;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+      outline-offset: -2px;
+    }
+  }
+
+  // Without :has() the white half cannot follow, so the open tab is white itself.
+  @supports not selector(:has(*)) {
+    &::before {
+      display: none;
+    }
+
+    .components-tab-panel__tabs-item.is-active {
+      @apply bg-white;
+    }
+  }
+
+  // High contrast drops the white fill, so the open tab gets a system-colour outline.
+  @media (forced-colors: active) {
+    .components-tab-panel__tabs-item.is-active {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before,
+    .components-tab-panel__tabs-item {
+      transition: none;
+    }
+  }
+}
+
+// The opened tab's settings fade and rise in, only when switching tabs.
+.fct-swatch-tab-panel.is-switching {
+  animation: fct-swatch-tab-in 200ms cubic-bezier(0.2, 0, 0, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes fct-swatch-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+// A border keeps the marker visible on the grey track as well as on the white tab.
+.fct-swatch-tab-off {
+  @apply inline-flex items-center rounded-full px-1.5 text-[10px] font-semibold uppercase leading-4 tracking-wide bg-white border border-solid border-gray-outline text-system-mid;
+}
+
+
+// Tab top, as in the swatches design: hint, switch, then a card drawn from the settings.
+.fct-swatch-tab-top {
+  @apply flex flex-col gap-3.5 p-4 border-0 border-b border-solid border-gray-outline;
+}
+
+.fct-swatch-switch {
+  @apply flex items-start justify-between gap-3;
+
+  .components-form-toggle {
+    @apply shrink-0 mt-0.5;
+  }
+}
+
+.fct-swatch-switch-description,
+.fct-swatch-preview-off {
+  @apply text-xs leading-normal text-system-mid;
+}
+
+.fct-swatch-switch-text {
+  @apply flex flex-col gap-1 min-w-0;
+}
+
+.fct-swatch-switch-title {
+  @apply text-[13px] font-semibold text-system-dark cursor-pointer;
+
+  &.is-large {
+    @apply text-sm;
+  }
+}
+
+
+.fct-swatch-tab-settings {
+  @apply flex flex-col;
+}
+
+// One setting per section, each with its own divider, as in the design.
+.fct-swatch-section {
+  @apply flex flex-col gap-3 p-4 border-0 border-b border-solid border-gray-outline;
+}
+
+.fct-swatch-section-label {
+  @apply text-xs font-semibold text-system-dark;
+}
+
+.fct-swatch-section-help {
+  @apply text-xs leading-normal text-system-mid;
+}
+
+.fct-swatch-option-name-text {
+  @apply flex flex-col gap-1.5;
+
+  .components-text-control__input {
+    @apply w-full;
+  }
+}
+
+.fct-swatch-option-name-presets {
+  @apply flex flex-wrap gap-1;
+}
+
+.fct-inspector-control-wrap .fct-swatch-option-name-preset {
+  @apply inline-flex items-center h-7 px-2.5 m-0 rounded-full border border-solid border-[#949494] bg-white text-xs text-system-dark cursor-pointer;
+
+  &[aria-pressed="true"] {
+    @apply border-system-dark bg-system-dark text-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+.fct-swatch-position-choices {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.fct-inspector-control-wrap .fct-swatch-position-choice {
+  @apply flex flex-col items-start gap-1.5 m-0 p-1.5 rounded border border-solid border-[#dcdcde] bg-white text-left text-system-dark cursor-pointer;
+
+  &:hover {
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &[aria-checked="true"] {
+    @apply -m-px border-2;
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+// Each choice holds a small white card drawn from the tab's settings.
+.fct-swatch-position-sample {
+  @apply flex flex-col justify-center gap-1 w-full min-h-[54px] p-2 rounded-[3px] border border-solid border-[#f0f0f0] bg-white text-[10px] text-system-mid;
+
+  .is-title,
+  .is-below {
+    @apply max-w-full overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  .is-below {
+    @apply font-semibold text-system-dark;
+  }
+}
+
+.fct-swatch-position-dots {
+  @apply flex items-center gap-[3px];
+
+  .is-dot {
+    @apply block w-2.5 h-2.5 rounded-full;
+  }
+
+  .is-pill {
+    @apply block w-3.5 h-2 rounded border border-solid border-[#949494] bg-white;
+  }
+
+  .is-more {
+    @apply text-[9px] text-system-mid;
+  }
+}
+
+.fct-swatch-position-label {
+  @apply text-xs font-medium text-system-dark;
+}
+
+.fct-swatch-preview {
+  @apply flex flex-col gap-3.5;
+}
+
+.fct-swatch-preview-card {
+  @apply flex items-start gap-3 p-3 rounded-md border border-solid border-gray-outline bg-[#fafafa];
+}
+
+.fct-swatch-preview-image {
+  @apply flex items-center justify-center shrink-0 w-16 h-16 rounded-md bg-[#f0f0f1];
+
+  &.is-list {
+    @apply bg-[#f5efe6];
+  }
+}
+
+.fct-swatch-preview-details {
+  @apply flex flex-col gap-2 grow min-w-0;
+}
+
+.fct-swatch-preview-name {
+  @apply text-xs font-semibold text-system-dark;
+}
+
+
+
+.fct-swatch-preview-row {
+  @apply flex flex-col gap-1;
+}
+
+.fct-swatch-preview-selected {
+  @apply text-[11px] font-semibold text-system-dark;
+}
+
+.fct-swatch-preview-title,
+.fct-swatch-preview-more {
+  @apply text-[11px] text-system-mid;
+}
+
+.fct-swatch-preview-options {
+  @apply flex flex-wrap items-center gap-[5px];
+}
+
+.fct-inspector-control-wrap .fct-swatch-preview-option {
+  @apply inline-flex items-center h-[22px] px-2 m-0 rounded-full border border-solid border-[#c3c4c7] bg-white text-[11px] leading-none text-system-dark cursor-pointer;
+
+  &[aria-checked="true"] {
+    @apply border-system-dark bg-system-dark text-white;
+  }
+
+  // A colour dot: white gap, then a ring that darkens when picked.
+  &.is-dot {
+    @apply w-[22px] p-0 border-2 border-white;
+    box-shadow: 0 0 0 1px #c3c4c7;
+
+    &[aria-checked="true"] {
+      box-shadow: 0 0 0 2px #1e1e1e;
+    }
+  }
+
+  &:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary-500;
+  }
+}
+
+// How it shows on the card: one section, three settings with no dividers between them.
+.fct-swatch-card-display {
+  @apply gap-[18px];
+}
+
+// The inspector styles its h3s as small capitals with a 1.5em bottom margin. This one is in normal
+// case, like the other section titles (Which attributes to show, Sold-out options).
+.fct-inspector-control-wrap .fct-swatch-group-heading {
+  @apply m-0 text-[13px] font-semibold normal-case tracking-normal text-system-dark;
+}
+
+.fct-swatch-card-setting {
+  @apply flex flex-col gap-2.5;
+
+  // Lighter titles than the section headings, as in the design.
+  .fct-swatch-switch-title {
+    @apply font-medium;
+  }
+
+  .fct-swatch-switch-description {
+    @apply text-[#757575];
+
+    b {
+      @apply font-semibold text-system-mid;
+    }
+  }
+}
+
+// The extra controls of a setting sit in a light grey box below it.
+.fct-swatch-setting-box {
+  @apply flex flex-col gap-2 p-3 rounded bg-[#f6f7f7];
+
+  .fct-swatch-section-label {
+    @apply font-medium;
+  }
+}
+
+// Show up to: a number box and an All checkbox, beside the label and help.
+.fct-swatch-count-row {
+  @apply flex items-start justify-between gap-3;
+}
+
+.fct-swatch-count-controls {
+  @apply flex items-center gap-2.5 shrink-0;
+}
+
+// WordPress admin gives number inputs a 40px min-height; the design's box is 32px.
+.fct-inspector-control-wrap input.fct-swatch-count-input {
+  @apply w-14 h-8 min-h-8 m-0 px-2 py-0 rounded-sm border border-solid border-[#949494] bg-white text-[13px] text-system-dark;
+
+  &:disabled {
+    @apply bg-[#f0f0f0] text-[#a7aaad];
+  }
+
+  &:focus {
+    border-color: var(--wp-admin-theme-color, #3858e9);
+    box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #3858e9);
+  }
+}
+
+.fct-swatch-count-all {
+  @apply flex items-center gap-1.5 text-[13px] text-system-dark cursor-pointer;
+}
+
+.fct-inspector-control-wrap .fct-swatch-count-all input[type="checkbox"] {
+  @apply shrink-0 w-4 h-4 min-w-4 m-0 p-0 cursor-pointer;
+  border: 1px solid #1e1e1e;
+  border-radius: 2px;
+
+  &:checked {
+    background: var(--wp-admin-theme-color, #3858e9);
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &:checked::before {
+    filter: brightness(0) invert(1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+// Which attributes to show: tick to show, arrows to reorder, as in the swatches design.
+.fct-swatch-attribute-list {
+  @apply m-0 p-0 list-none rounded border border-solid border-[#dcdcde] overflow-hidden;
+}
+
+.fct-swatch-attribute-row {
+  @apply flex items-center gap-2 m-0 py-1.5 pr-1.5 pl-2.5 bg-white;
+
+  & + & {
+    @apply border-0 border-t border-solid border-[#f0f0f1];
+  }
+
+  label {
+    @apply grow min-w-0 text-[13px] text-system-dark cursor-pointer;
+
+    &.is-off {
+      @apply text-[#757575];
+    }
+  }
+}
+
+// The sidebar's input rule rounds and pads every input; a checkbox here stays a square box.
+.fct-inspector-control-wrap .fct-swatch-attribute-row input[type="checkbox"],
+.fct-inspector-control-wrap .fct-swatch-attribute-other input[type="checkbox"] {
+  @apply shrink-0 w-4 h-4 min-w-4 m-0 p-0 cursor-pointer;
+  border: 1px solid #1e1e1e;
+  border-radius: 2px;
+  accent-color: var(--wp-admin-theme-color, #3858e9);
+
+  &:checked {
+    background: var(--wp-admin-theme-color, #3858e9);
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &:checked::before {
+    filter: brightness(0) invert(1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+// Lines the box up with the first line of its two-line label; after the rule above, which sets m-0.
+.fct-inspector-control-wrap .fct-swatch-attribute-other input[type="checkbox"] {
+  @apply mt-0.5;
+}
+
+.fct-swatch-attribute-sample {
+  @apply shrink-0 text-[11px] text-[#757575];
+}
+
+.fct-inspector-control-wrap .fct-swatch-attribute-move {
+  @apply flex items-center justify-center shrink-0 w-7 h-7 m-0 p-0 rounded-sm border-0 bg-transparent text-system-dark cursor-pointer;
+
+  &:disabled {
+    @apply text-[#c3c4c7] cursor-default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 1px;
+  }
+}
+
+.fct-swatch-attribute-add {
+  @apply flex flex-col gap-1.5;
+}
+
+.fct-inspector-control-wrap .fct-swatch-attribute-add-toggle {
+  @apply self-start h-8 px-2.5 m-0 rounded-sm border border-dashed border-[#949494] bg-white text-[13px] cursor-pointer;
+  color: var(--wp-admin-theme-color, #3858e9);
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+.fct-swatch-attribute-pool {
+  @apply flex flex-col rounded-sm border border-solid border-[#949494] bg-white;
+  box-shadow: 0 4px 12px #0000001a;
+
+  > button {
+    @apply flex items-center justify-between h-[34px] px-2.5 m-0 border-0 bg-transparent text-left text-[13px] text-system-dark cursor-pointer;
+
+    &:hover {
+      @apply bg-[#f6f7f7];
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+      outline-offset: -2px;
+    }
+  }
+}
+
+.fct-swatch-attribute-pool-title {
+  @apply px-2.5 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-[#757575];
+}
+
+.fct-swatch-attribute-pool-empty {
+  @apply px-2.5 py-2 text-xs text-[#757575];
+}
+
+.fct-swatch-attribute-other {
+  @apply flex items-start gap-2 pt-1;
+
+  label {
+    @apply text-[13px] text-system-dark cursor-pointer;
+  }
+}
+
+.fct-swatch-attribute-warning {
+  @apply text-xs text-[#b32d2e];
+
+  // Empty, it stays in the page for screen readers but takes no room.
+  &:empty {
+    @apply absolute;
+  }
+}
+
+// Sold-out options: three picture choices, as in the swatches design.
+.fct-swatch-sold-out-choices {
+  @apply grid grid-cols-3 gap-1.5 w-full;
+}
+
+.fct-inspector-control-wrap .fct-swatch-sold-out-choice {
+  @apply flex flex-col items-center gap-1.5 m-0 px-1 py-2.5 rounded-md border border-solid border-[#dcdcde] bg-white text-system-dark cursor-pointer;
+
+  &:hover {
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &[aria-checked="true"] {
+    @apply -m-px border-2;
+    border-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 2px;
+  }
+}
+
+.fct-swatch-sold-out-sample {
+  @apply flex items-center gap-1 h-5;
+
+  > span {
+    @apply inline-flex items-center h-[18px] px-1.5 rounded-full border border-solid border-[#c3c4c7] text-[10px];
+
+    &.is-crossed {
+      @apply border-dashed text-[#a7aaad] line-through;
+    }
+  }
+}
+
+.fct-swatch-sold-out-label {
+  @apply text-xs font-medium text-center whitespace-nowrap;
+}
+
+// Sold-out samples in the preview card, crossed out like on the storefront.
+.fct-inspector-control-wrap .fct-swatch-preview-option.is-sold-out {
+  @apply border-dashed text-[#a7aaad] line-through cursor-not-allowed;
+
+  &.is-dot {
+    @apply border-solid;
+    opacity: 0.3;
   }
 }

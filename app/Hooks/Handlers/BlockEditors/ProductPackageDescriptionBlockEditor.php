@@ -86,7 +86,7 @@ class ProductPackageDescriptionBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null): string
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
         $product = fluent_cart_get_current_product();
 
         if (!$product) {

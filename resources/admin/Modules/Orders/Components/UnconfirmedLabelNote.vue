@@ -3,10 +3,11 @@
     <!-- Must match POST .../recheck-unconfirmed and .../dismiss-unconfirmed (orders/manage_statuses). -->
     <UserCan permission="orders/manage_statuses">
       <div class="fct-unconfirmed-label-check mt-2 flex flex-wrap items-center gap-3">
-        <el-button v-if="entry.can_recheck" size="small" :loading="busy === 'check'" :disabled="!!busy" :aria-busy="busy === 'check' ? 'true' : 'false'" @click="check">
+        <fct-button v-if="entry.can_recheck" size="small" :loading="busy === 'check'" :disabled="!!busy" :aria-busy="busy === 'check' ? 'true' : 'false'" @click="check">
           {{ translate('Check again') }}
-        </el-button>
-        <el-popconfirm
+        </fct-button>
+        <fct-popover
+            confirm
             :title="translate('Order_Mark_Purchase')"
             :confirm-button-text="translate('Mark resolved')"
             :cancel-button-text="translate('Cancel')"
@@ -14,11 +15,11 @@
             @confirm="dismiss"
         >
           <template #reference>
-            <el-button size="small" :loading="busy === 'dismiss'" :disabled="!!busy">
+            <fct-button size="small" :loading="busy === 'dismiss'" :disabled="!!busy">
               {{ translate('Mark resolved') }}
-            </el-button>
+            </fct-button>
           </template>
-        </el-popconfirm>
+        </fct-popover>
         <span class="text-sm">{{ result }}</span>
       </div>
     </UserCan>

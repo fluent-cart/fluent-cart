@@ -19,7 +19,7 @@ const coverage = computed(() => translate("%1$s of refunds have a reason", perce
   <Card.Container>
     <Card.Header :title="translate('Refund reasons')" title_size="small" border_bottom />
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="4" />
+      <fct-skeleton v-if="loading" animated :rows="4" />
       <template v-else>
         <p class="m-0 mb-4 text-sm text-system-mid dark:text-gray-300">{{ coverage }}</p>
         <ul v-if="reasons && reasons.top && reasons.top.length" class="m-0 p-0 list-none grid gap-2.5">

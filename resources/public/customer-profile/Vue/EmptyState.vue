@@ -12,14 +12,14 @@
             <h4>{{ title }}</h4>
             <p>{{ text }}</p>
 
-            <el-button 
+            <fct-button 
                 tag="a" 
                 :href="shop_url" 
                 rel="noopener noreferrer" 
                 :aria-label="$t('Back to Shopping Now')"
             >
                 {{ $t('Back to Shopping Now') }}
-            </el-button>
+            </fct-button>
         </div>
     </div>
 </template>

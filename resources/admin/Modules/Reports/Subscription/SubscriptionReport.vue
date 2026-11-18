@@ -3,13 +3,13 @@
     <div class="fct-subscription-report-page">
       <!-- Health is a snapshot; it does not follow the date range -->
       <div class="flex items-center gap-2 mb-3">
-        <h5 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ translate("Right now") }}</h5>
+        <h2 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ translate("Right now") }}</h2>
         <span class="text-xs text-system-light dark:text-gray-400">{{ translate("Not affected by the date range") }}</span>
       </div>
       <SubscriptionHealth :reportFilter="reportFilter" />
 
       <div class="flex items-center gap-2 mb-3">
-        <h5 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ translate("In this period") }}</h5>
+        <h2 class="m-0 text-sm font-semibold text-system-dark dark:text-gray-50">{{ translate("In this period") }}</h2>
       </div>
       <!-- A failed request has no figures: no zero cards, no empty chart, no "No active subscriptions" -->
       <Card.Container v-if="overview.error">

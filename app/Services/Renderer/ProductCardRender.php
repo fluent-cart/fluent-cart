@@ -37,7 +37,8 @@ class ProductCardRender
 
     public function render()
     {
-        AssetLoader::loadSingleProductAssets();
+        // The card's Quick View opens the product's buy section; the product page's reviews it never shows.
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
         // Lets extensions (e.g. Pro's advanced-variation selector) enqueue the
         // CSS/JS a product purchase UI needs. Backs the card surfaces that go
         // through this renderer's render() — Shop, Product List, the product
@@ -50,6 +51,11 @@ class ProductCardRender
         if (!$assetsHookFired) {
             $assetsHookFired = true;
             do_action('fluent_cart/advanced_variation/enqueue_assets');
+        }
+        $layoutCard = ProductCardLayoutPresets::cardBlock((string) Arr::get($this->config, 'card_layout', ''));
+        // A builder's swatch, badge and rating settings for the layout card (see withCardOptions()).
+        if ($layoutCard && Arr::get($this->config, 'layout_options')) {
+            $layoutCard = ProductCardLayoutPresets::withCardOptions($layoutCard, (array) Arr::get($this->config, 'layout_options', []));
         }
         $cursor = '';
         if (!empty($this->config['cursor'])) {
@@ -86,18 +92,63 @@ class ProductCardRender
                  /* translators: %s: product title */
                          __('%s product card', 'fluent-cart'), $this->product->post_title));
                  ?>">
-            <?php $this->renderProductImage(); ?>
+            <?php if ($layoutCard) { echo $this->renderLayoutCard($layoutCard); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered block markup */ } else { $this->renderProductImage(); ?>
             <?php $this->renderTitle(); ?>
             <?php $this->renderStarRating(); ?>
             <?php if (!Arr::get($this->config, 'hide_excerpt', false)) { $this->renderExcerpt(); } ?>
             <?php $this->renderPrices(); ?>
-            <?php $this->showBuyButton(); ?>
+            <?php $this->showBuyButton(); } ?>
         </article>
         <?php
         do_action('fluent_cart/product/group/after_card', RenderContext::decorate([
                 'product' => $this->product,
                 'scope'   => RenderGate::SCOPE_CARD,
         ]));
+    }
+
+    // Renders the layout's blocks as a Product Loop does, so the card matches the block version.
+    /** A Rating, Swatches or Quick View block for this product, for a builder's own card; '' for another part. */
+    public function renderCardPart(string $part, array $settings = []): string
+    {
+        $block = ProductCardLayoutPresets::partBlock($part, $settings);
+
+        return $block ? $this->renderLayoutCard($block) : '';
+    }
+
+    private function renderLayoutCard(array $cardBlock): string
+    {
+        $context = [
+            'postId'                       => (int) $this->product->ID,
+            'postType'                     => $this->product->post_type,
+            'fluent-cart/product-card-loop' => true,
+            'fluent-cart/price_format'     => Arr::get($this->config, 'layout_price_format', 'starts_from'),
+        ];
+        // The rating block knows related products by this key, so it follows show_rating_in_relevant as the standard card does.
+        if (Arr::get($this->config, 'rating_context') === 'relevant') {
+            $context['fluent-cart/related_product_ids'] = [(int) $this->product->ID];
+        }
+        // Keeps the_post from querying the product again.
+        \FluentCart\App\Modules\Data\ProductDataSetup::setProductsCache([$this->product]);
+        $keys = ['post', 'id', 'authordata', 'currentday', 'currentmonth', 'page', 'pages', 'multipage', 'more', 'numpages', 'fct_product'];
+        $savedGlobals = [];
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $GLOBALS)) {
+                $savedGlobals[$key] = $GLOBALS[$key];
+            }
+        }
+        try {
+            $GLOBALS['post'] = get_post($this->product->ID);
+            setup_postdata($GLOBALS['post']);
+            return (new \WP_Block($cardBlock, $context))->render();
+        } finally {
+            foreach ($keys as $key) {
+                if (array_key_exists($key, $savedGlobals)) {
+                    $GLOBALS[$key] = $savedGlobals[$key];
+                } else {
+                    unset($GLOBALS[$key]);
+                }
+            }
+        }
     }
 
     /**

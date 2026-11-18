@@ -1655,8 +1655,9 @@ class ShipmentService
      */
     public static function getLabelPdf(Shipment $shipment)
     {
-        $url = static::hasLabel($shipment)
-            ? CarrierManager::carrier(sanitize_key((string) $shipment->carrier_slug))->getLabelDownloadUrl($shipment)
+        $carrier = CarrierManager::carrier(sanitize_key((string) $shipment->carrier_slug));
+        $url = $carrier instanceof AbstractShippingCarrier && $carrier->hasLabel($shipment)
+            ? $carrier->getLabelDownloadUrl($shipment)
             : '';
 
         if (is_wp_error($url)) {

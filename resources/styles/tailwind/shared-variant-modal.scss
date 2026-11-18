@@ -25,13 +25,14 @@
 }
 
 .fct-physical-product-meta-row {
-  @apply items-end;
+  @apply grid grid-cols-1 gap-x-[10px] items-end;
 
-  .el-col {
-    @apply flex;
+  // Was el-col :sm="14" / :sm="10" (Element Plus sm = 768px).
+  @media (min-width: 768px) {
+    grid-template-columns: 7fr 5fr;
   }
 
-  .el-form-item {
+  .fct-form-field {
     @apply w-full mb-0;
   }
 }
@@ -50,7 +51,7 @@
   }
 
   .fct-product-weight-unit {
-    @apply w-[70px] !important;
+    @apply w-[70px]!;
   }
 }
 
@@ -67,11 +68,7 @@
   }
 
   .fct-physical-product-meta-row {
-    .el-col {
-      @apply block;
-    }
-
-    .el-form-item {
+    .fct-form-field {
       @apply mb-[18px];
     }
   }
@@ -91,6 +88,11 @@
   }
   .fct-admin-input-wrapper {
     @apply flex-1;
+
+    // style.css zeroes `.fct-admin-input-wrapper label`; keep the field label gap.
+    .fct-form-field__label {
+      @apply mb-2;
+    }
   }
 
   .fct-shared-variant-item-box__label {
@@ -150,8 +152,8 @@
   }
   .fct-product-media-row {
     @apply flex items-center gap-4;
-    .el-form-item {
-        @apply mb-0 flex-1;
+    .fct-form-field {
+        @apply mb-0;
     }
   }
 
@@ -297,7 +299,7 @@
 }
 
 /* Smaller labels for group-edit select controls */
-.fct-group-select-label .el-form-item__label {
+.fct-group-select-label .fct-form-field__label {
     font-size: 11px;
 }
 
@@ -307,7 +309,7 @@
 }
 
 .sortable-chosen.ghost .drag-icon {
-  @apply cursor-grabbing !important;
+  @apply cursor-grabbing!;
 }
 
 .fct-shared-variant-drawer {
@@ -393,7 +395,7 @@
   @apply self-start text-[12px] text-blue-500 hover:text-blue-600 bg-transparent border-0 p-0 cursor-pointer underline;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 }
 
@@ -420,7 +422,7 @@
   @apply flex-1 flex items-center gap-2 px-2 py-1.5 bg-transparent border-0 rounded cursor-pointer text-start min-w-0;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 }
 
@@ -436,7 +438,7 @@
   }
 
   &:focus-visible {
-    @apply opacity-100 outline-2 outline-offset-2 outline-blue-500;
+    @apply opacity-100 [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 }
 
@@ -565,7 +567,7 @@
 .fct-shared-variant-nav__menu-trigger {
   @apply border-0 bg-transparent w-5 h-5 inline-flex items-center justify-center cursor-pointer rounded-[4px] hover:bg-gray-100 dark:hover:bg-dark-500;
   svg {
-    @apply w-[15px] h-[15px] !important;
+    @apply w-[15px]! h-[15px]!;
   }
   &.is-disabled {
     @apply cursor-not-allowed opacity-45 pointer-events-none;
@@ -920,13 +922,50 @@
     }
 }
 
+/* el-row / el-col stand-ins for the variant pricing form; plain CSS because the drawer is outside the Tailwind wrapper */
+.fct-variant-row {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+
+    &.is-guttered {
+        margin-left: -7.5px;
+        margin-right: -7.5px;
+
+        > .fct-variant-col {
+            padding-left: 7.5px;
+            padding-right: 7.5px;
+        }
+    }
+}
+
+.fct-variant-col {
+    box-sizing: border-box;
+    flex: 0 0 100%;
+    max-width: 100%;
+
+    @media (min-width: 1200px) {
+        &.is-lg-12 { flex: 0 0 50%; max-width: 50%; }
+        &.is-lg-8 { flex: 0 0 33.33333%; max-width: 33.33333%; }
+        &.is-lg-6 { flex: 0 0 25%; max-width: 25%; }
+    }
+}
+
+.fct-variant-plain-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    line-height: 32px;
+    margin-bottom: 18px;
+}
+
 /* Price field with inline tax inclusion selector */
 .fct-price-with-inclusion {
     @apply flex items-start flex-wrap w-full;
     gap: 8px;
     margin-bottom: var(--el-form-item-margin-bottom, 18px);
 
-    .el-form-item {
+    .fct-form-field {
         @apply mb-0;
     }
 }

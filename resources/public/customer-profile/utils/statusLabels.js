@@ -26,6 +26,11 @@ const getLabels = () => ({
     canceled: translate('Canceled'),
     expired: translate('Expired'),
     partially_paid: translate('Partially Paid'),
+    refunded: translate('Refunded'),
+    partially_refunded: translate('Partially Refunded'),
+    authorized: translate('Authorized'),
+    payment_scheduled: translate('Payment Scheduled'),
+    dispute_lost: translate('Dispute Lost'),
     intended: translate('Intended'),
     scheduled: translate('Scheduled'),
     'on-hold': translate('On Hold'),
@@ -43,6 +48,10 @@ const getLabels = () => ({
     payment: translate('Payment'),
     unshipped: translate('Unshipped'),
     trialing: translate('Trialing'),
+    past_due: translate('Past Due'),
+    paused: translate('Paused'),
+    failing: translate('Failing'),
+    expiring: translate('Expiring'),
 });
 
 export default function statusLabel(status) {

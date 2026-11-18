@@ -1,52 +1,53 @@
 <template>
   <div class="fct-attr-group-modal">
-    <el-form label-position='top' :data="group">
-      <el-row :gutter="24">
-        <el-col :span="24">
-          <el-form-item :label="$t('Group Title')" required>
-            <el-input
-                ref="titleInputRef"
-                type="text"
-                v-model="group.title"
-                :placeholder="$t('Group Title')"
-                :class="validationErrors['title'] ? 'is-error' : ''"
-                @keyup="handleTitleKeyup"
-            />
-            <ValidationError :validation-errors="validationErrors" field-key="title"/>
-          </el-form-item>
-        </el-col>
+    <div>
+      <fct-input
+          ref="titleInputRef"
+          type="text"
+          v-model="group.title"
+          :label="$t('Group Title')"
+          required
+          :placeholder="$t('Group Title')"
+          :class="validationErrors['title'] ? 'is-error' : ''"
+          :validation-errors="validationErrors"
+          field-key="title"
+          @keyup="handleTitleKeyup"
+      />
 
-        <el-col :span="12">
-          <el-form-item :label="$t('Attribute Type')">
-            <el-select v-model="group.settings.type" style="width: 100%">
-              <el-option :label="$t('Options')" value="options"/>
-              <el-option :label="$t('Color')" value="color"/>
-              <el-option :label="$t('Image')" value="image"/>
-            </el-select>
-          </el-form-item>
-        </el-col>
-
-        <el-col :span="12">
-          <el-form-item :label="$t('Styling')">
-            <el-select v-model="group.settings.styling" clearable style="width: 100%">
-              <el-option :label="$t('Dropdown')" value="dropdown"/>
-              <el-option :label="$t('Button')" value="button"/>
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
+      <div class="fct-attr-group-modal-row">
+        <fct-select
+            v-model="group.settings.type"
+            :label="$t('Attribute Type')"
+            style="width: 100%"
+            :options="[
+              {label: $t('Options'), value: 'options'},
+              {label: $t('Color'), value: 'color'},
+              {label: $t('Image'), value: 'image'}
+            ]"
+        />
+        <fct-select
+            v-model="group.settings.styling"
+            :label="$t('Styling')"
+            clearable
+            style="width: 100%"
+            :options="[
+              {label: $t('Dropdown'), value: 'dropdown'},
+              {label: $t('Button'), value: 'button'}
+            ]"
+        />
+      </div>
 
       <div class="dialog-footer">
-        <el-button
+        <fct-button
           :disabled="!group.title || loading"
           :loading="loading"
           @click="createGroup()"
           type="primary"
         >
             {{ $t('Add Group')}}
-        </el-button>
+        </fct-button>
       </div>
-    </el-form>
+    </div>
   </div>
 </template>
 
@@ -54,7 +55,6 @@
 import {reactive, ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import {handleSuccess} from "@/Bits/common";
-import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import Notify from "@/utils/Notify";
 
 

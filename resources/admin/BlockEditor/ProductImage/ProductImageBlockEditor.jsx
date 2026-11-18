@@ -4,6 +4,7 @@ import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductImage/Components/InspectorSettings";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {ProductGallery} from "@/BlockEditor/Icons";
+import {syncInsideProductInfo} from "@/BlockEditor/Components/insideProductInfo";
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
 const {registerBlockType, createBlock} = wp.blocks;
@@ -51,6 +52,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                 const name = getBlockName(parentId);
                 return [
                     'fluent-cart/product-info',
+                    'fluent-cart/product-card',
                     'fluent-cart/products',
                     'fluent-cart/shopapp-product-container',
                     'fluent-cart/shopapp-product-loop',
@@ -60,10 +62,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         }, [clientId]);
 
         useEffect(() => {
-            setAttributes({
-                inside_product_info: isInsideProductInfo ? 'yes' : 'no',
-                ...(!isInsideProductInfo ? { query_type: 'custom' } : {})
-            });
+            syncInsideProductInfo(attributes, setAttributes, isInsideProductInfo);
         }, [isInsideProductInfo]);
 
         const fetchProduct = () => {
@@ -117,6 +116,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                             allowedBlocks={[
                                 'fluent-cart/sold-out-badge',
                                 'fluent-cart/sale-badge',
+                                'fluent-cart/product-quick-view',
                                 'fluent-cart/shopapp-product-title',
                             ]}
                             renderAppender={InnerBlocks.ButtonBlockAppender}

@@ -1,5 +1,9 @@
-@config "./product-review-list-block-editor.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-review-list-block-editor.config.mjs";
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+.fct-review-list-block-editor {
+    @tailwind utilities source(none);
+}
 
 /* Editor-specific review layouts using storefront markup and sizing.
  * Keep dimensions explicit so theme defaults do not change the preview. */
@@ -232,8 +236,7 @@
     .fct-reviews-slider-nav {
         appearance: none;
         -webkit-appearance: none;
-        @apply flex items-center justify-center bg-white border border-solid border-gray-outline
-               rounded-full text-system-dark shadow-none;
+        @apply flex items-center justify-center bg-white border border-solid border-gray-outline rounded-full text-system-dark shadow-none;
 
         box-sizing: border-box;
         position: absolute;
@@ -688,8 +691,7 @@
 /* Draw an inert sort control without triggering storefront sorting.
  * Scope it to the editor and leave space for its own caret. */
 .fct-review-list-block-editor .fct-reviews-sort-preview {
-    @apply inline-flex items-center gap-1.5 bg-white border border-solid border-gray-outline
-           leading-none py-2 rounded text-system-mid text-sm;
+    @apply inline-flex items-center gap-1.5 bg-white border border-solid border-gray-outline leading-none py-2 rounded text-system-mid text-sm;
 
     position: relative;
     box-sizing: border-box;

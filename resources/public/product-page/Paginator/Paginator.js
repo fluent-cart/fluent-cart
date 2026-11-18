@@ -16,6 +16,13 @@ export default class Paginator {
     #productType = '';
     #onSale = false;
     #hideExcerpt = false;
+    #cardLayout = '';
+    // A builder's swatch and badge settings for layout cards, sent back so later pages match.
+    #layoutOptions = null;
+    // Remembered from the last card seen: a filter with no results leaves no card to read them
+    // from, and without them the next results come back in the default card template.
+    #templateClientId = '';
+    #templateProvider = '';
 
     applyingFilter = false;
     placeholderImage;
@@ -100,6 +107,14 @@ export default class Paginator {
             this.#hideExcerpt = true;
             container.removeAttribute('data-hide-excerpt');
         }
+        this.#cardLayout = container.getAttribute('data-card-layout') || '';
+        container.removeAttribute('data-card-layout');
+        try {
+            this.#layoutOptions = JSON.parse(container.getAttribute('data-layout-options') || 'null');
+        } catch (e) {
+            this.#layoutOptions = null;
+        }
+        container.removeAttribute('data-layout-options');
 
         this.bindFilter();
         this.handleDefaultFilters();
@@ -246,14 +261,14 @@ export default class Paginator {
 
             const firstElement = this.container.querySelector("[data-fct-product-card]");
             if (firstElement) {
-                const clientId = firstElement.getAttribute('data-fluent-client-id');
-                const templateProvider = firstElement.getAttribute('data-template-provider');
-                if (clientId) {
-                    query.client_id = clientId;
-                }
-                if (templateProvider) {
-                    query.template_provider = templateProvider;
-                }
+                this.#templateClientId = firstElement.getAttribute('data-fluent-client-id') || this.#templateClientId;
+                this.#templateProvider = firstElement.getAttribute('data-template-provider') || this.#templateProvider;
+            }
+            if (this.#templateClientId) {
+                query.client_id = this.#templateClientId;
+            }
+            if (this.#templateProvider) {
+                query.template_provider = this.#templateProvider;
             }
 
             if (this.#allowOutOfStock) {
@@ -275,6 +290,12 @@ export default class Paginator {
             }
             if (this.#hideExcerpt) {
                 query['hide_excerpt'] = 1;
+            }
+            if (this.#cardLayout) {
+                query['card_layout'] = this.#cardLayout;
+                if (this.#layoutOptions && typeof this.#layoutOptions === 'object') {
+                    query['layout_options'] = this.#layoutOptions;
+                }
             }
 
 
@@ -377,7 +398,9 @@ export default class Paginator {
 
         // check if 'fct-empty-el' class found in views
         const hasNoResult = views.includes('fluent-cart-shop-no-result-found');
-        this.productList.classList.toggle('product-list-empty', hasNoResult);
+        // Hiding the list would also hide a message that already sits inside it.
+        const messageInList = noResultElement && this.productList.contains(noResultElement);
+        this.productList.classList.toggle('product-list-empty', hasNoResult && !messageInList);
 
         if (hasNoResult) {
             if (noResultElement) {

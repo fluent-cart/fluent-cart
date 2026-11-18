@@ -43,7 +43,6 @@
 
 <script setup>
 import {ref, onMounted, watch, nextTick, getCurrentInstance, useTemplateRef} from 'vue';
-import {defineProps} from 'vue';
 import {useRouter} from "vue-router";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import NavigableList from "@/Bits/Components/NavigableList.vue";

@@ -11,16 +11,16 @@
         <div v-if="settings.hide_on_valid && integration.status" class="integration_success_state">
             <p v-html="settings.discard_settings.section_description"></p>
             <div>
-                <el-button @click="disconnect(settings.discard_settings.data)" type="danger" plain>
+                <fct-button @click="disconnect(settings.discard_settings.data)" type="danger" plain>
                     {{ settings.discard_settings.disconnect_button_text }}
-                </el-button>
-                <el-button v-if="settings.discard_settings.show_verify" @click="save()" type="primary">
+                </fct-button>
+                <fct-button v-if="settings.discard_settings.show_verify" @click="save()" type="primary">
                   {{ settings.discard_settings.verify_button_text }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
 
-        <div v-else v-loading="loading" class="fct-integration-setting-body">
+        <div v-else-if="!error_message" v-loading="loading" class="fct-integration-setting-body">
             <div class="fct-integration-setting-body-inner">
                 <template v-if="settings.config_instruction && !integration.status">
                     <div class="integration_instraction" v-html="settings.config_instruction"></div>
@@ -31,37 +31,31 @@
                     <el-form-item v-for="(field,fieldKey) in settings.fields" :key="fieldKey">
                         <template #label>
                             {{ field.label }}
-                            <el-tooltip v-if="field.label_tips" popper-class="fct-tooltip" placement="top-start">
+                            <fct-tooltip v-if="field.label_tips" placement="top-start">
                                 <template #content>
                                     <div v-html="field.label_tips">
                                     </div>
                                 </template>
                                 <el-icon><InfoFilled /></el-icon>
-                            </el-tooltip>
+                            </fct-tooltip>
                         </template>
 
                         <template v-if="field.type == 'authenticate-button'">
-                            <el-button @click="authenticate(field.end_point, field.params)">
+                            <fct-button @click="authenticate(field.end_point, field.params)">
                                 {{field.button_text}}
-                            </el-button>
+                            </fct-button>
                         </template>
 
                         <template v-else-if="field.type == 'select'">
-                            <el-select v-model="integration[fieldKey]">
-                                <el-option
-                                    v-for="(optionName, optionValue) in field.options"
-                                    :key="optionValue"
-                                    :label="optionName"
-                                    :value="optionValue"></el-option>
-                            </el-select>
+                            <fct-select v-model="integration[fieldKey]" :options="toOptions(field.options)"/>
                         </template>
                         <template v-else-if="field.type == 'link'">
                             <a :target="field.target" :class="field.btn_class" :href="field.link">{{ field.link_text }}</a>
                             <p>{{ field.tips }}</p>
                         </template>
                         <template v-else>
-                            <el-input :placeholder="field.placeholder" :type="field.type"
-                                    v-model="integration[fieldKey]"></el-input>
+                            <fct-input :placeholder="field.placeholder" :type="field.type" :controls="false"
+                                    v-model="integration[fieldKey]"/>
                             <p v-if="field.tips">{{ field.tips }}</p>
                         </template>
                     </el-form-item>
@@ -76,9 +70,9 @@
            
 
             <div class="fct-integration-setting-body-footer" v-if="!loading">
-                <el-button type="primary" @click="save">
+                <fct-button type="primary" @click="save">
                     {{ settings.save_button_text }}
-                </el-button>
+                </fct-button>
             </div>
         </div><!-- .fct-integration-setting-body -->
 
@@ -130,6 +124,14 @@ export default {
         this.getIntegrationSettings();
     },
     methods: {
+        // Rest rejects with {data: <response body>}; wp_send_json_error nests the message one level deeper.
+        errorMessage(error) {
+            const body = (error && error.data) || {};
+            return body.message || (body.data && body.data.message) || this.$t('Something is wrong!');
+        },
+        toOptions(options) {
+            return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+        },
         save() {
             this.saving = true;
             this.$post('integration/global-settings',{
@@ -150,19 +152,16 @@ export default {
                 })
                 .catch(error => {
                     this.integration.status = false;
-                    if (error && error.data.message) {
-                        this.handleError(error.data.message);
-                    } else if (error && error.responseJSON.data.message){
-                        this.handleerror(error.responseJSON.data.message);
-                    }
+                    this.handleError(this.errorMessage(error));
                 })
-                // .always(() => {
-                //     this.saving = false;
-                // });
+                .finally(() => {
+                    this.saving = false;
+                });
 
         },
         getIntegrationSettings() {
             this.loading = true;
+            this.error_message = '';
             this.$get('integration/global-settings', {
                 settings_key: this.settings_key
             })
@@ -172,11 +171,11 @@ export default {
                     this.settings = response.data.settings;
                 })
                 .catch(error => {
-                    this.error_message = error.responseJSON.data.message;
+                    this.error_message = this.errorMessage(error);
                 })
-                // .always(() => {
-                //     this.loading = false;
-                // });
+                .finally(() => {
+                    this.loading = false;
+                });
         },
         disconnect(data) {
             this.integration = data;
@@ -197,11 +196,11 @@ export default {
                 }
             })
             .catch(error => {
-                this.handleError(error.responseJSON.data.message);
+                this.handleError(this.errorMessage(error));
             })
-            // .always(() => {
-            //     this.loading = false;
-            // });
+            .finally(() => {
+                this.loading = false;
+            });
         },
     }
 }

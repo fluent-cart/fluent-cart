@@ -36,7 +36,7 @@
         @apply flex items-start gap-2.5 p-4 cursor-pointer relative;
 
         &:focus-visible {
-            @apply outline-2 outline-offset-2 outline-primary-500;
+            @apply [outline-width:2px] outline-offset-2 outline-primary-500;
         }
     }
     .fct-appearance-source-card__text {
@@ -151,7 +151,7 @@
 /* Every colour below is a preview variable, so the mock repaints as soon as
    the palette changes. Never style these with admin theme colours. */
 .fct-preview-card {
-    @apply w-full p-4 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    @apply w-full p-4 rounded shadow-xs border border-solid border-gray-divider dark:border-dark-400;
     background: var(--fct-pv-surface, #ffffff);
     // Radius variables mirror the storefront tokens; undeclared, the mock
     // keeps its own rounding.
@@ -243,7 +243,7 @@
 }
 
 .fct-preview-cart {
-    @apply w-full p-5 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    @apply w-full p-5 rounded shadow-xs border border-solid border-gray-divider dark:border-dark-400;
     background: var(--fct-pv-surface, #ffffff);
 
     &__title {
@@ -310,7 +310,7 @@
 }
 
 .fct-preview-form {
-    @apply w-full p-5 rounded shadow-sm border border-solid border-gray-divider dark:border-dark-400;
+    @apply w-full p-5 rounded shadow-xs border border-solid border-gray-divider dark:border-dark-400;
     background: var(--fct-pv-surface, #ffffff);
 
     &__title {

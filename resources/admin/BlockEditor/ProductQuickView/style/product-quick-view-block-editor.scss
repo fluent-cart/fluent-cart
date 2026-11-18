@@ -1,0 +1,235 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../ProductCard/style/product-card-block-editor.config.mjs";
+// Quick View block. product-quick-view.js moves the trigger beside the buy button
+// (.fct-card-buy-row) or onto the image (.fct-card-media); until then it sits where it was placed.
+// The attribute selector outranks the palette's `.fct-product-card button` fill.
+.fct-card-quick-view-button,
+.fct-card-quick-view button.fct-card-quick-view-button[type="button"] {
+  @apply inline-flex items-center justify-center gap-1.5 cursor-pointer text-[13px] font-medium leading-none;
+  white-space: nowrap;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
+
+  &.is-icon {
+    padding: 0;
+  }
+
+  &:focus-visible {
+    outline-offset: 2px;
+  }
+}
+
+// Colours only while FluentCart prints them: with fluent-cart-no-colors the theme styles
+// the button, like the card's own buttons.
+body:not(.fluent-cart-no-colors) {
+  .fct-card-quick-view-button,
+  .fct-card-quick-view button.fct-card-quick-view-button[type="button"] {
+    // The palette's outlined-button pair, which it keeps readable on dark themes too.
+    background: var(--fct-secondary-btn-bg-color, #fff);
+    color: var(--fct-secondary-btn-text-color, var(--fct-card-primary-text-color, #2F3448));
+    box-shadow: inset 0 0 0 1px var(--fct-secondary-btn-border-color, var(--fct-card-border-color, #D6DAE1));
+
+    // Restated colours: the palette's `.fct-product-card button:hover` would fill it dark.
+    &:hover,
+    &:focus-visible {
+      background: var(--fct-secondary-btn-hover-bg-color, #fff);
+      color: var(--fct-secondary-btn-text-color, var(--fct-card-primary-text-color, #2F3448));
+      box-shadow: inset 0 0 0 1px var(--fct-secondary-btn-text-color, var(--fct-card-primary-text-color, #2F3448));
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--fct-secondary-btn-text-color, var(--fct-card-primary-text-color, #2F3448));
+    }
+  }
+
+  .fct-card-media > .fct-card-quick-view button.fct-card-quick-view-button[type="button"] {
+    background: var(--fct-secondary-btn-bg-color, rgb(255 255 255 / 92%));
+    box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+
+    &:hover,
+    &:focus-visible {
+      background: var(--fct-secondary-btn-hover-bg-color, #fff);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 18%);
+    }
+  }
+}
+
+.fct-card-buy-row {
+  @apply flex items-stretch gap-2 mt-auto;
+
+  > :first-child {
+    @apply flex-1 mt-0;
+  }
+
+  > .fct-card-quick-view {
+    @apply m-0 shrink-0;
+  }
+}
+
+// Where on the picture, by its Position setting: a corner or the middle of the top or bottom edge.
+@mixin quick-view-image-positions($inset) {
+  left: 50%;
+  bottom: $inset;
+  transform: translateX(-50%);
+
+  &[data-image-position^="top-"] {
+    top: $inset;
+    bottom: auto;
+  }
+
+  &[data-image-position$="-left"] {
+    left: $inset;
+    right: auto;
+    transform: none;
+  }
+
+  &[data-image-position$="-right"] {
+    left: auto;
+    right: $inset;
+    transform: none;
+  }
+}
+
+.fct-card-media {
+  @apply relative;
+
+  > .fct-card-quick-view {
+    @apply absolute m-0;
+    @include quick-view-image-positions(12px);
+
+    button.fct-card-quick-view-button[type="button"] {
+      height: 36px;
+      border-radius: 18px;
+    }
+  }
+}
+
+// On hover: hidden until the card is hovered or something inside it has focus.
+// Touch screens have no hover, so they always show it.
+@media (hover: hover) {
+  .fct-card-quick-view[data-show="hover"] {
+    opacity: 0;
+    transition: opacity .15s ease;
+  }
+
+  :is(.fct-product-card, [data-fct-product-card]):is(:hover, :focus-within) .fct-card-quick-view[data-show="hover"] {
+    opacity: 1;
+  }
+}
+
+// Editor canvas only: the block's look in the place its Position setting names.
+.fct-card-quick-view.is-preview-image .fct-card-quick-view-button {
+  height: 36px;
+  border-radius: 18px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+.fct-card-quick-view.is-preview-hover .fct-card-quick-view-button {
+  opacity: 0.55;
+}
+
+// Editor canvas: show the block where the storefront puts it. On the image it sits in the image
+// block's overlay; beside the button, CSS anchor positioning pins it, or a fixed corner without it.
+:is(.fct-product-block-editor-product-card, .fct-related-product-card) {
+  position: relative;
+
+  [data-type="fluent-cart/shopapp-product-buttons"] {
+    anchor-name: --fct-card-buy-button;
+  }
+
+  // Room for the 44px icon and its 8px gap; the button block is full width by default.
+  &:has(.fct-card-quick-view.is-preview-button) [data-type="fluent-cart/shopapp-product-buttons"] {
+    width: calc(100% - 52px);
+  }
+
+  .fct-card-quick-view.is-preview {
+    position: absolute;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .fct-card-quick-view.is-preview-button {
+    right: 8px;
+    bottom: 8px;
+  }
+
+  // Gutenberg's inner block list is position:relative and only as tall as the badges; it gives way so the
+  // preview is placed from the image block's overlay, the picture's own box.
+  .block-editor-block-list__layout:has(> .fct-card-quick-view.is-preview-image) {
+    position: static;
+  }
+
+  // In the image block's overlay, so it is placed on the picture itself.
+  .fct-card-quick-view.is-preview-image {
+    top: auto;
+    @include quick-view-image-positions(12px);
+  }
+}
+
+@supports (position-anchor: --fct-card-buy-button) and (anchor-scope: all) {
+  :is(.fct-product-block-editor-product-card, .fct-related-product-card) {
+    anchor-scope: all;
+
+    .fct-card-quick-view.is-preview-button {
+      position-anchor: --fct-card-buy-button;
+      top: anchor(top);
+      bottom: auto;
+      left: calc(anchor(right) + 8px);
+      right: auto;
+    }
+
+  }
+}
+
+// Shop list view: the photo is a small thumbnail and the list's own button rules would turn
+// the pill into a full-width bar, so it shrinks to a round icon at its place on the thumbnail.
+// The selector outranks `.mode-list .fct-products-container .fct-product-card button`.
+.fct-products-wrapper-inner.mode-list {
+  .fct-card-media > .fct-card-quick-view {
+    @include quick-view-image-positions(8px);
+  }
+
+  .fct-card-media > .fct-card-quick-view button.fct-card-quick-view-button[type="button"] {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 50%;
+
+    .fct-card-quick-view-text {
+      display: none;
+    }
+  }
+
+  // The list layout gives the card's button a "button" cell; the row holding it and the eye takes it instead.
+  .fct-product-card > .fct-card-buy-row {
+    grid-area: button;
+    justify-self: start;
+    margin-top: 0;
+  }
+
+  .fct-card-buy-row .fct-card-quick-view button.fct-card-quick-view-button.is-icon[type="button"] {
+    width: 44px;
+    min-width: 44px;
+    max-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+}
+
+// Inspector note beside the button, where it has no settings.
+.fct-card-quick-view-note {
+  @apply m-0 text-xs;
+  color: #565865;
+}
+
+// Editor canvas only: the note on a simple product's card.
+.fct-card-quick-view > .fct-card-swatch-empty {
+  @apply text-xs italic;
+  color: var(--fct-card-text-color, #565865);
+}

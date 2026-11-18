@@ -12,7 +12,8 @@ if (!defined('ABSPATH')) {
 /**
  * Coupons are authored in the base currency. For a cart priced in another
  * currency, fixed amounts and spend thresholds are converted at the cart's
- * rate — on in-memory copies that can never be saved (plan §2.5.2).
+ * rate — on in-memory copies that can never be saved
+ * (dev-docs/multi-currency/05-storefront-cart-checkout.md, "The cart").
  */
 class CouponCurrency
 {

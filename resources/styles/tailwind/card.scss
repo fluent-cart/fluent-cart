@@ -175,7 +175,7 @@
 
   &-list {
     &-item {
-      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider py-5 pe-[120px] gap-2.5 grid last:border-b-0 dark:border-dark-500;
+      @apply relative border-x-0 border-t-0 border border-solid border-gray-divider py-5 pe-[120px] gap-2.5 grid first:pt-0 last:pb-0 last:border-b-0 dark:border-dark-500;
     }
 
     &-icon {
@@ -274,7 +274,7 @@
 
   .fct-customer-avatar {
     a {
-      @apply block h-10 focus:shadow-none focus:outline-none;
+      @apply block h-10 focus:shadow-none focus:outline-hidden;
     }
   }
 }
@@ -287,17 +287,17 @@
   }
 
   .view-link {
-    @apply block invisible absolute end-[16px] top-0 text-system-dark dark:text-gray-50 focus:outline-none focus:shadow-none;
+    @apply block invisible absolute end-[16px] top-0 text-system-dark dark:text-gray-50 focus:outline-hidden focus:shadow-none;
   }
 
   &:hover {
     .view-link {
-      @apply visible shadow-none ring-0 border-0;
+      @apply visible shadow-none ring-0;
     }
   }
 
   .fct-product-info-name {
-    @apply w-full relative inline-block text-sm text-system-dark focus:outline-none focus:shadow-none hover:text-primary-500 dark:text-gray-50;
+    @apply w-full relative inline-block text-sm text-system-dark focus:outline-hidden focus:shadow-none hover:text-primary-500 dark:text-gray-50;
     &:hover {
       .fct-product-info-id {
         @apply text-primary-500 dark:text-gray-300;

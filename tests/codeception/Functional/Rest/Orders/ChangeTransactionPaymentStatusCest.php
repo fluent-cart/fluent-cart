@@ -28,7 +28,7 @@ class ChangeTransactionPaymentStatusCest
      * The request status must come from Status::getEditableTransactionStatuses()
      * (pending / succeeded / authorized / failed / refunded); 'paid' is an ORDER
      * payment status, not a transaction status. A succeeded transaction must leave the
-     * order at the canonical `paid` with total_paid recomputed (TC-053 / FC-SEC-09) —
+     * order at the canonical `paid` with total_paid recomputed (TC-053) —
      * never at the transaction word `succeeded`.
      */
     public function adminCanChangeTransactionPaymentStatus(FunctionalTester $I): void

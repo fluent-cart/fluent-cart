@@ -1,4 +1,5 @@
-@config "./single-product.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./single-product.config.mjs";
 
 @import "./lightbox/lightbox.css";
 
@@ -234,7 +235,7 @@ body:not(.fluent-cart-no-colors) {
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
+    @apply [outline-width:2px] outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
   }
 
   .fct-see-more-text {
@@ -243,7 +244,7 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct-gallery-thumb-control-button {
-  @apply w-[92px] h-[92px] border border-solid border-[var(--fct-single-product-border-color)] transition-all duration-100 flex-shrink-0 hover:border-[var(--fct-single-product-border-color)] first:ms-0 overflow-hidden flex-none bg-transparent outline-none hover:bg-transparent focus:bg-transparent hover:shadow-none p-0;
+  @apply w-[92px] h-[92px] border border-solid border-[var(--fct-single-product-border-color)] transition-all duration-100 flex-shrink-0 hover:border-[var(--fct-single-product-border-color)] first:ms-0 overflow-hidden flex-none bg-transparent outline-hidden hover:bg-transparent focus:bg-transparent hover:shadow-none p-0;
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
   &.is-hidden{
     @apply hidden;
@@ -259,7 +260,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
+    @apply [outline-width:2px] outline-offset-2 outline-[var(--fct-single-product-active-border-color)];
   }
 
   &:hover {
@@ -284,7 +285,7 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct-product-tab-nav-item {
-  @apply text-sm text-[var(--fct-single-product-secondary-text-color)] font-medium cursor-pointer pb-2.5 px-1 relative transition-all duration-200 outline-none focus:outline-none;
+  @apply text-sm text-[var(--fct-single-product-secondary-text-color)] font-medium cursor-pointer pb-2.5 px-1 relative transition-all duration-200 outline-hidden focus:outline-hidden;
   &.active {
     @apply text-[var(--fct-single-product-primary-text-color)] font-semibold;
   }
@@ -602,7 +603,7 @@ body:not(.fluent-cart-no-colors) {
         }
 
         .fct-quantity-input{
-            @apply font-semibold text-[var(--fct-single-product-qty-text-color)] bg-transparent max-w-9 max-h-9 text-center p-0 m-0 border-0 outline-none shadow-none focus:shadow-none focus:outline-none focus-visible:outline-none rounded-none;
+            @apply font-semibold text-[var(--fct-single-product-qty-text-color)] bg-transparent max-w-9 max-h-9 text-center p-0 m-0 border-0 outline-hidden shadow-none focus:shadow-none focus:outline-hidden focus-visible:outline-hidden rounded-none;
             &:disabled{
                 @apply opacity-50 cursor-not-allowed;
             }
@@ -674,13 +675,13 @@ button.out-of-stock {
     @apply text-lg leading-[26px];
   }
   .fluent-cart-shop-app-single-product-modal-body {
-    @apply p-4 !important;
+    @apply p-4!;
   }
 }
 
 @media (max-width: 480px) {
   .fct-product-variants.column-type-masonry {
-    @apply grid grid-cols-1 !important;
+    @apply grid! grid-cols-1!;
   }
   .fluent-cart-single-product-page-buttons-wrap,
   .fct-product-variants.column-type-two,

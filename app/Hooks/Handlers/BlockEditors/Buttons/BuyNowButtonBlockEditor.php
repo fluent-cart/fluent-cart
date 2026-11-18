@@ -84,7 +84,7 @@ class BuyNowButtonBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
 
         $variantIds = Arr::get($shortCodeAttribute, 'variant_ids', []);
         $variantId  = Arr::get($variantIds, 0);

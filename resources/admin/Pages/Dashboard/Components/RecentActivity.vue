@@ -135,11 +135,8 @@ onMounted(() => {
           }}
         </template>
       </p>
-      <el-radio-group class="fct-dashboard-recent-activities__header_filter" v-model="selectedGroupKey" @change="getData"
-                      size="large">
-        <el-radio-button v-for="(filter, index) in selectedGroupKeys" :key="index" :label="filter.label"
-                         :value="filter.value"/>
-      </el-radio-group>
+      <fct-choice class="fct-dashboard-recent-activities__header_filter" v-model="selectedGroupKey" @change="getData"
+                  type="radio" button size="large" :options="selectedGroupKeys"/>
     </div>
 
     <div v-if="visibleActivities.length" class="fct-dashboard-recent-activities__body">

@@ -31,33 +31,24 @@
           <p class="text">{{ getAddress(address.formatted_address, '') }}</p>
 
           <div class="fct-address-action">
-            <el-dropdown trigger="click" class="fct-more-option-wrap" popper-class="fct-dropdown"
-                         @command="handleAddressCommand">
+            <fct-dropdown
+                trigger="click"
+                class="fct-more-option-wrap"
+                :items="[
+                  {command: 'edit', label: translate('Edit')},
+                  ...(address.is_primary !== '1' ? [
+                    {command: 'default', label: translate('Set as default')},
+                    {command: 'remove', label: translate('Delete'), danger: true}
+                  ] : [])
+                ]"
+                @command="(action) => handleAddressCommand({action, data: address})"
+            >
 
               <button class="more-btn" :aria-label="translate('Address options')" aria-haspopup="true"
                       aria-expanded="false">
                 <DynamicIcon name="More" aria-hidden="true"/>
               </button>
-
-              <template #dropdown>
-                <el-dropdown-menu role="menu">
-                  <el-dropdown-item :command="{ action: 'edit', data: address }" role="menuitem">
-                    {{ translate('Edit') }}
-                  </el-dropdown-item>
-
-                  <template v-if="address.is_primary !== '1'">
-                    <el-dropdown-item :command="{ action: 'default', data: address }" role="menuitem">
-                      {{ translate('Set as default') }}
-                    </el-dropdown-item>
-
-                    <el-dropdown-item :command="{ action: 'remove', data: address }" class="item-destructive"
-                                      role="menuitem">
-                      {{ translate('Delete') }}
-                    </el-dropdown-item>
-                  </template>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            </fct-dropdown>
           </div>
         </li>
       </ul>

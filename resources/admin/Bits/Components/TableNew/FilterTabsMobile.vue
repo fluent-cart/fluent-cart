@@ -1,45 +1,24 @@
 <template>
   <div class="fct-filter-tabs-mobile">
-    <el-select
+    <fct-select
         v-model="selectedTab"
         @change="(viewKey) => {
           onChange(viewKey)
         }"
         popper-class="fct-fluid-tab-select"
         size="small"
+        :options="[
+          ...Object.entries(table.getTabs() || {}).map(([viewKey, viewLabel]) => ({label: viewLabel.title || viewLabel, value: viewKey, viewLabel})),
+          ...table.getSavedViews().map((view) => ({label: view.name, value: view.slug, view}))
+        ]"
     >
-      <el-option
-          v-for="(viewLabel, viewKey) in (table.getTabs() || {})"
-          :key="viewKey"
-          :label="viewLabel.title || viewLabel"
-          :value="viewKey"
-      >
-        <template v-if="typeof viewLabel == 'object'">
-          <div>
-            <div class="select-label">
-              {{ viewLabel.title }}
-            </div>
-            <div class="select-desc">{{ viewLabel.description }}</div>
-          </div>
-        </template>
-        <template v-else>
-          {{viewLabel}}
-        </template>
-      </el-option>
-
-      <!-- Saved Views -->
-      <el-option
-          v-for="view in table.getSavedViews()"
-          :key="view.slug"
-          :label="view.name"
-          :value="view.slug"
-      >
-        <div class="flex items-center justify-between w-full">
-          <span class="text-sm text-system-dark dark:text-gray-50">{{ view.name }}</span>
+      <template #option="{option}">
+        <div v-if="option.view" class="flex items-center justify-between w-full">
+          <span class="text-sm text-system-dark dark:text-gray-50">{{ option.view.name }}</span>
           <span
-              v-if="table.isProActive() && table.isViewOwner(view)"
+              v-if="table.isProActive() && table.isViewOwner(option.view)"
               style="display:inline-flex;align-items:center;cursor:pointer;padding:2px;"
-              @click.stop="confirmDeleteView(view.slug)"
+              @click.stop="confirmDeleteView(option.view.slug)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -49,8 +28,17 @@
             </svg>
           </span>
         </div>
-      </el-option>
-    </el-select>
+        <div v-else-if="typeof option.viewLabel == 'object'">
+          <div class="select-label">
+            {{ option.viewLabel.title }}
+          </div>
+          <div class="select-desc">{{ option.viewLabel.description }}</div>
+        </div>
+        <template v-else>
+          {{ option.viewLabel }}
+        </template>
+      </template>
+    </fct-select>
   </div>
 </template>
 

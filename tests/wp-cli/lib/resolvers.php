@@ -2,9 +2,9 @@
 /**
  * Read-only smoke fixture resolvers.
  *
- * Phase 1 never creates data. Each resolver selects an existing record and
- * returns placeholder values for the route manifest. A missing record causes
- * the owning case to be reported as a documented runtime skip.
+ * Each resolver selects an existing record and returns placeholder values for
+ * the route manifest. FcSmokeFixture supplies its own records first for the
+ * needs it builds, and a case whose need resolves to nothing fails.
  */
 
 $resolveCustomerContext = static function () {

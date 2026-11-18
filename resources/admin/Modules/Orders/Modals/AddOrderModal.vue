@@ -1,22 +1,22 @@
 <template>
-    <el-dialog v-model="showModal" :title="$t('Add new order')" width="30%" class="add-order-popover">
-        <el-form label-position='top' :data="order">
-            <el-form-item :label="$t('Order Status')">
-                <el-radio-group v-model="order.status">
-                    <el-radio value="draft">{{$t('Draft')}}</el-radio>
-                    <el-radio value="publish">{{$t('Publish')}}</el-radio>
-                </el-radio-group>
-            </el-form-item>
-        </el-form>
+    <fct-dialog v-model="showModal" :title="$t('Add new order')" width="30%" class="add-order-popover">
+        <div>
+            <fct-choice
+                type="radio"
+                v-model="order.status"
+                :label="$t('Order Status')"
+                :options="[{value: 'draft', label: $t('Draft')}, {value: 'publish', label: $t('Publish')}]"
+            />
+        </div>
         <div class="dialog-footer">
-            <el-button
+            <fct-button
                 v-loading="creating_order"
                 @click="createOrder()"
                 type="primary">
                 {{$t('Create Order')}}
-            </el-button>
+            </fct-button>
         </div>
-    </el-dialog>
+    </fct-dialog>
 </template>
 
 <script type="text/babel">

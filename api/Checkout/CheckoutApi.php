@@ -96,8 +96,8 @@ class CheckoutApi
             ]);
         }
 
-        // The currency and rate the page was priced at (multi-currency plan
-        // §9.1), checked on the cart as submitted: coupon revalidation, tax,
+        // The currency and rate the page was priced at (dev-docs/multi-currency/
+        // 05-storefront-cart-checkout.md), checked on the cart as submitted: coupon revalidation, tax,
         // shipping and fee hooks below save the cart, and a save re-prices an
         // expired lock — which would accept a rate the shopper never saw.
         // Accepted, the lock is held for the rest of this checkout.
@@ -110,6 +110,15 @@ class CheckoutApi
         CartCurrency::holdForCheckout($cart);
 
         $cart = $cart->reValidateCoupons();
+
+        // Never charge a price the shopper did not see: re-price and let them review.
+        // Same refusal as a changed rate, so the reloaded page shows the notice.
+        if ($cart->refreshStalePrices()) {
+            static::refuseForCurrency($cart, new \WP_Error(
+                'prices_changed',
+                __('Some prices in your cart have changed. Please review your order and place it again.', 'fluent-cart')
+            ));
+        }
 
         $cartData = $cart->cart_data;
 
@@ -1261,8 +1270,9 @@ class CheckoutApi
             Arr::get($data, $prefix . 'country', ''),
             Arr::get($data, $prefix . 'state', ''),
             [
-                'postcode' => (string) Arr::get($data, $prefix . 'postcode', ''),
-                'city'     => (string) Arr::get($data, $prefix . 'city', ''),
+                'postcode'  => (string) Arr::get($data, $prefix . 'postcode', ''),
+                'city'      => (string) Arr::get($data, $prefix . 'city', ''),
+                'form_data' => $data,
             ] + AddressHelper::quoteContact($data),
         ];
     }

@@ -2,7 +2,7 @@
     &-wrap{
         @apply flex items-center gap-2 justify-between;
     }
-    @apply grid basis-[70%] grid-cols-3 gap-5 list-none p-0 m-0 #{!important};
+    @apply grid! basis-[70%]! grid-cols-3! gap-5! list-none! p-0! m-0!;
     .title{
         @apply text-sm leading-[20px] mb-1 text-[var(--fct-customer-dashboard-text-color,#565865)] font-medium;
     }
@@ -45,6 +45,6 @@
 
 .fct-more-option-wrap{
     .more-btn{
-        @apply border-0 flex items-center justify-center p-0 bg-transparent text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-none dark:text-gray-200;
+        @apply border-0 flex items-center justify-center p-0 bg-transparent text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] w-5 h-5 leading-[20px] text-center cursor-pointer focus:outline-hidden dark:text-gray-200;
     }
 }

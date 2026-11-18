@@ -1,6 +1,6 @@
 <template>
   <div class="fct-popover-box">
-    <el-popover
+    <fct-popover
         placement="bottom-start"
         :width="280"
         trigger="click"
@@ -42,13 +42,12 @@
           </li>
         </ul>
 
-        <el-button
+        <fct-button
             size="small"
-            tag="router-link"
             :to="{ name: 'view_customer', params: { customer_id: customer?.id } }"
         >
           {{ $t('View Customer') }}
-        </el-button>
+        </fct-button>
       </div>
 
       <template #reference>
@@ -61,7 +60,7 @@
           </div>
         </div>
       </template>
-    </el-popover>
+    </fct-popover>
 
     <RouteCell
         class="hover:no-underline"

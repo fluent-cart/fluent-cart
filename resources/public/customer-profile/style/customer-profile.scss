@@ -21,20 +21,23 @@
 @use "./scss/license.scss";
 @use "./scss/copy.scss";
 @use "./scss/form.scss";
+@use "./scss/field.scss";
 @use "./scss/file-upload.scss";
 @use "./scss/icon-button.scss";
 @use "./scss/copy-to-clipboard.scss";
 @use "./scss/address";
 @use "./scss/order";
 @use "./scss/portal-sections";
+@use "./scss/update-payment";
 @use "./scss/responsive";
+@import "tailwindcss/theme.css" theme(reference inline);
 
 .fluent-cart-customer-profile-app {
   @include meta.load-css("./element-plus/button.scss");
 }
 
 
-@config "./customer-profile.config.js";
+@config "./customer-profile.config.mjs";
 
 /* Element Plus paints the portal's tables, fields, dialogs, poppers and pager
    from its own globals. While FluentCart prints colours they read the palette;
@@ -108,7 +111,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
 
 
 div[data-fluent-cart-customer-profile-app] {
-  @apply max-w-full antialiased @container/customer-profile-page #{!important};
+  @apply max-w-full! antialiased! @container/customer-profile-page!;
 }
 
 .el-input + .fluent-cart-admin-validation-error-wrapper {
@@ -120,6 +123,14 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 /*====== customer profile ======*/
+.fluent-cart-customer-profile-app .el-button {
+  @apply shadow-none;
+}
+
+.fluent-cart-customer-profile-app .el-tabs {
+  --el-color-primary: var(--fct-customer-dashboard-btn-bg-color, #253241);
+}
+
 .fct-btn-group {
   @apply flex items-center gap-2;
   .el-button {
@@ -134,14 +145,14 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   table {
-    @apply m-0 border-0 w-full text-start table-fixed border-collapse #{!important};
+    @apply m-0! border-0! w-full! text-start! table-fixed! border-collapse!;
   }
 }
 
 .fct-customer-single-download-table {
   thead {
     th {
-      @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] text-sm font-semibold py-3 px-3 #{!important};
+      @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)]! text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! text-sm! font-semibold! py-3! px-3!;
     }
   }
 
@@ -157,19 +168,19 @@ div[data-fluent-cart-customer-profile-app] {
     }
 
     td {
-      @apply text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-normal p-0 border-0 #{!important};
+      @apply text-sm! text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! font-normal! p-0! border-0!;
       &:first-child {
-        @apply ps-5 #{!important};
+        @apply ps-5!;
       }
     }
   }
 
   a {
-    @apply outline-none no-underline;
+    @apply outline-hidden no-underline;
   }
 
   .link {
-    @apply text-sm font-medium no-underline text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] hover:underline #{!important};
+    @apply text-sm! font-medium! no-underline! text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! hover:underline!;
   }
 
   .variation-title {
@@ -179,7 +190,7 @@ div[data-fluent-cart-customer-profile-app] {
   table {
     tr {
       th {
-        @apply border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] #{!important};
+        @apply border! border-solid! border-x-0! border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)]!;
         &:first-child {
           @apply rounded-none;
         }
@@ -192,16 +203,16 @@ div[data-fluent-cart-customer-profile-app] {
 
     tbody {
       td {
-        @apply py-2.5 px-3 border border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] border-t-0 border-l-0 border-r-0 #{!important};
+        @apply py-2.5! px-3! border! border-solid! border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)]! border-t-0! border-l-0! border-r-0!;
         &:last-child {
-          @apply pe-5 #{!important};
+          @apply pe-5!;
         }
       }
 
       tr {
         &:last-child {
           td {
-            @apply border-b-0 #{!important};
+            @apply border-b-0!;
           }
         }
       }
@@ -234,7 +245,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center cursor-pointer text-[13px] no-underline text-gray-50 leading-none bg-success-500 font-semibold transition duration-100 hover:bg-success-600 #{!important};
+    @apply inline-flex! items-center! justify-center! cursor-pointer! text-[13px]! no-underline! text-gray-50! leading-none! bg-success-500! font-semibold! transition! duration-100! hover:bg-success-600!;
     padding-top: var(--fct-btn-padding-y, theme('spacing.2')) !important;
     padding-bottom: var(--fct-btn-padding-y, theme('spacing.2')) !important;
     padding-left: var(--fct-btn-padding-x, theme('spacing.3')) !important;
@@ -243,7 +254,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .btn-close {
-    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] absolute -top-3.5 end-[-10px] w-7 h-7 bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] shadow rounded-full flex items-center justify-center cursor-pointer transition duration-100 hover:bg-red-500 hover:text-white;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] absolute -top-3.5 end-[-10px] w-7 h-7 bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] shadow-sm rounded-full flex items-center justify-center cursor-pointer transition duration-100 hover:bg-red-500 hover:text-white;
   }
 
   .verification-message + .btn {
@@ -278,7 +289,7 @@ div[data-fluent-cart-customer-profile-app] {
     }
 
     .is-link {
-      @apply font-medium underline text-sm text-[var(--fct-customer-dashboard-title-color,#2F3448)] focus:bg-transparent focus:shadow-none #{!important};
+      @apply font-medium! underline! text-sm! text-[var(--fct-customer-dashboard-title-color,#2F3448)]! focus:bg-transparent! focus:shadow-none!;
     }
   }
 
@@ -292,7 +303,7 @@ div[data-fluent-cart-customer-profile-app] {
 .fct-customer-orders-items {
   @apply inline-flex items-start gap-1;
   a {
-    @apply no-underline text-[var(--fct-customer-dashboard-title-color,#2F3448)] focus:outline-none hover:underline #{!important};
+    @apply no-underline! text-[var(--fct-customer-dashboard-title-color,#2F3448)]! focus:outline-hidden! hover:underline!;
   }
 
   &-title {
@@ -369,7 +380,7 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .title {
-    @apply mb-0.5 inline-block text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline hover:underline focus:shadow-none focus:outline-none;
+    @apply mb-0.5 inline-block text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline hover:underline focus:shadow-none focus:outline-hidden;
   }
 
   .variation-title {
@@ -462,11 +473,11 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   .el-table td.el-table__cell {
-    @apply py-3 !important;
+    @apply py-3!;
   }
 
   .el-table td.el-table__cell, .el-table th.el-table__cell.is-leaf {
-    @apply border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] !important;
+    @apply border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)]!;
   }
 
   .upgrade-title {
@@ -520,19 +531,20 @@ div[data-fluent-cart-customer-profile-app] {
   }
 
   img {
-    @apply w-6;
+    @apply h-5 w-auto;
   }
 }
 
+// grid-cols-1 is minmax(0, 1fr): a long address label can't widen the column past the modal
 .fct-update-payment-method-form {
-  @apply grid gap-5 pt-5;
+  @apply grid grid-cols-1 gap-5 pt-5;
   .form-heading {
     @apply text-[15px] font-semibold leading-[22px] text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] mb-3;
   }
 }
 
 .fct-update-payment-method-stripe {
-  @apply grid gap-5;
+  @apply grid grid-cols-1 gap-5;
 }
 
 
@@ -837,7 +849,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .simple-icon-btn {
-  @apply border-transparent bg-transparent transition duration-100 !important;
+  @apply border-transparent! bg-transparent! transition! duration-100!;
 }
 
 .fct-customer-dashboard-single-subscription,
@@ -869,7 +881,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .el-alert__description {
-  @apply text-system-dark !important;
+  @apply text-system-dark!;
 }
 
 .el-alert__content {
@@ -894,7 +906,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .underline-link-button {
-  @apply p-0 text-sm shadow-none font-medium leading-[24px] inline-flex items-center gap-1.5 text-[var(--fct-customer-dashboard-link-color,#253241)] underline focus:outline-none focus:shadow-none hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)] !important;
+  @apply p-0! text-sm! shadow-none! font-medium! leading-[24px]! inline-flex! items-center! gap-1.5! text-[var(--fct-customer-dashboard-link-color,#253241)]! underline! focus:outline-hidden! focus:shadow-none! hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)]!;
   .icon {
     @apply w-4 h-4;
   }
@@ -904,7 +916,7 @@ div[data-fluent-cart-customer-profile-app] {
 }
 
 .el-button.is-text.underline-link-button {
-  @apply p-0 m-0 underline text-sm shadow-none hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)] !important;
+  @apply p-0! m-0! underline! text-sm! shadow-none! hover:bg-transparent! hover:text-[var(--fct-customer-dashboard-link-hover-color,#5A5F66)]!;
 }
 
 .invoice-id-date {

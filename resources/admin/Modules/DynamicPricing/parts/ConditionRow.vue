@@ -90,18 +90,12 @@ const isCurrency = computed(() => selectedAttribute.value?.input_type === 'curre
         </td>
 
         <td class="fct-conditions-operator w-[190px]">
-            <el-select
+            <fct-select
                 v-model="condition.operator"
                 size="small"
                 :placeholder="translate('Select a condition')"
-            >
-                <el-option
-                    v-for="(label, operator) in operatorOptions"
-                    :key="operator"
-                    :value="operator"
-                    :label="label"
-                />
-            </el-select>
+                :options="Object.entries(operatorOptions || {}).map(([value, label]) => ({value, label}))"
+            />
         </td>
 
         <td class="fct-conditions-value">
@@ -121,11 +115,12 @@ const isCurrency = computed(() => selectedAttribute.value?.input_type === 'curre
                 :placeholder="translate('Enter an amount')"
             />
 
-            <el-input
+            <fct-input
                 v-else
                 v-model="condition.value"
                 size="small"
                 :type="valueInputType"
+                :controls="false"
                 :placeholder="translate('Enter a value')"
             />
         </td>

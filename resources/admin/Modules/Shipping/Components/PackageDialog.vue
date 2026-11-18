@@ -114,11 +114,10 @@ const handleClose = () => {
 </script>
 
 <template>
-  <el-dialog
+  <fct-dialog
     :model-value="modelValue"
     @update:model-value="handleClose"
     :title="dialogTitle"
-    :aria-label="dialogTitle"
     append-to-body
     :close-on-click-modal="false"
     class="fct-package-dialog"
@@ -155,12 +154,13 @@ const handleClose = () => {
                 <div class="fct-package-label">
                     {{ translate('Length') }}
                 </div>
-                <el-input-number
+                <fct-input
                     v-model="form.length"
-                    :min="0"
+                    type="number"
                     :precision="2"
-                    :step="0.5"
                     :controls="false"
+                    :min="0"
+                    :step="0.5"
                     :placeholder="'0'"
                     size="default"
                     class="w-full"
@@ -170,12 +170,13 @@ const handleClose = () => {
                 <div class="fct-package-label">
                     {{ translate('Width') }}
                 </div>
-                <el-input-number
+                <fct-input
                     v-model="form.width"
-                    :min="0"
+                    type="number"
                     :precision="2"
-                    :step="0.5"
                     :controls="false"
+                    :min="0"
+                    :step="0.5"
                     :placeholder="'0'"
                     size="default"
                     class="w-full"
@@ -185,12 +186,13 @@ const handleClose = () => {
                 <div class="fct-package-label" :class="{'text-gray-300': isHeightDisabled}">
                     {{ translate('Height') }}
                 </div>
-                <el-input-number
+                <fct-input
                     v-model="form.height"
-                    :min="0"
+                    type="number"
                     :precision="2"
-                    :step="0.5"
                     :controls="false"
+                    :min="0"
+                    :step="0.5"
                     :disabled="isHeightDisabled"
                     :placeholder="isHeightDisabled ? '' : '0'"
                     size="default"
@@ -200,9 +202,7 @@ const handleClose = () => {
             <div class="fct-package-unit-field">
                 <div class="fct-package-label">&nbsp;</div>
 
-                <el-select v-model="form.dimension_unit" size="default" class="w-full">
-                <el-option v-for="u in dimensionUnits" :key="u.value" :label="u.label" :value="u.value" />
-                </el-select>
+                <fct-select v-model="form.dimension_unit" :options="dimensionUnits" size="default" class="w-full"/>
             </div>
         </div>
 
@@ -212,11 +212,10 @@ const handleClose = () => {
             </div>
 
             <div class="fct-package-weight-input">
-                <el-input
+                <fct-input
                     v-model="form.weight"
                     type="number"
                     :min="0"
-                    :precision="4"
                     :step="0.1"
                     :controls="false"
                     :placeholder="'0'"
@@ -224,21 +223,20 @@ const handleClose = () => {
                     class="fct-product-weight-number"
                 >
                     <template #append>
-                        <el-select v-model="form.weight_unit" size="default" class="fct-product-weight-unit">
-                            <el-option v-for="u in weightUnits" :key="u.value" :label="u.label" :value="u.value" />
-                        </el-select>
+                        <fct-select v-model="form.weight_unit" :options="weightUnits" size="default" class="fct-product-weight-unit"/>
                     </template>
-                </el-input>
+                </fct-input>
             </div>
 
             <div class="fct-package-max-weight-field">
                 <label class="fct-package-label" for="fct-package-max-weight">
                     {{ translate('Max weight (contents)') }}
                 </label>
-                <el-input
+                <fct-input
                     id="fct-package-max-weight"
                     v-model="form.max_weight"
                     type="number"
+                    :controls="false"
                     :min="0"
                     :step="0.1"
                     placeholder="0"
@@ -246,7 +244,7 @@ const handleClose = () => {
                     aria-describedby="fct-package-max-weight-hint"
                 >
                     <template #append>{{ form.weight_unit }}</template>
-                </el-input>
+                </fct-input>
                 <div id="fct-package-max-weight-hint" class="fct-package-max-weight-hint">
                     {{ translate('Contents only. 0 = no limit.') }}
                 </div>
@@ -260,14 +258,14 @@ const handleClose = () => {
             {{ translate('Package name') }}
         </div>
 
-        <el-input v-model="form.name" :placeholder="translate('e.g. Medium box')" size="default" />
+        <fct-input v-model="form.name" :placeholder="translate('e.g. Medium box')" size="default" />
       </div>
 
       <!-- Default checkbox -->
       <div class="fct-package-default-check">
-        <el-checkbox v-model="form.is_default">
+        <fct-choice v-model="form.is_default">
           {{ translate('Use as default package') }}
-        </el-checkbox>
+        </fct-choice>
         <div class="fct-package-default-check-desc">
           {{ translate('Ship_Calculate_Rates') }}
         </div>
@@ -276,11 +274,11 @@ const handleClose = () => {
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleClose">{{ translate('Cancel') }}</el-button>
-        <el-button type="primary" @click="handleSave" :disabled="!canSave || saving" :loading="saving">
+        <fct-button @click="handleClose">{{ translate('Cancel') }}</fct-button>
+        <fct-button type="primary" @click="handleSave" :disabled="!canSave || saving" :loading="saving">
           {{ saveButtonText }}
-        </el-button>
+        </fct-button>
       </span>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>

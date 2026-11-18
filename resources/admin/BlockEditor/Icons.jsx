@@ -1,4 +1,5 @@
 import {REVIEW_STAR_PATH} from "@/Bits/Components/Icons/reviewStar";
+import {QUICK_VIEW_PATH, QUICK_VIEW_CIRCLE} from "@/Bits/Components/Icons/quickView";
 export const Cart = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none">
         <path fillRule="evenodd" clipRule="evenodd"
@@ -410,6 +411,17 @@ export const SoldOutBadge = () => {
     </svg>
 }
 
+export const Swatches = () => {
+    // A swatch row as it looks on a card: the selected colour ringed, then two more.
+    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
+        {/* Inline fill: the editor's icon CSS fills every shape, which would turn the ring solid. */}
+        <circle cx="5" cy="12" r="4" stroke="currentColor" strokeWidth="1.25" style={{fill: 'none'}}/>
+        <circle cx="5" cy="12" r="2.25" fill="currentColor"/>
+        <circle cx="13" cy="12" r="2.5" fill="currentColor"/>
+        <circle cx="20" cy="12" r="2.5" fill="currentColor"/>
+    </svg>
+}
+
 export const Layout = () => {
     return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 21C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4ZM8 10H5V19H8V10ZM19 10H10V19H19V10ZM19 5H5V8H19V5Z"></path></svg>
 }
@@ -627,3 +639,12 @@ const ReviewPagerChevron = ({d}) => (
 
 export const ReviewPagerPrevious = () => <ReviewPagerChevron d="m15 18-6-6 6-6"/>;
 export const ReviewPagerNext = () => <ReviewPagerChevron d="m9 18 6-6-6-6"/>;
+
+// Shapes from app/Views/icons/quick-view.svg, the file the storefront renders.
+export const QuickView = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+         aria-hidden="true" focusable="false">
+        <path d={QUICK_VIEW_PATH} style={{fill: 'none'}}/>
+        <circle {...QUICK_VIEW_CIRCLE} style={{fill: 'none'}}/>
+    </svg>
+);

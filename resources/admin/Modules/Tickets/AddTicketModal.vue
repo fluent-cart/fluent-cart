@@ -36,15 +36,15 @@ const saveTicket = () => {
 </script>
 
 <template>
-  <el-button @click="showModal = true">{{ $t('New Ticket') }}</el-button>
+  <fct-button @click="showModal = true">{{ $t('New Ticket') }}</fct-button>
 
-  <el-dialog v-model="showModal" @closed="reset">
-    <el-input v-model="form.title"/>
-    <el-input type="textarea" v-model="form.content"></el-input>
-    <el-button @click="()=>{saveTicket()}">
+  <fct-dialog v-model="showModal" @closed="reset">
+    <fct-input v-model="form.title"/>
+    <fct-input type="textarea" v-model="form.content"/>
+    <fct-button @click="()=>{saveTicket()}">
       Save
-    </el-button>
-  </el-dialog>
+    </fct-button>
+  </fct-dialog>
 
 </template>
 

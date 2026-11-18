@@ -278,8 +278,8 @@ if (class_exists($elementorClass)) {
     }
 }
 
+// A pass prints nothing, so anything this process writes is an unexpected diagnostic.
 if (!$mismatches) {
-    echo "review-layout-preset-contract: OK\n";
     exit(0);
 }
 

@@ -31,8 +31,8 @@ class SubscriptionTools
 
         return [
             'fluent-cart/list-subscriptions' => [
-                'label'       => __('List Subscriptions', 'fluent-cart'),
-                'description' => __('Find and filter subscriptions. Compact rows carry customer, plan, status, recurring_total, interval, next/created/canceled dates, and installment fields: is_installment, installments_paid, installments_remaining, total_contract_value = recurring_total x bill_times (the full committed price). Use plan_type to split fixed-term installment/split-pay from open-ended recurring plans; next_billing_before for upcoming renewals; created_*/canceled_* ranges for cohorts and churn — a completed installment is paid-in-full, not churn. summary_only=true returns just the aggregates (count by status, committed recurring total, remaining installments). min_recurring is in store currency, not cents. For conditions these flat filters cannot express (OR groups, vendor/transaction ids, payment method, license properties, labels) pass advanced_filters — call get-search-schema entity=subscriptions first (Pro).', 'fluent-cart'),
+                'label'       => 'List Subscriptions',
+                'description' => 'Find and filter subscriptions. Compact rows carry customer, plan, status, recurring_total, interval, next/created/canceled dates, and installment fields: is_installment, installments_paid, installments_remaining, total_contract_value = recurring_total x bill_times (the full committed price); these three are null on open-ended plans, whose payments made are in bill_count. Use plan_type to split fixed-term installment/split-pay from open-ended recurring plans; next_billing_before for upcoming renewals; created_*/canceled_* ranges for cohorts and churn — a completed installment is paid-in-full, not churn. summary_only=true returns just the aggregates (count by status, per-cycle amounts summed, remaining installments) over every status unless you filter by status. min_recurring is in store currency, not cents. For conditions these flat filters cannot express (OR groups, vendor/transaction ids, payment method, license properties, labels) pass advanced_filters — call get-search-schema entity=subscriptions first (Pro).',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -41,18 +41,18 @@ class SubscriptionTools
                         'customer_id'         => ['type' => 'integer'],
                         'product_id'          => ['type' => 'integer'],
                         'billing_interval'    => ['type' => 'string', 'enum' => $intervals],
-                        'next_billing_after'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
-                        'next_billing_before' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Use to find upcoming renewals.'],
-                        'created_after'       => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Subscriptions started on or after this date.'],
-                        'created_before'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Subscriptions started on or before this date.'],
-                        'canceled_after'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Subscriptions canceled on or after this date. Pair with status=canceled to measure churn in a window.'],
-                        'canceled_before'     => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC. Subscriptions canceled on or before this date.'],
+                        'next_billing_after'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
+                        'next_billing_before' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset. Use to find upcoming renewals.'],
+                        'created_after'       => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset. Subscriptions started on or after this date.'],
+                        'created_before'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset. Subscriptions started on or before this date.'],
+                        'canceled_after'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset. Subscriptions canceled on or after this date. Pair with status=canceled to measure churn in a window.'],
+                        'canceled_before'     => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset. Subscriptions canceled on or before this date.'],
                         'min_recurring'       => ['type' => 'number', 'description' => 'Minimum recurring total in store currency.'],
                         'advanced_filters'    => ['type' => 'array', 'items' => ['type' => ['object', 'array']], 'description' => 'Pro: condition groups {property, operator, value} — outer array = OR groups, inner = AND. Call get-search-schema entity=subscriptions FIRST for properties/operators/format. AND-combines with the other filters here (summary_only included). An empty array means no advanced filter.'],
                         'sort_by'             => ['type' => 'string', 'enum' => ['id', 'next_billing_date', 'created_at', 'canceled_at', 'recurring_total'], 'default' => 'id'],
                         'sort_type'           => ['type' => 'string', 'enum' => ['ASC', 'DESC'], 'default' => 'DESC'],
                         'fields'              => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional: return only these row keys to shrink the payload (subscription_id is always kept). Available: status, item_name, customer, recurring_total, billing_interval, next_billing_date, created_at, canceled_at, bill_count, bill_times, plan_type, is_installment, installments_paid, installments_remaining, total_contract_value, currency, label. Omit for the full row.'],
-                        'summary_only'        => ['type' => 'boolean', 'description' => 'When true, return ONLY aggregates across all matching subscriptions — count_by_status, summed recurring_total, and total remaining installments — with no per-record array. Answers "how many active subs and how much is committed" with a tiny payload. Honors all the filters above.'],
+                        'summary_only'        => ['type' => 'boolean', 'description' => 'When true, return ONLY aggregates across all matching subscriptions — count_by_status, summed recurring_total, and total remaining installments — with no per-record array. With status=active it answers "how many active subs and how much do they bill per cycle" with a tiny payload. Honors all the filters above.'],
                         'page'                => ['type' => 'integer', 'default' => 1],
                         'per_page'            => ['type' => 'integer', 'default' => 15, 'description' => 'Max 200.'],
                     ],
@@ -65,8 +65,8 @@ class SubscriptionTools
             ],
 
             'fluent-cart/get-subscription' => [
-                'label'       => __('Get Subscription', 'fluent-cart'),
-                'description' => __('Full detail for one subscription: lifecycle dates, billing schedule, signup/trial, parent order, gateway ids. Add include[] for transactions (renewal history) and labels. Identify by subscription_id.', 'fluent-cart'),
+                'label'       => 'Get Subscription',
+                'description' => 'Full detail for one subscription: dates, billing schedule, parent order and gateway ids. Dates are the lifecycle dates; signup and trial terms are included. Add include[] for transactions (renewal history) and labels. Identify by subscription_id.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -86,8 +86,8 @@ class SubscriptionTools
             ],
 
             'fluent-cart/change-subscription-status' => [
-                'label'       => __('Change Subscription Status', 'fluent-cart'),
-                'description' => __('Cancel a subscription through its gateway — destructive. Call dry_run:true first to preview and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute. Cancellation is immediate. The preview reports payment_mode and live_gateway_action; a LIVE cancellation requires operator opt-in, and test-mode always works.', 'fluent-cart'),
+                'label'       => 'Change Subscription Status',
+                'description' => 'Cancel a subscription through its gateway — destructive. Call dry_run:true first to preview and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute. Cancellation is immediate. The preview reports payment_mode and live_gateway_action; a LIVE cancellation requires operator opt-in, and test-mode always works.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -96,8 +96,8 @@ class SubscriptionTools
                         'when'            => ['type' => 'string', 'enum' => ['immediately'], 'default' => 'immediately', 'description' => 'Cancellation is immediate. Deferred (period-end) cancellation is not yet supported.'],
                         'reason'          => ['type' => 'string'],
                         'dry_run'         => ['type' => 'boolean', 'description' => 'Preview without cancelling. Returns a confirm_token. Do this first.'],
-                        'confirm_token'   => ['type' => 'string'],
-                        'idempotency_key' => ['type' => 'string'],
+                        'confirm_token'   => ['type' => 'string', 'description' => 'From a prior dry_run. Required to execute.'],
+                        'idempotency_key' => ['type' => 'string', 'description' => 'A unique string for this change. Prevents a repeat on retry.'],
                     ],
                     'required' => ['subscription_id', 'action'],
                 ],
@@ -147,6 +147,14 @@ class SubscriptionTools
         if (!empty($params['product_id'])) {
             $query->where('product_id', (int) $params['product_id']);
         }
+        $reversed = MCPHelper::reversedBoundsError((array) $params, [
+            'next_billing_after' => 'next_billing_before',
+            'created_after'      => 'created_before',
+            'canceled_after'     => 'canceled_before',
+        ]);
+        if ($reversed) {
+            return $reversed;
+        }
         $dateFilters = [
             'next_billing_after'  => ['next_billing_date', '>='],
             'next_billing_before' => ['next_billing_date', '<='],
@@ -159,7 +167,7 @@ class SubscriptionTools
             if (empty($params[$field])) {
                 continue;
             }
-            $date = self::toDbDate($params[$field]);
+            $date = MCPHelper::storeDateBound($params[$field], $spec[1] === '<=');
             if ($date === null) {
                 return self::invalidDateError($field);
             }
@@ -202,8 +210,7 @@ class SubscriptionTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: number of matching subscriptions */
-                _n('%d subscription found.', '%d subscriptions found.', $total, 'fluent-cart'),
+                $total === 1 ? '%d subscription found.' : '%d subscriptions found.',
                 $total
             ),
             ['subscriptions' => $rows],
@@ -239,19 +246,19 @@ class SubscriptionTools
         }
 
         // Remaining installments across finite (bill_times > 0) plans only.
+        // Both columns are unsigned: cast first, or MySQL errors when bill_count > bill_times.
         $remRow = (clone $query)
-            ->selectRaw('COALESCE(SUM(CASE WHEN bill_times > 0 THEN GREATEST(bill_times - bill_count, 0) ELSE 0 END), 0) as rem')
+            ->selectRaw('COALESCE(SUM(CASE WHEN bill_times > 0 THEN GREATEST(CAST(bill_times AS SIGNED) - CAST(bill_count AS SIGNED), 0) ELSE 0 END), 0) as rem')
             ->first();
         $remaining = $remRow ? (int) $remRow->rem : 0;
 
         $summary = sprintf(
-            /* translators: 1: subscription count, 2: summed recurring total */
-            __('%1$d subscriptions; committed recurring total %2$s.', 'fluent-cart'),
+            '%1$d subscriptions; their per-cycle amounts add up to %2$s.',
             $totalCount,
             MCPHelper::displayAmount($recurringSum, MCPHelper::currencyCode())
         );
 
-        $meta = ['currency' => MCPHelper::currencyCode(), 'note' => 'Aggregates across all matching subscriptions; money is in the store currency, not currency-scoped.'];
+        $meta = ['currency' => MCPHelper::currencyCode(), 'note' => 'Aggregates across all matching subscriptions in every status, canceled, expired and completed included: pass status=active for what still bills. recurring_total_sum adds one cycle of each plan; remaining_installments_total counts unpaid installments, also on plans that stopped. Money is in the store currency, not currency-scoped.'];
         if ($advWarnings) {
             $meta['warnings'] = $advWarnings;
         }
@@ -295,8 +302,9 @@ class SubscriptionTools
             // get-store-context, so the enum, the filter and the row all agree.
             'plan_type'              => $isInstallment ? 'installment' : 'recurring',
             'is_installment'         => $isInstallment,
-            'installments_paid'      => (int) $sub->bill_count,
-            'installments_remaining' => $sub->installmentsRemaining(),
+            // Null on open-ended plans: they have no installments (bill_count holds their payments)
+            'installments_paid'      => $isInstallment ? (int) $sub->bill_count : null,
+            'installments_remaining' => $isInstallment ? $sub->installmentsRemaining() : null,
             'total_contract_value'   => $isInstallment ? MCPHelper::money($sub->totalContractValue(), $currency) : null,
             'currency'               => $currency,
         ];
@@ -304,11 +312,10 @@ class SubscriptionTools
 
     private static function label($sub, $customer)
     {
-        $who = $customer ? MCPHelper::personName($customer) : __('Customer', 'fluent-cart');
+        $who = $customer ? MCPHelper::personName($customer) : 'Customer';
 
         return sprintf(
-            /* translators: 1: plan name, 2: customer name, 3: status */
-            __('%1$s for %2$s — %3$s', 'fluent-cart'),
+            '%1$s for %2$s — %3$s',
             $sub->item_name,
             $who,
             $sub->status
@@ -318,7 +325,7 @@ class SubscriptionTools
     public static function getSubscription($params = [])
     {
         if (empty($params['subscription_id'])) {
-            return MCPHelper::error('missing_identifier', __('subscription_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'subscription_id is required.');
         }
 
         $sub = Subscription::query()
@@ -327,7 +334,7 @@ class SubscriptionTools
             ->first();
 
         if (!$sub) {
-            return MCPHelper::error('subscription_not_found', __('No subscription found for the given subscription_id.', 'fluent-cart'));
+            return MCPHelper::error('subscription_not_found', 'No subscription found for the given subscription_id.');
         }
 
         $include  = isset($params['include']) ? (array) $params['include'] : [];
@@ -353,8 +360,8 @@ class SubscriptionTools
                 'collection_method' => $sub->collection_method,
                 'plan_type'              => $sub->isInstallment() ? 'installment' : 'recurring',
                 'is_installment'         => $sub->isInstallment(),
-                'installments_paid'      => (int) $sub->bill_count,
-                'installments_remaining' => $sub->installmentsRemaining(),
+                'installments_paid'      => $sub->isInstallment() ? (int) $sub->bill_count : null,
+                'installments_remaining' => $sub->isInstallment() ? $sub->installmentsRemaining() : null,
                 'total_contract_value'   => $sub->isInstallment() ? MCPHelper::money($sub->totalContractValue(), $currency) : null,
             ],
             'next_billing_date'    => MCPHelper::toIso8601($sub->next_billing_date),
@@ -416,23 +423,22 @@ class SubscriptionTools
     public static function changeSubscriptionStatus($params = [])
     {
         if (empty($params['subscription_id'])) {
-            return MCPHelper::error('missing_identifier', __('subscription_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'subscription_id is required.');
         }
         $action = isset($params['action']) ? sanitize_text_field($params['action']) : '';
         if ($action !== 'cancel') {
-            return MCPHelper::error('invalid_action', __('action must be cancel. Pause and resume are not supported.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'action must be cancel. Pause and resume are not supported.');
         }
 
         $sub = Subscription::query()->where('id', (int) $params['subscription_id'])->first();
         if (!$sub) {
-            return MCPHelper::error('subscription_not_found', __('No subscription found for the given subscription_id.', 'fluent-cart'));
+            return MCPHelper::error('subscription_not_found', 'No subscription found for the given subscription_id.');
         }
         if (in_array($sub->status, ['canceled', 'cancelled', 'expired'], true)) {
             return MCPHelper::error(
                 'already_ended',
                 sprintf(
-                    /* translators: %1$s: current subscription status */
-                    __('Subscription is already in status %1$s.', 'fluent-cart'),
+                    'Subscription is already in status %1$s.',
                     $sub->status
                 )
             );
@@ -455,8 +461,7 @@ class SubscriptionTools
         if (!empty($params['dry_run'])) {
             return MCPHelper::envelope(
                 sprintf(
-                    /* translators: 1: subscription id, 2: plan name, 3: when */
-                    __('Preview: cancel subscription #%1$d %2$s, effective %3$s.', 'fluent-cart'),
+                    'Preview: cancel subscription #%1$d %2$s, effective %3$s.',
                     (int) $sub->id,
                     $sub->item_name,
                     $when
@@ -501,8 +506,7 @@ class SubscriptionTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: subscription id, 2: when */
-                __('Subscription #%1$d canceled, effective %2$s.', 'fluent-cart'),
+                'Subscription #%1$d canceled, effective %2$s.',
                 (int) $sub->id,
                 $when
             ),
@@ -521,24 +525,12 @@ class SubscriptionTools
         return MCPHelper::paginatorTotal($paginator);
     }
 
-    private static function toDbDate($value)
-    {
-        try {
-            return (new \DateTime((string) $value, new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-        } catch (\Exception $e) {
-            // Return null so callers reject the input. An epoch fallback would
-            // silently turn a typo'd date bound into an unbounded "match all".
-            return null;
-        }
-    }
-
     private static function invalidDateError($field)
     {
         return MCPHelper::error(
-            'invalid_date',
+            'invalid_param',
             sprintf(
-                /* translators: 1: field name */
-                __('%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.', 'fluent-cart'),
+                '%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.',
                 $field
             ),
             ['fields' => [$field]]

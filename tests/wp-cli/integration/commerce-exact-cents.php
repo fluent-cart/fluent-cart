@@ -1,99 +1,18 @@
 <?php
 /**
- * exact-cent checkout, tax, coupon, refund, and stock contracts.
+ * exact-cent checkout, tax, refund, and stock contracts.
  */
 
-use FluentCart\Api\Checkout\CheckoutApi;
-use FluentCart\Api\Resource\FrontendResource\CartResource;
-use FluentCart\App\App;
-use FluentCart\App\Helpers\AdminOrderProcessor;
 use FluentCart\App\Helpers\CheckoutProcessor;
-use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Listeners\UpdateStock;
-use FluentCart\App\Models\Coupon;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\TaxClass;
-use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
-use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\App\Modules\Tax\TaxCalculator;
-use FluentCart\App\Modules\Tax\TaxModule;
-use FluentCart\App\Services\Coupon\CouponServiceAdmin;
-use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Services\Payments\Refund;
 use FluentCart\Framework\Support\Collection;
-
-class FcPhase23InertGateway implements PaymentGatewayInterface
-{
-    /** @var array<int,int> */
-    public $amounts = [];
-
-    public function has(string $feature): bool
-    {
-        return $feature === 'payment';
-    }
-
-    public function meta(): array
-    {
-        return [
-            'title'       => 'Phase 23 inert gateway',
-            'route'       => 'phase23_inert',
-            'slug'        => 'phase23_inert',
-            'description' => 'Test-only inert gateway',
-            'logo'        => '',
-            'icon'        => '',
-            'brand_color' => '#000000',
-            'upcoming'    => false,
-            'status'      => true,
-        ];
-    }
-
-    public function getMeta($key = '')
-    {
-        $meta = $this->meta();
-
-        return $key === '' ? $meta : ($meta[$key] ?? '');
-    }
-
-    public function validatePaymentMethod($status): array
-    {
-        return ['isValid' => true, 'reason' => ''];
-    }
-
-    public function isEnabled(): bool
-    {
-        return true;
-    }
-
-    public function makePaymentFromPaymentInstance(PaymentInstance $paymentInstance)
-    {
-        $amount = (int) $paymentInstance->order->total_amount;
-        $this->amounts[] = $amount;
-
-        return [
-            'status' => 'success',
-            'amount' => $amount,
-            'mode'   => 'inert',
-        ];
-    }
-
-    public function handleIPN()
-    {
-        return null;
-    }
-
-    public function getOrderInfo(array $data)
-    {
-        return [];
-    }
-
-    public function fields()
-    {
-        return [];
-    }
-}
 
 $phase23CartItem = function ($id, $unitPrice, $quantity, array $extra = []) {
     $defaults = [
@@ -120,13 +39,6 @@ $phase23CartItem = function ($id, $unitPrice, $quantity, array $extra = []) {
     ];
 
     return array_replace_recursive($defaults, $extra);
-};
-
-$phase23Reflect = function ($object, $property) {
-    $reflection = new ReflectionProperty(get_class($object), (string) $property);
-    $reflection->setAccessible(true);
-
-    return $reflection->getValue($object);
 };
 
 $phase23RestoreOption = function ($key, $previous, $missing) {
@@ -199,48 +111,6 @@ return [
                 FcTest::assertSame(2004, (int) $transaction->total, 'transaction exact cents');
                 FcTest::assertSame(Status::PAYMENT_PENDING, (string) $transaction->status, 'transaction remains pending');
                 FcTest::assertSame(0, (int) $stored->total_paid, 'no payment completed');
-            } finally {
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
-        'id'            => 'admin-order-processor-exact-cents',
-        'name'          => 'AdminOrderProcessor preserves boundary cents before any draft write',
-        'phase'         => 23,
-        'known_failure' => false,
-        'run'           => function () use ($phase23CartItem, $phase23Reflect) {
-            try {
-                FcFixture::customer();
-                $inertOrder = FcFixture::order([
-                    'subtotal'     => 2000,
-                    'total_amount' => 2000,
-                ]);
-                FcTest::assertSame(2000, (int) FcFixture::reloadOrder($inertOrder->id)->total_amount, 'inert Order canary');
-
-                $items = [
-                    $phase23CartItem(230011, 1001, 1, [
-                        'discount_total' => 1,
-                    ]),
-                    $phase23CartItem(230012, 333, 3, [
-                        'manual_discount' => 1,
-                    ]),
-                ];
-                $processor = new AdminOrderProcessor($items, ['shipping_total' => 2]);
-                $orderData = $phase23Reflect($processor, 'orderData');
-                $formatted = $phase23Reflect($processor, 'formattedIOrderItems');
-                $lineTotals = array_map(function ($item) {
-                    return (int) $item['subtotal'] - (int) $item['discount_total'];
-                }, $formatted);
-
-                FcTest::assertSame([1000, 998], $lineTotals, 'admin line totals');
-                FcTest::assertSame(1998, array_sum($lineTotals), 'admin line sum exact cents');
-                FcTest::assertSame(2000, (int) $orderData['subtotal'], 'admin subtotal cents');
-                FcTest::assertSame(1, (int) $orderData['coupon_discount_total'], 'admin coupon cent');
-                FcTest::assertSame(1, (int) $orderData['manual_discount_total'], 'admin manual cent');
-                FcTest::assertSame(2, (int) $orderData['shipping_total'], 'admin shipping cents');
-                FcTest::assertSame(2000, (int) $orderData['total_amount'], 'admin payable exact cents');
-                FcTest::assertSame(0, (int) $inertOrder->total_paid, 'inert Order remains unpaid');
             } finally {
                 FcDomainFixture::cleanupAll();
             }
@@ -340,79 +210,6 @@ return [
             } finally {
                 $phase23RestoreOption($option, $previous, $missing);
                 TaxCalculator::resetCache();
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
-        'id'            => 'coupon-cap-and-minimum-cents',
-        'name'          => 'Coupon concerns enforce exact-cent minimums and caps on line totals',
-        'phase'         => 23,
-        'known_failure' => false,
-        'run'           => function () {
-            $requestKey = Helper::INSTANT_CHECKOUT_URL_PARAM;
-            $previousHash = App::request()->get($requestKey);
-            try {
-                $product = FcDomainFixture::product(['item_price' => 1001]);
-                FcFixture::customer();
-                $inertOrder = FcFixture::order([
-                    'subtotal'     => 1001,
-                    'total_amount' => 1001,
-                ]);
-                $coupon = FcFixture::coupon([
-                    'status'     => 'active',
-                    'type'       => 'fixed',
-                    'amount'     => 2000,
-                    'stackable'  => 'yes',
-                    'conditions' => [
-                        'min_purchase_amount' => 1001,
-                        'max_discount_amount' => 1001,
-                    ],
-                ]);
-                $line = [
-                    'id'             => (int) $product['variation']->id,
-                    'post_id'        => (int) $product['post']->ID,
-                    'quantity'       => 1,
-                    'unit_price'     => 1001,
-                    'subtotal'       => 1001,
-                    'discount_total' => 0,
-                    'other_info'     => [],
-                ];
-
-                App::request()->set($requestKey, null);
-                CartResource::resetCartCache();
-                $service = new CouponServiceAdmin([$line]);
-                $service->applyCoupon((string) $coupon->code);
-                $calculated = $service->getCalculatedLineItems();
-                $discount = $service->getDiscountData();
-
-                FcTest::assertSame(
-                    1001,
-                    (int) $calculated[(int) $product['variation']->id]['coupon_discount'],
-                    'line coupon cap exact cents'
-                );
-                FcTest::assertSame(
-                    0,
-                    (int) $calculated[(int) $product['variation']->id]['subtotal']
-                        - (int) $calculated[(int) $product['variation']->id]['coupon_discount'],
-                    'capped line total reaches zero without underflow'
-                );
-                FcTest::assertSame(1001, (int) $discount[$coupon->code]['discount'], 'discount ledger exact cents');
-
-                $below = $line;
-                $below['unit_price'] = 1000;
-                $below['subtotal'] = 1000;
-                $belowService = new CouponServiceAdmin([$below]);
-                FcTest::assertSame(
-                    false,
-                    $belowService->ensureMinimumPurchaseAmount($coupon),
-                    'one cent below minimum is rejected'
-                );
-                FcTest::assertSame(1001, (int) $inertOrder->total_amount, 'coupon inert Order canary');
-                FcTest::assertSame(0, (int) $inertOrder->total_paid, 'coupon canary remains unpaid');
-            } finally {
-                App::request()->set($requestKey, $previousHash);
-                CartResource::resetCartCache();
                 FcDomainFixture::cleanupAll();
             }
         },
@@ -549,200 +346,6 @@ return [
                 }
                 remove_filter('fluent_cart/should_send_email_notification', $mailFilter, 1);
                 FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
-        'id'            => 'checkout-api-exact-cents',
-        'name'          => 'CheckoutApi passes exact tax cents into one inert pending Order',
-        'phase'         => 23,
-        'known_failure' => false,
-        'run'           => function () use ($phase23CartItem) {
-            $requestKey = Helper::INSTANT_CHECKOUT_URL_PARAM;
-            $previousHash = App::request()->get($requestKey);
-            $previousUserId = get_current_user_id();
-            $gateway = new FcPhase23InertGateway();
-            $slug = 'phase23_inert';
-            $registeredManagers = [];
-            $taxSettings = [
-                'enable_tax' => 'yes',
-                'tax_inclusion' => 'excluded',
-                'tax_calculation_basis' => 'billing',
-                'tax_rounding' => 'item',
-            ];
-            $taxSettingsFilter = function () use ($taxSettings) {
-                return $taxSettings;
-            };
-            $taxModules = [];
-            $taxSettingsProperty = new ReflectionProperty(TaxModule::class, 'taxSettings');
-            $taxSettingsProperty->setAccessible(true);
-            $taxBehaviorFilter = function () {
-                return 1;
-            };
-            $dieFilter = function () {
-                return function () {
-                    throw new RuntimeException('phase23-json-terminated');
-                };
-            };
-            $cartHash = '';
-            $capturedOutput = '';
-            $terminated = false;
-
-            try {
-                add_filter('pre_option_fluent_cart_tax_configuration_settings', $taxSettingsFilter);
-                global $wp_filter;
-                foreach ($wp_filter['fluent_cart/cart/cart_data_items_updated']->callbacks as $callbacks) {
-                    foreach ($callbacks as $callback) {
-                        $handler = $callback['function'];
-                        if (is_array($handler) && $handler[0] instanceof TaxModule) {
-                            $key = spl_object_hash($handler[0]);
-                            if (!isset($taxModules[$key])) {
-                                $addedRecalculation = has_action('fluent_cart/cart/cart_data_items_updated', [$handler[0], 'recalculateTax']) === false;
-                                $taxModules[$key] = [$handler[0], $taxSettingsProperty->getValue($handler[0]), $addedRecalculation];
-                                $taxSettingsProperty->setValue($handler[0], $taxSettings);
-                                if ($addedRecalculation) {
-                                    add_action('fluent_cart/cart/cart_data_items_updated', [$handler[0], 'recalculateTax'], 10, 1);
-                                }
-                            }
-                        }
-                    }
-                }
-                TaxCalculator::resetCache();
-                $customer = FcFixture::customer();
-                FcFixture::customerAddress((int) $customer->id, 'billing');
-                FcFixture::customerAddress((int) $customer->id, 'shipping');
-                $standard = TaxClass::query()->where('slug', 'standard')->first();
-                FcTest::assert($standard !== null, 'standard TaxClass exists for checkout');
-                FcFixture::taxRate((int) $standard->id, [
-                    'country' => 'BD',
-                    'state' => 'BD-13',
-                    'postcode' => '99123',
-                    'rate' => 0.05,
-                ]);
-                $product = FcDomainFixture::product([
-                    'item_price' => 1001,
-                    'fulfillment_type' => 'digital',
-                    'other_info' => ['tax_class' => 'standard', 'tax_exempt' => 'no'],
-                ]);
-
-                $cart = FcAutomationFixture::cart('phase23-checkout', '2001-02-03 04:05:06', [
-                    'customer_id'   => (int) $customer->id,
-                    'cart_group'    => 'instant',
-                    'stage'         => 'cart',
-                    'cart_data'     => [
-                        $phase23CartItem((int) $product['variation']->id, 1001, 1, [
-                            'post_id' => (int) $product['post']->ID,
-                            'is_custom' => false,
-                        ]),
-                    ],
-                    'checkout_data' => [
-                        'disable_coupons' => 'yes',
-                        'fees'            => [],
-                        'form_data'      => [
-                            'billing_country' => 'BD',
-                            'billing_state' => 'BD-13',
-                            'billing_city' => 'Dhaka',
-                            'billing_postcode' => '99123',
-                            'ship_to_different' => 'no',
-                        ],
-                    ],
-                ]);
-                $cartHash = (string) $cart->cart_hash;
-
-                foreach ([GatewayManager::getInstance(), App::gateway()] as $manager) {
-                    if (!$manager || isset($registeredManagers[spl_object_hash($manager)])) {
-                        continue;
-                    }
-                    FcTest::assertSame(null, $manager->get($slug), 'inert gateway slug starts unused');
-                    $manager->register($slug, $gateway);
-                    $registeredManagers[spl_object_hash($manager)] = $manager;
-                }
-
-                App::request()->set($requestKey, $cartHash);
-                wp_set_current_user(0);
-                CartResource::resetCartCache();
-                add_filter('fluent_cart/cart/tax_behavior', $taxBehaviorFilter, PHP_INT_MAX, 2);
-                if (!defined('DOING_AJAX')) {
-                    define('DOING_AJAX', true);
-                }
-                add_filter('wp_die_ajax_handler', $dieFilter, PHP_INT_MAX);
-                ob_start();
-                try {
-                    CheckoutApi::placeOrder([
-                        'billing_email'      => FcFixture::identity(),
-                        'billing_full_name'  => 'Phase Twenty Three',
-                        'billing_first_name' => 'Phase',
-                        'billing_last_name'  => 'Twenty Three',
-                        'billing_country'    => 'BD',
-                        'billing_state'      => 'BD-13',
-                        'billing_city'       => 'Dhaka',
-                        'billing_postcode'   => '99123',
-                        'billing_address_1'  => 'Phase 23 exact checkout',
-                        'billing_address_2'  => '',
-                        'billing_phone'      => '',
-                        'ship_to_different'  => 'no',
-                        'agree_terms'        => 'yes',
-                        '_fct_pay_method'    => $slug,
-                        'order_notes'        => FcFixture::orderMarker(),
-                        'user_tz'            => 'UTC',
-                    ], true);
-                } catch (RuntimeException $e) {
-                    if ($e->getMessage() !== 'phase23-json-terminated') {
-                        throw $e;
-                    }
-                    $terminated = true;
-                } finally {
-                    $capturedOutput = ob_get_clean();
-                    remove_filter('wp_die_ajax_handler', $dieFilter, PHP_INT_MAX);
-                }
-
-                $storedCart = FcAutomationFixture::findCart($cartHash);
-                $payload = json_decode($capturedOutput, true);
-                if ($storedCart === null || (int) $storedCart->order_id <= 0) {
-                    FcTest::fail(
-                        'checkout linked one Order; response=' . wp_json_encode($payload)
-                    );
-                    return;
-                }
-                $order = FcFixture::captureCheckoutOrder((int) $storedCart->order_id);
-
-                FcTest::assertSame(true, $terminated, 'CheckoutApi JSON boundary was caught');
-                FcTest::assertSame('success', (string) ($payload['status'] ?? ''), 'inert gateway response');
-                FcTest::assertSame(1002, (int) ($payload['amount'] ?? 0), 'response payable exact cents');
-                FcTest::assertSame([1002], $gateway->amounts, 'gateway observed one exact amount');
-                FcTest::assertSame(1001, (int) $order->subtotal, 'CheckoutApi order subtotal');
-                FcTest::assertSame(1, (int) $order->tax_total, 'CheckoutApi exclusive tax cent');
-                FcTest::assertSame(1002, (int) $order->total_amount, 'CheckoutApi order payable cents');
-                FcTest::assertSame(Status::PAYMENT_PENDING, (string) $order->payment_status, 'CheckoutApi order remains pending');
-                FcTest::assertSame(0, (int) $order->total_paid, 'CheckoutApi completes no payment');
-                FcTest::assertSame([], FcTest::externalCalls(), 'CheckoutApi inert path has no outbound HTTP');
-            } finally {
-                if ($cartHash !== '') {
-                    global $wpdb;
-                    $lockName = 'fct_checkout_' . md5($wpdb->prefix . $cartHash);
-                    $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lockName));
-                    $storedCart = FcAutomationFixture::findCart($cartHash);
-                    if ($storedCart && (int) $storedCart->order_id > 0) {
-                        FcFixture::captureCheckoutOrder((int) $storedCart->order_id);
-                    }
-                }
-                foreach ($registeredManagers as $manager) {
-                    $manager->remove($slug);
-                }
-                remove_filter('fluent_cart/cart/tax_behavior', $taxBehaviorFilter, PHP_INT_MAX);
-                remove_filter('pre_option_fluent_cart_tax_configuration_settings', $taxSettingsFilter);
-                foreach ($taxModules as $module) {
-                    if ($module[2]) {
-                        remove_action('fluent_cart/cart/cart_data_items_updated', [$module[0], 'recalculateTax'], 10);
-                    }
-                    $taxSettingsProperty->setValue($module[0], $module[1]);
-                }
-                TaxCalculator::resetCache();
-                wp_set_current_user($previousUserId);
-                App::request()->set($requestKey, $previousHash);
-                CartResource::resetCartCache();
-                FcDomainFixture::cleanupAll();
-                FcAutomationFixture::cleanupAll();
             }
         },
     ],

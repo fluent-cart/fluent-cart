@@ -9,16 +9,16 @@
         <slot name="heading"></slot>
       </template>
 
-      <h3 v-else class="fct-setting-head-title">
+      <h1 v-else class="fct-setting-head-title">
         {{heading}}
-      </h3>
+      </h1>
     </div>
 
     <div class="fct-setting-header-action">
-      <el-button v-if="showSaveButton" type="primary" @click="saveSettings" :loading="loading" size="small">
+      <fct-button v-if="showSaveButton" type="primary" @click="saveSettings" :loading="loading" size="small">
         <span v-if="showCmndIcon && !loading" class="cmd">⌘s</span>
         {{ translate(saveButtonText) }}
-      </el-button>
+      </fct-button>
 
       <slot name="action"></slot>
     </div>

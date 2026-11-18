@@ -42,6 +42,7 @@ vi.mock('@/utils/translator/Translator', () => ({
 }));
 
 const {toStoreTimezone, dateTimeI18, resolveDateFormat} = await import('@/utils/Utils');
+const {storeWallToUtc} = await import('@/utils/dateFormats');
 
 /**
  * The payload TransStrings::dateTimeStrings() ships, narrowed to what these
@@ -225,5 +226,43 @@ describe('format source back-compat', () => {
         dateConfig.datei18 = {formats_source: 'wordpress', formats: {}};
 
         expect(resolveDateFormat('YYYY/MM/DD')).toBe('YYYY/MM/DD');
+    });
+});
+
+describe('storeWallToUtc', () => {
+    const utc = (wall) => storeWallToUtc(wall).utc().format('YYYY-MM-DD HH:mm:ss');
+
+    it('reads a typed time as the site timezone, not the browser', () => {
+        useTimezone('wordpress', 'UTC');
+
+        expect(utc('2026-11-24 00:00:00')).toBe('2026-11-24 00:00:00');
+    });
+
+    it('moves a named zone back to UTC', () => {
+        useTimezone('wordpress', 'Asia/Singapore');
+
+        expect(utc('2026-11-24 00:00:00')).toBe('2026-11-23 16:00:00');
+    });
+
+    it('accepts a manual UTC offset', () => {
+        useTimezone('wordpress', '+05:30');
+
+        expect(utc('2026-11-24 00:00:00')).toBe('2026-11-23 18:30:00');
+    });
+
+    it('round-trips with toStoreTimezone', () => {
+        useTimezone('wordpress', 'America/New_York');
+
+        const wall = toStoreTimezone('2026-11-24 12:00:00').format('YYYY-MM-DD HH:mm:ss');
+
+        expect(utc(wall)).toBe('2026-11-24 12:00:00');
+    });
+
+    it('reads the browser zone on the FluentCart source', () => {
+        useTimezone('fluent_cart', 'UTC');
+
+        const expected = dayjs('2026-11-24 00:00:00').utc().format('YYYY-MM-DD HH:mm:ss');
+
+        expect(utc('2026-11-24 00:00:00')).toBe(expected);
     });
 });

@@ -1,10 +1,10 @@
 <template>
     <div class="fct-inventory-export-modal-wrap">
-        <el-button @click="dialogVisible = true" type="primary">
+        <fct-button @click="dialogVisible = true" type="primary">
             {{ translate('Export') }}
-        </el-button>
+        </fct-button>
 
-        <el-dialog
+        <fct-dialog
             v-model="dialogVisible"
             :title="translate('Export Inventory')"
             @close="handleClose"
@@ -18,21 +18,22 @@
                         {{ translate('Inventory states shown') }}
                     </label>
 
-                    <el-radio-group v-model="inventoryState" class="fct-export-states-options">
-                        <el-radio :value="'all_states'">
-                            {{ translate('All states') }}
+                    <fct-choice
+                        type="radio"
+                        v-model="inventoryState"
+                        class="fct-export-states-options"
+                        :options="[
+                            {value: 'all_states', label: translate('All states'), note: translate('Export all inventory states')},
+                            {value: 'available', label: translate('Available'), note: translate('Export only available column')}
+                        ]"
+                    >
+                        <template #option="{option}">
+                            {{ option.label }}
                             <span>
-                                - {{ translate('Export all inventory states') }}
+                                - {{ option.note }}
                             </span>
-                        </el-radio>
-
-                        <el-radio :value="'available'">
-                            {{ translate('Available') }}
-                            <span>
-                                - {{ translate('Export only available column') }}
-                            </span>
-                        </el-radio>
-                    </el-radio-group>
+                        </template>
+                    </fct-choice>
                 </div>
 
                 <!-- Export Scope Section -->
@@ -41,24 +42,20 @@
                         {{ translate('Export') }}
                     </label>
 
-                    <el-radio-group v-model="exportScope" class="fct-export-options">
-                        <el-radio :value="'current_page'">
-                            {{ translate('Current page') }}
-                        </el-radio>
-
-                        <el-radio :value="'all_variants'">
-                            {{ translate('All variants') }}
-                        </el-radio>
-
-                        <el-radio
-                            :value="'selected'"
-                            :disabled="!selectedItemsCount"
-                        >
-                            {{ translate('Selected:') }}
-                            {{ selectedItemsCount }}
-                            {{ selectedItemsCount > 1 ? translate('variants') : translate('variant') }}
-                        </el-radio>
-                    </el-radio-group>
+                    <fct-choice
+                        v-model="exportScope"
+                        type="radio"
+                        class="fct-export-options"
+                        :options="[
+                            {label: translate('Current page'), value: 'current_page'},
+                            {label: translate('All variants'), value: 'all_variants'},
+                            {
+                                label: translate('Selected:') + ' ' + selectedItemsCount + ' ' + (selectedItemsCount > 1 ? translate('variants') : translate('variant')),
+                                value: 'selected',
+                                disabled: !selectedItemsCount
+                            }
+                        ]"
+                    />
                 </div>
 
                 <!-- Export Format Section -->
@@ -67,32 +64,32 @@
                         {{ translate('Export as') }}
                     </label>
 
-                    <el-radio-group v-model="exportFormat" class="fct-export-format-options">
-                        <el-radio :value="'csv_spreadsheet'">
-                            {{ translate('CSV for Excel, Numbers, or other spreadsheet programs') }}
-                        </el-radio>
-
-                        <el-radio :value="'csv_plain'">
-                            {{ translate('Plain CSV file') }}
-                        </el-radio>
-                    </el-radio-group>
+                    <fct-choice
+                        v-model="exportFormat"
+                        type="radio"
+                        class="fct-export-format-options"
+                        :options="[
+                            {label: translate('CSV for Excel, Numbers, or other spreadsheet programs'), value: 'csv_spreadsheet'},
+                            {label: translate('Plain CSV file'), value: 'csv_plain'}
+                        ]"
+                    />
                 </div>
             </div>
 
             <div class="dialog-footer">
-                <el-button @click="handleClose">
+                <fct-button @click="handleClose">
                     {{ translate('Cancel') }}
-                </el-button>
-                <el-button type="primary" @click="handleConfirm">
+                </fct-button>
+                <fct-button type="primary" @click="handleConfirm">
                     {{ translate('Export Variants') }}
-                </el-button>
+                </fct-button>
             </div>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 
 <script setup>
-import { defineOptions, ref } from 'vue';
+import { ref } from 'vue';
 import translate from '@/utils/translator/Translator';
 
 defineOptions({

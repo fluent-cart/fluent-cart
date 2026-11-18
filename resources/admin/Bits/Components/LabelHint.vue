@@ -1,11 +1,10 @@
 <template>
     <span :class="`fct-label-hint ${required ? 'is-required' : ''}`">
         <span class="label">{{ title }}</span>
-        <el-tooltip
+        <FctTooltip
             v-if="content"
-            effect="dark"
             :placement="placement ? placement : 'top'"
-            popper-class="fct-label-hint-popover fct-tooltip"
+            popper-class="fct-label-hint-popover"
             :show-after="400"
             :hide-after="hideAfter"
         >
@@ -13,18 +12,21 @@
                 <div v-html="content"></div>
             </template>
             <DynamicIcon name="InformationFill"/>
-        </el-tooltip>
+        </FctTooltip>
       <slot/>
     </span>
 </template>
 
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+// Imported, not global: Fct/Field.vue renders LabelHint, so the kit must not need registration.
+import FctTooltip from "@/Bits/Components/Fct/Tooltip.vue";
 
 export default {
   name: 'LabelHint',
   components: {
-    DynamicIcon
+    DynamicIcon,
+    FctTooltip
   },
   props: {
     title: String,

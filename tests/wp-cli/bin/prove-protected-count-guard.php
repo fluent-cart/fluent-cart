@@ -19,18 +19,17 @@ FcFixture::initialize($identity);
 $baseline = FcProtectedTables::capture($protectedTables);
 $detected = null;
 $portableCounts = [];
-$portableOutput = [];
-$portableCode = 0;
+$portableResult = null;
+$portableFile = tempnam(sys_get_temp_dir(), 'fc-static');
 
 try {
     FcFixture::customer();
     $portableCounts = FcProtectedTables::capture($protectedTables);
-    exec(
-        'bash '
-        . escapeshellarg(dirname(__DIR__) . '/bin/run-all.sh')
-        . ' static 2>&1',
-        $portableOutput,
-        $portableCode
+    // The static tier reports its start and end counts through a result file, not stdout.
+    $portableResult = WP_CLI::runcommand(
+        'eval-file ' . escapeshellarg(dirname(__DIR__) . '/bin/run-static.php')
+            . ' -- result-file=' . escapeshellarg($portableFile),
+        ['return' => 'all', 'exit_error' => false]
     );
 
     try {
@@ -54,23 +53,19 @@ if ($restored !== $baseline) {
         . ' end=' . wp_json_encode($restored)
     );
 }
+$portableCode = (int) $portableResult->return_code;
+$portableText = (string) file_get_contents($portableFile);
+unlink($portableFile);
 if ($portableCode !== 0) {
-    WP_CLI::log(implode("\n", $portableOutput));
+    WP_CLI::log($portableResult->stdout . $portableResult->stderr);
     WP_CLI::error(
         'Portable-baseline proof tier failed with exit ' . $portableCode . '.'
     );
 }
-$portableText = implode("\n", $portableOutput);
 $portableCountText = FcProtectedTables::format($portableCounts);
 if (
-    strpos(
-        $portableText,
-        'protected run-start counts: ' . $portableCountText
-    ) === false
-    || strpos(
-        $portableText,
-        'protected run-end counts: ' . $portableCountText
-    ) === false
+    strpos($portableText, 'protected_start=' . $portableCountText . "\n") === false
+    || strpos($portableText, 'protected_end=' . $portableCountText . "\n") === false
 ) {
     WP_CLI::log($portableText);
     WP_CLI::error(

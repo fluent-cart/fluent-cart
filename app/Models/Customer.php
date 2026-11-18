@@ -206,7 +206,7 @@ class Customer extends Model
 
         // Grouped per currency: amounts of different currencies are only
         // added together after conversion at each order's frozen rate
-        // (dev-docs/multi-currency/plan.md §13).
+        // (dev-docs/multi-currency/06-orders-subscriptions.md, "Customer stats").
         $rows = Order::query()->where('customer_id', $this->id)
             ->whereIn('payment_status', Status::getOrderPaymentSuccessStatuses())
             ->selectRaw('UPPER(currency) AS currency_code, COUNT(*) AS purchase_count, MIN(created_at) AS first_purchase_date, MAX(created_at) AS last_purchase_date')

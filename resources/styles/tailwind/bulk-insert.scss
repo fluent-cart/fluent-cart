@@ -72,7 +72,7 @@ body.fct-bulk-page #wpcontent {
   .el-input__wrapper {
     @apply rounded-none border-0 bg-transparent;
     &.is-focus {
-      @apply border border-gray-200;
+      @apply [border-width:1px] border-gray-200;
     }
   }
 
@@ -83,7 +83,7 @@ body.fct-bulk-page #wpcontent {
   .el-select {
     @apply w-full;
     .el-tag {
-      @apply max-w-[100px] bg-gray-100 dark:bg-dark-500 #{!important};
+      @apply max-w-[100px]! bg-gray-100! dark:bg-dark-500!;
     }
     .el-select__selection {
       flex-wrap: nowrap #{!important};
@@ -94,7 +94,7 @@ body.fct-bulk-page #wpcontent {
   }
   .el-input-number {
     .el-input__wrapper {
-      @apply rounded-xs border;
+      @apply rounded-xs [border-width:1px];
     }
   }
 }
@@ -107,14 +107,14 @@ body.fct-bulk-page #wpcontent {
 .fct-mp-add-compact {
   @apply shadow-none inline-flex items-center p-0 rounded-none border-dashed w-full h-7.5 min-h-[auto] transition-all duration-150 hover:border-gray-500 hover:text-system-dark;
   svg {
-    @apply w-4 h-4 !important;
+    @apply w-4! h-4!;
   }
 }
 
 .fct-mp-add-featured {
     @apply w-[80px] h-[80px] border-dashed text-system-light transition-all duration-150 dark:text-gray-300;
     svg {
-      @apply w-5.5 h-5.5 !important;
+      @apply w-5.5! h-5.5!;
     }
 }
 
@@ -173,18 +173,18 @@ td.bulk-checkbox-cell input[type="checkbox"] {
 // ── Selected row highlighting ────────────────────────────────
 
 tr.is-selected > td {
-  @apply bg-gray-50 dark:bg-dark-500 #{!important};
+  @apply bg-gray-50! dark:bg-dark-500!;
 }
 
 tr.is-selected > td.sticky-col,
 tr.is-selected > td.sticky-col-right {
-  @apply bg-gray-50 dark:bg-dark-500 #{!important};
+  @apply bg-gray-50! dark:bg-dark-500!;
 }
 
 // ── Cell inputs ──────────────────────────────────────────────
 
 .bulk-cell-input {
-  @apply w-full px-3 text-sm border border-solid border-transparent bg-transparent outline-none;
+  @apply w-full px-3 text-sm border border-solid border-transparent bg-transparent outline-hidden;
   min-height: 38px;
   box-sizing: border-box;
   color: var(--fct-text-system-dark, #101828);
@@ -297,12 +297,12 @@ input.bulk-cell-input {
 }
 
 .bulk-product-row.is-dirty td {
-    @apply bg-gray-50 !important;
+    @apply bg-gray-50!;
 }
 
 .bulk-product-row.is-dirty td.sticky-col,
 .bulk-product-row.is-dirty td.sticky-col-right {
-  @apply bg-gray-50 !important;
+  @apply bg-gray-50!;
 }
 
 // ── Variation rows ───────────────────────────────────────────
@@ -312,7 +312,7 @@ input.bulk-cell-input {
 }
 
 .bulk-variation-cell {
-    @apply bg-gray-50 !important;
+    @apply bg-gray-50!;
 }
 
 .bulk-variation-row:hover td,
@@ -322,7 +322,7 @@ input.bulk-cell-input {
 
 // Add variant row (BulkInsert only)
 .bulk-add-variant-row td {
-  @apply py-1.5 border-0 bg-white dark:bg-dark-600 #{!important};
+  @apply py-1.5! border-0! bg-white! dark:bg-dark-600!;
 
 }
 
@@ -825,7 +825,7 @@ html.fluent_theme_dark {
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-white;
+    @apply [outline-width:2px] outline-offset-2 outline-white;
   }
 }
 
@@ -907,7 +907,7 @@ html.fluent_theme_dark {
       }
     }
     &__count {
-      @apply absolute bottom-1 right-1 left-1 transition-opacity duration-150 font-medium !important;
+      @apply absolute! bottom-1! right-1! left-1! transition-opacity! duration-150! font-medium!;
       background-color: rgba(0, 0, 0, 0.48);
       color: #fff;
       .el-tag__content {

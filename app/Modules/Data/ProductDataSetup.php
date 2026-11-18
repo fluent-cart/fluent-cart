@@ -54,6 +54,14 @@ class ProductDataSetup
         return $product;
     }
 
+    /**
+     * The products the current page already loaded, keyed by post ID.
+     */
+    public static function getCachedProducts(): array
+    {
+        return self::$productsCache;
+    }
+
     public static function setProductsCache($products)
     {
         foreach ($products as $product) {

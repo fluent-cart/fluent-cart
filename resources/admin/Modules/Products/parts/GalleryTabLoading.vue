@@ -17,20 +17,18 @@ import translate from '@/utils/translator/Translator';
     role="status"
     :aria-label="translate('Loading...')"
   >
-    <el-skeleton animated>
-      <template #template>
-        <div class="fct-gallery-tab-loading__card">
-          <el-skeleton-item variant="image" class="fct-gallery-tab-loading__thumb" />
-          <div class="fct-gallery-tab-loading__lines">
-            <el-skeleton-item variant="h3" class="fct-gallery-tab-loading__title" />
-            <el-skeleton-item variant="text" class="fct-gallery-tab-loading__meta" />
-          </div>
+    <fct-skeleton animated>
+      <div class="fct-gallery-tab-loading__card">
+        <fct-skeleton variant="image" class="fct-gallery-tab-loading__thumb" />
+        <div class="fct-gallery-tab-loading__lines">
+          <fct-skeleton variant="h3" class="fct-gallery-tab-loading__title" />
+          <fct-skeleton variant="text" class="fct-gallery-tab-loading__meta" />
         </div>
-        <div class="fct-gallery-tab-loading__section" v-for="row in 2" :key="row">
-          <el-skeleton-item variant="text" class="fct-gallery-tab-loading__label" />
-          <el-skeleton-item variant="button" class="fct-gallery-tab-loading__field" />
-        </div>
-      </template>
-    </el-skeleton>
+      </div>
+      <div class="fct-gallery-tab-loading__section" v-for="row in 2" :key="row">
+        <fct-skeleton variant="text" class="fct-gallery-tab-loading__label" />
+        <fct-skeleton variant="button" class="fct-gallery-tab-loading__field" />
+      </div>
+    </fct-skeleton>
   </div>
 </template>

@@ -27,12 +27,12 @@
       </div><!-- .single-page-header -->
 
       <div class="single-page-body" v-if="customer.id">
-        <el-row :gutter="30">
-          <el-col :lg="17" :xs="24">
+        <div class="flex flex-wrap -mx-[15px]">
+          <div class="box-border w-full px-[15px] min-[1200px]:w-[70.83333%]">
             <CardContainer class="overflow-hidden fct-customer-orders-items">
               <CardHeader :title="translate('Orders (%s)', translateNumber(customerOrders.total || 0))" title_size="small">
                 <template #action>
-                  <el-input
+                  <fct-input
                       v-model="search"
                       @keyup.enter="getCustomerOrders()"
                       :placeholder="translate('Type and hit enter...')"
@@ -102,8 +102,16 @@
                 <LicensingUnavailable v-else/>
               </CardBody>
             </CardContainer>
-          </el-col>
-          <el-col :lg="7" :xs="24">
+
+            <DynamicTemplates
+                v-if="customer?.id"
+                :key="customer.id"
+                filter="customer_page_main"
+                :widgets-query="{ customer_id: customer.id }"
+                :data="{ customer }"
+            />
+          </div>
+          <div class="box-border w-full px-[15px] min-[1200px]:w-[29.16667%]">
             <div class="fct-admin-sidebar">
               <CustomerInformation
                   :customer="customer"
@@ -128,8 +136,8 @@
                 }" :data="{customer}"/>
               </div>
             </div><!-- .fct-admin-sidebar -->
-          </el-col>
-        </el-row>
+          </div>
+        </div>
       </div>
     </div><!-- .fct-single-customer-wrapper -->
   </div>

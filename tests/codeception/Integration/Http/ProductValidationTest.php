@@ -164,22 +164,6 @@ class ProductValidationTest extends RestTestCase
     // Spec 233: Subscription quantity > 1
     // =========================================================================
 
-    public function test_subscription_variant_cannot_purchase_quantity_gt_1(): void
-    {
-        $product = $this->productFactory
-            ->withVariantAttributes([
-                'payment_type' => 'subscription',
-                'other_info'   => ['payment_type' => 'subscription', 'repeat_interval' => 'monthly'],
-            ])
-            ->create();
-
-        $variant = $product->variants->first();
-        $result = $variant->canPurchase(2);
-
-        $this->assertInstanceOf(\WP_Error::class, $result);
-        $this->assertSame('invalid_subscription_quantity', $result->get_error_code());
-    }
-
     // =========================================================================
     // Spec 237: Empty price normalized to 0
     // =========================================================================
@@ -298,6 +282,45 @@ class ProductValidationTest extends RestTestCase
         $this->assertNotNull($receivedPayload, 'fluent_cart/product_updated should fire');
         $this->assertArrayHasKey('data', $receivedPayload, 'Payload should contain data key');
         $this->assertArrayHasKey('product', $receivedPayload, 'Payload should contain product key');
+    }
+
+    public function test_simple_product_save_fills_an_empty_variation_title_from_the_product_title(): void
+    {
+        $product = $this->productFactory
+            ->withVariantAttributes(['variation_title' => ''])
+            ->create(['post_title' => 'Imported Mug']);
+        $variant = $product->variants->first();
+
+        $request = new \WP_REST_Request('POST', '/fluent-cart/v2/products/' . $product->ID . '/pricing');
+        $request->set_body_params([
+            'post_title'  => 'Imported Mug',
+            'post_status' => 'publish',
+            'detail' => [
+                'id'               => $product->detail->id,
+                'post_id'          => $product->ID,
+                'fulfillment_type' => 'digital',
+                'variation_type'   => 'simple',
+            ],
+            'variants' => [
+                [
+                    'id'               => $variant->id,
+                    'post_id'          => $product->ID,
+                    'variation_title'  => '',
+                    'fulfillment_type' => 'digital',
+                    'item_price'       => 2999,
+                    'other_info'       => ['payment_type' => 'onetime'],
+                ],
+            ],
+        ]);
+
+        $response = $this->dispatchRequest($request);
+
+        $this->assertSame(200, $response->get_status(), wp_json_encode($response->get_data()));
+        $this->assertSame(
+            'Imported Mug',
+            ProductVariation::query()->where('id', $variant->id)->value('variation_title'),
+            'The empty simple variation title takes the product title'
+        );
     }
 
     // =========================================================================

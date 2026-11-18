@@ -1,11 +1,11 @@
 <template>
   <div class="shipping-zones-table">
-    <el-table
+    <fct-table
         :data="shipping_zones"
-        v-loading="loading"
+        :loading="loading"
         class="w-full compact-table responsive full-compact"
     >
-      <el-table-column prop="name" :label="translate('Zone Name')">
+      <fct-table-column prop="name" :label="translate('Zone Name')">
         <template #default="scope">
           <RouteCell
               :to="{ name: 'view_shipping_zone', params: { zone_id: scope.row.id } }"
@@ -13,9 +13,9 @@
             {{ scope.row.name }}
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Country')">
+      <fct-table-column :label="translate('Country')">
         <template #default="scope">
           <RouteCell
               :to="{ name: 'view_shipping_zone', params: { zone_id: scope.row.id } }"
@@ -30,9 +30,9 @@
             </div>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Shipping Methods')" width="180">
+      <fct-table-column :label="translate('Shipping Methods')" width="180">
         <template #default="scope">
           <RouteCell
               :to="{ name: 'view_shipping_zone', params: { zone_id: scope.row.id } }"
@@ -48,9 +48,9 @@
             </div>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Actions')" width="200" align="right">
+      <fct-table-column :label="translate('Actions')" width="200" align="right">
         <template #default="scope">
           <div class="fct-btn-group sm justify-end pe-4">
             <IconButton size="small"
@@ -59,7 +59,7 @@
               <DynamicIcon name="Edit"/>
             </IconButton>
 
-            <el-popconfirm
+            <fct-popover confirm
                 :title="translate('Are you sure to delete this shipping zone?')"
                 @confirm="deleteZone(scope.row.id)"
                 width="220"
@@ -69,11 +69,11 @@
                   <DynamicIcon name="Delete"/>
                 </IconButton>
               </template>
-            </el-popconfirm>
+            </fct-popover>
           </div>
         </template>
-      </el-table-column>
-    </el-table>
+      </fct-table-column>
+    </fct-table>
   </div>
 </template>
 

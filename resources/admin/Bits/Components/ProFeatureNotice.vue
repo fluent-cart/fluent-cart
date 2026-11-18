@@ -15,10 +15,10 @@
 
       <slot></slot>
 
-      <el-button v-if="showButton" type="primary" tag="a" :href="buttonUrl || upgradeUrl(placement)" :target="buttonUrl ? '_self' : '_blank'">
+      <fct-button v-if="showButton" type="primary" tag="a" :href="buttonUrl || upgradeUrl(placement)" :target="buttonUrl ? '_self' : '_blank'">
         <DynamicIcon name="Crown"/>
         {{ buttonText || translate('Upgrade to Pro') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

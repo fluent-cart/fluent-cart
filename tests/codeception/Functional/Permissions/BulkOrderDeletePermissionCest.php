@@ -12,9 +12,8 @@ use Tests\Support\Traits\AdjustsRolePermissions;
 /**
  * Spec: Cases/Functional/orders.md → "Running bulk actions on orders", items 75a-75b.
  *
- * Security finding FC-SEC-01 (2026-08-25 assessment): POST /orders/do-bulk-action
- * declared `orders/manage`, but every action it accepts — delete_orders and
- * delete_test_orders — permanently deletes orders and their related records.
+ * POST /orders/do-bulk-action declared `orders/manage`, but every action it accepts —
+ * delete_orders and delete_test_orders — permanently deletes orders and their related records.
  * A delegated user holding orders/manage without orders/delete could therefore
  * destroy orders that DELETE /orders/{id} (orders/delete) refuses them.
  *

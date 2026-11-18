@@ -1,3 +1,4 @@
+@import "tailwindcss/theme.css" theme(reference inline);
 @import "base.css";
 @import "reset.scss";
 @import "./element-plus/base.scss";
@@ -34,6 +35,7 @@
 @import "icon.scss";
 @import "chart.scss";
 @import "heading.scss";
+@import "layout.scss";
 @import "header.scss";
 @import "setting.scss";
 @import "tab.scss";
@@ -72,6 +74,7 @@
 @import "activity.scss";
 @import "dashboard-recent-activities.scss";
 @import "dashboard-review-prompt.scss";
+@import "dashboard-addon-recommendations.scss";
 @import "current-user-info.scss";
 @import "dashboard-stat-widget.scss";
 @import "fluid-tab.scss";
@@ -80,6 +83,7 @@
 @import "search-guide.scss";
 @import "tax.scss";
 @import "order-bump.scss";
+@import "placement-preview.scss";
 @import "pro-feature.scss";
 @import "bulk-insert.scss";
 @import "inventory.scss";
@@ -95,9 +99,11 @@
 
 @import "responsive.scss";
 
-@config "./admin-tailwind.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./admin-tailwind.config.mjs";
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+#fct_admin_app_wrapper {
+    @tailwind utilities source(none);
+}
 
 .show-on-mobile {
     @apply hidden;
@@ -157,11 +163,11 @@
 }
 
 .el-input__inner {
-    @apply p-0 border-0 rounded-none shadow-none !important;
+    @apply p-0! border-0! rounded-none! shadow-none!;
 }
 
 .el-input__inner:focus {
-    @apply shadow-none border-primary-500 !important;
+    @apply shadow-none! border-primary-500!;
 }
 
 .text-note {
@@ -187,7 +193,7 @@
     @apply stroke-gray-500;
 }
 .el-message.is-center.invalid-date {
-    @apply top-2/4 !important;
+    @apply top-2/4!;
 }
 
 .lead-text {
@@ -229,7 +235,7 @@
     @apply mt-1;
 }
 .fluent-cart-admin-validation-error{
-    @apply !text-red-500;
+    @apply text-red-500!;
 }
 
 /*==== empty text =====*/
@@ -320,10 +326,10 @@ code{
 
 
 .el-button.fct-show-more-button{
-    @apply mt-4 text-system-mid w-full py-4.5 h-auto border border-solid border-x-0 border-b-0 border-gray-divider dark:border-dark-400 dark:bg-transparent !important;
+    @apply mt-4! text-system-mid! w-full! py-4.5! h-auto! border! border-solid! border-x-0! border-b-0! border-gray-divider! dark:border-dark-400! dark:bg-transparent!;
 }
 .el-button.fct-show-more-button svg{
-    @apply w-3 h-3 !important;
+    @apply w-3! h-3!;
 }
 .fct-layout-width{
     @apply max-w-[1350px] 3xl:max-w-[1600px] mx-auto;
@@ -345,11 +351,11 @@ code{
     
 }
 .fct-dummy-product-hint a {
-    @apply text-blue-500 underline dark:text-gray-50 !important;
+    @apply text-blue-500! underline! dark:text-gray-50!;
 }
 
 .underline-link-button{
-    @apply bg-transparent text-[13px] cursor-pointer font-normal border-0 min-h-[auto] flex items-center gap-0.5 text-primary-500 underline focus:outline-none focus:shadow-none dark:text-gray-50 !important;
+    @apply bg-transparent! text-[13px]! cursor-pointer! font-normal! border-0! min-h-[auto]! flex! items-center! gap-0.5! text-primary-500! underline! focus:outline-hidden! focus:shadow-none! dark:text-gray-50!;
 }
 
 /*beta version menu*/

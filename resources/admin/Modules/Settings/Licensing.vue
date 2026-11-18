@@ -1,117 +1,110 @@
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader :heading="translate('Licensing')" :show-save-button="false"/>
+  <SettingsPage :heading="translate('Licensing')" :show-save-button="false">
+    <AdminNotice/>
 
-    <div class="setting-wrap-inner">
-      <AdminNotice/>
-      
-      <CardContainer>
-        <CardBody>
-          <el-skeleton :loading="loading" animated :rows="6"/>
+    <LayoutSection>
+      <fct-skeleton v-if="loading" animated :rows="6"/>
 
-          <div>
-            <!--          <div class="fluent_cart_settings_header fluent_cart_configure_integration_card_header">-->
-            <!--            <div v-if="!disabled" class="fluent_cart_settings_actions">-->
-            <!--              <el-button-->
-            <!--                  class="refresh-setting-icon"-->
-            <!--                  @click="getSettings">-->
-            <!--                <el-icon><Refresh /></el-icon>-->
-            <!--              </el-button>-->
-            <!--            </div>-->
-            <!--          </div>-->
+      <div>
+        <!--          <div class="fluent_cart_settings_header fluent_cart_configure_integration_card_header">-->
+        <!--            <div v-if="!disabled" class="fluent_cart_settings_actions">-->
+        <!--              <el-button-->
+        <!--                  class="refresh-setting-icon"-->
+        <!--                  @click="getSettings">-->
+        <!--                <el-icon><Refresh /></el-icon>-->
+        <!--              </el-button>-->
+        <!--            </div>-->
+        <!--          </div>-->
 
-            <div v-if="!disabled && !loading" v-loading="verifying" class="fluent_cart_configure_integration_body">
-              <div class="fluent_cart_license_box" :class="'fct_license_'+licenseData.status">
-                <div v-if="licenseData.status == 'expired'" class="fct-license-box-content">
-                  <template v-if="!showNewLicenseInput">
-                    <DynamicIcon name="GradientWarningCircle"/>
-                    <h3>{{ translate("Looks like your license key has been Expired!") }}</h3>
-                    <p>{{ translate('Have a new license Key?') }} <a
-                        @click.prevent="showNewLicenseInput = !showNewLicenseInput" href="#">{{
-                        translate('Click here')
-                      }}</a> <template v-if="licenseData.renew_url">or <a :href="licenseData.renew_url" target="_blank">{{
-                        translate('Purchase a new license')
-                      }}</a></template></p>
+        <div v-if="!disabled && !loading" v-loading="verifying" class="fluent_cart_configure_integration_body">
+          <div class="fluent_cart_license_box" :class="'fct_license_'+licenseData.status">
+            <div v-if="licenseData.status == 'expired'" class="fct-license-box-content">
+              <template v-if="!showNewLicenseInput">
+                <DynamicIcon name="GradientWarningCircle"/>
+                <h2>{{ translate("Looks like your license key has been Expired!") }}</h2>
+                <p>{{ translate('Have a new license Key?') }} <a
+                    @click.prevent="showNewLicenseInput = !showNewLicenseInput" href="#">{{
+                    translate('Click here')
+                  }}</a> <template v-if="licenseData.renew_url">or <a :href="licenseData.renew_url" target="_blank">{{
+                    translate('Purchase a new license')
+                  }}</a></template></p>
 
-                    <div class="fct-license-box-content-details">
-                      <p>
-                        <span class="label">{{ translate('License Key') }}</span>
-                        <span class="license-key">{{ maskLicense(licenseData.license_key) }}
-                      <CopyToClipboard
-                          :text="licenseData.license_key"
-                          showMode="basic_copy_btn"
-                          :tooltipText="translate('Copy License')"
-                      />
-                    </span>
-                      </p>
-                      <p><span class="label">{{ translate('Expired At') }}</span> {{
-                          formatDate(licenseData.expires, true)
-                        }}</p>
-                    </div>
-                  </template>
-                  <div v-else class="w-full items-start">
-                    <h3>{{ translate('Your License Key') }}</h3>
-                    <el-input v-model="licenseKey" :placeholder="translate('License Key')"/>
-                  </div>
+                <div class="fct-license-box-content-details">
+                  <p>
+                    <span class="label">{{ translate('License Key') }}</span>
+                    <span class="license-key">{{ maskLicense(licenseData.license_key) }}
+                  <CopyToClipboard
+                      :text="licenseData.license_key"
+                      showMode="basic_copy_btn"
+                      :tooltipText="translate('Copy License')"
+                  />
+                </span>
+                  </p>
+                  <p><span class="label">{{ translate('Expired At') }}</span> {{
+                      formatDate(licenseData.expires, true)
+                    }}</p>
                 </div>
-
-                <div v-else-if="licenseData.status == 'valid'" class="fct-license-box-content">
-                  <DynamicIcon name="GradientCheckCircle"/>
-                  <!-- <span style="font-size: 50px;" class="el-icon el-icon-circle-check"></span> -->
-                  <h3>{{ translate('Congratulations! Your license key is valid and activated') }}</h3>
-                  <p>{{ translate('Want to deactivate this license?') }} <a @click.prevent="deactivateLicense()" href="#">{{
-                      translate('Click here')
-                    }}</a></p>
-                  <div class="fct-license-box-content-details">
-                    <p v-if="licenseData.license_key">
-                      <span class="label">{{ translate('License Key') }}</span>
-                      <span class="license-key">{{ maskLicense(licenseData.license_key) }}
-                    </span>
-                    </p>
-                    <p><span class="label">{{ translate('Expires') }}</span> {{
-                        licenseData.expires !== 'lifetime' ? formatDate(licenseData.expires, true) : licenseData.expires
-                      }}</p>
-                  </div>
-                </div>
-
-                <div v-else class="fct-license-box-content">
-                  <h3>
-                    {{ translate('Please Provide a license key of') }} FluentCart
-                  </h3>
-                  <el-input v-model="licenseKey" :placeholder="translate('License Key')"/>
-                  <p v-if="!showNewLicenseInput">{{ translate("Don't have a license key?") }} <a target="_blank"
-                                                                                                 :href="purchaseLink">{{
-                      translate('Purchase one here')
-                    }}
-                    <DynamicIcon name="External" class="w-4 h-4"/>
-                  </a></p>
-                </div>
-                <p class="fluent_cart_warning text-red-500 m-0" v-html="errorMessage"></p>
-                <!--              <a :href="licenseData.renew_url" target="_blank"-->
-                <!--                 class="el-button el-button&#45;&#45;danger el-button&#45;&#45;small">{{-->
-                <!--                  translate("Click Here to Renew your License")-->
-                <!--                }}</a>-->
-                <el-button v-if="licenseData.status === 'expired' && showNewLicenseInput"
-                           type="primary"
-                           @click="verifyLicense()">
-                  <DynamicIcon name="Lock" class="w-5 h-5"/>
-                  {{ translate('Click Here to Renew your License') }}
-                </el-button>
-                <el-button v-else-if="!['valid', 'expired'].includes(licenseData.status)"
-                           type="primary"
-                           @click="verifyLicense()"
-                >
-                  <DynamicIcon name="Lock" class="w-5 h-5"/>
-                  {{ translate('Verify License') }}
-                </el-button>
+              </template>
+              <div v-else class="w-full items-start">
+                <h2>{{ translate('Your License Key') }}</h2>
+                <fct-input v-model="licenseKey" :placeholder="translate('License Key')"/>
               </div>
             </div>
-          </div>
-        </CardBody>
-      </CardContainer>
-    </div>
 
-  </div>
+            <div v-else-if="licenseData.status == 'valid'" class="fct-license-box-content">
+              <DynamicIcon name="GradientCheckCircle"/>
+              <!-- <span style="font-size: 50px;" class="el-icon el-icon-circle-check"></span> -->
+              <h2>{{ translate('Congratulations! Your license key is valid and activated') }}</h2>
+              <p>{{ translate('Want to deactivate this license?') }} <a @click.prevent="deactivateLicense()" href="#">{{
+                  translate('Click here')
+                }}</a></p>
+              <div class="fct-license-box-content-details">
+                <p v-if="licenseData.license_key">
+                  <span class="label">{{ translate('License Key') }}</span>
+                  <span class="license-key">{{ maskLicense(licenseData.license_key) }}
+                </span>
+                </p>
+                <p><span class="label">{{ translate('Expires') }}</span> {{
+                    licenseData.expires !== 'lifetime' ? formatDate(licenseData.expires, true) : licenseData.expires
+                  }}</p>
+              </div>
+            </div>
+
+            <div v-else class="fct-license-box-content">
+              <h2>
+                {{ translate('Please Provide a license key of') }} FluentCart
+              </h2>
+              <fct-input v-model="licenseKey" :placeholder="translate('License Key')"/>
+              <p v-if="!showNewLicenseInput">{{ translate("Don't have a license key?") }} <a target="_blank"
+                                                                                             :href="purchaseLink">{{
+                  translate('Purchase one here')
+                }}
+                <DynamicIcon name="External" class="w-4 h-4"/>
+              </a></p>
+            </div>
+            <p class="fluent_cart_warning text-red-500 m-0" v-html="errorMessage"></p>
+            <!--              <a :href="licenseData.renew_url" target="_blank"-->
+            <!--                 class="el-button el-button&#45;&#45;danger el-button&#45;&#45;small">{{-->
+            <!--                  translate("Click Here to Renew your License")-->
+            <!--                }}</a>-->
+            <fct-button v-if="licenseData.status === 'expired' && showNewLicenseInput"
+                       type="primary"
+                       @click="verifyLicense()">
+              <DynamicIcon name="Lock" class="w-5 h-5"/>
+              {{ translate('Click Here to Renew your License') }}
+            </fct-button>
+            <fct-button v-else-if="!['valid', 'expired'].includes(licenseData.status)"
+                       type="primary"
+                       @click="verifyLicense()"
+            >
+              <DynamicIcon name="Lock" class="w-5 h-5"/>
+              {{ translate('Verify License') }}
+            </fct-button>
+          </div>
+        </div>
+      </div>
+    </LayoutSection>
+  </SettingsPage>
 </template>
 
 
@@ -122,14 +115,11 @@ import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
 import {formatDate} from "@/Bits/common";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
+import SettingsPage from "./Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import Badge from "@/Bits/Components/Badge.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
-import {
-  Container as CardContainer,
-  Body as CardBody
-} from '@/Bits/Components/Card/Card.js';
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 export default {
@@ -139,9 +129,8 @@ export default {
     Badge,
     DynamicIcon,
     CopyToClipboard,
-    SettingsHeader,
-    CardBody,
-    CardContainer,
+    SettingsPage,
+    LayoutSection: Section,
     AdminNotice
   },
   props: ['disabled'],

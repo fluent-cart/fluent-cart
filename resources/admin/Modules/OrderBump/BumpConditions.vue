@@ -1,8 +1,8 @@
 <template>
     <div class="fct_bump_conditions">
-        <el-checkbox @change="maybePrepareData()" true-value="yes" false-value="no" v-model="bumpConditions.is_enabled">
+        <fct-choice @change="maybePrepareData()" true-value="yes" false-value="no" v-model="bumpConditions.is_enabled">
           {{ translate('Enable Conditions for this Order Bump') }}
-        </el-checkbox>
+        </fct-choice>
 
         <div class="fct_bump_condition_groups mt-4" v-if="bumpConditions.is_enabled === 'yes'">
             <div v-for="(group, index) in bumpConditions.groups" :key="'fct_group_' + index"
@@ -16,10 +16,10 @@
             </div>
         </div>
 
-        <el-button v-if="bumpConditions.is_enabled === 'yes'" type="primary" @click="bumpConditions.groups.push([])" class="mt-4">
+        <fct-button v-if="bumpConditions.is_enabled === 'yes'" type="primary" @click="bumpConditions.groups.push([])" class="mt-4">
           <DynamicIcon name="Plus"/>
           {{ translate('Add New Condition Group') }}
-        </el-button>
+        </fct-button>
 
     </div>
 </template>

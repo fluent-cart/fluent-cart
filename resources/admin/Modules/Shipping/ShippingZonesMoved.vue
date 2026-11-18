@@ -16,9 +16,9 @@ const manualCarrierRoute = {name: 'carrier_settings', params: {slug: CARRIER_MAN
       <Card.Container>
         <Card.Body>
           <div class="fct-shipping-zones-moved grid gap-3 justify-items-start">
-            <h4 class="text-base font-semibold m-0 text-system-dark dark:text-gray-50">
+            <h2 class="text-base font-semibold m-0 text-system-dark dark:text-gray-50">
               {{ translate('Shipping zones have moved') }}
-            </h4>
+            </h2>
             <p class="text-sm m-0 text-system-mid dark:text-gray-300">
               {{ translate('Ship_Shipping_Zones') }}
             </p>
@@ -29,9 +29,9 @@ const manualCarrierRoute = {name: 'carrier_settings', params: {slug: CARRIER_MAN
               <el-breadcrumb-item :to="manualCarrierRoute">{{ translate('Manual / Other') }}</el-breadcrumb-item>
               <el-breadcrumb-item>{{ translate('Shipping Zones') }}</el-breadcrumb-item>
             </el-breadcrumb>
-            <el-button tag="router-link" type="primary" :to="manualCarrierRoute">
+            <fct-button type="primary" :to="manualCarrierRoute">
               {{ translate('Go to Manual carrier') }}
-            </el-button>
+            </fct-button>
           </div>
         </Card.Body>
       </Card.Container>

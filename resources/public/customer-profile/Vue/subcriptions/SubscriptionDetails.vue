@@ -23,23 +23,18 @@
             </div>
 
             <div class="action-btns">
-                <el-dropdown v-if="isCancelable && showCancelButton" trigger="click" :hide-on-click="false" role="menu" aria-haspopup="true" aria-expanded="false">
+                <fct-dropdown v-if="isCancelable && showCancelButton" trigger="click" :hide-on-click="false" :items="[{command: 'cancel'}]">
                     <IconButton tag="button" size="x-small" class="simple-icon-btn" :aria-label="translate('Subscription options')">
                         <DynamicIcon name="More" class="w-[5px]" aria-hidden="true"/>
                     </IconButton>
-                    <template #dropdown>
-                        <el-dropdown-menu role="menu">
-                            <el-dropdown-item role="menuitem">
-                                <el-popover
+                    <template #item>
+                                <fct-popover
                                     popper-class="fluent-cart-customer-profile-app"
                                     trigger="click"
                                     placement="bottom"
                                     :width="260"
                                     ref="popoverRef"
                                     role="alertdialog"
-                                    aria-modal="true"
-                                    aria-labelledby="cancel-popover-title"
-                                    aria-describedby="cancel-popover-desc"
                                 >
                                     <h3 id="cancel-popover-title" class="sr-only">
                                         {{ translate('Cancel Subscription') }}
@@ -50,10 +45,10 @@
                                     </div>
 
                                     <div class="flex justify-end gap-2">
-                                        <el-button class="el-button--x-small" text @click="closePopover" :aria-label="$t('Cancel')">
+                                        <fct-button class="el-button--x-small" text @click="closePopover" :aria-label="$t('Cancel')">
                                             {{ $t('Cancel') }}
-                                        </el-button>
-                                        <el-button 
+                                        </fct-button>
+                                        <fct-button 
                                             class="el-button--x-small" 
                                             type="primary" 
                                             :loading="cancelling"
@@ -61,17 +56,15 @@
                                             :aria-label="$t('Yes, Proceed')"
                                         >
                                             {{ $t('Yes, Proceed') }}
-                                        </el-button>
+                                        </fct-button>
                                     </div>
 
                                     <template #reference>
                                         <span :aria-label="_x('Cancel', 'Subscription action')">{{ _x('Cancel', 'Subscription action') }}</span>
                                     </template>
-                                </el-popover>
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
+                                </fct-popover>
                     </template>
-                </el-dropdown>
+                </fct-dropdown>
             </div>
         </div>
 
@@ -139,7 +132,7 @@ import Badge from "../parts/Badge.vue";
 import UpgradePlan from "./UpdatePaymentInfos/UpgradePlan.vue";
 import {computed, getCurrentInstance, ref} from "vue";
 import Rest from "@/utils/http/Rest";
-import Notify from "@/utils/Notify";
+import Notify from "../../utils/PortalNotify";
 import SubscriptionHelper from "../../SubscriptionHelper.js";
 import UpdatePaymentInfos from "./UpdatePaymentInfos/index.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";

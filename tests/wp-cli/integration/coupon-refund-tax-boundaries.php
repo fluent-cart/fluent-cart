@@ -1,17 +1,13 @@
 <?php
 /**
- * Coupon cap, local refund reconciliation and tax postcode boundaries.
+ * Local refund reconciliation and tax postcode boundaries.
  */
 
-use FluentCart\Api\Resource\FrontendResource\CartResource;
-use FluentCart\App\App;
-use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\TaxClass;
 use FluentCart\App\Modules\Tax\TaxCalculator;
-use FluentCart\App\Services\Coupon\CouponServiceAdmin;
 use FluentCart\App\Services\Payments\Refund;
 
 $phase30RestoreOption = function ($key, $previous, $missing) {
@@ -24,74 +20,6 @@ $phase30RestoreOption = function ($key, $previous, $missing) {
 };
 
 return [
-    [
-        'id'            => 'coupon-independent-maximum-cap',
-        'name'          => 'Coupon maximum caps a line below both face value and eligible subtotal',
-        'kind'          => 'behavior',
-        'phase'         => 30,
-        'known_failure' => false,
-        'run'           => function () {
-            $requestKey = Helper::INSTANT_CHECKOUT_URL_PARAM;
-            $previousHash = App::request()->get($requestKey);
-
-            try {
-                $product = FcDomainFixture::product(['item_price' => 5000]);
-                FcFixture::customer();
-                $inertOrder = FcFixture::order([
-                    'subtotal'     => 5000,
-                    'tax_total'    => 0,
-                    'total_amount' => 5000,
-                ]);
-                $coupon = FcFixture::coupon([
-                    'status'     => 'active',
-                    'type'       => 'fixed',
-                    'amount'     => 4000,
-                    'stackable'  => 'yes',
-                    'conditions' => ['max_discount_amount' => 1001],
-                ]);
-                $line = [
-                    'id'             => (int) $product['variation']->id,
-                    'post_id'        => (int) $product['post']->ID,
-                    'quantity'       => 1,
-                    'unit_price'     => 5000,
-                    'subtotal'       => 5000,
-                    'discount_total' => 0,
-                    'other_info'     => [],
-                ];
-
-                App::request()->set($requestKey, null);
-                CartResource::resetCartCache();
-                $service = new CouponServiceAdmin([$line]);
-                $service->applyCoupon((string) $coupon->code);
-                $calculated = $service->getCalculatedLineItems();
-                $discount = $service->getDiscountData();
-                $calculatedLine = $calculated[(int) $product['variation']->id];
-                $storedOrder = FcFixture::reloadOrder((int) $inertOrder->id);
-
-                FcTest::assertSame(
-                    [5000, 4000, 1001],
-                    [(int) $line['subtotal'], (int) $coupon->amount, (int) $coupon->conditions['max_discount_amount']],
-                    'subtotal, face value, and maximum are three independent boundaries'
-                );
-                FcTest::assertSame(1001, (int) $calculatedLine['coupon_discount'], 'line discount stops at the independent maximum');
-                FcTest::assertSame(
-                    3999,
-                    (int) $calculatedLine['subtotal'] - (int) $calculatedLine['coupon_discount'],
-                    'line retains the exact post-cap payable cents'
-                );
-                FcTest::assertSame(1001, (int) $discount[$coupon->code]['discount'], 'discount ledger stops at the same maximum');
-                FcTest::assertSame(
-                    [Status::PAYMENT_PENDING, 0, ''],
-                    [(string) $storedOrder->payment_status, (int) $storedOrder->total_paid, (string) $storedOrder->payment_method],
-                    'coupon calculation leaves the owned Order inert'
-                );
-            } finally {
-                App::request()->set($requestKey, $previousHash);
-                CartResource::resetCartCache();
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
     [
         'id'            => 'local-refund-amount-reconciliation',
         'name'          => 'Provider refund identity attaches only to the same-parent local refund with matching amount',

@@ -11,7 +11,8 @@ const emit = defineEmits(['update:modelValue']);
 </script>
 
 <template>
-  <el-dialog
+  <fct-dialog
+      append-to="#fct_admin_app_wrapper"
       :model-value="modelValue"
       :title="translate('Channel Rules')"
       class="fct-channel-rules-dialog"
@@ -29,5 +30,5 @@ const emit = defineEmits(['update:modelValue']);
           :rows="[[translate('Partners'), translate('Source'), 'partner'], [translate('Newsletter'), translate('Medium'), 'email']]"
       />
     </ProReportPreview>
-  </el-dialog>
+  </fct-dialog>
 </template>

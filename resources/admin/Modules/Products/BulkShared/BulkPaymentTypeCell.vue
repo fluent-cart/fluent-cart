@@ -24,16 +24,14 @@ const hasOtherInfo = () => props.variant?.other_info;
 <template>
   <template v-if="variant && hasOtherInfo()">
     <div class="flex items-center">
-      <el-select
+      <fct-select
         v-model="variant.other_info.payment_type"
+        :options="[{label: $t('One Time'), value: 'onetime'}, {label: $t('Subscription'), value: 'subscription'}]"
         size="small"
         :class="{ 'is-field-error': hasError }"
         :disabled="disabled"
         @change="emit('payment-type-change', variant)"
-      >
-        <el-option :label="$t('One Time')" value="onetime" />
-        <el-option :label="$t('Subscription')" value="subscription" />
-      </el-select>
+      />
       <BulkSubscriptionPopover :variant="variant" :disabled="disabled" @changed="emit('change')" />
     </div>
   </template>

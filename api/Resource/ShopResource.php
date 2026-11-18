@@ -7,6 +7,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\WpModels\TermRelationship;
+use FluentCart\App\Services\Filter\ShopAttributeFilter;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
@@ -89,8 +90,11 @@ class ShopResource extends BaseResourceApi
         if (is_string($defaultFilters)) {
             $defaultFilters = json_decode($defaultFilters, true) ?: [];
         }
+        $priceFrom = Arr::get($filters, 'price_range_from');
+        $priceTo = Arr::get($filters, 'price_range_to');
 
         $taxonomy_filters = Arr::get($params, 'taxonomy_filters', []);
+        $attributeSelection = ShopAttributeFilter::parseSelection($filters);
 
 
         $defaultWildcard = Arr::get($defaultFilters, 'wildcard', null);
@@ -142,10 +146,11 @@ class ShopResource extends BaseResourceApi
                     });
                 });
             })
-            ->when(!empty($filters['price_range_from']) && !empty($filters['price_range_to']), function ($query) use ($filters) {
-                return $query->whereHas('detail', function ($query) use ($filters) {
+            // Both bounds must be numbers; 0 is one, which empty() would treat as no value.
+            ->when(is_numeric($priceFrom) && is_numeric($priceTo), function ($query) use ($priceFrom, $priceTo) {
+                return $query->whereHas('detail', function ($query) use ($priceFrom, $priceTo) {
                     // The shopper's bounds are in their currency; min_price is base
-                    return $query->search(["min_price" => ["column" => "min_price", "operator" => "between", "value" => StorefrontPrice::rangeToBase(Helper::toCent($filters['price_range_from']), Helper::toCent($filters['price_range_to']))]]);
+                    return $query->search(["min_price" => ["column" => "min_price", "operator" => "between", "value" => StorefrontPrice::rangeToBase(Helper::toCent($priceFrom), Helper::toCent($priceTo))]]);
                 });
             })
             ->when(!empty($taxonomy_filters), function ($query) use ($taxonomy_filters) {
@@ -156,6 +161,9 @@ class ShopResource extends BaseResourceApi
                         return $query->search(["term_id" => ["column" => "term_id", "operator" => "in", "value" => $terms]]);
                     });
                 }
+            })
+            ->when($attributeSelection, function ($query) use ($attributeSelection) {
+                return ShopAttributeFilter::apply($query, $attributeSelection);
             })
             // Shortcode filter: include specific product IDs
             ->when(!empty(Arr::get($params, 'include_ids')), function ($query) use ($params) {

@@ -29,9 +29,9 @@ const detachUser = () => {
 
 <template>
 
-  <el-button @click="detachUser">
+  <fct-button @click="detachUser">
     {{ translate('Detach User') }}
-  </el-button>
+  </fct-button>
 </template>
 
 <style scoped>

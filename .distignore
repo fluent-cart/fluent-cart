@@ -32,7 +32,6 @@ lerna-debug.log*
 composer.lock
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
 
 # Development / Docs
 dev-docs/

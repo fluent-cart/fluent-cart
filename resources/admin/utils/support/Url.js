@@ -144,6 +144,29 @@ export default class Url {
         return router?.query?.[key] ?? router?.query ?? null;
     }
 
+    // An add-on registers its routes and assets only on a fresh load, so reload on its page.
+    // target: an admin route ('/settings/...') or a full URL. replaceState, not a router push:
+    // the route may not exist until after the reload.
+    static reloadAt(target = '') {
+        let hash = target && target.charAt(0) === '/' ? '#' + target : '';
+
+        if (target && !hash) {
+            const next = new URL(target, window.location.href);
+            const here = new URL(window.location.href);
+            // Same page, new hash: assign() would only change the hash, not reload.
+            if (next.origin + next.pathname + next.search !== here.origin + here.pathname + here.search) {
+                window.location.assign(next.href);
+                return;
+            }
+            hash = next.hash;
+        }
+
+        if (hash) {
+            window.history.replaceState(null, '', hash);
+        }
+        window.location.reload();
+    }
+
     static scrollToHashSection(hash) {
         const sectionId = hash?.startsWith('#') ? hash.slice(1) : (hash || '');
         if (!sectionId) return;

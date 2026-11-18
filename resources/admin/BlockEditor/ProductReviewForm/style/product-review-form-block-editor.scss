@@ -1,3 +1,5 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
 .fct-review-form-block-editor {
     // The canvas renders the block's real markup (ServerSideRender), so the
     // storefront stylesheet does the work. Only the empty-state note is ours.

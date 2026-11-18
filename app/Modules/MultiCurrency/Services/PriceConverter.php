@@ -15,7 +15,8 @@ if (!defined('ABSPATH')) {
  * that are not prices (shipping, coupon amounts) convert with toQuote():
  * rate, then the currency's smallest unit. Product prices convert with
  * toPrice(): rate, the % adjustment, rounding up to the step, the charm
- * ending (plan §2.5.1, §15.4). Amounts stay ×100 for every currency.
+ * ending (dev-docs/multi-currency/04-conversion-engine.md). Amounts stay
+ * ×100 for every currency.
  */
 class PriceConverter
 {
@@ -137,7 +138,8 @@ class PriceConverter
 
     /**
      * The quote's pricing rules as one comparable string — a cart item priced
-     * under other rules is re-priced (plan §11.6).
+     * under other rules is re-priced
+     * (dev-docs/multi-currency/03-data-storage-map.md, "Cart item keys").
      */
     public static function rulesKey(array $quote): string
     {

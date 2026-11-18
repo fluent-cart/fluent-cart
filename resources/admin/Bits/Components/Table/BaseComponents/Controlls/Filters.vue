@@ -2,7 +2,7 @@
   <div class="filters-wrap">
     <div class="fct-btn-group">
       <div ref="filter_popover_wrapper">
-        <el-popover :visible="filterVisible" placement="bottom-start" width="450"
+        <fct-popover :visible="filterVisible" placement="bottom-start" width="450"
                     popper-class="filter-popover fluent-cart-admin-pages">
           <div class="filter-popover-item">
             <FilterItem
@@ -13,11 +13,9 @@
           </div>
           <template #reference>
               <span>
-                <el-tooltip
-                    effect="dark"
+                <fct-tooltip
                     :content="$t('Filter')"
                     placement="top"
-                    popper-class="fct-tooltip"
                 >
                   <IconButton tag="button"
                               @click="filterVisible = !filterVisible">
@@ -25,10 +23,10 @@
                                 class="filter-count-badge"></el-badge>
                       <DynamicIcon name="FilterIcon"/>
                     </IconButton>
-                </el-tooltip>
+                </fct-tooltip>
               </span>
           </template>
-        </el-popover>
+        </fct-popover>
       </div>
     </div>
   </div>

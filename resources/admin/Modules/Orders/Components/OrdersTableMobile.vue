@@ -91,21 +91,14 @@ const getFilteredItems = (orderItems) => {
             </div>
 
             <div v-if="isColumnVisible('actions')" class="fct-order-table-actions-col">
-              <el-dropdown trigger="click" popper-class="fct-dropdown">
+              <fct-dropdown
+                  trigger="click"
+                  :items="[{command: 'view_invoice', label: translate('View Invoice'), icon: 'Print', href: getInvoiceUrl(row.uuid), target: '_blank'}]"
+              >
                 <span class="el-dropdown-link">
                    <DynamicIcon name="More" class="w-1"/>
                 </span>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item class="item-link">
-                      <a target="_blank" :href="getInvoiceUrl(row.uuid)">
-                        <DynamicIcon name="Print"/>
-                        {{ translate('View Invoice') }}
-                      </a>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              </fct-dropdown>
 
             </div>
           </div>
@@ -125,7 +118,7 @@ const getFilteredItems = (orderItems) => {
 
             <div v-if="isColumnVisible('order_items')" class="fct-order-table-order-items-col">
               <div class="fct-popover-box">
-                <el-popover
+                <fct-popover
                     placement="bottom-start"
                     :width="360"
                     trigger="click"
@@ -175,7 +168,7 @@ const getFilteredItems = (orderItems) => {
                       </div>
                     </div>
                   </template>
-                </el-popover>
+                </fct-popover>
               </div>
             </div>
           </div>

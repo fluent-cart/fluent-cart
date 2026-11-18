@@ -54,8 +54,11 @@
           &::after,
           &::before {
             content: '';
-            @apply absolute top-1/2 w-full h-[1px] bg-gray-divider dark:bg-dark-400;
+            @apply absolute top-1/2 w-full h-[1px] bg-gray-divider;
             transform: translateY(-50%);
+          }
+          .fluent_theme_dark &::before {
+              @apply bg-dark-400;
           }
           span {
             @apply z-10 px-3 bg-white dark:bg-primary-700;
@@ -69,12 +72,10 @@
 
 .el-overlay {
   &.fct-create-new-order-bump-modal {
-    .el-form {
-      .el-form-item {
-        .el-select {
-          .el-tag__content {
-            @apply truncate max-w-[400px];
-          }
+    .fct-create-new-order-bump-form {
+      .el-select {
+        .el-tag__content {
+          @apply truncate max-w-[400px];
         }
       }
     }
@@ -97,6 +98,672 @@
           @apply h-auto;
         }
       }
+    }
+  }
+}
+
+// Checkout placement select: a check mark on the chosen option
+.el-popper.fct-order-bump-placement-popper {
+  .el-select-dropdown__item {
+    @apply relative pr-9;
+
+    &.is-selected::after {
+      @apply absolute top-1/2 right-3 w-4 h-3.5 bg-no-repeat bg-center;
+      content: "";
+      transform: translateY(-50%) scale(0.8);
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="13" viewBox="0 0 16 13" fill="none"><path d="M1 8.5C1 8.5 2.5 8.5 4.5 12C4.5 12 10.0588 2.83333 15 1" stroke="%23758195" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    }
+  }
+}
+
+.fct-order-bump-placement-label {
+  @apply inline-flex items-center gap-2;
+}
+
+// A plain button: the global Element Plus link button forces the dark primary colour.
+.fct-order-bump-preview-btn {
+  @apply inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-xs font-medium text-blue-600 hover:text-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:text-blue-400 dark:hover:text-blue-300;
+
+  svg {
+    @apply h-3 w-3.5;
+  }
+}
+
+// Order bumps list: the Offer, Price and Discount cells.
+.fct-order-bump-offer {
+  @apply flex items-center gap-4;
+  // The table cell has no vertical padding, so the tile would touch the row borders.
+  padding-block: 20px;
+
+  &__tile {
+    @apply flex-shrink-0 overflow-hidden bg-gray-100 dark:bg-dark-500;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+
+    img {
+      @apply block h-full w-full object-cover;
+    }
+  }
+
+  &__body {
+    @apply flex min-w-0 flex-col text-system-mid dark:text-gray-300;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  // The offer's product or variation was deleted: the chip says so where the product details would be.
+  // The extra class beats the label hint's own colour for its label.
+  &__missing.fct-label-hint {
+    @apply inline-flex items-center gap-2;
+
+    .label {
+      @apply inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700 dark:bg-red-alpha-16 dark:text-red-400;
+    }
+  }
+
+  &__product {
+    @apply font-medium text-system-dark dark:text-gray-50;
+    font-size: 16px;
+  }
+
+  &__variation {
+    font-size: 12px;
+  }
+
+  &__name {
+    @apply font-medium text-system-dark no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:text-gray-50;
+    font-size: 14px;
+  }
+}
+
+.fct-order-bump-shows-on {
+  @apply flex flex-col items-start gap-1.5;
+}
+
+// A small grey pill, for short facts in a table cell.
+.fct-order-bump-chip {
+  @apply inline-flex whitespace-nowrap rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-system-dark dark:bg-dark-500 dark:text-gray-50;
+}
+
+.fct-order-bump-discount,
+.fct-order-bump-price {
+  @apply text-system-dark dark:text-gray-50;
+  font-size: 13px;
+  line-height: 1.8;
+
+  &__label {
+    @apply font-bold;
+  }
+}
+
+.fct-order-bump-price__regular--struck {
+  @apply line-through;
+}
+
+// Order Bumps → Design: the card templates, laid out like the PDF template list
+.fct-order-bump-template-grid {
+  @apply grid gap-5;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+}
+
+.fct-order-bump-template-card {
+  @apply border border-solid border-gray-outline rounded overflow-hidden transition-colors hover:border-gray-500 dark:border-dark-400;
+}
+
+.fct-order-bump-template-preview {
+  @apply relative flex h-[220px] items-center justify-center bg-gray-50 p-5 dark:bg-dark-600;
+}
+
+.fct-order-bump-template-skeleton {
+  @apply h-[220px] w-full rounded-none;
+}
+
+.fct-order-bump-template-skeleton-title {
+  @apply w-[140px];
+}
+
+.fct-order-bump-template-skeleton-text {
+  @apply w-[200px];
+}
+
+.fct-order-bump-template-more {
+  @apply h-auto! p-1!;
+}
+
+.fct-order-bump-template-sample {
+  @apply pointer-events-none w-full;
+}
+
+.fct-order-bump-template-footer {
+  @apply flex flex-wrap items-center justify-between gap-x-2 gap-y-3 px-4 py-2.5 text-xs;
+}
+
+.fct-order-bump-template-actions {
+  @apply flex w-full flex-wrap items-center gap-2;
+
+  // Element Plus adds its own left margin between buttons, on top of the gap.
+  .el-button + .el-button {
+    @apply ml-0;
+  }
+
+  // Reset undoes work, so it sits apart at the right end, quieter and red.
+  .el-button.fct-order-bump-template-reset {
+    @apply ms-auto border-transparent bg-transparent text-red-600 hover:border-transparent hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-alpha-16;
+  }
+}
+
+.fct-order-bump-template-name {
+  // The name takes the full row, so the buttons sit on their own line below it.
+  @apply flex min-w-0 basis-full flex-col gap-1;
+}
+
+.fct-order-bump-template-name-row {
+  @apply flex items-center gap-2;
+
+  // The In Use badge sits at the right end of the name row.
+  .fct-order-bump-template-active {
+    @apply ms-auto;
+  }
+}
+
+// The active card keeps the primary colour; the others stay grey.
+.fct-order-bump-template-card.is-active {
+  @apply border-primary-500 dark:border-gray-100;
+}
+
+.fct-order-bump-template-active {
+  @apply inline-flex shrink-0 rounded-full bg-primary-500 px-2 text-xs font-medium text-white dark:bg-gray-100 dark:text-gray-900;
+  line-height: 20px;
+}
+
+.fct-order-bump-template-used {
+  @apply text-system-mid dark:text-gray-300;
+}
+
+.fct-order-bump-template-title {
+  @apply font-medium text-system-dark dark:text-gray-50;
+}
+
+.fct-order-bump-template-badge {
+  @apply inline-flex rounded-xs bg-blue-50 p-1 px-1.5 text-[11px] leading-none text-blue-500 dark:text-blue-800;
+
+  // An edited card: amber, so it reads apart from the built-in blue.
+  &.is-customized {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
+  }
+}
+
+// Order Bumps → Design: look-alike previews of the built-in cards (static, so the page needs no storefront CSS)
+// The admin's dark theme paints every p and span light, which hides the text of these fixed-colour cards.
+// Two element selectors out-rank that rule but stay under the cards' own class rules, so the cards keep their colours.
+:where(.fct-order-bump-template-sample) :is(p, span):is(p, span) {
+  color: inherit;
+}
+
+// Highlight
+.fct-pp-highlight {
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px dashed rgb(217, 220, 225);
+    border-radius: 8px;
+    background: rgb(255, 255, 255);
+    color: rgb(17, 24, 39);
+}
+.fct-pp-highlight__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 12px;
+    min-height: 46px;
+    padding: 0 16px;
+    background: rgb(253, 247, 200);
+    color: rgb(107, 58, 14);
+    font-size: 14px;
+    font-weight: 600;
+}
+.fct-pp-highlight__toggle {
+    display: flex;
+    align-items: center;
+    column-gap: 8px;
+}
+.fct-pp-highlight__checkbox {
+    flex: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    background: rgb(255, 255, 255);
+    border: 1px solid rgb(107, 58, 14);
+    border-radius: 3px;
+}
+.fct-pp-highlight__prices {
+    display: flex;
+    align-items: baseline;
+    column-gap: 8px;
+}
+.fct-pp-highlight__was {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+.fct-pp-highlight__body {
+    display: flex;
+    align-items: center;
+    column-gap: 14px;
+    padding: 18px 16px;
+}
+.fct-pp-highlight__image {
+    flex: none;
+    width: 60px;
+    height: 60px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgb(243, 244, 246);
+}
+.fct-pp-highlight__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fct-pp-highlight__details {
+    flex: 1;
+    min-width: 0;
+}
+.fct-pp-highlight__badge,
+.fct-pp-highlight__variation {
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgb(107, 114, 128);
+}
+.fct-pp-highlight__name {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.fct-pp-highlight__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    margin-top: 2px;
+    font-size: 15px;
+}
+.fct-pp-highlight__was--body {
+    color: rgb(107, 114, 128);
+    opacity: 1;
+}
+.fct-pp-highlight__price {
+    font-weight: 600;
+}
+.fct-pp-highlight__savings {
+    font-size: 13px;
+    color: rgb(192, 57, 43);
+}
+
+// Exclusive
+.fct-pp-excl {
+    box-sizing: border-box;
+    border: 1px dashed #a6e0c0;
+    border-radius: 8px;
+    background: #effcf5;
+    overflow: hidden;
+}
+.fct-pp-excl__top {
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+    padding: 18px 12px;
+    border-bottom: 1px dashed #a6e0c0;
+}
+.fct-pp-excl__icon {
+    flex: 0 0 auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+.fct-pp-excl__icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fct-pp-excl__details {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+}
+.fct-pp-excl__badge {
+    font-size: 12px;
+    color: #1f7a50;
+}
+.fct-pp-excl__product {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+}
+.fct-pp-excl__variation {
+    font-size: 13px;
+    color: #6b7280;
+}
+.fct-pp-excl__prices,
+.fct-pp-excl__total {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    font-size: 14px;
+}
+.fct-pp-excl__original {
+    text-decoration: line-through;
+    color: #6b7280;
+}
+.fct-pp-excl__price {
+    font-weight: 600;
+    color: #111827;
+}
+.fct-pp-excl__savings {
+    color: #c0392b;
+}
+.fct-pp-excl__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 12px;
+    padding: 10px 12px;
+}
+.fct-pp-excl__toggle {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    column-gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f7a50;
+}
+.fct-pp-excl__checkbox {
+    flex: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 1px solid #2f9467;
+    border-radius: 3px;
+}
+.fct-pp-excl__total .fct-pp-excl__original {
+    color: #7fbf9f;
+}
+.fct-pp-excl__total .fct-pp-excl__price {
+    color: #1f7a50;
+}
+
+// Callout
+.fct-bump-callout-preview {
+    box-sizing: border-box;
+    padding: 16px;
+    border: 1px dashed #bfd3f2;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #0e121b;
+}
+.fct-bump-callout-preview__body {
+    display: flex;
+    align-items: flex-start;
+    column-gap: 16px;
+}
+.fct-bump-callout-preview__image {
+    flex: 0 0 auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.5);
+}
+.fct-bump-callout-preview__image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fct-bump-callout-preview__details {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+}
+.fct-bump-callout-preview__product {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+.fct-bump-callout-preview__variation,
+.fct-bump-callout-preview__description {
+    margin-top: 4px;
+    font-size: 14px;
+    color: #525866;
+}
+.fct-bump-callout-preview__prices {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 12px;
+    margin-top: 4px;
+    font-size: 15px;
+}
+.fct-bump-callout-preview__original {
+    text-decoration: line-through;
+    color: #525866;
+}
+.fct-bump-callout-preview__price {
+    font-weight: 600;
+}
+.fct-bump-callout-preview__savings {
+    font-size: 14px;
+    color: #b42318;
+}
+.fct-bump-callout-preview__footer {
+    display: flex;
+    align-items: center;
+    column-gap: 8px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px dashed #93b4ea;
+    border-radius: 10px;
+    background: #fff;
+}
+.fct-bump-callout-preview__box {
+    flex: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #2563eb;
+    border-radius: 3px;
+    background: #fff;
+}
+.fct-bump-callout-preview__label {
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+// Toggle
+.fct-pv-toggle {
+    display: flex;
+    align-items: center;
+    column-gap: 14px;
+    box-sizing: border-box;
+    padding: 16px;
+    border: 1px dashed #f6d6b4;
+    border-radius: 12px;
+    background: #fdf6ec;
+}
+.fct-pv-toggle__icon {
+    flex: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f3f4f6;
+}
+.fct-pv-toggle__icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.fct-pv-toggle__details {
+    flex: 1;
+    min-width: 0;
+}
+.fct-pv-toggle__product {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #111827;
+}
+.fct-pv-toggle__variation {
+    margin-top: 2px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #6b7280;
+}
+.fct-pv-toggle__prices {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 8px;
+    margin-top: 4px;
+    font-size: 15px;
+}
+.fct-pv-toggle__original {
+    text-decoration: line-through;
+    color: #6b7280;
+}
+.fct-pv-toggle__price {
+    font-weight: 600;
+    color: #111827;
+}
+.fct-pv-toggle__savings {
+    font-size: 13px;
+    color: #c0392b;
+}
+.fct-pv-toggle__switch {
+    position: relative;
+    flex: none;
+    width: 52px;
+    height: 26px;
+    border-radius: 999px;
+    background: #d9dce1;
+}
+.fct-pv-toggle__switch::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    inset-inline-start: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+
+
+// Order Bumps → Design → edit a card: the header band and the page body match the PDF template editor
+.fct-order-bump-template-edit,
+.fct-order-bump-design-page {
+  @apply pb-7.5;
+}
+
+.fct-order-bump-edit-body {
+  @apply px-7.5 max-w-[1100px] pt-7.5 mx-auto w-full;
+}
+
+// The Design page keeps the wide card grid, with the same page padding.
+// Page's body is a flex column: without w-full, mx-auto shrinks the body to its content.
+.fct-order-bump-design-body {
+  @apply mx-auto w-full max-w-[1350px] px-7.5 pt-7.5 3xl:max-w-[1600px];
+}
+
+// The header band runs edge to edge right under the fixed top bar, so the app wrapper drops its side padding here.
+// The wrapper id matches the responsive rules, so this wins at tablet and phone widths too.
+#fct_admin_app_wrapper #fluent_cart_plugin_app:has(.fct-order-bump-template-edit, .fct-order-bump-design-page) {
+  @apply px-0;
+
+  // The top bar is 8px shorter below 1025px, and 19px shorter on phones than the default top padding assumes.
+  @apply pt-[25px];
+
+  @media (min-width: 1025px) {
+    @apply pt-[33px];
+  }
+}
+
+// The table cell is a flex row, so text-align cannot centre the priority number.
+.fct-order-bump-priority .table-cell {
+  @apply justify-center;
+}
+
+// Bump settings → Display: one card shows the chosen placement; clicking it opens the placement preview.
+.fct-order-bump-placement-card {
+  @apply flex w-full cursor-pointer items-center gap-3 rounded-[12px] border border-solid border-gray-outline bg-white p-3.5 text-start transition-colors hover:border-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:border-dark-400 dark:bg-dark-700;
+
+  &__text {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  &__line {
+    @apply text-[13px] text-system-light dark:text-gray-400;
+
+    strong {
+      @apply ms-1 font-semibold text-system-dark dark:text-gray-50;
+    }
+  }
+
+  &__chevron {
+    @apply flex-shrink-0 text-blue-500;
+
+    svg {
+      @apply block h-2.5 w-2;
+    }
+  }
+}
+
+// A small sketch of the checkout: two columns of bars, and a blue block where the offer goes.
+.fct-order-bump-placement-thumb {
+  @apply flex h-[50px] w-[50px] flex-shrink-0 gap-1 rounded-[8px] bg-gray-100 p-1.5 dark:bg-dark-500;
+
+  &__col {
+    @apply flex flex-1 flex-col gap-[3px];
+  }
+
+  &__bar {
+    @apply block h-[5px] rounded-[2px] bg-gray-300 dark:bg-dark-300;
+  }
+
+  &__slot {
+    @apply block;
+  }
+
+  &[data-position="above_customer"] [data-slot="above_customer"],
+  &[data-position="below_customer"] [data-slot="below_customer"],
+  &[data-position="above_payment"] [data-slot="above_payment"],
+  &[data-position="below_payment"] [data-slot="below_payment"],
+  &[data-position="above_summary"] [data-slot="above_summary"],
+  &[data-position="below_summary"] [data-slot="below_summary"],
+  &[data-position="default"] [data-slot="default"] {
+    @apply h-2.5 rounded-[2px] bg-blue-500;
+  }
+}
+
+// Two classes, so SettingRow's own padding and border don't win on load order.
+.fct-setting-field.fct-order-bump-priority-row {
+  @apply mt-2 border-t pt-4;
+}
+
+.fct-order-bump-priority-row {
+  &__input {
+    @apply w-[60px];
+
+    input {
+      @apply text-center;
     }
   }
 }

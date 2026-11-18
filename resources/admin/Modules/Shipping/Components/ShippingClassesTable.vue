@@ -1,36 +1,36 @@
 <template>
   <div class="shipping-classes-table">
 
-    <el-table
+    <fct-table
         :data="shipping_classes"
-        v-loading="loading"
+        :loading="loading"
         class="w-full responsive"
     >
-      <el-table-column prop="name" :label="translate('Class Name')">
+      <fct-table-column prop="name" :label="translate('Class Name')">
         <template #default="scope">
           {{ scope.row.name }}
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column prop="cost" :label="translate('Cost')" width="150">
+      <fct-table-column prop="cost" :label="translate('Cost')" width="150">
         <template #default="scope">
           {{ scope.row.cost }}{{ scope.row.type === 'percentage' ? '%' : '' }}
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column prop="type" :label="translate('Type')" width="150">
+      <fct-table-column prop="type" :label="translate('Type')" width="150">
         <template #default="scope">
           {{ scope.row.type === 'fixed' ? translate('Fixed Amount') : translate('Percentage') }}
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column prop="per_item" :label="translate('Per Item')" width="150">
+      <fct-table-column prop="per_item" :label="translate('Per Item')" width="150">
         <template #default="scope">
           {{ scope.row.per_item == 1 ? translate('Yes') : translate('No') }}
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Actions')" width="200" align="right">
+      <fct-table-column :label="translate('Actions')" width="200" align="right">
         <template #default="scope">
           <div class="fct-btn-group sm justify-end">
             <IconButton size="small"
@@ -39,7 +39,7 @@
               <DynamicIcon name="Edit"/>
             </IconButton>
 
-            <el-popconfirm
+            <fct-popover confirm
                 :title="translate('Are you sure to delete this shipping class?')"
                 @confirm="deleteClass(scope.row.id)"
                 width="220"
@@ -49,11 +49,11 @@
                   <DynamicIcon name="Delete"/>
                 </IconButton>
               </template>
-            </el-popconfirm>
+            </fct-popover>
           </div>
         </template>
-      </el-table-column>
-    </el-table>
+      </fct-table-column>
+    </fct-table>
 
     <!-- Use the new ShippingClassDrawer component -->
     <ShippingClassDrawer

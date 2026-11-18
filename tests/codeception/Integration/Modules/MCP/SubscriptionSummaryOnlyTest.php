@@ -72,6 +72,20 @@ class SubscriptionSummaryOnlyTest extends DatabaseTestCase
         );
     }
 
+    public function test_summary_only_survives_a_plan_billed_more_times_than_planned(): void
+    {
+        // bill_count > bill_times: both columns are unsigned, so a plain subtraction errors in MySQL
+        (new SubscriptionFactory())->create([
+            'customer_id' => $this->cid, 'parent_order_id' => $this->oid, 'product_id' => 9801, 'variation_id' => 98011,
+            'status' => 'completed', 'recurring_total' => Helper::toCent(9), 'bill_times' => 3, 'bill_count' => 4,
+        ]);
+
+        $res = SubscriptionTools::listSubscriptions(['summary_only' => true]);
+
+        $this->assertIsArray($res);
+        $this->assertSame(5, $res['data']['remaining_installments_total'], 'The over-billed plan owes 0, not a negative count');
+    }
+
     public function test_summary_only_honors_filters(): void
     {
         $res  = SubscriptionTools::listSubscriptions(['summary_only' => true, 'status' => 'active']);

@@ -1,4 +1,5 @@
-@config "../../../../styles/tailwind/scales.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../styles/tailwind/scales.config.mjs";
 
 /* =====================================================
    CSS Custom Properties - Theme Support
@@ -187,7 +188,9 @@
 .fct-product-carousel .swiper-button-prev,
 .fct-product-carousel .swiper-button-next {
   position: absolute;
-  top: 50%;
+  // Same selector as the product carousel's arrows: keep the picture position product-carousel.js sets
+  // there, whichever stylesheet loads last. A media carousel never sets it.
+  top: var(--fct-carousel-arrow-top, 50%);
   transform: translateY(-50%);
   width: var(--fct-carousel-arrow-size-md);
   height: var(--fct-carousel-arrow-size-md);

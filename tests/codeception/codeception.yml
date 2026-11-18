@@ -13,5 +13,6 @@ extensions:
         # host:database and the loaded FluentCart copy is this repository.
         - Tests\Support\Extension\DestructiveDbGuardExtension
         - Codeception\Extension\RunFailed
+        - Codeception\Extension\DotReporter
 params:
     - .env

@@ -1,5 +1,6 @@
-@config "./product-reviews-block-editor.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-reviews-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
 
 // The child review blocks (Rating Summary / Write a Review / Review List)
 // reuse this stylesheet's skeleton and real-data preview pieces, so the
@@ -352,7 +353,7 @@
         }
 
         &:focus-visible {
-            @apply outline outline-2 outline-offset-1 outline-blue-600;
+            @apply outline-solid outline-2 outline-offset-1 outline-blue-600;
         }
 
         svg {
@@ -365,11 +366,11 @@
    closes and hands focus back; keyboard focus keeps a thin outline. */
 .fct-review-product-picker .fct-button {
     &:focus {
-        @apply outline-none shadow-none;
+        @apply outline-hidden shadow-none;
     }
 
     &:focus-visible {
-        @apply outline outline-1 outline-offset-1 outline-blue-600 shadow-none;
+        @apply outline-solid outline-1 outline-offset-1 outline-blue-600 shadow-none;
     }
 }
 

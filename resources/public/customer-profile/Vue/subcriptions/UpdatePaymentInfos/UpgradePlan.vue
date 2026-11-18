@@ -1,28 +1,25 @@
 <template>
     <div class="fct-upgrade-plan">
-        <el-button :type="buttonType" size="small" @click="showUpgradePlanModal" :aria-label="buttonText">
+        <fct-button :type="buttonType" size="small" @click="showUpgradePlanModal" :aria-label="buttonText">
             {{ buttonText }}
-        </el-button>
+        </fct-button>
 
-        <el-dialog
+        <fct-dialog
             v-model="upgradePlanModal"
             :append-to-body="true"
             :title="$t('Upgrade Options')"
             class="fct-upgrade-plan-dialog fluent-cart-customer-profile-app"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="upgrade-dialog-title"
         >
         <h2 id="upgrade-dialog-title" class="sr-only">{{ $t('Upgrade Options') }}</h2>
 
             <div v-if="upgradePaths.length > 0" class="fct-upgrade-variation-table pb-10">
-                <el-table :data="upgradePaths" :aria-label="translate('Upgrade options table')">
-                    <el-table-column :label="translate('Package')" :width="290" :aria-label="translate('Package')">
+                <fct-table :data="upgradePaths" :aria-label="translate('Upgrade options table')">
+                    <fct-table-column :label="translate('Package')" :width="290">
                         <template #default="scope">
                             <div class="upgrade-title">{{ scope.row.title }}</div>
                         </template>
-                    </el-table-column>
-                  <el-table-column :label="translate('Price')" :width="100" :aria-label="translate('Price')">
+                    </fct-table-column>
+                  <fct-table-column :label="translate('Price')" :width="100">
                     <template #default="scope">
                       <div class="plan-price">
                         <div class="plan-price" v-if="scope.row.is_available !== false">
@@ -31,8 +28,8 @@
                         <div class="plan-price" v-else>&mdash;</div>
                       </div>
                     </template>
-                  </el-table-column>
-                    <el-table-column :label="translate('Amount to pay')" :width="200" :aria-label="translate('Amount to pay')">
+                  </fct-table-column>
+                    <fct-table-column :label="translate('Amount to pay')" :width="200">
                         <template #default="scope">
                             <div class="upgrade-cost">
                                 <div class="upgrade-title">
@@ -41,12 +38,12 @@
                                 </div>
                             </div>
                         </template>
-                    </el-table-column>
+                    </fct-table-column>
 
-                    <el-table-column :label="translate('Action')" :width="110" :aria-label="translate('Action')">
+                    <fct-table-column :label="translate('Action')" :width="110">
                         <template #default="scope">
                             <div class="upgrade-action">
-                                <el-button
+                                <fct-button
                                     v-if="scope.row.is_available !== false"
                                     class="el-button--x-small" 
                                     tag="a" 
@@ -56,19 +53,19 @@
                                     :aria-label="$t('Upgrade to') + ' ' + scope.row.title"
                                 >
                                     {{ $t('Upgrade') }}
-                                </el-button>
+                                </fct-button>
                             </div>
                         </template>
-                    </el-table-column>
-                </el-table>
+                    </fct-table-column>
+                </fct-table>
             </div>
             <div v-else-if="loading" class="p-5" role="status" aria-live="polite">
-                <el-skeleton :animated="true" :rows="2"/>
+                <fct-skeleton :animated="true" :rows="2"/>
             </div>
             <div v-else class="p-5" role="alert" aria-live="assertive">
                 {{ translate('No upgrade found for this purchase') }}
             </div>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 

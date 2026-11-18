@@ -1,18 +1,18 @@
 <template>
-  <el-skeleton loading="loading" animated>
-    <template #template>
+  <fct-skeleton animated>
+    <template #default>
       <div class="grid gap-5 bg-white rounded dark:bg-dark-700 fct-summary-loader"
         :class="`mb-${marginBottom} p-${padding}`"
         :style="`--loader-grid-cols: ${count};`">
         <template v-for="row in rows" :key="row">
           <div v-for="index in count" :key="index">
-            <el-skeleton-item />
-            <el-skeleton-item class="w-[90%]" />
+            <fct-skeleton variant="text" />
+            <fct-skeleton variant="text" class="w-[90%]" />
           </div>
         </template>
       </div>
     </template>
-  </el-skeleton>
+  </fct-skeleton>
 </template>
 
 <script setup>

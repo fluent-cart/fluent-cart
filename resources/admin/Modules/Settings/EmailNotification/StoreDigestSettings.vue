@@ -4,8 +4,9 @@ import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
-import * as Card from "@/Bits/Components/Card/Card.js";
-import SettingsHeader from "../Parts/SettingsHeader.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
+import SettingsPage from "../Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
 const settingsForm = ref({
@@ -109,129 +110,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :heading="translate('Store Digest Emails')"
-        :loading="saving"
-        @on-save="saveSettings"
-    />
+  <SettingsPage
+      :heading="translate('Store Digest Emails')"
+      :loading="saving"
+      @on-save="saveSettings"
+  >
+    <AdminNotice/>
 
-    <div class="setting-wrap-inner">
-      <AdminNotice/>
-
-      <Card.Container>
-        <Card.Header
-            :title="translate('Recipients & General')"
-            :text="translate('Settings_System_Email')"
-            border_bottom/>
-        <Card.Body>
-          <el-row :gutter="15">
-            <el-col :lg="12">
-              <el-form-item :label="translate('Recipient email addresses')" label-position="top">
-                <el-input
-                    v-model="settingsForm.recipients"
-                    :placeholder="adminEmailToken"
-                />
-                <div>
-                  <ValidationError
-                      :validation-errors="validationErrors.recipients||{}"
-                      field-key="recipients"
-                  />
-                  <div class="form-note">
-                    <p>{{ recipientsHint }}</p>
-                  </div>
-                </div>
-              </el-form-item>
-            </el-col>
-            <el-col :lg="12">
-              <el-form-item :label="translate('Empty periods')" label-position="top">
-                <el-checkbox
-                    v-model="settingsForm.send_when_empty"
-                    true-value="yes"
-                    false-value="no"
-                >
-                  {{ translate('Send even when there was no activity') }}
-                </el-checkbox>
-                <div class="form-note">
-                  <p>{{ translate('When off, a digest is skipped for any period with no paid orders.') }}</p>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </Card.Body>
-      </Card.Container>
-
-      <Card.Container v-for="cadence in cadences" :key="cadence.key" class="fct-mt-4">
-        <Card.Header :title="cadence.label" :text="cadence.desc" border_bottom/>
-        <Card.Body>
-          <el-row :gutter="15" align="middle">
-            <el-col :lg="6">
-              <el-form-item :label="translate('Enable')" label-position="top">
-                <el-switch
-                    v-model="settingsForm[cadence.key].enabled"
-                    active-value="yes"
-                    inactive-value="no"
-                />
-              </el-form-item>
-            </el-col>
-
-            <el-col :lg="6">
-              <el-form-item :label="translate('Send time')" label-position="top">
-                <el-select v-model="settingsForm[cadence.key].send_hour" class="w-full">
-                  <el-option
-                      v-for="opt in hourOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-
-            <el-col :lg="6" v-if="cadence.key === 'weekly'">
-              <el-form-item :label="translate('Day of week')" label-position="top">
-                <el-select v-model="settingsForm.weekly.send_dow" class="w-full">
-                  <el-option
-                      v-for="opt in dowOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-
-            <el-col :lg="6" v-if="cadence.key === 'monthly'">
-              <el-form-item :label="translate('Send day')" label-position="top">
-                <div class="form-note" style="padding-top: 6px;">
-                  <p>{{ translate('Sent on the 1st of each month.') }}</p>
-                </div>
-              </el-form-item>
-            </el-col>
-
-            <el-col :lg="6">
-              <el-form-item label=" " label-position="top">
-                <el-button
-                    :loading="testing === cadence.key"
-                    @click="sendTest(cadence.key)"
-                    class="mt-2"
-                >
-                  {{ translate('Send test email') }}
-                </el-button>
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <div class="form-note">
-            <p>{{ translate('Send time is in your store timezone. Test emails use your saved recipients.') }}</p>
+    <Section
+        :title="translate('Recipients & General')"
+        :description="translate('Settings_System_Email')"
+        divided
+    >
+      <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+        <Field :label="translate('Recipient email addresses')" v-slot="{id}">
+          <fct-input :id="id" v-model="settingsForm.recipients" :placeholder="adminEmailToken"/>
+          <div>
+            <ValidationError
+                :validation-errors="validationErrors.recipients||{}"
+                field-key="recipients"
+            />
+            <div class="form-note">
+              <p>{{ recipientsHint }}</p>
+            </div>
           </div>
-        </Card.Body>
-      </Card.Container>
-
-      <div class="setting-save-action">
-        <el-button type="primary" @click="saveSettings()" :loading="saving">
-          {{ translate('Save Settings') }}
-        </el-button>
+        </Field>
+        <fct-choice
+            v-model="settingsForm.send_when_empty"
+            true-value="yes"
+            false-value="no"
+            :label="translate('Empty periods')"
+            :help="translate('When off, a digest is skipped for any period with no paid orders.')"
+        >
+          {{ translate('Send even when there was no activity') }}
+        </fct-choice>
       </div>
+    </Section>
+
+    <Section v-for="cadence in cadences" :key="cadence.key" :title="cadence.label" :description="cadence.desc" divided>
+      <div class="grid grid-cols-1 items-center gap-x-[15px] min-[1200px]:grid-cols-4">
+        <fct-switch
+            v-model="settingsForm[cadence.key].enabled"
+            active-value="yes"
+            inactive-value="no"
+            :label="translate('Enable')"
+        />
+
+        <fct-select
+            v-model="settingsForm[cadence.key].send_hour"
+            class="w-full"
+            :options="hourOptions"
+            :label="translate('Send time')"
+        />
+
+        <fct-select
+            v-if="cadence.key === 'weekly'"
+            v-model="settingsForm.weekly.send_dow"
+            class="w-full"
+            :options="dowOptions"
+            :label="translate('Day of week')"
+        />
+
+        <Field v-if="cadence.key === 'monthly'" :label="translate('Send day')">
+          <div class="form-note" style="padding-top: 6px;">
+            <p>{{ translate('Sent on the 1st of each month.') }}</p>
+          </div>
+        </Field>
+
+        <Field label=" ">
+          <fct-button
+              :loading="testing === cadence.key"
+              @click="sendTest(cadence.key)"
+          >
+            {{ translate('Send test email') }}
+          </fct-button>
+        </Field>
+      </div>
+      <div class="form-note">
+        <p>{{ translate('Send time is in your store timezone. Test emails use your saved recipients.') }}</p>
+      </div>
+    </Section>
+
+    <div class="setting-save-action">
+      <fct-button type="primary" @click="saveSettings()" :loading="saving">
+        {{ translate('Save Settings') }}
+      </fct-button>
     </div>
-  </div>
+  </SettingsPage>
 </template>

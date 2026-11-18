@@ -4,7 +4,7 @@ Tags: ecommerce, online store, subscriptions, digital downloads, licensing
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -328,6 +328,25 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 8. VAT/TAX Settings
 
 == Changelog ==
+
+= 2.3.2 (Nov 17, 2026) =
+* Adds Attribute filters to the shop sidebar, with filter limits.
+* Adds Product swatches for attribute and list products, with up to 12 options, sold-out styles, and selected Choice.
+* Adds Four product card layouts (Classic, Compact, Floating, Framed) with a Masonry grid switch for every layout.
+* Adds Card layouts to Products, Related Products, Product Carousel, and Product Card.
+* Adds Card layouts, Masonry grid, swatches, and Quick View settings to Products and Related Products shortcodes.
+* Adds Quick View on the card image or after the button.
+* Adds Layout card to the new Shop page and category template, with Sort and filters.
+* Adds Layout settings to the Products block.
+* Adds Manual subscription conversion to automatic charging when a renewal invoice saves a card.
+* Adds Customize and Reset on PDF template cards.
+* Adds Bricks notice that core elements moved to the Bricks add-on.
+* Improves Shop pager, scroll paginator, and shop box sizing in content-box themes.
+* Improves Customer profile payment form and report dark mode.
+* Fixes Unknown shortcode categories, duplicate bundle child titles, and empty variation titles.
+* Fixes coupon Apply button hover, and SKU transfers in bulk edits.
+* Improves Authorize.Net subscription retries on staging copies in a different store mode.
+* Fixes Mollie and Authorize.Net subscriptions paid off by the last installment.
 
 = 2.3.0 (Nov 3, 2026) =
 * Adds Shippo live rates, labels, and tracking through the free Shipping For FluentCart add-on.

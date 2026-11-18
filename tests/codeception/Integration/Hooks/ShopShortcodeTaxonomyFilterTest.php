@@ -32,6 +32,9 @@ class ShopShortcodeTaxonomyFilterTest extends WPTestCase
     /** @var int */
     private $acmeBrandId;
 
+    /** @var int */
+    private $dressCategoryId;
+
     public function setUp(): void
     {
         parent::setUp();
@@ -44,6 +47,7 @@ class ShopShortcodeTaxonomyFilterTest extends WPTestCase
         $this->saleTagId = (int) wp_insert_term('Sale', 'product-tags', ['slug' => 'sale'])['term_id'];
         $this->newTagId = (int) wp_insert_term('New', 'product-tags', ['slug' => 'new'])['term_id'];
         $this->acmeBrandId = (int) wp_insert_term('Acme', 'product-brands', ['slug' => 'acme'])['term_id'];
+        $this->dressCategoryId = (int) wp_insert_term('Dress', 'product-categories', ['slug' => 'dress'])['term_id'];
 
         $factory = new ProductFactory();
         foreach (['Alpha', 'Bravo', 'Charlie', 'Delta'] as $name) {
@@ -56,6 +60,8 @@ class ShopShortcodeTaxonomyFilterTest extends WPTestCase
         wp_set_object_terms($this->productIds['Charlie'], [$this->newTagId], 'product-tags');
         wp_set_object_terms($this->productIds['Alpha'], [$this->acmeBrandId], 'product-brands');
         wp_set_object_terms($this->productIds['Charlie'], [$this->acmeBrandId], 'product-brands');
+        wp_set_object_terms($this->productIds['Alpha'], [$this->dressCategoryId], 'product-categories');
+        wp_set_object_terms($this->productIds['Bravo'], [$this->dressCategoryId], 'product-categories');
     }
 
     public function tearDown(): void
@@ -86,6 +92,21 @@ class ShopShortcodeTaxonomyFilterTest extends WPTestCase
     public function test_without_a_taxonomy_attribute_every_product_renders(): void
     {
         $this->assertSame(['Alpha', 'Bravo', 'Charlie', 'Delta'], $this->renderedNames(''));
+    }
+
+    public function test_an_unknown_category_matches_nothing_instead_of_everything(): void
+    {
+        $this->assertSame([], $this->renderedNames('category="manuals"'));
+    }
+
+    public function test_a_category_slug_only_renders_assigned_products(): void
+    {
+        $this->assertSame(['Alpha', 'Bravo'], $this->renderedNames('category="dress"'));
+    }
+
+    public function test_mixed_valid_and_unknown_category_slugs_keep_the_valid_match(): void
+    {
+        $this->assertSame(['Alpha', 'Bravo'], $this->renderedNames('category="dress,manuals"'));
     }
 
     public function test_a_term_id_filters_on_a_store_registered_taxonomy(): void
@@ -187,5 +208,15 @@ class ShopShortcodeTaxonomyFilterTest extends WPTestCase
         $defaultFilters = json_decode(html_entity_decode($match[1]), true);
 
         $this->assertSame([$this->saleTagId], array_map('intval', array_values($defaultFilters['product-tags'])));
+    }
+
+    public function test_an_unknown_category_stays_fail_closed_in_pager_filters(): void
+    {
+        $output = $this->render('category="manuals"');
+
+        $this->assertSame(1, preg_match('/data-default-filters="([^"]*)"/', $output, $match));
+        $defaultFilters = json_decode(html_entity_decode($match[1]), true);
+
+        $this->assertSame([-1], array_map('intval', array_values($defaultFilters['product-categories'])));
     }
 }

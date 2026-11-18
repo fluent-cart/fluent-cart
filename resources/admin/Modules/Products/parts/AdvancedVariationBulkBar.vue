@@ -63,15 +63,16 @@ const needsBulkValue = computed(() => {
       {{ $t('Clear') }}
     </button>
 
-    <el-select
+    <fct-select
         v-model="action"
         :placeholder="$t('Bulk Actions')"
         size="small"
-    >
-      <el-option :label="$t('Set Price')" value="set_price"/>
-      <el-option :label="$t('Set Active')" value="set_status_active"/>
-      <el-option :label="$t('Set Inactive')" value="set_status_inactive"/>
-    </el-select>
+        :options="[
+          {label: $t('Set Price'), value: 'set_price'},
+          {label: $t('Set Active'), value: 'set_status_active'},
+          {label: $t('Set Inactive'), value: 'set_status_inactive'}
+        ]"
+    />
 
     <!-- Set Price feeds products/variants/bulk-update, which reads CENTS.
          PriceInput shows the merchant dollars and emits cents, so bulkValue
@@ -82,7 +83,7 @@ const needsBulkValue = computed(() => {
         :placeholder="$t('Value')"
         size="small"
     />
-    <el-button
+    <fct-button
         type="primary"
         size="small"
         :loading="saving"
@@ -90,6 +91,6 @@ const needsBulkValue = computed(() => {
         @click="$emit('apply')"
     >
       {{ $t('Apply') }}
-    </el-button>
+    </fct-button>
   </div>
 </template>

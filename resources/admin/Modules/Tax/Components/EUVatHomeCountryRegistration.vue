@@ -208,7 +208,7 @@ function saveHomeRegistration() {
         <div class="fct-home-country-body">
             <div class="fct-vat-home-field">
                 <label class="fct-vat-home-field__label">{{ translate('VAT number') }}</label>
-                <el-input v-model="form.vat" class="fct-vat-number-input" />
+                <fct-input v-model="form.vat" class="fct-vat-number-input" />
             </div>
 
             <div class="fct-reg-rates-section">
@@ -221,7 +221,7 @@ function saveHomeRegistration() {
                 </div>
                 <div v-for="row in homeRateRows" :key="getRegClassKey(row)" class="fct-reg-rates-row">
                     <div class="fct-reg-rates-cell-label">
-                        <el-input
+                        <fct-input
                             v-if="row.isNew"
                             v-model="row.title"
                             size="small"
@@ -234,12 +234,12 @@ function saveHomeRegistration() {
                         </span>
                     </div>
                     <div class="fct-reg-rates-cell-input fct-reg-rates-cell-rate">
-                        <el-input v-model="form.rates[getRegClassKey(row)].rate" type="number" step="0.01" min="0" size="small">
+                        <fct-input v-model="form.rates[getRegClassKey(row)].rate" type="number" :controls="false" step="0.01" min="0" size="small">
                             <template #suffix>%</template>
-                        </el-input>
+                        </fct-input>
                     </div>
                     <div class="fct-reg-rates-cell-input">
-                        <el-input v-model="form.rates[getRegClassKey(row)].label" size="small" :placeholder="translate('e.g. VAT, MwSt')" />
+                        <fct-input v-model="form.rates[getRegClassKey(row)].label" size="small" :placeholder="translate('e.g. VAT, MwSt')" />
                     </div>
                     <div class="fct-reg-rates-cell-action">
                         <button
@@ -266,30 +266,19 @@ function saveHomeRegistration() {
                         {{ translate('Add class') }}
                     </button>
 
-                    <el-dropdown v-else trigger="click" @command="handleAddRegClass" popper-class="fct-dropdown">
+                    <fct-dropdown v-else trigger="click" :items="availableRegClasses" @command="handleAddRegClass">
                         <button type="button" class="fct-reg-add-class-btn">
                             <DynamicIcon name="Plus" class="w-3 h-3" />
                             {{ translate('Add class') }}
                         </button>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item
-                                    v-for="opt in availableRegClasses"
-                                    :key="opt.command"
-                                    :command="opt.command"
-                                >
-                                    {{ opt.label }}
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
+                    </fct-dropdown>
                 </div>
             </div>
 
             <div class="fct-vat-home-actions">
-                <el-button type="primary" size="small" @click="saveHomeRegistration">
+                <fct-button type="primary" size="small" @click="saveHomeRegistration">
                     {{ translate('Save VAT') }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
 

@@ -1,8 +1,8 @@
 <template>
-  <el-button @click="exportCSV" size="small">
+  <fct-button @click="exportCSV" size="small">
     <DynamicIcon name="Download"/>
     {{ $t("Export") }}
-  </el-button>
+  </fct-button>
 </template>
 
 <script>

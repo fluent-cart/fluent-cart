@@ -47,7 +47,7 @@ onMounted(() => {
     <span v-if="false" class="fct-material-input-label">
       {{ label }} <span v-if="required" class="required-mark">*</span>
     </span>
-    <el-input
+    <fct-input
         :type="type"
         :disabled="disabled"
         :required="required"

@@ -96,13 +96,12 @@ $entries = array_filter($entries, function ($uses) {
     return array_diff(array_column($uses, 0), ['countries.php']) !== [];
 });
 
-echo "state-translation-contexts: {$calls} translated names, " . count($entries) . " distinct entries\n";
-
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
 if (!$violations) {
-    echo "OK — every state name has its own translation entry.\n";
     exit(0);
 }
 
+echo "state-translation-contexts: {$calls} translated names, " . count($entries) . " distinct entries\n";
 echo "\nFAIL — " . count($violations) . " violation(s):\n\n";
 foreach ($violations as $v) {
     echo "  {$v}\n\n";

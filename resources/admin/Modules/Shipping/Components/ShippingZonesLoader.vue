@@ -1,49 +1,41 @@
 <template>
   <div class="shipping-zones-loader">
     <div class="shipping-zones-table">
-      <el-table
+      <fct-table
           :data="nextPageCount"
           class="w-full compact-table responsive"
       >
-        <el-table-column prop="name" :label="translate('Zone Name')">
+        <fct-table-column prop="name" :label="translate('Zone Name')">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[120px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[120px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Regions')">
+        <fct-table-column :label="translate('Regions')">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[150px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[150px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Shipping Methods')" width="180">
+        <fct-table-column :label="translate('Shipping Methods')" width="180">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[200px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[200px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
-        <el-table-column :label="translate('Actions')" width="200" align="right">
+        </fct-table-column>
+        <fct-table-column :label="translate('Actions')" width="200" align="right">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[120px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[120px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
-      </el-table>
+        </fct-table-column>
+      </fct-table>
     </div>
   </div>
 </template>

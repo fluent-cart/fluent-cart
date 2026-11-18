@@ -4,6 +4,7 @@ namespace FluentCart\App\Modules\Subscriptions\Services;
 
 use FluentCart\App\App;
 use FluentCart\App\Helpers\CartHelper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\Framework\Support\Arr;
@@ -28,6 +29,9 @@ class SubscriptionManagementMode
 
     /** Config key stamped at checkout — the durable per-subscription record of the mode it was born under. */
     const CONFIG_KEY = 'management_mode';
+
+    /** Transaction meta: this renewal payment saves the method and converts manual → system. */
+    const CONVERT_TO_SYSTEM_META = 'convert_to_system';
 
     public static function getMode(): string
     {
@@ -120,6 +124,68 @@ class SubscriptionManagementMode
         }
 
         return self::isSystemChargeEnabled() && $gateway && $gateway->has('system_subscription');
+    }
+
+    /**
+     * A manual sub may become `system` when its renewal invoice is paid through a
+     * gateway that can charge a saved method, while auto-charge is on.
+     */
+    public static function canConvertToSystem($subscription, $gateway): bool
+    {
+        if (!$subscription || $subscription->collection_method !== 'manual') {
+            return false;
+        }
+
+        if (in_array($subscription->status, [Status::SUBSCRIPTION_COMPLETED, Status::SUBSCRIPTION_CANCELED], true)) {
+            return false;
+        }
+
+        return self::isSystemChargeEnabled() && $gateway && $gateway->has('system_subscription');
+    }
+
+    public static function currentCheckoutCanConvertToSystem($gateway): bool
+    {
+        return self::canConvertToSystem(self::resolveRenewalSubscription(CartHelper::getCart()), $gateway);
+    }
+
+    /**
+     * Decided once at payment start and stored on the transaction, so confirmation
+     * never re-reads settings that may have changed meanwhile. Cleared otherwise:
+     * a retried payment reuses the same transaction.
+     *
+     * @param \FluentCart\App\Services\Payments\PaymentInstance $paymentInstance
+     * @param \FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway $gateway
+     * @return bool true when the payment must save the method for conversion
+     */
+    public static function flagSystemConversion($paymentInstance, $gateway): bool
+    {
+        $transaction = $paymentInstance->transaction;
+        $order = $paymentInstance->order;
+
+        $convert = $order
+            && $order->type === Status::ORDER_TYPE_RENEWAL
+            && (int) $transaction->total > 0
+            && self::canConvertToSystem($paymentInstance->subscription, $gateway);
+
+        $meta = is_array($transaction->meta) ? $transaction->meta : [];
+        $flagged = Arr::get($meta, self::CONVERT_TO_SYSTEM_META) === 'yes';
+
+        if ($convert !== $flagged) {
+            if ($convert) {
+                $meta[self::CONVERT_TO_SYSTEM_META] = 'yes';
+            } else {
+                unset($meta[self::CONVERT_TO_SYSTEM_META]);
+            }
+            $transaction->meta = $meta;
+            $transaction->save();
+        }
+
+        return $convert;
+    }
+
+    public static function transactionConvertsToSystem($transaction): bool
+    {
+        return $transaction && Arr::get((array) $transaction->meta, self::CONVERT_TO_SYSTEM_META) === 'yes';
     }
 
     /**

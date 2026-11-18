@@ -181,6 +181,18 @@ class ProductFinancialsCalculatorTest extends Unit
         $this->assertSame($created['subscriptions'], $paid['subscriptions'], 'subscriptions are identical across basis');
     }
 
+    public function test_totals_use_the_lifetime_one_time_net_when_one_time_is_windowed(): void
+    {
+        $subs = [$this->sub('monthly', 3000, 4, 0, 'active', '2026-07-15 00:00:00')];
+        $r = Calc::compute($subs, $this->opts(self::AS_OF, [
+            'one_time'              => ['units' => 1, 'orders' => 1, 'gross' => 5000, 'refunds' => 0],
+            'one_time_lifetime_net' => 90000,
+        ]));
+
+        $this->assertSame(5000, $r['one_time']['net_collected'], 'the one_time block keeps its window');
+        $this->assertSame(90000 + 3000 * 4, $r['totals']['collected_to_date'], 'lifetime one-time net + lifetime subscription payments');
+    }
+
     public function test_as_of_shift_drops_elapsed_buckets_and_keeps_lifetime_figures(): void
     {
         $subs = [$this->sub('monthly', 3000, 4, 0, 'active', '2026-07-15 00:00:00')];

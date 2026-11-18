@@ -6,6 +6,7 @@ use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
+use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\Api\StoreSettings;
@@ -261,6 +262,86 @@ class SystemChargeService
             __('%1$s cannot charge a saved payment method automatically.', 'fluent-cart'),
             $methodLabel ?: __('The payment method on file', 'fluent-cart')
         ));
+    }
+
+    /**
+     * manual → system after a renewal invoice payment saved a reusable method.
+     * Runs after recordManualRenewal(), so this cycle's schedule is already set.
+     *
+     * @param \FluentCart\App\Models\Subscription $subscription
+     * @param array $billingInfo active_payment_method meta, with vendor_method_id
+     * @param string $vendorCustomerId gateway customer the saved method belongs to
+     * @param string $gatewaySlug
+     * @return bool true when the subscription was converted
+     */
+    public static function promoteToSystem($subscription, array $billingInfo, string $vendorCustomerId, string $gatewaySlug): bool
+    {
+        if (!$subscription
+            || $subscription->collection_method !== 'manual'
+            || in_array($subscription->status, [Status::SUBSCRIPTION_COMPLETED, Status::SUBSCRIPTION_CANCELED], true)
+            || !Arr::get($billingInfo, 'vendor_method_id')
+        ) {
+            return false;
+        }
+
+        $db = Subscription::query()->getConnection();
+        $db->beginTransaction();
+
+        try {
+            // Return and webhook confirms can race; the row lock lets only one convert.
+            $locked = Subscription::query()
+                ->where('id', $subscription->id)
+                ->where('collection_method', 'manual')
+                ->lockForUpdate()
+                ->first();
+            if (!$locked) {
+                $db->rollBack();
+                return false;
+            }
+
+            $subscription->updateMeta('active_payment_method', $billingInfo);
+
+            $config = is_array($locked->config) ? $locked->config : [];
+            $config[SubscriptionManagementMode::CONFIG_KEY] = SubscriptionManagementMode::STORE_MANAGED;
+
+            // chargeRenewal() charges the saved method against this customer.
+            $changes = [
+                'collection_method'      => 'system',
+                'current_payment_method' => $gatewaySlug,
+            ];
+            if ($vendorCustomerId) {
+                $changes['vendor_customer_id'] = $vendorCustomerId;
+            }
+
+            // Same encoding as Subscription::setConfigAttribute(); the builder skips the mutator.
+            Subscription::query()
+                ->where('id', $subscription->id)
+                ->update($changes + [
+                    'config' => json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ]);
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+
+        $subscription->fill($changes);
+        $subscription->setAttribute('config', $config);
+        $subscription->syncOriginalAttributes(array_merge(array_keys($changes), ['config']));
+
+        $subscription->addLog(
+            'Converted to auto-charge',
+            sprintf('Payment method saved on the renewal payment. Future renewal orders will be auto-charged via %s.', $gatewaySlug),
+            'info'
+        );
+
+        do_action('fluent_cart/subscription_converted_to_system', [
+            'subscription'   => $subscription,
+            'payment_method' => $gatewaySlug,
+        ]);
+
+        return true;
     }
 
     /**

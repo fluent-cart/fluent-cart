@@ -48,6 +48,9 @@ class AdvancedSearch
     // searchByPayerEmail) consume their advertised labels verbatim.
     const OPERATOR_ALIASES = ['equals' => '=', 'not_equals' => '!='];
 
+    // Catalog key of the label filter as the admin defines it; advertised as labels.label.
+    const LEGACY_LABEL_KEY = 'labels.customer_email';
+
     /**
      * Entities that expose advanced search, keyed by the public MCP name.
      * Each maps to its admin filter class, the capability that gates reading
@@ -140,8 +143,7 @@ class AdvancedSearch
             return MCPHelper::error(
                 'no_advanced_options',
                 sprintf(
-                    /* translators: %1$s: entity name */
-                    __('%1$s exposes no advanced filter properties on this site.', 'fluent-cart'),
+                    '%1$s exposes no advanced filter properties on this site.',
                     $entity
                 ),
                 ['entity' => $entity]
@@ -229,7 +231,7 @@ class AdvancedSearch
         if (!App::isProActive()) {
             return MCPHelper::error(
                 'pro_required',
-                __('advanced_filters requires FluentCart Pro — without it the conditions would be silently ignored, so this call is rejected instead. Remove advanced_filters and use the tool\'s named filters.', 'fluent-cart'),
+                'advanced_filters requires FluentCart Pro — without it the conditions would be silently ignored, so this call is rejected instead. Remove advanced_filters and use the tool\'s named filters.',
                 ['entity' => $entity]
             );
         }
@@ -334,6 +336,11 @@ class AdvancedSearch
                     continue;
                 }
                 $key = $providerKey . '.' . $property;
+                // The admin label filter is keyed "customer_email" (saved admin filters use it);
+                // agents get a name that says what it filters. The engine still gets the real key.
+                if ($key === self::LEGACY_LABEL_KEY) {
+                    $key = 'labels.label';
+                }
                 // Core lists subscription.status twice — first wins.
                 if (isset($map[$key])) {
                     continue;
@@ -535,7 +542,7 @@ class AdvancedSearch
         if (!$groups) {
             return MCPHelper::error(
                 'empty_filters',
-                __('advanced_filters contained no conditions. Provide at least one {property, operator, value} condition, or omit the parameter.', 'fluent-cart'),
+                'advanced_filters contained no conditions. Provide at least one {property, operator, value} condition, or omit the parameter.',
                 ['entity' => $entity]
             );
         }
@@ -584,8 +591,7 @@ class AdvancedSearch
             return MCPHelper::error(
                 'invalid_structure',
                 sprintf(
-                    /* translators: 1: group number, 2: condition number */
-                    __('The condition in group %1$d position %2$d has no property. Each condition needs {property, operator, value}.', 'fluent-cart'),
+                    'The condition in group %1$d position %2$d has no property. Each condition needs {property, operator, value}.',
                     $groupNo,
                     $conditionNo
                 ),
@@ -593,12 +599,15 @@ class AdvancedSearch
             );
         }
 
+        if ($property === self::LEGACY_LABEL_KEY) {
+            $property = 'labels.label';
+        }
+
         if (!isset($catalog[$property])) {
             return MCPHelper::error(
                 'unknown_property',
                 sprintf(
-                    /* translators: 1: property name, 2: group number, 3: condition number, 4: entity name, 5: valid property names */
-                    __('Unknown property "%1$s" (group %2$d, condition %3$d). Valid properties for %4$s: %5$s. Call get-search-schema with entity=%4$s for operators and value formats.', 'fluent-cart'),
+                    'Unknown property "%1$s" (group %2$d, condition %3$d). Valid properties for %4$s: %5$s. Call get-search-schema with entity=%4$s for operators and value formats.',
                     $property,
                     $groupNo,
                     $conditionNo,
@@ -617,8 +626,7 @@ class AdvancedSearch
             return MCPHelper::error(
                 'invalid_operator',
                 sprintf(
-                    /* translators: 1: property name */
-                    __('The operator for property "%1$s" must be a string.', 'fluent-cart'),
+                    'The operator for property "%1$s" must be a string.',
                     $property
                 ),
                 ['entity' => $entity, 'property' => $property]
@@ -633,8 +641,7 @@ class AdvancedSearch
             return MCPHelper::error(
                 'invalid_operator',
                 sprintf(
-                    /* translators: 1: operator, 2: property name, 3: allowed operators */
-                    __('Operator "%1$s" is not valid for property "%2$s". Allowed: %3$s.', 'fluent-cart'),
+                    'Operator "%1$s" is not valid for property "%2$s". Allowed: %3$s.',
                     $operator,
                     $property,
                     implode(', ', $allowed)
@@ -647,8 +654,7 @@ class AdvancedSearch
             return MCPHelper::error(
                 'missing_value',
                 sprintf(
-                    /* translators: 1: property name */
-                    __('The condition on "%1$s" has no value.', 'fluent-cart'),
+                    'The condition on "%1$s" has no value.',
                     $property
                 ),
                 ['entity' => $entity, 'property' => $property]
@@ -692,14 +698,14 @@ class AdvancedSearch
 
         if ($kind === 'money' || $kind === 'numeric') {
             if (!is_numeric($value)) {
-                return self::valueError($property, __('a number', 'fluent-cart'));
+                return self::valueError($property, 'a number');
             }
             // Reject non-finite / out-of-range magnitudes: "9e18" overflows the
             // BIGINT cents column to a negative and silently matches all rows;
             // "1e400" is +INF and throws deep in the SQL grammar.
             $num = (float) $value;
             if (!is_finite($num) || abs($num) > 1000000000000) {
-                return self::valueError($property, __('a number within a sensible range', 'fluent-cart'));
+                return self::valueError($property, 'a number within a sensible range');
             }
             return (string) $value;
         }
@@ -707,13 +713,13 @@ class AdvancedSearch
         if ($kind === 'date') {
             if ($operator === 'days_before' || $operator === 'days_within') {
                 if (!is_numeric($value)) {
-                    return self::valueError($property, __('a number of days', 'fluent-cart'));
+                    return self::valueError($property, 'a number of days');
                 }
                 // Beyond ~100 years the engine's now-minus-N-days underflows past
                 // year 0000 into a malformed DATETIME the DB rejects (uncaught).
                 $days = (int) $value;
                 if ($days < 0 || $days > 36500) {
-                    return self::valueError($property, __('a number of days between 0 and 36500', 'fluent-cart'));
+                    return self::valueError($property, 'a number of days between 0 and 36500');
                 }
                 return (string) $days;
             }
@@ -723,7 +729,7 @@ class AdvancedSearch
             if (!is_string($value)
                 || !preg_match('/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$/', $value)
                 || strtotime($value) === false) {
-                return self::valueError($property, __('a date (YYYY-MM-DD or ISO-8601, UTC)', 'fluent-cart'));
+                return self::valueError($property, 'a date (YYYY-MM-DD or ISO-8601, UTC)');
             }
             return $value;
         }
@@ -736,12 +742,12 @@ class AdvancedSearch
                 // Custom selection callbacks read one scalar.
                 if (is_array($value)) {
                     if (count($value) !== 1) {
-                        return self::valueError($property, __('a single value', 'fluent-cart'));
+                        return self::valueError($property, 'a single value');
                     }
                     $value = reset($value);
                 }
                 if (!is_scalar($value)) {
-                    return self::valueError($property, __('a single value', 'fluent-cart'));
+                    return self::valueError($property, 'a single value');
                 }
                 $value = (string) $value;
                 self::warnUnknownOption($property, [$value], $known, $warnings);
@@ -755,12 +761,12 @@ class AdvancedSearch
             $flat = [];
             foreach ($value as $entryValue) {
                 if (!is_scalar($entryValue)) {
-                    return self::valueError($property, __('a value or array of values', 'fluent-cart'));
+                    return self::valueError($property, 'a value or array of values');
                 }
                 $flat[] = (string) $entryValue;
             }
             if (!$flat) {
-                return self::valueError($property, __('a non-empty array of values', 'fluent-cart'));
+                return self::valueError($property, 'a non-empty array of values');
             }
             self::warnUnknownOption($property, $flat, $known, $warnings);
             return $flat;
@@ -774,26 +780,26 @@ class AdvancedSearch
             $ids = [];
             foreach ($value as $id) {
                 if (!is_numeric($id)) {
-                    return self::valueError($property, __('an array of numeric ids', 'fluent-cart'));
+                    return self::valueError($property, 'an array of numeric ids');
                 }
                 $ids[] = (int) $id;
             }
             if (!$ids) {
-                return self::valueError($property, __('a non-empty array of numeric ids', 'fluent-cart'));
+                return self::valueError($property, 'a non-empty array of numeric ids');
             }
             return $ids;
         }
 
         // text
         if (!is_scalar($value)) {
-            return self::valueError($property, __('a single text value', 'fluent-cart'));
+            return self::valueError($property, 'a single text value');
         }
         $value = (string) $value;
         // On a relation-backed property the engine silently drops an empty
         // string (HandleRelationalFilter bails on empty), returning the full
         // unfiltered list as if filtered. Reject it here instead.
         if ($value === '' && Arr::get($def, 'filter_type') === 'relation') {
-            return self::valueError($property, __('a non-empty value', 'fluent-cart'));
+            return self::valueError($property, 'a non-empty value');
         }
 
         return $value;
@@ -804,8 +810,7 @@ class AdvancedSearch
     {
         if (count($values) > self::MAX_VALUES_PER_CONDITION) {
             $warnings[] = sprintf(
-                /* translators: 1: property name, 2: cap, 3: received count */
-                __('Property %1$s: only the first %2$d values were applied (received %3$d).', 'fluent-cart'),
+                'Property %1$s: only the first %2$d values were applied (received %3$d).',
                 $property,
                 self::MAX_VALUES_PER_CONDITION,
                 count($values)
@@ -840,8 +845,7 @@ class AdvancedSearch
             $key    = $prop . '|' . $op;
             if (isset($seen[$key]) && !isset($warned[$key])) {
                 $warnings[] = sprintf(
-                    /* translators: 1: property name, 2: operator */
-                    __('Property %1$s: multiple "%2$s" conditions on the same related property in one group are combined as OR (match any), not AND. Split them across separate OR groups, or use in_all for id-list AND matching.', 'fluent-cart'),
+                    'Property %1$s: multiple "%2$s" conditions on the same related property in one group are combined as OR (match any), not AND. Split them across separate OR groups, or use in_all for id-list AND matching.',
                     $prop,
                     $op
                 );
@@ -869,8 +873,7 @@ class AdvancedSearch
         // One warning per property, listing every off-catalog value, rather than
         // one warning per value (a capped-but-large list would flood the meta).
         $warnings[] = sprintf(
-            /* translators: 1: unrecognized values, 2: property name, 3: known option values */
-            __('Values "%1$s" on %2$s are not among the documented options (%3$s); they were matched literally, so unintended values return zero rows.', 'fluent-cart'),
+            'Values "%1$s" on %2$s are not among the documented options (%3$s); they were matched literally, so unintended values return zero rows.',
             implode(', ', $unknown),
             $property,
             implode(', ', $known)
@@ -886,8 +889,7 @@ class AdvancedSearch
         return MCPHelper::error(
             'unknown_entity',
             sprintf(
-                /* translators: 1: entity name, 2: valid entity names */
-                __('Unknown entity "%1$s". Valid entities: %2$s.', 'fluent-cart'),
+                'Unknown entity "%1$s". Valid entities: %2$s.',
                 (string) $entity,
                 implode(', ', self::entityNames())
             ),
@@ -899,7 +901,7 @@ class AdvancedSearch
     {
         return MCPHelper::error(
             'invalid_structure',
-            __('advanced_filters must be an array of OR groups, each an array of AND conditions {property, operator, value}. A flat array of conditions is also accepted and treated as one group.', 'fluent-cart'),
+            'advanced_filters must be an array of OR groups, each an array of AND conditions {property, operator, value}. A flat array of conditions is also accepted and treated as one group.',
             [
                 'entity' => $entity,
                 'hint'   => 'Example: [[{"property":"order.status","operator":"in","value":["completed"]}]] — call get-search-schema for the full reference.',
@@ -912,8 +914,7 @@ class AdvancedSearch
         return MCPHelper::error(
             'too_many_conditions',
             sprintf(
-                /* translators: 1: max groups, 2: max conditions per group */
-                __('advanced_filters allows at most %1$d OR groups with %2$d conditions each.', 'fluent-cart'),
+                'advanced_filters allows at most %1$d OR groups with %2$d conditions each.',
                 self::MAX_GROUPS,
                 self::MAX_CONDITIONS_PER_GROUP
             ),
@@ -926,8 +927,7 @@ class AdvancedSearch
         return MCPHelper::error(
             'invalid_value',
             sprintf(
-                /* translators: 1: property name, 2: what the value should be */
-                __('The value for "%1$s" must be %2$s.', 'fluent-cart'),
+                'The value for "%1$s" must be %2$s.',
                 $property,
                 $expected
             ),

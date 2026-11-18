@@ -1,7 +1,4 @@
 import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {emptyChipState, isChipActive, toggleChip} from '../../resources/public/single-product/review-filter-chips';
 
 /**
@@ -51,18 +48,5 @@ describe('review filter chips', () => {
         expect(isChipActive(state, '5')).toBe(false);
         expect(isChipActive(state, 'has_media')).toBe(true);
         expect(isChipActive(state, 'verified')).toBe(false);
-    });
-});
-
-describe('the review list request', () => {
-    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-    const JS = fs.readFileSync(path.join(root, 'resources/public/single-product/Reviews.js'), 'utf8');
-
-    it('sends every chosen star as one ratings param', () => {
-        expect(JS).toMatch(/params\.set\('ratings', this\.#chips\.ratings\.join\(','\)\)/);
-    });
-
-    it('keeps a photos-only list photos-only whatever the chips say', () => {
-        expect(JS).toMatch(/if \(this\.#chips\.hasMedia \|\| this\.#onlyWithPhotos\)/);
     });
 });

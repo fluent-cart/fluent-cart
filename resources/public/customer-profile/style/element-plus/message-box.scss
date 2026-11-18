@@ -38,7 +38,7 @@
     .button:hover,
     .button:focus,
     .button:active {
-      @apply shadow-none !important;
+      @apply shadow-none!;
     }
   }
   &__headerbtn{

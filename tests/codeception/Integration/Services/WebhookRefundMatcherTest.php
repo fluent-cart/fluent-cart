@@ -352,7 +352,7 @@ class WebhookRefundMatcherTest extends DatabaseTestCase
 
         $rival = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
         if (!$rival) {
-            $this->markTestSkipped('could not open a second DB connection to simulate the admin refund');
+            $this->fail('could not open a second DB connection to simulate the admin refund');
         }
 
         try {
@@ -389,7 +389,7 @@ class WebhookRefundMatcherTest extends DatabaseTestCase
 
         $rival = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
         if (!$rival) {
-            $this->markTestSkipped('could not open a second DB connection to simulate the admin refund');
+            $this->fail('could not open a second DB connection to simulate the admin refund');
         }
 
         $ipn = new class extends StripeIPN {

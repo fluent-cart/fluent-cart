@@ -51,7 +51,7 @@ onMounted(() => {
   <div class="grid grid-cols-1 gap-4">
     <div class="fct-row fct-setting-row" v-for="(field, index) in fields" :key="index">
       <div class="fct-col" v-if="field.type === 'enable'">
-        <el-switch
+        <fct-switch
             v-model="settings[index]"
             active-value="yes"
             inactive-value="no"
@@ -59,46 +59,42 @@ onMounted(() => {
             inactive-text="Inactive"
         />
         <p class="setting-label" v-if="field.tooltip">
-          <el-tooltip placement="top-start"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon>
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
       </div><!-- .fct-col -->
 
       <div class="fct-col" v-if="(field.type === 'input' || field.type === 'password')">
         <p class="setting-label">{{ field.label }}</p>
-        <el-input :type="field.type" :placeholder="field.placeholder" v-model="settings[index]"></el-input>
+        <fct-input :type="field.type === 'password' ? 'password' : 'text'" :placeholder="field.placeholder" v-model="settings[index]"/>
       </div><!-- .fct-col -->
 
       <div class="fct-col" v-if="field.type === 'text'">
         <p class="setting-label">{{ field.label }}</p>
-        <el-input type="text" :placeholder="field.placeholder" v-model="settings[index]">
-        </el-input>
+        <fct-input type="text" :placeholder="field.placeholder" v-model="settings[index]"/>
       </div><!-- .fct-col -->
 
       <div class="fct-col" v-if="field.type === 'select'">
         <p class="setting-label">{{ field.label }}</p>
-        <el-select :placeholder="field.placeholder" v-model="settings[index]"
-                   :filterable="(field.filterable !== false)">
-          <el-option v-for="(opt, ind) in field.options" :label="opt.label" :value="opt.value" :key="ind"/>
-        </el-select>
+        <fct-select :placeholder="field.placeholder" v-model="settings[index]"
+                   :filterable="(field.filterable !== false)" :options="Object.values(field.options || {})"/>
       </div><!-- .fct-col -->
 
       <div class="fct-col" v-if="field.type === 'button' && settings['is_active'] === 'yes'">
         <ContentCard :title="field.label">
-          <el-button @click="testConfig()" type="primary" :disabled="testing_config"
+          <fct-button @click="testConfig()" type="primary" :disabled="testing_config"
                      :loading="testing_config">
             {{
               /* translators: %s is the storage driver name */
               translate("Test %s Config", route_name)
             }}
-          </el-button>
+          </fct-button>
         </ContentCard>
       </div><!-- .fct-col -->
     </div>

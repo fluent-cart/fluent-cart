@@ -43,6 +43,7 @@ class RazorpayAddon extends AbstractPaymentGateway
             'slug' => 'razorpay',
             'description' => __('Pay securely with Razorpay - UPI, Cards, NetBanking, and Wallets', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/razorpay-logo.svg"),
+            'logo_light' => Vite::getAssetUrl("images/payment-methods/razorpay-logo-light.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/razorpay-logo.svg"),
             'brand_color' => '#0fa958',
             'status' => false,

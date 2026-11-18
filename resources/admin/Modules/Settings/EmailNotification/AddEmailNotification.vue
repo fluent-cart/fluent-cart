@@ -5,7 +5,6 @@ import CardBody from "@/Bits/Components/Card/CardBody.vue";
 import { getCurrentInstance, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
-import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import { useSaveShortcut } from "@/mixin/saveButtonShortcutMixin.js";
@@ -147,111 +146,81 @@ const selectFromEmail = () => {
       </template>
     </CardHeader>
     <CardBody>
-      <el-dialog v-model="isModalVisible" :title="$t('Preview')">
+      <fct-dialog v-model="isModalVisible" :title="$t('Preview')">
         <div v-html="htmlContent"></div>
-      </el-dialog>
-      <el-form label-position="top" require-asterisk-position="right">
-        <el-form-item :label="$t('Notification Name')" required>
-          <el-input
-            v-model="notification.title"
-            @focus="clearValidationError('title')"
-          />
-          <ValidationError
-            :validation-errors="validationErrors?.title?.required"
-          />
-        </el-form-item>
+      </fct-dialog>
+      <div>
+        <fct-input
+          v-model="notification.title"
+          @focus="clearValidationError('title')"
+          :label="$t('Notification Name')"
+          required
+          :validation-errors="validationErrors"
+          field-key="title"
+        />
 
-        <el-form-item :label="$t('Select notification event')" required>
-          <el-select
-            :multiple="true"
-            v-model="notification.events"
-            :placeholder="$t('Select Events')"
-            @focus="clearValidationError('events')"
-            clearable
+        <fct-select
+          :multiple="true"
+          v-model="notification.events"
+          :placeholder="$t('Select Events')"
+          @focus="clearValidationError('events')"
+          clearable
+          :options="availableEvents"
+          :label="$t('Select notification event')"
+          required
+          :validation-errors="validationErrors"
+          field-key="events"
+        />
+
+        <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+          <fct-input
+            v-model="notification.from"
+            @focus="clearValidationError('from')"
+            :placeholder="$t('Select a Field or Type Custom Value')"
+            :label="$t('Mail From:')"
+            required
+            :validation-errors="validationErrors"
+            field-key="from"
           >
-            <el-option
-              v-for="option in availableEvents"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            ></el-option>
-          </el-select>
-          <ValidationError
-            :validation-errors="validationErrors?.events?.required"
-          />
-        </el-form-item>
-
-        <el-row :gutter="15">
-          <el-col :lg="12">
-            <el-form-item :label="$t('Mail From:')" required>
-              <el-input
-                v-model="notification.from"
-                @focus="clearValidationError('from')"
-                :placeholder="$t('Select a Field or Type Custom Value')"
-              >
-                <template #append>
-                  <el-select
-                    v-model="selectedFromEmail"
-                    @change="selectFromEmail()"
-                    clearable
-                  >
-                    <el-option
-                      v-for="option in emailShortCodes"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                    />
-                  </el-select>
-                </template>
-              </el-input>
-
-              <ValidationError
-                :validation-errors="validationErrors?.from?.required"
+            <template #append>
+              <fct-select
+                v-model="selectedFromEmail"
+                @change="selectFromEmail()"
+                clearable
+                :options="emailShortCodes"
               />
-            </el-form-item>
-          </el-col>
+            </template>
+          </fct-input>
 
-          <el-col :lg="12">
-            <el-form-item :label="$t('Send Mail To:')" required>
-              <el-input
-                v-model="notification.to"
-                @focus="clearValidationError('to')"
-              >
-                <template #append>
-                  <el-select
-                    v-model="selectedToEmail"
-                    @change="selectToEmail()"
-                    clearable
-                  >
-                    <el-option
-                      v-for="option in emailShortCodes"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value"
-                    />
-                  </el-select>
-                </template>
-              </el-input>
-              <ValidationError
-                :validation-errors="validationErrors?.to?.required"
+          <fct-input
+            v-model="notification.to"
+            @focus="clearValidationError('to')"
+            :label="$t('Send Mail To:')"
+            required
+            :validation-errors="validationErrors"
+            field-key="to"
+          >
+            <template #append>
+              <fct-select
+                v-model="selectedToEmail"
+                @change="selectToEmail()"
+                clearable
+                :options="emailShortCodes"
               />
-            </el-form-item>
-          </el-col>
-        </el-row>
+            </template>
+          </fct-input>
+        </div>
 
-        <el-form-item :label="$t('Cc:')">
-          <el-input v-model="notification.cc" />
-        </el-form-item>
+        <fct-input v-model="notification.cc" :label="$t('Cc:')"/>
 
-        <el-form-item :label="$t('Mail Subject:')" required>
-          <el-input
-            v-model="notification.subject"
-            @focus="clearValidationError('subject')"
-          />
-          <ValidationError
-            :validation-errors="validationErrors?.subject?.required"
-          />
-        </el-form-item>
+        <fct-input
+          v-model="notification.subject"
+          @focus="clearValidationError('subject')"
+          :label="$t('Mail Subject:')"
+          required
+          :validation-errors="validationErrors"
+          field-key="subject"
+        />
 
         <div>
           <WpEditor
@@ -268,7 +237,7 @@ const selectFromEmail = () => {
           >
             <template #action>
               <div class="fct-select-template-wrap">
-                <el-select
+                <fct-select
                   @change="
                     (html) => {
                       wpEditor?.setContent(html);
@@ -276,18 +245,12 @@ const selectFromEmail = () => {
                   "
                   :placeholder="$t('Select button')"
                   clearable
-                >
-                  <el-option
-                    v-for="(button, index) in buttons"
-                    :key="index"
-                    :label="Object.keys(button)[0]"
-                    :value="Object.values(button)[0]"
-                  ></el-option>
-                </el-select>
+                  :options="Object.values(buttons).map((button) => ({label: Object.keys(button)[0], value: Object.values(button)[0]}))"
+                />
               </div>
 
               <div class="fct-select-template-wrap flex gap-2 flex-row">
-                <el-select
+                <fct-select
                   @change="
                     (template) => {
                       getTemplate(template);
@@ -295,55 +258,45 @@ const selectFromEmail = () => {
                   "
                   :placeholder="$t('Select template')"
                   clearable
-                >
-                  <el-option
-                    v-for="(template, index) in templates"
-                    :key="index"
-                    :label="template.label"
-                    :value="template.path"
-                  ></el-option>
-                </el-select>
+                  :options="Object.values(templates).map((template) => ({label: template.label, value: template.path}))"
+                />
 
                 <span>
-                  <el-tooltip
-                    effect="dark"
+                  <fct-tooltip
                     :content="$t('Reset Template')"
                     placement="top"
-                    popper-class="fct-tooltip"
                   >
                     <IconButton @click.prevent="resetTemplate" tag="button">
                       <DynamicIcon name="Refresh" />
                     </IconButton>
-                  </el-tooltip>
+                  </fct-tooltip>
                 </span>
               </div>
             </template>
             <template #preview_button>
-              <el-tooltip
+              <fct-tooltip
                 v-if="editor !== null"
-                effect="dark"
                 :content="$t('Preview Template')"
                 placement="top"
-                popper-class="fct-tooltip"
               >
                 <IconButton @click.prevent="showPreview" tag="button">
                   <DynamicIcon name="Eye" />
                 </IconButton>
-              </el-tooltip>
+              </fct-tooltip>
             </template>
           </WpEditor>
         </div>
         <div class="setting-save-action">
-          <el-button
+          <fct-button
             @click="addNotification"
             type="primary"
             :disabled="loading"
             :loading="loading"
           >
             {{ $t("Save Notification") }}
-          </el-button>
+          </fct-button>
         </div>
-      </el-form>
+      </div>
     </CardBody>
   </Card>
 </template>

@@ -1,42 +1,40 @@
 <template>
   <div v-if="loading" aria-live="polite" aria-hidden="true" class="border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded fct-customer-dashboard-layout-width">
-    <el-skeleton class="px-5 py-5" :loading="loading" :rows="2" animated>
-      <template #template>
-        <div class="fct-form-container">
-          <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
-          </div>
-
-          <div class="form-right">
-            <el-skeleton-item variant="p" class="w-[200px]"/>
-            <el-skeleton-item variant="p" class="w-[300px]"/>
-          </div>
+    <fct-skeleton class="px-5 py-5" animated>
+      <div class="fct-form-container">
+        <div class="form-left">
+          <fct-skeleton variant="p" class="w-[200px] me-5"/>
+          <fct-skeleton variant="p" class="w-[240px] me-5"/>
         </div>
-        <div class="fct-form-container">
-          <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
-          </div>
 
-          <div class="form-right">
-            <el-skeleton-item variant="p" class="w-[200px]"/>
-            <el-skeleton-item variant="p" class="w-[300px]"/>
-          </div>
+        <div class="form-right">
+          <fct-skeleton variant="p" class="w-[200px]"/>
+          <fct-skeleton variant="p" class="w-[300px]"/>
         </div>
-        <div class="fct-form-container">
-          <div class="form-left">
-            <el-skeleton-item variant="p" class="w-[200px] me-5"/>
-            <el-skeleton-item variant="p" class="w-[240px] me-5"/>
-          </div>
+      </div>
+      <div class="fct-form-container">
+        <div class="form-left">
+          <fct-skeleton variant="p" class="w-[200px] me-5"/>
+          <fct-skeleton variant="p" class="w-[240px] me-5"/>
+        </div>
 
-          <div class="form-right">
-            <el-skeleton-item variant="p" class="w-[200px]"/>
-            <el-skeleton-item variant="p" class="w-[300px]"/>
-          </div>
+        <div class="form-right">
+          <fct-skeleton variant="p" class="w-[200px]"/>
+          <fct-skeleton variant="p" class="w-[300px]"/>
         </div>
-      </template>
-    </el-skeleton>
+      </div>
+      <div class="fct-form-container">
+        <div class="form-left">
+          <fct-skeleton variant="p" class="w-[200px] me-5"/>
+          <fct-skeleton variant="p" class="w-[240px] me-5"/>
+        </div>
+
+        <div class="form-right">
+          <fct-skeleton variant="p" class="w-[200px]"/>
+          <fct-skeleton variant="p" class="w-[300px]"/>
+        </div>
+      </div>
+    </fct-skeleton>
   </div>
 
   <div v-if="profileDetails && !loading" class="fct-customer-dashboard-user-profile fct-customer-dashboard-layout-width" aria-live="polite">
@@ -57,7 +55,7 @@
     
       <!--    Save button disabling now -->
       <footer class="fct-form-footer text-end">
-        <el-button
+        <fct-button
             type="primary"
             size="small"
             @click="updateCustomerProfile"
@@ -65,7 +63,7 @@
             :aria-label="translate('Save Profile')"
         >
           {{ translate('Save Profile') }}
-        </el-button>
+        </fct-button>
       </footer>
 
       <!--    Add-on sections (e.g. pro saved payment methods). Sits below the
@@ -78,7 +76,7 @@
 <script>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Badge from "../parts/Badge.vue";
-import Notify from "@/utils/Notify";
+import Notify from "../../utils/PortalNotify";
 import MaterialInput from "@/Bits/Components/MaterialInput.vue";
 import AddressComponent from "@/Bits/Components/Address/AddressComponent.vue";
 import translate from "../../translator/Translator";

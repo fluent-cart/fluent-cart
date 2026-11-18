@@ -3,6 +3,7 @@
 namespace Tests\Integration\Modules\MCP;
 
 use FluentCart\App\Modules\MCP\AbilitiesRegistrar;
+use FluentCart\App\Modules\MCP\MCPInit;
 use lucatume\WPBrowser\TestCase\WPTestCase;
 use Tests\Support\Traits\InvokesPrivateMethods;
 
@@ -25,7 +26,13 @@ class AbilitiesRegistrarTest extends WPTestCase
 
     public function test_registered_read_ability_keeps_wordpress_annotations(): void
     {
-        AbilitiesRegistrar::register();
+        // WordPress fires the abilities init actions once per process and refuses
+        // registration outside them, so start from fresh registries.
+        foreach ([\WP_Abilities_Registry::class, \WP_Ability_Categories_Registry::class] as $registry) {
+            (new \ReflectionProperty($registry, 'instance'))->setValue(null, null);
+        }
+        add_action('wp_abilities_api_categories_init', [new MCPInit(), 'registerCategory']);
+        add_action('wp_abilities_api_init', [AbilitiesRegistrar::class, 'register']);
 
         $ability = wp_get_ability('fluent-cart/list-orders');
         $annotations = $ability->get_meta_item('annotations');
@@ -81,6 +88,7 @@ class AbilitiesRegistrarTest extends WPTestCase
         $data = $out->get_error_data();
         $this->assertSame(['variation_id'], $data['fields'], 'error data names the unknown fields.');
         $this->assertSame(['product_id'], $data['accepted'], 'error data carries the accepted params.');
+        $this->assertSame($data['accepted'], $data['allowed'], 'the same list under the key the other Fluent MCPs use.');
     }
 
     public function test_declared_params_are_not_rejected(): void
@@ -115,6 +123,75 @@ class AbilitiesRegistrarTest extends WPTestCase
 
         $this->assertInstanceOf(\WP_Error::class, $out, 'Param sent to a no-param tool is rejected.');
         $this->assertStringContainsString('takes no parameters', $out->get_error_message(), 'Message states the tool accepts nothing.');
+    }
+
+    // --- input validation errors ------------------------------------------
+
+    public function test_a_schema_validation_error_has_the_json_shape_of_a_tool_error(): void
+    {
+        foreach ([\WP_Abilities_Registry::class, \WP_Ability_Categories_Registry::class] as $registry) {
+            (new \ReflectionProperty($registry, 'instance'))->setValue(null, null);
+        }
+        add_action('wp_abilities_api_categories_init', [new MCPInit(), 'registerCategory']);
+        add_action('wp_abilities_api_init', [AbilitiesRegistrar::class, 'register']);
+        add_filter('wp_ability_validate_input', [AbilitiesRegistrar::class, 'structuredInputError'], 10, 3);
+        wp_set_current_user(self::factory()->user->create(['role' => 'administrator']));
+
+        $out = wp_get_ability('fluent-cart/list-orders')->execute(['status' => 'bogus']);
+
+        $this->assertInstanceOf(\WP_Error::class, $out);
+        $error = json_decode($out->get_error_message(), true)['error'];
+        $this->assertSame('invalid_param', $error['code']);
+        $this->assertSame(['status'], $error['fields']);
+        $this->assertFalse($error['retryable']);
+        $this->assertStringContainsString('completed', $error['message'], 'The message lists the accepted values');
+
+        $out = wp_get_ability('fluent-cart/list-reference-data')->execute([]);
+        $error = json_decode($out->get_error_message(), true)['error'];
+        $this->assertSame(['kinds'], $error['fields'], 'A missing required parameter is named');
+    }
+
+    public function test_the_validation_error_of_another_plugins_ability_is_left_alone(): void
+    {
+        $theirs = new \WP_Error('ability_invalid_input', 'Ability "other/tool" has invalid input.');
+
+        $this->assertSame($theirs, AbilitiesRegistrar::structuredInputError($theirs, [], 'other/tool'));
+        $this->assertTrue(AbilitiesRegistrar::structuredInputError(true, [], 'fluent-cart/list-orders'));
+    }
+
+    // --- tool exceptions ---------------------------------------------------
+
+    public function test_a_query_exception_hides_its_sql_and_is_not_retryable(): void
+    {
+        $failing = function () {
+            return \FluentCart\App\App::db()->table('fct_orders')->selectRaw('no_such_column')->first();
+        };
+        $wrapped = $this->invokePrivateMethod(AbilitiesRegistrar::class, 'wrapExecuteCallback', ['fluent-cart/list-orders', $failing, []]);
+
+        // wpdb prints the failed query when WP_DEBUG is on: that must not reach the response either
+        ob_start();
+        $out = $wrapped([]);
+        $printed = ob_get_clean();
+
+        $this->assertSame('', $printed, 'Nothing is printed before the JSON response');
+
+        $this->assertInstanceOf(\WP_Error::class, $out);
+        $error = json_decode($out->get_error_message(), true)['error'];
+        $this->assertSame('tool_failed', $error['code']);
+        $this->assertFalse($error['retryable'], 'The same query fails again');
+        $this->assertStringNotContainsString('no_such_column', $out->get_error_message(), 'No SQL reaches the agent');
+        $this->assertStringNotContainsString('fct_orders', $out->get_error_message(), 'No table or schema name reaches the agent');
+    }
+
+    public function test_another_exception_keeps_its_message_and_stays_retryable(): void
+    {
+        $wrapped = $this->invokePrivateMethod(AbilitiesRegistrar::class, 'wrapExecuteCallback', ['fluent-cart/list-orders', function () {
+            throw new \RuntimeException('gateway timed out');
+        }, []]);
+
+        $error = json_decode($wrapped([])->get_error_message(), true)['error'];
+        $this->assertSame('gateway timed out', $error['message']);
+        $this->assertTrue($error['retryable']);
     }
 
     // --- clamped per_page warnings -----------------------------------------

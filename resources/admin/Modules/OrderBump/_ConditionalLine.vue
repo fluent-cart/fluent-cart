@@ -1,30 +1,17 @@
 <template>
     <div class="fct_condition_line flex items-center gap-2 mb-2">
-        <el-select @change="setDefaultValues()" v-model="conditionLine.key"
+        <fct-select @change="setDefaultValues()" v-model="conditionLine.key"
+                   :options="Object.keys(dataGroups).map(key => ({label: dataGroups[key].label, value: key}))"
                    :placeholder="translate('Select Condition')"
-                   class="w-1/4">
-            <el-option
-                v-for="(dataGroup, key) in dataGroups"
-                :key="'fct_key_' + key"
-                :label="dataGroup.label"
-                :value="key">
-            </el-option>
-        </el-select>
+                   class="w-1/4"/>
 
         <div class="w-1/6">
-            <el-select v-if="conditionLine.key"
+            <fct-select v-if="conditionLine.key"
                        v-model="conditionLine.operator"
+                       :options="Object.keys(dataGroups[conditionLine.key].types).map(typeKey => ({label: dataGroups[conditionLine.key].types[typeKey], value: typeKey}))"
                        :placeholder="translate('Select Type')"
-                       class="flex-1">
-                <el-option
-                    v-for="(typeLabel, typeKey) in dataGroups[conditionLine.key].types"
-                    :key="'fct_operator_' + typeKey"
-                    :label="typeLabel"
-                    :value="typeKey">
-                </el-option>
-            </el-select>
-            <el-select v-else :disabled="true" :placeholder="translate('Select Condition First')" class="flex-1">
-            </el-select>
+                       class="flex-1"/>
+            <fct-select v-else :disabled="true" :placeholder="translate('Select Condition First')" class="flex-1"/>
         </div>
 
         <div class="flex-1">
@@ -34,15 +21,16 @@
                 </template>
 
                 <template v-else-if="conditionLine.key === 'order_subtotal'">
-                    <el-input
+                    <fct-input
                         v-model="conditionLine.value"
                         type="number"
+                        :controls="false"
                         :placeholder="translate('Enter Amount')"
                         class="w-full"/>
                 </template>
             </div>
             <div v-else>
-                <el-input
+                <fct-input
                     :disabled="true"
                     :placeholder="translate('Select Condition and Type First')"
                     class="w-full"/>

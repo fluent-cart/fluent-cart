@@ -1,7 +1,7 @@
 .fct-alert{
   @apply flex gap-1 py-2 px-2.5 rounded text-system-dark border border-solid border-blue-100 bg-blue-50 dark:text-blue-400 dark:bg-blue-alpha-16 dark:border-blue-alpha-16;
   a{
-    @apply text-blue-500 underline focus:underline focus:outline-none focus:shadow-none dark:text-gray-300;
+    @apply text-blue-500 underline focus:underline focus:outline-hidden focus:shadow-none dark:text-gray-300;
   }
   .icon{
     @apply text-blue-500 dark:text-blue-400;
@@ -10,7 +10,10 @@
     }
   }
   &-close{
-    @apply ml-auto w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-700;
+    @apply ml-auto w-5 h-5 p-0 border-0 bg-transparent text-inherit rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-700;
+    &:focus-visible {
+      @apply [outline-width:2px] outline-offset-1 outline-blue-500;
+    }
     svg{
       @apply w-3;
     }

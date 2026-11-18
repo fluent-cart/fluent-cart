@@ -243,133 +243,11 @@ class AddressSelectRenderer
                         </div>
 
 
-                        <?php $this->renderNameFields(); ?>
+                        <?php if ($this->address_type !== 'shipping') $this->renderNameFields(); ?>
 
                         <?php $this->renderBusinessDetailsFields(); ?>
 
-                        <?php if (!empty(Arr::get($this->requirements_fields, 'phone'))): ?>
-                            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_phone_wrapper" <?php $this->renderFieldAtts(__('Phone number', 'fluent-cart'), Arr::get($this->requirements_fields, 'phone') === 'required'); ?>>
-                                <label for="<?php echo esc_attr($this->address_type); ?>_phone" class="sr-only">
-                                    <?php echo esc_html__('Phone Number', 'fluent-cart'); ?>
-                                </label>
-
-                                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_phone"
-                                    placeholder="<?php echo esc_html__('Phone number', 'fluent-cart'); ?>" data-required="no"
-                                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_phone">
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty(Arr::get($this->requirements_fields, 'country'))): ?>
-                            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_country_wrapper" <?php $this->renderFieldAtts(__('Country / Region', 'fluent-cart'), Arr::get($this->requirements_fields, 'country') === 'required', 'select'); ?>>
-                                <label for="<?php echo esc_attr($this->address_type); ?>_country" class="sr-only">
-                                    <?php echo esc_html__('Country / Region', 'fluent-cart'); ?>
-                                </label>
-
-                                <select type="text" name="<?php echo esc_attr($this->address_type); ?>_country"
-                                    autocomplete="country"
-                                    data-required="<?php echo Arr::get($this->requirements_fields, 'country') === 'required' ? 'yes' : ''; ?>"
-                                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_country"
-                                    class="hidden-select">
-                                    <option value="">
-                                        <?php echo esc_html__('Select a Country', 'fluent-cart'); ?>
-                                    </option>
-                                    <?php foreach ($this->countries as $countryCode => $country): ?>
-                                        <option value="<?php echo esc_attr($countryCode); ?>">
-                                            <?php echo esc_html($country); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty(Arr::get($this->requirements_fields, 'address_1'))): ?>
-                            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_address_1_wrapper" <?php $this->renderFieldAtts(__('Street Address', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_1') === 'required'); ?>>
-                                <label for="<?php echo esc_attr($this->address_type); ?>_address_1" class="sr-only">
-                                    <?php echo esc_html__('Street Address', 'fluent-cart'); ?>
-                                    <?php echo Arr::get($this->requirements_fields, 'address_1') === 'required' ? esc_html__(' (required)', 'fluent-cart') : ''; ?>
-                                </label>
-                                <?php
-                                $placeholder_text = esc_html__('Street Address', 'fluent-cart');
-                                if (Arr::get($this->requirements_fields, 'address_1') === 'required') {
-                                    $placeholder_text .= ' ' . esc_html__('*', 'fluent-cart');
-                                }
-                                ?>
-                                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_address_1"
-                                    autocomplete="address-line1" placeholder="<?php echo esc_attr($placeholder_text); ?>"
-                                    data-required="yes" data-type="input" aria-required="true"
-                                    id="<?php echo esc_attr($this->address_type); ?>_address_1">
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty(Arr::get($this->requirements_fields, 'address_2'))): ?>
-                            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_address_2_wrapper" <?php $this->renderFieldAtts(__('Apt, suite, unit', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_2') === 'required'); ?>>
-                                <label for="<?php echo esc_attr($this->address_type); ?>_address_2" class="sr-only">
-                                    <?php echo esc_html__('Apartment, suite, unit, etc.', 'fluent-cart'); ?>
-                                </label>
-                                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_address_2"
-                                    autocomplete="address-line2"
-                                    placeholder="<?php echo esc_html__('Apt, suite, unit', 'fluent-cart'); ?>" data-required="no"
-                                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_address_2">
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (!empty(Arr::get($this->requirements_fields, 'state'))): ?>
-                            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                id="<?php echo esc_attr($this->address_type); ?>_state_wrapper" style="display: block;" <?php $this->renderFieldAtts(__('State / Province', 'fluent-cart'), Arr::get($this->requirements_fields, 'state') === 'required', 'select'); ?>>
-                                <label for="<?php echo esc_attr($this->address_type); ?>_state" class="sr-only">
-                                    <?php echo esc_html__('State / Province', 'fluent-cart'); ?>
-                                </label>
-
-                                <select type="select" name="<?php echo esc_attr($this->address_type); ?>_state"
-                                    autocomplete="address-level1" data-required="yes" data-type="input"
-                                    id="<?php echo esc_attr($this->address_type); ?>_state" checked="no" class="hidden-select">
-                                    <option value=""><?php echo esc_html__('Select a State', 'fluent-cart'); ?></option>
-                                </select>
-                            </div>
-                        <?php endif; ?>
-
-
-                        <div id="<?php echo esc_attr($this->address_type); ?>_city_zip_section"
-                            data-fluent-cart-checkout-page-form-section=""
-                            class="fct_checkout_form_section fct_city_zip_section <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? 'full-column' : '' ?>">
-
-                            <div class="fct_form_section_body">
-                                <div class="fct_checkout_input_group <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? '' : 'fct_2_columns'; ?>">
-                                    <?php if (!empty(Arr::get($this->requirements_fields, 'city'))): ?>
-                                        <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                            id="<?php echo esc_attr($this->address_type); ?>_city_wrapper" <?php $this->renderFieldAtts(__('City / Town', 'fluent-cart'), Arr::get($this->requirements_fields, 'city') === 'required'); ?>>
-                                            <label for="<?php echo esc_attr($this->address_type); ?>_city" class="sr-only">
-                                                <?php echo esc_html__('City / Town', 'fluent-cart'); ?>
-                                            </label>
-
-                                            <input type="text" name="<?php echo esc_attr($this->address_type); ?>_city"
-                                                autocomplete="address-level2"
-                                                placeholder="<?php echo esc_html__('City / Town', 'fluent-cart'); ?>"
-                                                data-required="yes" data-type="input"
-                                                id="<?php echo esc_attr($this->address_type); ?>_city" aria-required="true">
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty(Arr::get($this->requirements_fields, 'postcode'))): ?>
-                                        <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
-                                            id="<?php echo esc_attr($this->address_type); ?>_postcode_wrapper" <?php $this->renderFieldAtts(__('Postcode / ZIP', 'fluent-cart'), Arr::get($this->requirements_fields, 'postcode') === 'required'); ?>>
-                                            <label for="<?php echo esc_attr($this->address_type); ?>_postcode" class="sr-only">
-                                                <?php echo esc_html__('Postcode / ZIP', 'fluent-cart'); ?>
-                                            </label>
-
-                                            <input type="text" name="<?php echo esc_attr($this->address_type); ?>_postcode"
-                                                autocomplete="postal-code"
-                                                placeholder="<?php echo esc_attr__('Postcode / ZIP', 'fluent-cart'); ?>"
-                                                data-required="yes" data-type="input"
-                                                id="<?php echo esc_attr($this->address_type); ?>_postcode" aria-required="true">
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
+                        <?php $this->renderModalAddressFields(); ?>
 
                     </div>
                 </div>
@@ -388,6 +266,231 @@ class AddressSelectRenderer
                     aria-label="<?php echo esc_attr__('Submit', 'fluent-cart'); ?>">
                     <?php echo esc_html__('Submit', 'fluent-cart'); ?>
                 </button>
+            </div>
+        </div>
+        <?php
+    }
+
+
+    // Saved checkout order, then the filter; city and postcode share a row only when adjacent.
+    private function modalAddressFieldOrder()
+    {
+        $default = ['phone', 'country', 'address_1', 'address_2', 'state', 'city', 'postcode'];
+        // Shipping's name is orderable; billing keeps it fixed above the business fields.
+        if ($this->address_type === 'shipping') {
+            array_unshift($default, 'full_name');
+        }
+        $saved = array_keys(CheckoutFieldsSchema::applyAddressFieldOrder(array_fill_keys($default, true), $this->address_type));
+
+        $order = apply_filters('fluent_cart/fields/address_modal_field_order', $saved, [
+            'address_type' => $this->address_type,
+            'requirements' => $this->requirements_fields,
+        ]);
+
+        $order = is_array($order) ? array_values(array_unique(array_intersect($order, $default))) : [];
+        $order = $order ? $order : $saved;
+
+        // The name is required, so a filter that leaves it out must not drop it.
+        if (in_array('full_name', $default, true) && !in_array('full_name', $order, true)) {
+            array_unshift($order, 'full_name');
+        }
+
+        return $order;
+    }
+
+    private function renderModalAddressFields()
+    {
+        $order = $this->modalAddressFieldOrder();
+        $pair = ['city', 'postcode'];
+
+        for ($index = 0; $index < count($order); $index++) {
+            $next = isset($order[$index + 1]) ? $order[$index + 1] : null;
+            if (in_array($order[$index], $pair, true) && in_array($next, $pair, true)) {
+                $this->renderModalCityZipSection($order[$index], $next);
+                $index++;
+                continue;
+            }
+            $this->renderModalAddressField($order[$index]);
+        }
+    }
+
+    private function renderModalAddressField($key)
+    {
+        $methods = [
+            'full_name' => 'renderNameFields',
+            'phone'     => 'renderModalPhoneField',
+            'country'   => 'renderModalCountryField',
+            'address_1' => 'renderModalAddress1Field',
+            'address_2' => 'renderModalAddress2Field',
+            'state'     => 'renderModalStateField',
+            'city'      => 'renderModalCityField',
+            'postcode'  => 'renderModalPostcodeField',
+        ];
+        $this->{$methods[$key]}();
+    }
+
+    private function renderModalPhoneField()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'phone'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_phone_wrapper" <?php $this->renderFieldAtts(__('Phone number', 'fluent-cart'), Arr::get($this->requirements_fields, 'phone') === 'required'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_phone" class="sr-only">
+                    <?php echo esc_html__('Phone Number', 'fluent-cart'); ?>
+                </label>
+
+                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_phone"
+                    placeholder="<?php echo esc_html__('Phone number', 'fluent-cart'); ?>" data-required="no"
+                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_phone">
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalCountryField()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'country'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_country_wrapper" <?php $this->renderFieldAtts(__('Country / Region', 'fluent-cart'), Arr::get($this->requirements_fields, 'country') === 'required', 'select'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_country" class="sr-only">
+                    <?php echo esc_html__('Country / Region', 'fluent-cart'); ?>
+                </label>
+
+                <select type="text" name="<?php echo esc_attr($this->address_type); ?>_country"
+                    autocomplete="country"
+                    data-required="<?php echo Arr::get($this->requirements_fields, 'country') === 'required' ? 'yes' : ''; ?>"
+                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_country"
+                    class="hidden-select">
+                    <option value="">
+                        <?php echo esc_html__('Select a Country', 'fluent-cart'); ?>
+                    </option>
+                    <?php foreach ($this->countries as $countryCode => $country): ?>
+                        <option value="<?php echo esc_attr($countryCode); ?>">
+                            <?php echo esc_html($country); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalAddress1Field()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'address_1'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_address_1_wrapper" <?php $this->renderFieldAtts(__('Street Address', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_1') === 'required'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_address_1" class="sr-only">
+                    <?php echo esc_html__('Street Address', 'fluent-cart'); ?>
+                    <?php echo Arr::get($this->requirements_fields, 'address_1') === 'required' ? esc_html__(' (required)', 'fluent-cart') : ''; ?>
+                </label>
+                <?php
+                $placeholder_text = esc_html__('Street Address', 'fluent-cart');
+                if (Arr::get($this->requirements_fields, 'address_1') === 'required') {
+                    $placeholder_text .= ' ' . esc_html__('*', 'fluent-cart');
+                }
+                ?>
+                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_address_1"
+                    autocomplete="address-line1" placeholder="<?php echo esc_attr($placeholder_text); ?>"
+                    data-required="yes" data-type="input" aria-required="true"
+                    id="<?php echo esc_attr($this->address_type); ?>_address_1">
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalAddress2Field()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'address_2'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_address_2_wrapper" <?php $this->renderFieldAtts(__('Apt, suite, unit', 'fluent-cart'), Arr::get($this->requirements_fields, 'address_2') === 'required'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_address_2" class="sr-only">
+                    <?php echo esc_html__('Apartment, suite, unit, etc.', 'fluent-cart'); ?>
+                </label>
+                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_address_2"
+                    autocomplete="address-line2"
+                    placeholder="<?php echo esc_html__('Apt, suite, unit', 'fluent-cart'); ?>" data-required="no"
+                    data-type="input" id="<?php echo esc_attr($this->address_type); ?>_address_2">
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalStateField()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'state'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_state_wrapper" style="display: block;" <?php $this->renderFieldAtts(__('State / Province', 'fluent-cart'), Arr::get($this->requirements_fields, 'state') === 'required', 'select'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_state" class="sr-only">
+                    <?php echo esc_html__('State / Province', 'fluent-cart'); ?>
+                </label>
+
+                <select type="select" name="<?php echo esc_attr($this->address_type); ?>_state"
+                    autocomplete="address-level1" data-required="yes" data-type="input"
+                    id="<?php echo esc_attr($this->address_type); ?>_state" checked="no" class="hidden-select">
+                    <option value=""><?php echo esc_html__('Select a State', 'fluent-cart'); ?></option>
+                </select>
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalCityField()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'city'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_city_wrapper" <?php $this->renderFieldAtts(__('City / Town', 'fluent-cart'), Arr::get($this->requirements_fields, 'city') === 'required'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_city" class="sr-only">
+                    <?php echo esc_html__('City / Town', 'fluent-cart'); ?>
+                </label>
+
+                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_city"
+                    autocomplete="address-level2"
+                    placeholder="<?php echo esc_html__('City / Town', 'fluent-cart'); ?>"
+                    data-required="yes" data-type="input"
+                    id="<?php echo esc_attr($this->address_type); ?>_city" aria-required="true">
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalPostcodeField()
+    {
+        ?>
+        <?php if (!empty(Arr::get($this->requirements_fields, 'postcode'))): ?>
+            <div data-fluent-cart-checkout-page-form-input-wrapper="" class="fct_input_wrapper "
+                id="<?php echo esc_attr($this->address_type); ?>_postcode_wrapper" <?php $this->renderFieldAtts(__('Postcode / ZIP', 'fluent-cart'), Arr::get($this->requirements_fields, 'postcode') === 'required'); ?>>
+                <label for="<?php echo esc_attr($this->address_type); ?>_postcode" class="sr-only">
+                    <?php echo esc_html__('Postcode / ZIP', 'fluent-cart'); ?>
+                </label>
+
+                <input type="text" name="<?php echo esc_attr($this->address_type); ?>_postcode"
+                    autocomplete="postal-code"
+                    placeholder="<?php echo esc_attr__('Postcode / ZIP', 'fluent-cart'); ?>"
+                    data-required="yes" data-type="input"
+                    id="<?php echo esc_attr($this->address_type); ?>_postcode" aria-required="true">
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function renderModalCityZipSection($first, $second)
+    {
+        ?>
+        <div id="<?php echo esc_attr($this->address_type); ?>_city_zip_section"
+            data-fluent-cart-checkout-page-form-section=""
+            class="fct_checkout_form_section fct_city_zip_section <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? 'full-column' : '' ?>">
+
+            <div class="fct_form_section_body">
+                <div class="fct_checkout_input_group <?php echo empty(Arr::get($this->requirements_fields, 'postcode')) ? '' : 'fct_2_columns'; ?>">
+                    <?php $this->renderModalAddressField($first); ?>
+                    <?php $this->renderModalAddressField($second); ?>
+                </div>
             </div>
         </div>
         <?php

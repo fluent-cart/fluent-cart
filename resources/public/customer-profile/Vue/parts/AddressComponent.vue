@@ -1,5 +1,5 @@
 <script setup>
-import {computed, defineModel, onMounted, ref, watch} from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import Rest from "@/utils/http/Rest";
 import translate from "../../translator/Translator";
 import Animation from "@/Bits/Components/Animation.vue";
@@ -40,7 +40,6 @@ const zipLabel = ref(translate('Zip Code'));
 const stateLabel = ref(translate('State'));
 
 const fetchStates = (countryCode) => {
-  model.state = '';
   loadingState.value = true;
   if (!countryCode) {
     loadingState.value = false;

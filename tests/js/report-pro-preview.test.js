@@ -2,6 +2,7 @@ import {describe, expect, it, vi, beforeEach} from 'vitest';
 import {renderToString} from 'vue/server-renderer';
 import {createSSRApp, h} from 'vue';
 import ElementPlus from 'element-plus';
+import {registerFctComponents} from '@/Bits/Components/Fct';
 
 /**
  * A Pro report section on a store without it: sample data the keyboard and screen readers skip, a "Sample data"
@@ -27,6 +28,7 @@ const render = () => {
         }, {default: () => h('div', {class: 'sample'}, 'Sample customer A')}),
     });
     app.use(ElementPlus);
+    registerFctComponents(app);
     return renderToString(app);
 };
 

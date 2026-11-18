@@ -43,6 +43,9 @@
 <script>
 import EmailBodySkeleton from './EmailBodySkeleton.vue';
 
+// How long the parent waits for the editor to confirm a save.
+const FORCE_SAVE_TIMEOUT = 5000;
+
 export default {
   name: 'NewEditorFrame',
   components: { EmailBodySkeleton },
@@ -85,7 +88,10 @@ export default {
       editorReadyReceived: false,
       editorContentReady: false,
       isFullscreen: false,
-      _timers: []
+      _timers: [],
+      // Saves the parent asked for, waiting for the editor to answer.
+      pendingSaves: {},
+      forceSaveId: 0
     };
   },
   computed: {
@@ -112,6 +118,10 @@ export default {
     window.addEventListener('message', this.handleEditorMessage);
   },
   beforeUnmount() {
+    // A save waiting on this editor must not hang once the editor is gone.
+    Object.values(this.pendingSaves).forEach(done => done({acknowledged: false, saved: false}));
+    this.pendingSaves = {};
+
     // Clear all pending timers
     this._timers.forEach(id => clearTimeout(id));
     this._timers = [];
@@ -248,6 +258,17 @@ export default {
         this.toggleFullScreen(content);
       } else if (action === 'EMAIL_PREVIEW_REQUEST') {
         this.$emit('previewRequest');
+      } else if (action === 'FORCE_SAVE_DONE') {
+        const done = this.pendingSaves[event.data.id];
+        if (done) {
+          delete this.pendingSaves[event.data.id];
+          if (typeof content === 'string') {
+            this.editorData.content = content;
+            this.$emit('update:modelValue', content);
+            this.$emit('contentUpdated', content);
+          }
+          done({acknowledged: true, saved: !!event.data.saved, content});
+        }
       } else if (action === 'AUTOSAVE_STATE') {
         this.$emit('autosaveState', content);
       } else if (action === 'EDITOR_READY') {
@@ -256,12 +277,37 @@ export default {
         this.sendDataToEditor();
       }
     },
-    forceAutosave() {
-      if (this.editorFrame && this.editorFrame.contentWindow) {
+    // Asks the editor to save. With requireAck it waits for the editor's answer (latest content and save result);
+    // no answer in time resolves as not acknowledged. Without it, the message is sent and the promise resolves at once.
+    forceAutosave({requireAck = false} = {}) {
+      return new Promise((resolve) => {
+        if (!this.editorFrame || !this.editorFrame.contentWindow) {
+          resolve({acknowledged: false, saved: false});
+          return;
+        }
+
+        if (!requireAck) {
+          this.editorFrame.contentWindow.postMessage({action: 'FORCE_SAVE'}, this.editorOrigin);
+          resolve({acknowledged: false, saved: false});
+          return;
+        }
+
+        const id = ++this.forceSaveId;
+        const timer = this._setTimeout(() => {
+          delete this.pendingSaves[id];
+          resolve({acknowledged: false, saved: false});
+        }, FORCE_SAVE_TIMEOUT);
+
+        this.pendingSaves[id] = (result) => {
+          clearTimeout(timer);
+          resolve(result);
+        };
+
         this.editorFrame.contentWindow.postMessage({
-          action: 'FORCE_SAVE'
+          action: 'FORCE_SAVE',
+          id
         }, this.editorOrigin);
-      }
+      });
     },
     toggleFullScreen(enter) {
       this.isFullscreen = enter;

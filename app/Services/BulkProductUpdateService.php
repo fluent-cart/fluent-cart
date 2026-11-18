@@ -4,6 +4,7 @@ namespace FluentCart\App\Services;
 
 use FluentCart\Api\Resource\ProductResource;
 use FluentCart\Api\Resource\ProductVariationResource;
+use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
@@ -288,8 +289,8 @@ class BulkProductUpdateService
         $skus = [];
         $skuErrors = [];
         foreach ($variants as $i => $v) {
-            $sku = trim(Arr::get($v, 'sku', ''));
-            if (!empty($sku)) {
+            $sku = (string) Arr::get($v, 'sku', '');
+            if ($sku !== '') {
                 if (in_array($sku, $skus, true)) {
                     $skuErrors["variants.$i.sku"] = sprintf(
                         /* translators: %s: SKU */
@@ -325,44 +326,46 @@ class BulkProductUpdateService
      */
     public function updateChunk(array $products): array
     {
-        global $wpdb;
+        $db = App::db();
 
         $updated = [];
         $errors = [];
 
-        $wpdb->query('START TRANSACTION');
-
-        try {
-            foreach ($products as $index => $productData) {
-                $fieldErrors = $this->validateProduct($productData);
-                if ($fieldErrors) {
-                    $errors[] = [
-                        'index'   => $index,
-                        'post_id' => Arr::get($productData, 'ID', ''),
-                        'title'   => Arr::get($productData, 'post_title', ''),
-                        'message' => reset($fieldErrors),
-                        'fields'  => $fieldErrors,
-                    ];
-                    continue;
-                }
-
-                try {
-                    $postId = $this->updateSingleProduct($productData);
-                    $updated[] = $postId;
-                } catch (\Throwable $e) {
-                    $errors[] = [
-                        'index'   => $index,
-                        'post_id' => Arr::get($productData, 'ID', ''),
-                        'title'   => Arr::get($productData, 'post_title', ''),
-                        'message' => $e->getMessage(),
-                    ];
+        foreach ($products as $index => $productData) {
+            foreach (Arr::get($productData, 'variants', []) as $variantIndex => $variant) {
+                if (array_key_exists('sku', $variant)) {
+                    $sku = sanitize_text_field((string) Arr::get($variant, 'sku'));
+                    Arr::set($productData, 'variants.' . $variantIndex . '.sku', $sku === '' ? null : $sku);
                 }
             }
+            $fieldErrors = $this->validateProduct($productData);
+            if ($fieldErrors) {
+                $errors[] = [
+                    'index'   => $index,
+                    'post_id' => Arr::get($productData, 'ID', ''),
+                    'title'   => Arr::get($productData, 'post_title', ''),
+                    'message' => reset($fieldErrors),
+                    'fields'  => $fieldErrors,
+                ];
+                continue;
+            }
 
-            $wpdb->query('COMMIT');
-        } catch (\Throwable $e) {
-            $wpdb->query('ROLLBACK');
-            throw $e;
+            // Commit each product independently so a later deadlock cannot undo reported successes.
+            $transactionLevel = $db->transactionLevel();
+            $db->beginTransaction();
+            try {
+                $postId = $this->updateSingleProduct($productData);
+                $db->commit();
+                $updated[] = $postId;
+            } catch (\Throwable $e) {
+                $db->rollBack($transactionLevel);
+                $errors[] = [
+                    'index'   => $index,
+                    'post_id' => Arr::get($productData, 'ID', ''),
+                    'title'   => Arr::get($productData, 'post_title', ''),
+                    'message' => $e->getMessage(),
+                ];
+            }
         }
 
         return [
@@ -409,16 +412,26 @@ class BulkProductUpdateService
             $allVariants = Arr::get($productData, 'variants', []);
             $existingVariants = [];
             $newVariants = [];
+            $clearedSkuIds = [];
 
             foreach ($allVariants as $v) {
                 if (!empty($v['id'])) {
                     $existingVariants[] = Arr::except($v, ['media']);
+                    if (array_key_exists('sku', $v) && in_array(Arr::get($v, 'sku'), ['', null], true)) {
+                        $clearedSkuIds[] = (int) Arr::get($v, 'id');
+                    }
                 } else {
                     $newVariants[] = $v;
                 }
             }
 
             $updatePayload['variants'] = $existingVariants;
+
+            // New variations can take SKUs explicitly cleared in this same product save.
+            if ($newVariants && $clearedSkuIds) {
+                ProductVariation::query()->where('post_id', $postId)
+                    ->whereIn('id', $clearedSkuIds)->update(['sku' => null]);
+            }
 
             // Create new variants (e.g. from variation duplication)
             foreach ($newVariants as $newVariant) {
@@ -441,7 +454,11 @@ class BulkProductUpdateService
 
         // Use ProductResource::update which handles the variant and detail writes
         if (!empty($updatePayload['variants']) || !empty($updatePayload['detail'])) {
-            ProductResource::update($updatePayload, $postId);
+            $result = ProductResource::update($updatePayload, $postId);
+            // A refused save comes back as a WP_Error. Stop before the later writes.
+            if (is_wp_error($result)) {
+                throw new \RuntimeException($result->get_error_message()); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- shown as plain text in the bulk editor tooltip; escaping would show entities
+            }
         }
 
         // Update wp_post fields
@@ -543,7 +560,7 @@ class BulkProductUpdateService
         $createData = [
             'post_id'         => $postId,
             'variation_title' => sanitize_text_field(Arr::get($variantData, 'variation_title', '')),
-            'sku'             => Arr::get($variantData, 'sku') ? sanitize_text_field($variantData['sku']) : null,
+            'sku'             => Arr::get($variantData, 'sku'),
             'item_price'      => (int) Arr::get($variantData, 'item_price', 0),
             'compare_price'   => (int) Arr::get($variantData, 'compare_price', 0),
             'payment_type'    => Arr::get($otherInfo, 'payment_type', 'onetime'),

@@ -24,11 +24,11 @@ defineEmits(['retry']);
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="4"/>
+      <fct-skeleton v-if="loading" animated :rows="4"/>
       <ReportLoadError v-else-if="failed" @retry="$emit('retry')"/>
       <p v-else-if="!rows.length" class="text-sm text-system-light dark:text-gray-400 m-0">{{ empty }}</p>
       <ul v-else class="list-none m-0 p-0">
-        <li v-for="row in rows" :key="row.key" class="py-2 border-b border-gray-divider dark:border-dark-500 last:border-b-0">
+        <li v-for="row in rows" :key="row.key" class="py-2 [border-bottom-width:1px] border-gray-divider dark:border-dark-500 last:border-b-0">
           <div class="flex justify-between gap-3 text-sm">
             <span class="truncate text-system-dark dark:text-gray-50">{{ row.label }}</span>
             <span class="whitespace-nowrap text-system-mid dark:text-gray-300">{{ row.value }}</span>

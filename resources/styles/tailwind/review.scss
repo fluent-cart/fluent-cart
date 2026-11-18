@@ -93,7 +93,7 @@
     }
 
     &:focus-visible {
-      @apply outline outline-2 outline-blue-500 outline-offset-2;
+      @apply outline-solid outline-2 outline-blue-500 outline-offset-2;
     }
   }
 
@@ -205,7 +205,7 @@
   }
 
   &:focus-visible {
-    @apply outline outline-2 outline-blue-500 outline-offset-2;
+    @apply outline-solid outline-2 outline-blue-500 outline-offset-2;
   }
 
   img {
@@ -245,7 +245,7 @@
   @apply inline-flex p-0 bg-transparent border-0 cursor-pointer rounded-[6px];
 
   &:focus-visible {
-    @apply outline-none;
+    @apply outline-hidden;
   }
 
   &:focus-visible .badge,
@@ -282,7 +282,7 @@
 
 // The menu: each status with its icon; the current one ticked, tinted in
 // its own badge colour, and left readable rather than greyed out.
-#fct_admin_app_wrapper .fct-thread-status-menu {
+#fct_admin_app_wrapper .el-dropdown-menu:has(> .fct-thread-status-option) {
   @apply p-1 min-w-[180px];
 }
 
@@ -325,7 +325,7 @@
   }
 
   &:focus-visible {
-    @apply outline outline-2 outline-blue-500 outline-offset-2;
+    @apply outline-solid outline-2 outline-blue-500 outline-offset-2;
   }
 }
 
@@ -366,7 +366,7 @@
   }
 
   &:focus-visible {
-    @apply outline outline-2 outline-blue-500 outline-offset-2;
+    @apply outline-solid outline-2 outline-blue-500 outline-offset-2;
   }
 }
 
@@ -593,29 +593,17 @@
   }
 }
 
-// Product Reviews settings page (admin). The page is built from the shared
-// settings-form rows; its own additions are the stacked "who can review"
-// radios, laid out the way the tax page lays out its price-mode radios, and
-// a child row - a setting that only means something under the one above it
-// (Star Ratings Required under Enable Star Ratings, the photo limits under
-// Photo Reviews) - stepped in under it so the dependency reads.
+// Product Reviews settings page (admin). Its own additions to the shared
+// SettingRow: the stacked "who can review" radios, and a child row - a setting
+// that only means something under the one above it - stepped in so the
+// dependency reads.
 .fct-review-settings {
-  .fct-setting-form-row.is-child .fct-setting-form-content {
+  .fct-setting-field.is-child .fct-setting-field__info {
     @apply ps-7;
   }
 
-  // A row whose only control is a switch or a number box on the right edge
-  // has no field column to share with, so its label and tip take the whole
-  // line rather than wrapping inside the 300px column the other rows use -
-  // and every such control lines up on the same edge, whatever its kind.
-  .fct-setting-form-row:has(> .fct-setting-form-fields .el-switch),
-  .fct-setting-form-row:has(> .fct-setting-form-fields .el-input-number) {
-    .fct-setting-form-content {
-      @apply w-auto flex-1;
-    }
-    .fct-setting-form-fields {
-      @apply flex-none;
-    }
+  .fct-review-settings__fields > .fct-setting-field:first-child {
+    padding-top: var(--fct-space-section);
   }
 }
 
@@ -692,7 +680,7 @@
   }
 
   &:focus-visible {
-    @apply outline-none ring-2 ring-offset-1 ring-primary-500;
+    @apply outline-hidden ring-2 ring-offset-1 ring-primary-500;
   }
 
   &--approved {
@@ -790,7 +778,7 @@
 .fct-review-context-link {
   @apply inline-flex items-center justify-center w-8 h-8 rounded flex-shrink-0;
   @apply text-system-dark hover:text-black dark:text-gray-50 dark:hover:text-white;
-  @apply focus:outline-none focus:shadow-none;
+  @apply focus:outline-hidden focus:shadow-none;
 
   svg {
     @apply w-4 h-4;
@@ -799,7 +787,7 @@
   // Clicking should not leave a ring behind, but keyboard focus still has
   // to be visible.
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 }
 
@@ -857,7 +845,7 @@
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 }
 
@@ -968,7 +956,10 @@
     &::before {
       content: '';
       height: 1px;
-      @apply absolute inset-x-0 -top-1.5 bg-gray-divider dark:bg-dark-400;
+      @apply absolute inset-x-0 -top-1.5 bg-gray-divider;
+    }
+    .fluent_theme_dark &::before {
+        @apply bg-dark-400;
     }
   }
 
@@ -1001,7 +992,10 @@
     &::before,
     &::after {
       content: '';
-      @apply absolute start-[28px] bg-gray-divider dark:bg-dark-400;
+      @apply absolute start-[28px] bg-gray-divider;
+    }
+    .fluent_theme_dark &::after {
+        @apply bg-dark-400;
     }
 
     &::before {
@@ -1114,7 +1108,7 @@
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-1 outline-blue-500;
   }
 }
 
@@ -1137,7 +1131,7 @@
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-1 outline-blue-500;
   }
 
   /* Empty state: a full-width drop-zone-sized box, icon over the label,

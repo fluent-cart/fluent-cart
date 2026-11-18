@@ -791,11 +791,11 @@ const emit = defineEmits(['onDataPopulated'])
 </script>
 
 <template>
-  <el-button @click="showModal = true">
+  <fct-button @click="showModal = true">
     {{ $t('Import') }}
-  </el-button>
+  </fct-button>
 
-  <el-dialog v-model="showModal" :append-to-body="true" :title="$t('Import Products')" class="fct-bulk-import-dialog">
+  <fct-dialog v-model="showModal" :append-to-body="true" :title="$t('Import Products')" class="fct-bulk-import-dialog">
     <el-upload
         v-if="!shouldShowMappers"
         class="fct-file-uploader"
@@ -836,10 +836,10 @@ const emit = defineEmits(['onDataPopulated'])
       <!--            </template>-->
     </el-upload>
 
-    <el-button v-if="!shouldShowMappers" @click="downloadSampleCsv" link>
+    <fct-button v-if="!shouldShowMappers" @click="downloadSampleCsv" link>
       <DynamicIcon name="Download"/>
       {{ $t('Download a Sample CSV File') }}
-    </el-button>
+    </fct-button>
 
     <template v-if="shouldShowMappers">
       <div class="fct-import-map-table-wrap">
@@ -859,14 +859,12 @@ const emit = defineEmits(['onDataPopulated'])
             </td>
 
             <td width="50%">
-              <el-select v-model="field.value" filterable clearable>
-                <el-option
-                    v-for="option in fieldMapOptions"
-                    :key="option.value"
-                    :label="option.title"
-                    :value="option.value"
-                />
-              </el-select>
+              <fct-select
+                  v-model="field.value"
+                  :options="fieldMapOptions.map(option => ({label: option.title, value: option.value}))"
+                  filterable
+                  clearable
+              />
             </td>
           </tr>
           </tbody>
@@ -874,14 +872,14 @@ const emit = defineEmits(['onDataPopulated'])
       </div>
 
       <div class="dialog-footer">
-        <el-button @click="addProductsToTable()">
+        <fct-button @click="addProductsToTable()">
           {{ $t('Add Products') }}
-        </el-button>
+        </fct-button>
 
-        <el-button @click="addProductsToTable(false)">
+        <fct-button @click="addProductsToTable(false)">
           {{ $t('Clear and Add Products') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>

@@ -2,33 +2,22 @@
     <div class="fct-merge-fields" v-if="appReady">
       <div class="fct-merge-fields-container">
         <div class="fct-merge-fields-item" v-for="(primary_field, primary_field_index) in field.primary_fileds" :key="primary_field_index">
-          <el-form-item :label="primary_field.label" :required="primary_field.required">
-            <el-select
+          <Field :label="primary_field.label" :required="primary_field.required">
+            <fct-select
                 v-if="primary_field.input_options === 'emails'"
                 v-model="settings[primary_field.key]"
                 :placeholder="$t('Select a Field')"
                 clearable
                 :class="errors.errors[primary_field.key] ? 'is-error' : ''"
-            >
-              <template v-for="(option, index) in inputs" :key="index">
-                <el-option v-if="option?.attributes.type === 'email'"
-                           :value="option?.attributes.code"
-                           :label="option?.attributes.name"
-                ></el-option>
-              </template>
-            </el-select>
-            <el-select
+                :options="Object.values(inputs || {}).filter((option) => option?.attributes.type === 'email').map((option) => ({value: option.attributes.code, label: option.attributes.name}))"
+            />
+            <fct-select
                 v-else-if="primary_field.input_options === 'all'"
                 v-model="settings[primary_field.key]"
                 :placeholder="$t('Select a Field')"
                 clearable
-            >
-              <el-option
-                  v-for="(option, index) in inputs"
-                  :key="index" :value="option.attributes.name"
-                  :label="option.admin_label"
-              ></el-option>
-            </el-select>
+                :options="Object.values(inputs || {}).map((option) => ({value: option.attributes.name, label: option.admin_label}))"
+            />
 
             <template v-else>
               <FieldGeneral
@@ -41,25 +30,25 @@
             <div v-if="primary_field.help_text">{{ primary_field.help_text }}</div>
 
             <ErrorView field="fieldEmailAddress" :errors="errors"></ErrorView>
-          </el-form-item>
+          </Field>
         </div><!-- .fct-merge-fields-item -->
 
         <template v-if="field.default_fields">
           <div class="fct-merge-fields-item" v-for="default_field in field.default_fields" :key="default_field.name">
-            <el-form-item :label="default_field.label" :required="default_field.required">
+            <Field :label="default_field.label" :required="default_field.required">
               <FieldGeneral
                   :editorShortcodes="editorShortcodes"
                   :defaultValue="settings[primary_field.key]"
                   v-model="settings.default_fields[default_field.name]"
               ></FieldGeneral>
               <ErrorView field="default_fields" :errors="errors"></ErrorView>
-            </el-form-item>
+            </Field>
           </div><!-- .fct-merge-fields-item -->
         </template>
 
 
         <div class="fct-merge-fields-item" v-for="(field_name, field_index) in merge_fields" :key="field_index">
-          <el-form-item :label="field_name">
+          <Field :label="field_name">
             <FieldGeneral
                 :editorShortcodes="editorShortcodes"
                 :defaultValue="merge_model[field_index]"
@@ -67,7 +56,7 @@
                     onValueUpdated(value, field_index)
                 }"
             ></FieldGeneral>
-          </el-form-item>
+          </Field>
         </div><!-- .fct-merge-fields-item -->
 
       </div><!-- .fct-merge-fields-container -->
@@ -78,6 +67,7 @@
 
     import {QuestionFilled} from '@element-plus/icons-vue';
     import LabelHint from '@/Bits/Components/LabelHint.vue';
+    import Field from '@/Bits/Components/Fct/Field.vue';
 </script>
 
 <script type="text/babel">

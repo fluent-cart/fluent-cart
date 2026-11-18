@@ -9,6 +9,7 @@ use FluentCart\App\Hooks\Handlers\BlockEditors\BlockEditor;
 use FluentCart\App\Hooks\Handlers\BlockEditors\ShopApp\InnerBlocks\InnerBlocks;
 use FluentCart\App\Hooks\Handlers\ShortCodes\ShopAppHandler;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Filter\ShopAttributeFilter;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Collection;
@@ -32,7 +33,8 @@ class ShopAppBlockEditor extends BlockEditor
 
     public function getStyles(): array
     {
-        return ['admin/BlockEditor/ShopApp/style/shop-app-block-editor.css'];
+        // The Card Layout picker's styles are the editor's only; the storefront loads card-layouts.scss alone.
+        return ['admin/BlockEditor/ShopApp/style/shop-app-block-editor.css', 'public/product-card/style/card-layouts.scss', 'public/product-card/style/card-layout-picker.scss'];
     }
 
     public function init(): void
@@ -50,6 +52,7 @@ class ShopAppBlockEditor extends BlockEditor
     public function localizeData(): array
     {
         $taxonomies = Taxonomy::getTaxonomies();
+        $attributeGroupLimit = ShopAttributeFilter::maxGroups();
 
         $taxonomies = Collection::make($taxonomies)
             ->map(function ($taxonomy) {
@@ -69,6 +72,10 @@ class ShopAppBlockEditor extends BlockEditor
                 'product_categories' => $this->getMetaFilterOptions('categories'),
                 'trans'              => TransStrings::getShopAppBlockEditorString(),
                 'taxonomies'         => $taxonomies,
+                'attribute_groups'   => ShopAttributeFilter::groupOptions(),
+                'attribute_group_limit' => $attributeGroupLimit,
+                /* translators: %d: how many attribute filters one Products block can show */
+                'attribute_group_limit_note' => sprintf(__('Up to %d attributes. Remove one to add another.', 'fluent-cart'), $attributeGroupLimit),
                 'title'              => __('Products', 'fluent-cart'),
             ],
             'fluent_cart_block_editor_asset' => [

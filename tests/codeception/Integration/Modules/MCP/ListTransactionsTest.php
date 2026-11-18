@@ -116,6 +116,12 @@ class ListTransactionsTest extends DatabaseTestCase
         $this->assertSame(4, $this->currencyCount($summary, 'USD'));
         $this->assertSame(Helper::toCent(80), $this->currencyTotalCents($summary, 'EUR'));
 
+        // Charges and refunds are split per type; the summary line never adds them
+        $usd = $summary['amount_by_currency'][array_search('USD', array_column($summary['amount_by_currency'], 'currency'), true)];
+        $this->assertEquals(['charge' => 150.0, 'refund' => 50.0], $usd['by_type']);
+        $this->assertStringContainsString('refund', $res['summary']);
+        $this->assertStringNotContainsString('totaling', $res['summary']);
+
         // Count breakdowns. by_type/by_status are stdClass on purpose: the MCP
         // schema declares them JSON objects and an empty array would encode as
         // [] — pin the type before reading the counts.

@@ -345,6 +345,20 @@ const refreshAddress = (showModal, address) => {
   customerAddressModalInfos.value.showManageAddressModal = true;
   setAddress(address);
 };
+
+// Only an edit the server also wrote to this order returns orderAddress.
+const onAddressSaved = (savedAddress, orderAddress) => {
+  if (!orderAddress) {
+    return;
+  }
+
+  if (orderAddress.type === "shipping") {
+    currentShippingAddress.value = orderAddress;
+  } else {
+    currentBillingAddress.value = orderAddress;
+  }
+};
+
 const isB2bOrder = computed(() => {
     const info = entity.value && entity.value.business_info;
     if (!info) return false;
@@ -371,44 +385,22 @@ onMounted(() => {
           border_bottom
       >
         <template #action>
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
               class="fct-more-option-wrap"
-              popper-class="fct-dropdown"
               v-if="currentlySelectedCustomer && shouldEnableEditing"
+              :items="[
+                {command: 'edit_customer', label: translate('Edit customer information')},
+                {command: 'manage_shipping_address', label: translate('Manage shipping address')},
+                {command: 'manage_billing_address', label: translate('Manage billing address')},
+                orderId ? {command: 'change_customer', label: translate('Change customer')} : {command: 'remove_customer', label: translate('Remove customer')},
+              ]"
               @command="commandHandler"
           >
             <span class="more-btn">
               <DynamicIcon name="More"/>
             </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="edit_customer">
-                  {{ translate("Edit customer information") }}
-                </el-dropdown-item>
-                <el-dropdown-item command="manage_shipping_address">
-                  {{ translate("Manage shipping address") }}
-                </el-dropdown-item>
-                <el-dropdown-item command="manage_billing_address">
-                  {{ translate("Manage billing address") }}
-                </el-dropdown-item>
-
-                <el-dropdown-item
-                    v-if="orderId"
-                    command="change_customer"
-                >
-                  {{ translate("Change customer") }}
-                </el-dropdown-item>
-
-                <el-dropdown-item
-                    v-if="!orderId"
-                    command="remove_customer"
-                >
-                  {{ translate("Remove customer") }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </fct-dropdown>
         </template>
       </Card.Header>
 
@@ -521,7 +513,7 @@ onMounted(() => {
           </div>
 
           <div class="fct-admin-sidebar-item mt-5">
-            <h4 class="sidebar-title">{{ translate("Shipping Address") }}</h4>
+            <h3 class="sidebar-title">{{ translate("Shipping Address") }}</h3>
             <div
                 v-if="currentShippingAddress != null"
                 class="fct-address-copy-wrap"
@@ -572,7 +564,7 @@ onMounted(() => {
           </div>
 
           <div class="fct-admin-sidebar-item mt-5">
-            <h4 class="sidebar-title">{{ translate("Billing Address") }}</h4>
+            <h3 class="sidebar-title">{{ translate("Billing Address") }}</h3>
             <div
                 v-if="currentBillingAddress != null"
                 class="fct-address-copy-wrap"
@@ -684,6 +676,7 @@ onMounted(() => {
   <ManageCustomerAddressModal
       :modalAction="customerAddressModalInfos.modalAction"
       @on-address-selected="setAddress"
+      @refresh-address="onAddressSaved"
       @update:show-address-modal="
       (val) => (customerAddressModalInfos.showManageAddressModal = val)
     "
@@ -694,14 +687,14 @@ onMounted(() => {
       @add-new-address="addNewAddress"
   />
 
-  <el-dialog
+  <fct-dialog
       :show-close="true"
       v-model="customerAddressModalInfos.showModal"
       :append-to-body="true"
       :title="getTitle()"
   >
     <div class="fluent-cart-admin-pages">
-      <el-button
+      <fct-button
           text
           @click="
           () => {
@@ -715,7 +708,7 @@ onMounted(() => {
           <Back/>
         </el-icon>
         {{ $t("Manage address") }}
-      </el-button>
+      </fct-button>
       <AddOrEditAddressModal
           @update:refresh-address="refreshAddress"
           :customerAddressModalInfos="customerAddressModalInfos"
@@ -734,9 +727,9 @@ onMounted(() => {
         "
       />
     </div>
-  </el-dialog>
+  </fct-dialog>
 
-  <el-dialog v-if="orderId" v-model="showCustomerChangeModal" :title="$t('Change Customer')">
+  <fct-dialog v-if="orderId" v-model="showCustomerChangeModal" :title="$t('Change Customer')">
     <ChangeOrderCustomer :order-id="orderId" @close="showCustomerChangeModal = false"/>
-  </el-dialog>
+  </fct-dialog>
 </template>

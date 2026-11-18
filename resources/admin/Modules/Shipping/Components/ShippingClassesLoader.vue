@@ -2,50 +2,42 @@
   <div class="shipping-classes-loader">
 
     <div class="shipping-classes-table">
-      <el-table
+      <fct-table
           :data="[]"
           class="w-full compact-table responsive"
       >
-        <el-table-column prop="name" :label="translate('Class Name')">
+        <fct-table-column prop="name" :label="translate('Class Name')">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[120px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[120px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Cost')">
+        <fct-table-column :label="translate('Cost')">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[80px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[80px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Type')">
+        <fct-table-column :label="translate('Type')">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[100px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[100px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Actions')" width="200" align="right">
+        <fct-table-column :label="translate('Actions')" width="200" align="right">
           <div class="table-cell">
-            <el-skeleton animated>
-              <template #template>
-                <el-skeleton-item varient="p" class="w-[80px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton animated>
+              <fct-skeleton variant="p" class="w-[80px]" />
+            </fct-skeleton>
           </div>
-        </el-table-column>
-      </el-table>
+        </fct-table-column>
+      </fct-table>
     </div>
   </div>
 </template>
@@ -59,8 +51,8 @@ defineProps({
     required: true
   },
   nextPageCount: {
-    type: Array,
-    default: () => [1, 2, 3, 4, 5]
+    type: Number,
+    default: 0
   }
 });
 </script>

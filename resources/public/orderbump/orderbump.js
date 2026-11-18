@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (buttons) {
         buttons.forEach(button => {
+            // The drawer and the cart page have their own handler in Pro; two would add the offer twice.
+            if (button.closest('[data-fluent-cart-cart-drawer], [data-fluent-cart-page-after-items], .fct-cart-page')) {
+                return;
+            }
+
             button.addEventListener('input', function (event) {
                 event.preventDefault();
                 //dispatch fluentCartNotifyCartDrawerItemChanged event

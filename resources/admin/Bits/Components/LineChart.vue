@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed, watch, defineExpose } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import * as echarts from 'echarts';
 import Theme from "@/utils/Theme";
 import Empty from "@/Bits/Components/Table/Empty.vue";
@@ -287,7 +287,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <el-skeleton v-if="loading" animated :rows="8" />
+    <fct-skeleton v-if="loading" animated :rows="8" />
 
     <template v-else>
       <template v-if="chartData.length">

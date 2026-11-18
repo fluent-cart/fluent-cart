@@ -1,10 +1,12 @@
 <script setup>
-import * as Card from '@/Bits/Components/Card/Card.js';
 import translate, {_x, splitPlaceholders} from "@/utils/translator/Translator";
 import {computed, h, markRaw, nextTick, onBeforeUnmount, onMounted, ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
+import SettingsPage from "./Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
+import SettingRow from "@/Bits/Components/Layout/SettingRow.vue";
+import EmptyState from "@/Bits/Components/Layout/EmptyState.vue";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import McIcon from "./MultiCurrency/McIcon.vue";
 import {shopperRate, toPrice} from "@/utils/support/CurrencyPricing";
@@ -72,6 +74,12 @@ const addableCurrencies = computed(() => {
   const enabled = settings.value.currencies.map(row => row.code);
   return availableCurrencies.value.filter(currency => !enabled.includes(currency.code));
 });
+
+// fct-select takes [{label, value}]; these maps come as {value: label}.
+const rateProviderOptions = computed(() => Object.entries(rateProviders.value).map(([value, label]) => ({value, label})));
+const roundingSelectOptions = computed(() => Object.entries(roundingOptions.value).map(([value, label]) => ({value, label: value === 'none' ? translate('No rounding') : label})));
+const charmSelectOptions = computed(() => Object.entries(charmOptions.value).map(([value, label]) => ({value, label})));
+const addableCurrencyOptions = computed(() => addableCurrencies.value.map(currency => ({value: currency.code, label: `${currency.code} — ${currency.label}`})));
 
 const currencyName = (code) => availableCurrencies.value.find(currency => currency.code === code)?.label || '';
 
@@ -318,424 +326,387 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :loading="saving"
-        :show-save-button="loaded"
-        @on-save="saveSettings"
-    >
-      <template #heading>
-        <h3 class="fct-setting-head-title flex items-center gap-2">
-          {{ translate('Multi Currency') }}
-          <Badge size="small" status="beta"/>
-        </h3>
-      </template>
-    </SettingsHeader>
+  <SettingsPage
+      :loading="saving"
+      :show-save-button="loaded"
+      @on-save="saveSettings"
+  >
+    <template #heading>
+      <span class="inline-flex items-center gap-2">
+        {{ translate('Multi Currency') }}
+        <Badge size="small" status="beta"/>
+      </span>
+    </template>
 
-    <div class="setting-wrap-inner">
-      <Card.Container v-if="loading">
-        <Card.Body>
-          <el-skeleton animated :rows="6"/>
-        </Card.Body>
-      </Card.Container>
+    <Section v-if="loading">
+      <fct-skeleton animated :rows="6"/>
+    </Section>
 
-      <Card.Container v-else-if="loadFailed">
-        <Card.Body>
-          <div class="flex items-center justify-between gap-4">
-            <p class="m-0 text-sm">
-              {{ translate('Settings_Multi_Currency_Settings') }}
-            </p>
-            <el-button size="small" @click="fetchSettings">{{ translate('Retry') }}</el-button>
-          </div>
-        </Card.Body>
-      </Card.Container>
+    <Section v-else-if="loadFailed">
+      <div class="flex items-center justify-between gap-4">
+        <p class="m-0 text-sm">
+          {{ translate('Settings_Multi_Currency_Settings') }}
+        </p>
+        <fct-button size="small" @click="fetchSettings">{{ translate('Retry') }}</fct-button>
+      </div>
+    </Section>
 
-      <div v-else class="fct-mc-settings">
-        <el-alert class="fct-mc-beta-notice mb-5" type="info" :closable="false" show-icon>
-          <template #title>
-            {{ betaNotice[0] }}<a :href="SUPPORT_URL" target="_blank" rel="noopener noreferrer" class="fct-text-link">{{ translate('our support team') }}</a>{{ betaNotice[1] }}
+    <div v-else class="fct-mc-settings">
+      <el-alert class="fct-mc-beta-notice mb-5" type="info" :closable="false" show-icon>
+        <template #title>
+          {{ betaNotice[0] }}<a :href="SUPPORT_URL" target="_blank" rel="noopener noreferrer" class="fct-text-link">{{ translate('our support team') }}</a>{{ betaNotice[1] }}
+        </template>
+      </el-alert>
+
+      <Section class="fct-mc-body" :title="translate('Sell in more than one currency')" divided>
+        <SettingRow class="fct-mc-toggle-row" layout="toggle" :label="translate('Enable multi-currency')">
+          <template #default="{id}">
+            <fct-switch :id="id" v-model="settings.enabled" active-value="yes" inactive-value="no"/>
           </template>
-        </el-alert>
-
-        <Card.Container>
-          <Card.Header :title="translate('Sell in more than one currency')" border_bottom/>
-          <Card.Body class="fct-mc-body">
-            <div class="fct-mc-toggle-row">
-              <el-switch v-model="settings.enabled" active-value="yes" inactive-value="no" :aria-label="translate('Enable multi-currency')"/>
-              <div class="fct-mc-field-text gap-0.5">
-                <span class="fct-mc-field-label">{{ translate('Enable multi-currency') }}</span>
-                <span class="fct-mc-field-hint">
-                  {{ translate('Settings_Prices_Kept') }}
-                </span>
-                <Animation :visible="settings.enabled === 'yes'" accordion>
-                  <div class="fct-mc-switcher-line">
-                    <template v-for="(part, index) in switcherSentence" :key="index">
-                      <button v-if="part.slot === 1 || part.slot === 2" type="button" class="fct-mc-shortcode" :title="translate('Copy')" @click="copyText(part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS)">
-                        <McIcon name="copy"/>
-                        <code>{{ part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS }}</code>
-                      </button>
-                      <span v-else-if="part.text">{{ part.text }}</span>
-                    </template>
-                    <a :href="MULTI_CURRENCY_DOCS_URL" target="_blank" rel="noopener noreferrer" class="fct-text-link">
-                      {{ translate('See documentation') }}
-                    </a>
-                  </div>
-                </Animation>
-              </div>
-            </div>
-            <Animation :visible="settings.enabled !== 'yes'" accordion>
-              <div class="fct-mc-note">
-                <McIcon name="info"/>
-                <span>{{ translate('Settings_Multi_Currency_Off', baseCurrency) }}</span>
+          <template #description>
+            {{ translate('Settings_Prices_Kept') }}
+            <Animation :visible="settings.enabled === 'yes'" accordion>
+              <div class="fct-mc-switcher-line">
+                <template v-for="(part, index) in switcherSentence" :key="index">
+                  <button v-if="part.slot === 1 || part.slot === 2" type="button" class="fct-mc-shortcode" :title="translate('Copy')" @click="copyText(part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS)">
+                    <McIcon name="copy"/>
+                    <code>{{ part.slot === 1 ? SWITCHER_SHORTCODE : SWITCHER_MENU_CLASS }}</code>
+                  </button>
+                  <span v-else-if="part.text">{{ part.text }}</span>
+                </template>
+                <a :href="MULTI_CURRENCY_DOCS_URL" target="_blank" rel="noopener noreferrer" class="fct-text-link">
+                  {{ translate('See documentation') }}
+                </a>
               </div>
             </Animation>
-            <div class="fct-mc-divider"></div>
-            <div class="fct-mc-base-currency">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="fct-mc-field-label">{{ translate('Base currency') }}</span>
-                <span class="fct-mc-badge" :title="currencyName(baseCurrency)">{{ baseCurrency }}</span>
-                <router-link v-if="!baseCurrencyLocked" :to="{name: 'store_setup'}" class="fct-text-link">
-                  {{ translate('Change in Store Settings') }}
-                </router-link>
+          </template>
+        </SettingRow>
+        <Animation :visible="settings.enabled !== 'yes'" accordion>
+          <div class="fct-mc-note">
+            <McIcon name="info"/>
+            <span>{{ translate('Settings_Multi_Currency_Off', baseCurrency) }}</span>
+          </div>
+        </Animation>
+        <div class="fct-mc-divider"></div>
+        <div class="fct-mc-base-currency">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="fct-mc-field-label">{{ translate('Base currency') }}</span>
+            <span class="fct-mc-badge" :title="currencyName(baseCurrency)">{{ baseCurrency }}</span>
+            <router-link v-if="!baseCurrencyLocked" :to="{name: 'store_setup'}" class="fct-text-link">
+              {{ translate('Change in Store Settings') }}
+            </router-link>
+          </div>
+          <span v-if="baseCurrencyLocked" class="fct-mc-field-hint">
+            {{ translate('Locked while multi-currency is enabled and orders exist.') }}
+          </span>
+        </div>
+      </Section>
+
+      <!-- Currencies, rates and checkout only matter once multi-currency is on -->
+      <Animation :visible="settings.enabled === 'yes'" accordion>
+        <!-- Hidden for manual rates; a store already on a rate feed keeps it so it can switch back -->
+        <Animation :visible="isAutomated" accordion>
+          <Section class="fct-mc-body" :title="translate('Exchange rates')" divided>
+            <div class="fct-mc-setting-row">
+              <div class="fct-mc-field-text gap-1">
+                <span class="fct-mc-field-label">{{ translate('Exchange rates from') }}</span>
+                <span class="fct-mc-field-hint">{{ translate('Where the rate for each currency comes from.') }}</span>
               </div>
-              <span v-if="baseCurrencyLocked" class="fct-mc-field-hint">
-                {{ translate('Locked while multi-currency is enabled and orders exist.') }}
-              </span>
+              <fct-select
+                  v-model="settings.rate_provider"
+                  class="fct-mc-provider-select"
+                  :suffix-icon="ArrowDownIcon"
+                  :aria-label="translate('Exchange rates from')"
+                  :options="rateProviderOptions"
+              />
             </div>
-          </Card.Body>
-        </Card.Container>
+            <div v-if="rateNote" class="fct-mc-note">
+              <McIcon name="info"/>
+              <span>{{ rateNote }}</span>
+            </div>
+            <div v-if="isAutomated" class="fct-mc-inline-row">
+              <template v-for="(part, index) in marginSentence" :key="index">
+                <template v-if="part.slot === 1">
+                  <fct-input type="number" v-model="settings.rate_margin" :min="0" :max="10" :step="0.5" :precision="2" class="fct-mc-counter" :aria-label="translate('Rate margin (%)')">
+                    <template #decrease-icon><McIcon name="subtract"/></template>
+                    <template #increase-icon><McIcon name="add"/></template>
+                  </fct-input>
+                  <span>%</span>
+                </template>
+                <span v-else-if="part.text">{{ part.text }}</span>
+              </template>
+            </div>
+            <el-alert
+                v-if="isAutomated && hasStaleRate"
+                type="warning"
+                :closable="false"
+                :title="translate('Settings_Some_Rates')"
+            />
+          </Section>
+        </Animation>
 
-        <!-- Currencies, rates and checkout only matter once multi-currency is on -->
-        <Animation :visible="settings.enabled === 'yes'" accordion>
-          <!-- Hidden for manual rates; a store already on a rate feed keeps it so it can switch back -->
-          <Animation :visible="isAutomated" accordion>
-            <Card.Container>
-              <Card.Header :title="translate('Exchange rates')" border_bottom/>
-              <Card.Body class="fct-mc-body">
-                <div class="fct-mc-setting-row">
-                  <div class="fct-mc-field-text gap-1">
-                    <span class="fct-mc-field-label">{{ translate('Exchange rates from') }}</span>
-                    <span class="fct-mc-field-hint">{{ translate('Where the rate for each currency comes from.') }}</span>
+        <Section divided flush>
+          <template #title>
+            {{ translate('Currencies') }}
+            <span class="fct-mc-badge">{{ settings.currencies.length }}</span>
+          </template>
+          <template #actions>
+            <fct-select
+                v-model="newCurrency"
+                filterable
+                default-first-option
+                size="small"
+                :placeholder="translate('Add currencies')"
+                :aria-label="translate('Add currencies')"
+                :suffix-icon="ArrowDownIcon"
+                class="fct-mc-add-currency"
+                :options="addableCurrencyOptions"
+                @change="addCurrency"
+            >
+              <template #prefix>
+                <McIcon name="add"/>
+              </template>
+            </fct-select>
+          </template>
+
+          <div ref="currencyTable" class="fct-mc-table" role="table" :aria-label="translate('Currencies')">
+            <div v-if="settings.currencies.length" class="fct-mc-table-head" role="row">
+              <span class="fct-mc-col-currency" role="columnheader">{{ translate('Currency') }}</span>
+              <span class="fct-mc-col-rate" role="columnheader">{{ translate('Rate for 1 %1$s', baseCurrency) }}</span>
+              <span class="fct-mc-col-pricing" role="columnheader">{{ translate('Pricing') }}</span>
+              <span class="fct-mc-col-actions" role="columnheader"><span class="sr-only">{{ translate('Actions') }}</span></span>
+            </div>
+
+            <EmptyState v-if="!settings.currencies.length" class="fct-mc-table-empty" size="sm" :text="translate('No additional currencies yet.')"/>
+
+            <div
+                v-for="row in settings.currencies"
+                :key="row.code"
+                class="fct-mc-table-row"
+                :class="{'is-just-added': row.code === justAdded, 'is-needs-rate': !rates[row.code]}"
+                role="row"
+            >
+              <div class="fct-mc-table-cells">
+                <div class="fct-mc-col-currency" role="cell">
+                  <span class="fct-mc-code">{{ row.code }}</span>
+                  <span class="fct-mc-currency-name">{{ currencyName(row.code) }}</span>
+                </div>
+
+                <!-- No rate yet: one strip across Rate and Pricing that asks only for the rate -->
+                <div v-if="!rates[row.code]" class="fct-mc-needs-rate" role="cell">
+                  <div class="fct-mc-needs-rate-line">
+                    <span class="badge warning">{{ translate('Needs a rate') }}</span>
+                    <span class="fct-mc-field-hint">{{ translate('Shoppers won\'t see %1$s until it has a rate.', row.code) }}</span>
                   </div>
-                  <el-select
-                      v-model="settings.rate_provider"
-                      class="fct-mc-provider-select"
-                      :suffix-icon="ArrowDownIcon"
-                      :aria-label="translate('Exchange rates from')"
-                  >
-                    <el-option v-for="(label, key) in rateProviders" :key="key" :label="label" :value="key"/>
-                  </el-select>
-                </div>
-                <div v-if="rateNote" class="fct-mc-note">
-                  <McIcon name="info"/>
-                  <span>{{ rateNote }}</span>
-                </div>
-                <div v-if="isAutomated" class="fct-mc-inline-row">
-                  <template v-for="(part, index) in marginSentence" :key="index">
-                    <template v-if="part.slot === 1">
-                      <el-input-number v-model="settings.rate_margin" :min="0" :max="10" :step="0.5" :precision="2" class="fct-mc-counter" :aria-label="translate('Rate margin (%)')">
-                        <template #decrease-icon><McIcon name="subtract"/></template>
-                        <template #increase-icon><McIcon name="add"/></template>
-                      </el-input-number>
-                      <span>%</span>
-                    </template>
-                    <span v-else-if="part.text">{{ part.text }}</span>
-                  </template>
-                </div>
-                <el-alert
-                    v-if="isAutomated && hasStaleRate"
-                    type="warning"
-                    :closable="false"
-                    :title="translate('Settings_Some_Rates')"
-                />
-              </Card.Body>
-            </Card.Container>
-          </Animation>
-
-          <Card.Container>
-            <Card.Header border_bottom>
-              <template #title>
-                <div class="flex items-center gap-2">
-                  <h2 class="fct-card-header-title">{{ translate('Currencies') }}</h2>
-                  <span class="fct-mc-badge">{{ settings.currencies.length }}</span>
-                </div>
-              </template>
-              <template #action>
-                <el-select
-                    v-model="newCurrency"
-                    filterable
-                    default-first-option
-                    size="small"
-                    :placeholder="translate('Add currencies')"
-                    :aria-label="translate('Add currencies')"
-                    :suffix-icon="ArrowDownIcon"
-                    class="fct-mc-add-currency"
-                    @change="addCurrency"
-                >
-                  <template #prefix>
-                    <McIcon name="add"/>
-                  </template>
-                  <el-option
-                      v-for="currency in addableCurrencies"
-                      :key="currency.code"
-                      :label="`${currency.code} — ${currency.label}`"
-                      :value="currency.code"
-                  />
-                </el-select>
-              </template>
-            </Card.Header>
-            <Card.Body class="p-0">
-
-              <div ref="currencyTable" class="fct-mc-table" role="table" :aria-label="translate('Currencies')">
-                <div v-if="settings.currencies.length" class="fct-mc-table-head" role="row">
-                  <span class="fct-mc-col-currency" role="columnheader">{{ translate('Currency') }}</span>
-                  <span class="fct-mc-col-rate" role="columnheader">{{ translate('Rate for 1 %1$s', baseCurrency) }}</span>
-                  <span class="fct-mc-col-pricing" role="columnheader">{{ translate('Pricing') }}</span>
-                  <span class="fct-mc-col-actions" role="columnheader"><span class="sr-only">{{ translate('Actions') }}</span></span>
+                  <div class="fct-mc-needs-rate-input">
+                    <span class="fct-mc-pricing-unit">{{ translate('1 %1$s =', baseCurrency) }}</span>
+                    <fct-input
+                        v-model="rateDrafts[row.code]"
+                        size="small"
+                        class="fct-mc-rate-input"
+                        :data-rate-input="row.code"
+                        :placeholder="_x('Rate', 'Exchange rate')"
+                        :aria-label="translate('Rate for 1 %1$s in %2$s', baseCurrency, row.code)"
+                        @keyup.enter="saveRate(row.code)"
+                    >
+                      <template #append>{{ row.code }}</template>
+                    </fct-input>
+                    <fct-button size="small" type="primary" :loading="savingRate === row.code" @click="saveRate(row.code)">
+                      {{ translate('Set rate') }}
+                    </fct-button>
+                    <span v-if="inverseRate(rateDrafts[row.code])" class="fct-mc-currency-name">
+                      {{ translate('1 %1$s = %2$s %3$s', row.code, inverseRate(rateDrafts[row.code]), baseCurrency) }}
+                    </span>
+                  </div>
                 </div>
 
-                <div v-if="!settings.currencies.length" class="fct-mc-table-empty">
-                  {{ translate('No additional currencies yet.') }}
-                </div>
-
-                <div
-                    v-for="row in settings.currencies"
-                    :key="row.code"
-                    class="fct-mc-table-row"
-                    :class="{'is-just-added': row.code === justAdded, 'is-needs-rate': !rates[row.code]}"
-                    role="row"
-                >
-                  <div class="fct-mc-table-cells">
-                    <div class="fct-mc-col-currency" role="cell">
-                      <span class="fct-mc-code">{{ row.code }}</span>
-                      <span class="fct-mc-currency-name">{{ currencyName(row.code) }}</span>
+                <template v-else>
+                  <div class="fct-mc-col-rate" role="cell">
+                    <div class="fct-mc-rate">
+                      <span class="fct-mc-rate-value">{{ trimRate(rates[row.code].rate) }}</span>
+                      <span class="fct-mc-rate-code">{{ row.code }}</span>
+                      <el-tag v-if="rates[row.code].is_stale" type="warning" size="small">{{ translate('Stale') }}</el-tag>
+                      <button
+                          v-if="editingRate !== row.code"
+                          type="button"
+                          class="fct-mc-compact-button"
+                          :title="translate('Edit rate')"
+                          :aria-label="translate('Edit rate')"
+                          @click="openRateEdit(row.code)"
+                      >
+                        <McIcon name="edit"/>
+                      </button>
                     </div>
+                    <span v-if="editingRate !== row.code" class="fct-mc-currency-name">
+                      {{ translate('1 %1$s = %2$s %3$s', row.code, inverseRate(rates[row.code].rate), baseCurrency) }}
+                    </span>
 
-                    <!-- No rate yet: one strip across Rate and Pricing that asks only for the rate -->
-                    <div v-if="!rates[row.code]" class="fct-mc-needs-rate" role="cell">
-                      <div class="fct-mc-needs-rate-line">
-                        <span class="badge warning">{{ translate('Needs a rate') }}</span>
-                        <span class="fct-mc-field-hint">{{ translate('Shoppers won\'t see %1$s until it has a rate.', row.code) }}</span>
-                      </div>
-                      <div class="fct-mc-needs-rate-input">
-                        <span class="fct-mc-pricing-unit">{{ translate('1 %1$s =', baseCurrency) }}</span>
-                        <el-input
+                    <Animation :visible="editingRate === row.code" accordion>
+                      <div class="fct-mc-rate-edit">
+                        <fct-input
                             v-model="rateDrafts[row.code]"
                             size="small"
                             class="fct-mc-rate-input"
                             :data-rate-input="row.code"
-                            :placeholder="_x('Rate', 'Exchange rate')"
-                            :aria-label="translate('Rate for 1 %1$s in %2$s', baseCurrency, row.code)"
+                            :placeholder="translate('New rate')"
+                            :aria-label="translate('New rate')"
                             @keyup.enter="saveRate(row.code)"
+                            @keyup.esc="closeRateEdit(row.code)"
                         >
                           <template #append>{{ row.code }}</template>
-                        </el-input>
-                        <el-button size="small" type="primary" :loading="savingRate === row.code" @click="saveRate(row.code)">
-                          {{ translate('Set rate') }}
-                        </el-button>
-                        <span v-if="inverseRate(rateDrafts[row.code])" class="fct-mc-currency-name">
-                          {{ translate('1 %1$s = %2$s %3$s', row.code, inverseRate(rateDrafts[row.code]), baseCurrency) }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <template v-else>
-                      <div class="fct-mc-col-rate" role="cell">
-                        <div class="fct-mc-rate">
-                          <span class="fct-mc-rate-value">{{ trimRate(rates[row.code].rate) }}</span>
-                          <span class="fct-mc-rate-code">{{ row.code }}</span>
-                          <el-tag v-if="rates[row.code].is_stale" type="warning" size="small">{{ translate('Stale') }}</el-tag>
-                          <button
-                              v-if="editingRate !== row.code"
-                              type="button"
-                              class="fct-mc-compact-button"
-                              :title="translate('Edit rate')"
-                              :aria-label="translate('Edit rate')"
-                              @click="openRateEdit(row.code)"
-                          >
-                            <McIcon name="edit"/>
-                          </button>
+                        </fct-input>
+                        <div class="flex items-center gap-2">
+                          <fct-button size="small" type="primary" :loading="savingRate === row.code" @click="saveRate(row.code)">
+                            {{ translate('Set rate') }}
+                          </fct-button>
+                          <fct-button size="small" text class="!ml-0" @click="closeRateEdit(row.code)">{{ translate('Cancel') }}</fct-button>
                         </div>
-                        <span v-if="editingRate !== row.code" class="fct-mc-currency-name">
-                          {{ translate('1 %1$s = %2$s %3$s', row.code, inverseRate(rates[row.code].rate), baseCurrency) }}
-                        </span>
-
-                        <Animation :visible="editingRate === row.code" accordion>
-                          <div class="fct-mc-rate-edit">
-                            <el-input
-                                v-model="rateDrafts[row.code]"
-                                size="small"
-                                class="fct-mc-rate-input"
-                                :data-rate-input="row.code"
-                                :placeholder="translate('New rate')"
-                                :aria-label="translate('New rate')"
-                                @keyup.enter="saveRate(row.code)"
-                                @keyup.esc="closeRateEdit(row.code)"
-                            >
-                              <template #append>{{ row.code }}</template>
-                            </el-input>
-                            <div class="flex items-center gap-2">
-                              <el-button size="small" type="primary" :loading="savingRate === row.code" @click="saveRate(row.code)">
-                                {{ translate('Set rate') }}
-                              </el-button>
-                              <el-button size="small" text class="!ml-0" @click="closeRateEdit(row.code)">{{ translate('Cancel') }}</el-button>
-                            </div>
-                            <span v-if="rateChange(row.code)" class="fct-mc-currency-name">{{ rateChange(row.code) }}</span>
-                          </div>
-                        </Animation>
+                        <span v-if="rateChange(row.code)" class="fct-mc-currency-name">{{ rateChange(row.code) }}</span>
                       </div>
-
-                      <div class="fct-mc-col-pricing" role="cell">
-                        <div v-if="previews[row.code]" class="fct-mc-example">
-                          <span>{{ translate('Example') }}</span>
-                          <span class="fct-mc-example-base">{{ previews[row.code].base }} {{ baseCurrency }}</span>
-                          <span aria-hidden="true">→</span>
-                          <span class="fct-mc-example-price">{{ previews[row.code].pays }} {{ row.code }}</span>
-                        </div>
-                        <div class="fct-mc-pricing-meta">
-                          <span class="fct-mc-currency-name">
-                            {{ pricingSummary(row).map(rule => `${rule.label} ${rule.value}`).join(' · ') }}
-                          </span>
-                          <button
-                              type="button"
-                              class="fct-mc-compact-button"
-                              :class="{'is-active': openPricing === row.code}"
-                              :title="translate('Adjust pricing')"
-                              :aria-label="translate('Adjust pricing for %1$s', row.code)"
-                              :aria-expanded="openPricing === row.code ? 'true' : 'false'"
-                              @click="togglePricing(row.code)"
-                          >
-                            <McIcon name="edit"/>
-                          </button>
-                        </div>
-                      </div>
-                    </template>
-
-                    <div class="fct-mc-col-actions" role="cell">
-                      <button v-if="rates[row.code]" type="button" class="fct-mc-icon-button" :title="translate('Rate history')" :aria-label="translate('Rate history')" @click="showHistory(row.code)">
-                        <McIcon name="history"/>
-                      </button>
-                      <el-popconfirm
-                          :title="translate('Settings_Remove_Shoppers', row.code)"
-                          :confirm-button-text="translate('Remove')"
-                          :cancel-button-text="translate('Cancel')"
-                          width="280"
-                          popper-class="fct-delete-confirm-popover fct-mc-remove-popover"
-                          @confirm="removeCurrency(row.code)"
-                      >
-                        <template #reference>
-                          <button type="button" class="fct-mc-icon-button" :title="translate('Remove')" :aria-label="translate('Remove %1$s', row.code)">
-                            <McIcon name="delete"/>
-                          </button>
-                        </template>
-                      </el-popconfirm>
-                    </div>
+                    </Animation>
                   </div>
 
-                  <!-- Spans the Rate and Pricing columns so the notice stays on one line -->
-                  <Animation :visible="Boolean(rates[row.code]) && editingRate !== row.code && heldMinutesLeft(row.code) > 0" accordion>
-                    <p class="fct-mc-rate-hold-note" role="status">
-                      <McIcon name="info"/>
-                      <span>{{
-                        /* translators: %1$s: minutes left */
-                        translate('Converted prices may still use the previous rate. Minutes left: %1$s', heldMinutesLeft(row.code))
-                      }}</span>
-                    </p>
-                  </Animation>
-
-                  <Animation :visible="Boolean(rates[row.code]) && openPricing === row.code" accordion>
-                    <div class="fct-mc-pricing-panel">
-                      <div class="fct-mc-pricing-panel-head">
-                        <div class="fct-mc-field-text gap-0.5">
-                          <span class="fct-mc-field-label">{{ translate('Pricing rules for %1$s', row.code) }}</span>
-                          <span class="fct-mc-field-hint">{{ translate('Applied to every %1$s price. The example above updates as you change them.', row.code) }}</span>
-                        </div>
-                        <el-button size="small" :loading="saving" @click="savePricing(row.code)">{{ translate('Save') }}</el-button>
-                      </div>
-                      <div class="fct-mc-pricing-panel-grid">
-                        <div class="fct-mc-pricing-field">
-                          <LabelHint
-                              :title="translate('Price adjustment')"
-                              :content="translate('Settings_Raises_Lowers', row.code)"
-                              placement="right"
-                          />
-                          <div class="flex items-center gap-2">
-                            <el-input-number v-model="row.adjustment" :min="-50" :max="100" :step="1" :precision="2" class="fct-mc-counter" :aria-label="translate('Price adjustment')">
-                              <template #decrease-icon><McIcon name="subtract"/></template>
-                              <template #increase-icon><McIcon name="add"/></template>
-                            </el-input-number>
-                            <span class="fct-mc-pricing-unit">{{ translate('% on price') }}</span>
-                          </div>
-                        </div>
-                        <div class="fct-mc-pricing-field">
-                          <LabelHint
-                              :title="translate('Rounding')"
-                              :content="translate('Settings_Rounds_Converted')"
-                              placement="right"
-                          />
-                          <el-select v-model="row.rounding" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Rounding')">
-                            <el-option v-for="(label, key) in roundingOptions" :key="key" :label="key === 'none' ? translate('No rounding') : label" :value="key"/>
-                          </el-select>
-                        </div>
-                        <div class="fct-mc-pricing-field">
-                          <LabelHint
-                              :title="translate('Charm pricing')"
-                              :content="translate('Settings_Makes_Prices')"
-                              placement="right"
-                          />
-                          <el-select v-model="row.charm" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Charm pricing')">
-                            <el-option v-for="(label, key) in charmOptions" :key="key" :label="label" :value="key"/>
-                          </el-select>
-                        </div>
-                      </div>
+                  <div class="fct-mc-col-pricing" role="cell">
+                    <div v-if="previews[row.code]" class="fct-mc-example">
+                      <span>{{ translate('Example') }}</span>
+                      <span class="fct-mc-example-base">{{ previews[row.code].base }} {{ baseCurrency }}</span>
+                      <span aria-hidden="true">→</span>
+                      <span class="fct-mc-example-price">{{ previews[row.code].pays }} {{ row.code }}</span>
                     </div>
-                  </Animation>
+                    <div class="fct-mc-pricing-meta">
+                      <span class="fct-mc-currency-name">
+                        {{ pricingSummary(row).map(rule => `${rule.label} ${rule.value}`).join(' · ') }}
+                      </span>
+                      <button
+                          type="button"
+                          class="fct-mc-compact-button"
+                          :class="{'is-active': openPricing === row.code}"
+                          :title="translate('Adjust pricing')"
+                          :aria-label="translate('Adjust pricing for %1$s', row.code)"
+                          :aria-expanded="openPricing === row.code ? 'true' : 'false'"
+                          @click="togglePricing(row.code)"
+                      >
+                        <McIcon name="edit"/>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="fct-mc-col-actions" role="cell">
+                  <button v-if="rates[row.code]" type="button" class="fct-mc-icon-button" :title="translate('Rate history')" :aria-label="translate('Rate history')" @click="showHistory(row.code)">
+                    <McIcon name="history"/>
+                  </button>
+                  <fct-popover
+                      confirm
+                      :title="translate('Settings_Remove_Shoppers', row.code)"
+                      :confirm-button-text="translate('Remove')"
+                      :cancel-button-text="translate('Cancel')"
+                      width="280"
+                      popper-class="fct-delete-confirm-popover fct-mc-remove-popover"
+                      @confirm="removeCurrency(row.code)"
+                  >
+                    <template #reference>
+                      <button type="button" class="fct-mc-icon-button" :title="translate('Remove')" :aria-label="translate('Remove %1$s', row.code)">
+                        <McIcon name="delete"/>
+                      </button>
+                    </template>
+                  </fct-popover>
                 </div>
               </div>
-            </Card.Body>
-          </Card.Container>
 
-          <Card.Container>
-            <Card.Header :title="translate('Rate changes')" border_bottom/>
-            <Card.Body class="fct-mc-body fct-mc-checkout">
-              <span class="fct-mc-field-hint">{{ translate('Keep converted prices steady while customers shop and check out') }}</span>
-              <div class="fct-mc-inline-row">
-                <template v-for="(part, index) in rateLockSentence" :key="index">
-                  <el-input-number v-if="part.slot === 1" v-model="settings.rate_lock_minutes" :min="0" :max="1440" class="fct-mc-counter" :aria-label="translate('Minutes converted prices keep the previous rate')">
-                    <template #decrease-icon><McIcon name="subtract"/></template>
-                    <template #increase-icon><McIcon name="add"/></template>
-                  </el-input-number>
-                  <span v-else-if="part.text">{{ part.text }}</span>
-                </template>
-              </div>
-            </Card.Body>
-          </Card.Container>
-        </Animation>
+              <!-- Spans the Rate and Pricing columns so the notice stays on one line -->
+              <Animation :visible="Boolean(rates[row.code]) && editingRate !== row.code && heldMinutesLeft(row.code) > 0" accordion>
+                <p class="fct-mc-rate-hold-note" role="status">
+                  <McIcon name="info"/>
+                  <span>{{
+                    /* translators: %1$s: minutes left */
+                    translate('Converted prices may still use the previous rate. Minutes left: %1$s', heldMinutesLeft(row.code))
+                  }}</span>
+                </p>
+              </Animation>
 
-        <div class="setting-save-action">
-          <el-button type="primary" @click="saveSettings" :loading="saving">
-            {{ translate('Save Settings') }}
-          </el-button>
-        </div>
+              <Animation :visible="Boolean(rates[row.code]) && openPricing === row.code" accordion>
+                <div class="fct-mc-pricing-panel">
+                  <div class="fct-mc-pricing-panel-head">
+                    <div class="fct-mc-field-text gap-0.5">
+                      <span class="fct-mc-field-label">{{ translate('Pricing rules for %1$s', row.code) }}</span>
+                      <span class="fct-mc-field-hint">{{ translate('Applied to every %1$s price. The example above updates as you change them.', row.code) }}</span>
+                    </div>
+                    <fct-button size="small" :loading="saving" @click="savePricing(row.code)">{{ translate('Save') }}</fct-button>
+                  </div>
+                  <div class="fct-mc-pricing-panel-grid">
+                    <div class="fct-mc-pricing-field">
+                      <LabelHint
+                          :title="translate('Price adjustment')"
+                          :content="translate('Settings_Raises_Lowers', row.code)"
+                          placement="right"
+                      />
+                      <div class="flex items-center gap-2">
+                        <fct-input type="number" v-model="row.adjustment" :min="-50" :max="100" :step="1" :precision="2" class="fct-mc-counter" :aria-label="translate('Price adjustment')">
+                          <template #decrease-icon><McIcon name="subtract"/></template>
+                          <template #increase-icon><McIcon name="add"/></template>
+                        </fct-input>
+                        <span class="fct-mc-pricing-unit">{{ translate('% on price') }}</span>
+                      </div>
+                    </div>
+                    <div class="fct-mc-pricing-field">
+                      <LabelHint
+                          :title="translate('Rounding')"
+                          :content="translate('Settings_Rounds_Converted')"
+                          placement="right"
+                      />
+                      <fct-select v-model="row.rounding" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Rounding')" :options="roundingSelectOptions"/>
+                    </div>
+                    <div class="fct-mc-pricing-field">
+                      <LabelHint
+                          :title="translate('Charm pricing')"
+                          :content="translate('Settings_Makes_Prices')"
+                          placement="right"
+                      />
+                      <fct-select v-model="row.charm" size="small" :suffix-icon="ArrowDownIcon" class="fct-mc-select" :aria-label="translate('Charm pricing')" :options="charmSelectOptions"/>
+                    </div>
+                  </div>
+                </div>
+              </Animation>
+            </div>
+          </div>
+        </Section>
+
+        <Section class="fct-mc-body fct-mc-checkout" :title="translate('Rate changes')" divided>
+          <span class="fct-mc-field-hint">{{ translate('Keep converted prices steady while customers shop and check out') }}</span>
+          <div class="fct-mc-inline-row">
+            <template v-for="(part, index) in rateLockSentence" :key="index">
+              <fct-input type="number" v-if="part.slot === 1" v-model="settings.rate_lock_minutes" :min="0" :max="1440" class="fct-mc-counter" :aria-label="translate('Minutes converted prices keep the previous rate')">
+                <template #decrease-icon><McIcon name="subtract"/></template>
+                <template #increase-icon><McIcon name="add"/></template>
+              </fct-input>
+              <span v-else-if="part.text">{{ part.text }}</span>
+            </template>
+          </div>
+        </Section>
+      </Animation>
+
+      <div class="setting-save-action">
+        <fct-button type="primary" @click="saveSettings" :loading="saving">
+          {{ translate('Save Settings') }}
+        </fct-button>
       </div>
     </div>
 
-    <el-dialog v-model="history.visible" :title="translate('Rate history') + ' — ' + history.currency" width="720px" class="fct-mc-history-dialog" append-to-body>
+    <fct-dialog v-model="history.visible" :title="translate('Rate history') + ' — ' + history.currency" width="720px" class="fct-mc-history-dialog" append-to-body>
       <p class="fct-mc-history-intro">{{ translate('Rate for 1 %1$s, newest first', baseCurrency) }}</p>
-      <el-skeleton v-if="history.loading" animated class="fct-mc-history-skeleton">
-        <template #template>
-          <el-skeleton-item class="fct-mc-history-skeleton-head"/>
-          <div v-for="i in 3" :key="i" class="fct-mc-history-skeleton-row">
-            <el-skeleton-item class="w-1/4 h-4"/>
-            <el-skeleton-item class="w-1/6 h-4"/>
-            <el-skeleton-item class="w-1/6 h-4"/>
-            <el-skeleton-item class="w-1/5 h-4"/>
-            <el-skeleton-item class="w-1/4 h-4"/>
-          </div>
-        </template>
-      </el-skeleton>
-      <el-table v-else :data="history.rates" class="fct-mc-history-table" :max-height="historyTableHeight()" :empty-text="translate('No rates yet')">
-        <el-table-column :label="_x('Rate', 'Exchange rate')" min-width="150">
+      <fct-skeleton v-if="history.loading" animated class="fct-mc-history-skeleton">
+        <fct-skeleton variant="text" class="fct-mc-history-skeleton-head"/>
+        <div v-for="i in 3" :key="i" class="fct-mc-history-skeleton-row">
+          <fct-skeleton variant="text" class="w-1/4 h-4"/>
+          <fct-skeleton variant="text" class="w-1/6 h-4"/>
+          <fct-skeleton variant="text" class="w-1/6 h-4"/>
+          <fct-skeleton variant="text" class="w-1/5 h-4"/>
+          <fct-skeleton variant="text" class="w-1/4 h-4"/>
+        </div>
+      </fct-skeleton>
+      <fct-table v-else :data="history.rates" class="fct-mc-history-table" :max-height="historyTableHeight()" :empty-text="translate('No rates yet')">
+        <fct-table-column :label="_x('Rate', 'Exchange rate')" min-width="150">
           <template #default="{row}">
             <div class="fct-mc-history-rate">
               <span class="fct-mc-history-rate-value">{{ trimRate(row.rate) }}</span>
@@ -743,33 +714,33 @@ onBeforeUnmount(() => {
               <span v-if="isActiveRate(row)" class="badge success small">{{ translate('Current') }}</span>
             </div>
           </template>
-        </el-table-column>
-        <el-table-column :label="_x('Change', 'Exchange rate column: difference from the previous rate')" width="120">
-          <template #default="{$index}">
-            <span v-if="historyChange($index)" class="fct-mc-history-change" :class="'is-' + historyChange($index).direction">
-              {{ historyChange($index).direction === 'same' ? translate('No change') : historyChange($index).percent }}
+        </fct-table-column>
+        <fct-table-column :label="_x('Change', 'Exchange rate column: difference from the previous rate')" width="120">
+          <template #default="{index}">
+            <span v-if="historyChange(index)" class="fct-mc-history-change" :class="'is-' + historyChange(index).direction">
+              {{ historyChange(index).direction === 'same' ? translate('No change') : historyChange(index).percent }}
             </span>
             <span v-else class="fct-mc-history-muted">—</span>
           </template>
-        </el-table-column>
-        <el-table-column :label="translate('Source')" width="120">
+        </fct-table-column>
+        <fct-table-column :label="translate('Source')" width="120">
           <template #default="{row}">
             <span class="badge info small fct-mc-history-source" :title="historySource(row.source)">{{ historySource(row.source) }}</span>
           </template>
-        </el-table-column>
-        <el-table-column :label="translate('Effective')" width="140">
+        </fct-table-column>
+        <fct-table-column :label="translate('Effective')" width="140">
           <template #default="{row}">
             <span class="fct-mc-history-date">{{ dateTimeI18(row.effective_at, 'date') }}</span>
             <span class="fct-mc-history-muted">{{ dateTimeI18(row.effective_at, 'time') }}</span>
           </template>
-        </el-table-column>
-        <el-table-column :label="translate('Set by')" min-width="150" show-overflow-tooltip>
+        </fct-table-column>
+        <fct-table-column :label="translate('Set by')" min-width="150" show-overflow-tooltip>
           <template #default="{row}">
             <span v-if="row.created_by">{{ row.created_by }}</span>
             <span v-else class="fct-mc-history-muted">{{ translate('Automatic') }}</span>
           </template>
-        </el-table-column>
-      </el-table>
-    </el-dialog>
-  </div>
+        </fct-table-column>
+      </fct-table>
+    </fct-dialog>
+  </SettingsPage>
 </template>

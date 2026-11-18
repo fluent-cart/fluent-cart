@@ -33,21 +33,15 @@ onMounted(() => {
 
 <template>
     <div class="input-append">
-        <el-select
+        <fct-select
             v-model="value[fieldKey]"
             multiple
             :placeholder="field.placeholder"
             filterable
             remote
             :reserve-keyword="false"
-        >
-            <el-option
-                v-for="category in categories"
-                :key="category.term_id"
-                :label="category.name"
-                :value="category.term_id"
-            ></el-option>
-        </el-select>
+            :options="categories.map(category => ({label: category.name, value: category.term_id}))"
+        />
     </div>
 </template>
 

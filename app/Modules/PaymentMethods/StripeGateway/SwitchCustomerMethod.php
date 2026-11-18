@@ -2,7 +2,6 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
-use FluentCart\App\App;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductVariation;
@@ -11,7 +10,6 @@ use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
-use FluentCart\App\Services\Payments\SubscriptionHelper;
 use FluentCart\Framework\Support\Arr;
 
 class SwitchCustomerMethod
@@ -33,7 +31,29 @@ class SwitchCustomerMethod
         }
 
         $subscriptionModel = Subscription::query()->where('id', $subscriptionId)->first();
-        $currentPaymentMethod = sanitize_text_field(Arr::get($data, 'currentPaymentMethod'));
+
+        if (!$subscriptionModel->lockPaymentMethodSwitch()) {
+            $this->sendError(__('A payment method switch is already in progress.', 'fluent-cart'), 409);
+        }
+
+        try {
+            $freshModel = Subscription::query()->where('id', $subscriptionId)->first();
+            // A request that waited on the lock must not act on the row a finished switch already replaced.
+            if ($freshModel->vendor_subscription_id !== $subscriptionModel->vendor_subscription_id) {
+                $this->sendError(__('This subscription was just switched. Please refresh the page.', 'fluent-cart'), 409);
+            }
+            $this->switchLocked($data, $freshModel);
+        } finally {
+            $subscriptionModel->unlockPaymentMethodSwitch();
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    private function switchLocked($data, Subscription $subscriptionModel)
+    {
+        $subscriptionId = $subscriptionModel->id;
         $pm = Arr::get($data, 'vendorPaymentMethod');
         $verificationStatus = sanitize_text_field(Arr::get($data, 'verification_status', ''));
         $customerId = sanitize_text_field(Arr::get($data, 'customer_id'));
@@ -90,22 +110,18 @@ class SwitchCustomerMethod
 
         $newSubStatus = StripeHelper::transformSubscriptionStatus($newSub);
 
-
-        if ($newSubStatus == 'incomplete') {
-            wp_send_json([
-                'status'  => 'failed',
-                'message' => __('Could not switch payment method, please try again later', 'fluent-cart'),
-                'data'    => Arr::get($newSub, 'id')
-            ], 200);
+        if (!in_array($newSubStatus, [Status::SUBSCRIPTION_TRIALING, Status::SUBSCRIPTION_ACTIVE], true)) {
+            (new API())->deleteStripeObject('subscriptions/' . Arr::get($newSub, 'id'));
+            $this->sendError(__('Could not switch payment method, please try again later', 'fluent-cart'));
         }
 
+        $oldPaymentMethod = $subscriptionModel->current_payment_method;
         $oldVendorSubId = $subscriptionModel->vendor_subscription_id;
-        $oldVendorCusId = $subscriptionModel->vendor_customer_id;
         $oldData = [
-            'vendor_subscription_id' => $subscriptionModel->vendor_subscription_id,
+            'payment_method'         => $oldPaymentMethod,
+            'vendor_subscription_id' => $oldVendorSubId,
             'vendor_customer_id'     => $subscriptionModel->vendor_customer_id,
             'vendor_plan_id'         => $subscriptionModel->vendor_plan_id,
-            'old_payment_gateway'    => $currentPaymentMethod,
             'payment_source'         => SubscriptionMeta::query()
                 ->where('subscription_id', $subscriptionModel->id)
                 ->where('meta_key', 'active_payment_method')
@@ -116,7 +132,15 @@ class SwitchCustomerMethod
 
         $this->updateSubscription($subscriptionId, $newSub, $plan, $customerId);
         $this->updateBillingInfo($subscriptionId, $pm);
-        $this->handleOldSubscription($oldData, $newSub, $subscriptionModel);
+
+        if ($oldVendorSubId) {
+            $subscriptionModel->cancelReplacedVendorSubscription(
+                (string)$oldPaymentMethod,
+                (string)$oldVendorSubId,
+                __('Subscription switched to Stripe', 'fluent-cart')
+            );
+        }
+        SubscriptionsManager::addOldSubscriptionMeta($subscriptionModel->id, $oldData);
 
         wp_send_json([
             'status'  => 'success',
@@ -235,39 +259,12 @@ class SwitchCustomerMethod
         ]);
     }
 
-    private function handleOldSubscription($oldData, $newSub, $subscriptionModel)
-    {
-        SubscriptionsManager::addOldSubscriptionMeta($subscriptionModel->id, $oldData);
-
-        $gateway = App::gateway(Arr::get($oldData, 'old_payment_gateway'));
-        if ($gateway && $gateway->subscriptions) {
-            $gateway->subscriptions->cancel(Arr::get($oldData, 'vendor_subscription_id'), [
-                'mode' => $subscriptionModel->order->mode
-            ]);
-        }
-    }
-
     public function getSubscriptionItem($subscription, $variation)
     {
-        $trialDays = 0;
-        $nextBillingTimestamp = null;
-
-        // trial days is the difference between the next billing date and the current date in days
-        $nextBillingDate = Arr::get($subscription, 'next_billing_date');
-
-        if ($nextBillingDate) {
-            $now = DateTime::gmtNow()->getTimestamp();
-            $nextBillingTimestamp = DateTime::anyTimeToGmt($nextBillingDate)->getTimestamp();
-
-            if ($nextBillingTimestamp <= $now) {
-                $trialDays = 0;
-            } else {
-                $trialDays = ceil(($nextBillingTimestamp - $now) / 86400);
-            }
+        $trialDays = $subscription->paymentMethodChangeTrialDays();
+        if ($trialDays <= 0) {
+            throw new \Exception(esc_html__('Could not switch payment method', 'fluent-cart'));
         }
-
-        // there is loophole for getting 1 day trial and continue the subscription in loop, so we need to check for that
-        $trialDays = SubscriptionHelper::checkTrailDaysLoopHole($subscription, $trialDays);
 
         $billTimes = Arr::get($subscription, 'bill_times');
 
@@ -290,9 +287,7 @@ class SwitchCustomerMethod
             'expire_at'        => null,
         ];
 
-        if ($trialDays > 0) {
-            $processedSubscriptionItem['trial_end'] = $nextBillingTimestamp;
-        }
+        $processedSubscriptionItem['trial_end'] = DateTime::anyTimeToGmt($subscription->next_billing_date)->getTimestamp();
 
         return $processedSubscriptionItem;
     }

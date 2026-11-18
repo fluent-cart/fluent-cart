@@ -11,7 +11,7 @@
   .el-input {
     &.is-disabled {
       .el-input__wrapper{
-        @apply bg-transparent #{!important};
+        @apply bg-transparent!;
         .el-input__inner {
           @apply text-neutral-1200;
         }
@@ -70,11 +70,17 @@
   }
 
   &::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 rounded-sm invisible dark:bg-dark-500;
+    @apply bg-gray-200 rounded-sm invisible;
+  }
+  .fluent_theme_dark &::-webkit-scrollbar-thumb {
+    @apply bg-dark-500;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-300 dark:bg-dark-400;
+  @apply bg-gray-300;
+  }
+  .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-400;
   }
 
   &::-webkit-scrollbar {
@@ -85,9 +91,9 @@
     @apply w-full;
   }
   li {
-    @apply relative mb-0 p-3 text-sm text-system-mid font-normal leading-[20px] rounded duration-100 transition-all duration-[300ms] ease-in-out cursor-pointer flex items-center justify-between last:mb-0 hover:bg-gray-50 hover:text-system-dark dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 outline-none;
+    @apply relative mb-0 p-3 text-sm text-system-mid font-normal leading-[20px] rounded duration-100 transition-all duration-[300ms] ease-in-out cursor-pointer flex items-center justify-between last:mb-0 hover:bg-gray-50 hover:text-system-dark dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:text-gray-50 outline-hidden;
     &.selected {
-      @apply bg-gray-50 text-system-dark dark:bg-dark-500 dark:text-gray-50 outline-none;
+      @apply bg-gray-50 text-system-dark dark:bg-dark-500 dark:text-gray-50 outline-hidden;
       .action-icon {
         @apply opacity-100 visible ;
       }
@@ -174,7 +180,7 @@
     //@apply w-[120px]
   }
   .fct-product-info-card {
-    @apply w-[240px] flex-none #{!important};
+    @apply w-[240px]! flex-none!;
   }
 }
 

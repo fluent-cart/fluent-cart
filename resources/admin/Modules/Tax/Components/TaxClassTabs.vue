@@ -36,6 +36,11 @@ const remainingPredefined = computed(() => {
     return ['reduced', 'zero'].filter(slug => !props.classes.find(c => c.slug === slug));
 });
 
+const addClassItems = computed(() => [
+    {command: 'reduced', label: translate('Reduced')},
+    {command: 'zero', label: translate('Zero')},
+].filter(item => remainingPredefined.value.includes(item.command)).concat({command: 'custom', label: translate('Custom Class...')}));
+
 const startInlineCreate = () => {
     newClassName.value = '';
     inlineError.value = false;
@@ -125,7 +130,7 @@ watch(newClassName, () => {
                     v-if="inlineCreating"
                     :class="['fct-tax-class-tabs__inline-create', { 'fct-tax-class-tabs__inline-create--error': inlineError }]"
                 >
-                    <el-input
+                    <fct-input
                         ref="inlineInput"
                         v-model="newClassName"
                         size="small"
@@ -156,31 +161,17 @@ watch(newClassName, () => {
                     </button>
                 </div>
 
-                <el-dropdown
+                <fct-dropdown
                     v-else-if="remainingPredefined.length"
                     trigger="click"
                     :disabled="creating"
+                    :items="addClassItems"
                     @command="handleCommand"
-                    popper-class="fct-dropdown"
                 >
                     <button class="fct-tax-class-tabs__add" :disabled="creating">
                         <DynamicIcon name="Plus" />
                     </button>
-
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item
-                                v-if="remainingPredefined.includes('reduced')"
-                                command="reduced"
-                            >{{ translate('Reduced') }}</el-dropdown-item>
-                            <el-dropdown-item
-                                v-if="remainingPredefined.includes('zero')"
-                                command="zero"
-                            >{{ translate('Zero') }}</el-dropdown-item>
-                            <el-dropdown-item command="custom">{{ translate('Custom Class...') }}</el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                </fct-dropdown>
 
                 <button
                     v-else
@@ -195,7 +186,7 @@ watch(newClassName, () => {
         </div>
 
         <div class="fct-tax-class-tabs__search">
-            <el-input
+            <fct-input
                 :model-value="search"
                 :placeholder="translate('Search country or region…')"
                 size="small"
@@ -206,7 +197,7 @@ watch(newClassName, () => {
                 <template #prefix>
                     <DynamicIcon name="Search" class="w-3.5 h-3.5 text-system-light dark:text-gray-400" />
                 </template>
-            </el-input>
+            </fct-input>
             <slot name="search-actions" />
         </div>
     </div>

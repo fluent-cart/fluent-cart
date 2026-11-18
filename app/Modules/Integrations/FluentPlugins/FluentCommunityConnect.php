@@ -241,6 +241,14 @@ class FluentCommunityConnect extends BaseIntegrationManager
             return;
         }
 
+        // An email match is not proof of ownership: serve that account without linking the customer.
+        // Revoke above uses the linked account only, so it never acts on an email match.
+        $isEmailMatch = false;
+        if (!$userId && $existingUser = get_user_by('email', $customer->email)) {
+            $userId = $existingUser->ID;
+            $isEmailMatch = true;
+        }
+
         if (!$userId) {
             $userId = AuthService::createUserFromCustomer($customer);
             if (is_wp_error($userId)) {
@@ -273,6 +281,11 @@ class FluentCommunityConnect extends BaseIntegrationManager
         if ($markAsVerified) {
             $xprofile->is_verified = 1;
             $xprofile->save();
+        }
+
+        // Only add access to an account the buyer has not proven they own.
+        if ($isEmailMatch) {
+            $removeSpaceIds = $removeCourseIds = [];
         }
 
         // we will remove the spaces and courses from the user

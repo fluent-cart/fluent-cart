@@ -311,15 +311,29 @@ class FcReportFixture
      */
     /**
      * Run $run with the site timezone forced for this process only. Added after the non-UTC axis filters at the
-     * same priority, so these win; no site option is written.
+     * same priority, so these win; no site option is written. The offset follows the zone, as
+     * wp_timezone_override_offset() does, because current_time() reads gmt_offset alone.
      */
-    public static function inSiteTimezone($timezoneString, $gmtOffset, callable $run)
+    public static function inSiteTimezone($timezoneString, callable $run)
+    {
+        return self::withSiteTime($timezoneString, function () use ($timezoneString) {
+            $seconds = timezone_offset_get(timezone_open($timezoneString), date_create('now', timezone_open('UTC')));
+            return round($seconds / HOUR_IN_SECONDS, 2);
+        }, $run);
+    }
+
+    /** A store with no timezone string: WordPress then reads the manual gmt_offset option. */
+    public static function inManualOffset($gmtOffset, callable $run)
+    {
+        return self::withSiteTime('', function () use ($gmtOffset) {
+            return $gmtOffset;
+        }, $run);
+    }
+
+    private static function withSiteTime($timezoneString, callable $offset, callable $run)
     {
         $zone = function () use ($timezoneString) {
             return $timezoneString;
-        };
-        $offset = function () use ($gmtOffset) {
-            return $gmtOffset;
         };
         add_filter('pre_option_timezone_string', $zone, PHP_INT_MAX);
         add_filter('pre_option_gmt_offset', $offset, PHP_INT_MAX);

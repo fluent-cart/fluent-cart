@@ -1,6 +1,6 @@
 <template>
   <div class="fct-manage-address-modal">
-    <el-dialog v-model="showModal"
+    <fct-dialog v-model="showModal"
                @close="isEditAddress = false"
                @open="fetchAddresses"
                :title="getTitle()"
@@ -18,37 +18,22 @@
             {{getOrderAddress(address, '', true)}}
           </p>
           <div class="fct-address-action">
-            <el-dropdown trigger="click" class="fct-more-option-wrap" popper-class="fct-dropdown"
-                         @command="handleAddressCommand">
+            <fct-dropdown
+                trigger="click"
+                class="fct-more-option-wrap"
+                :items="[
+                  {command: 'edit', label: translate('Edit')},
+                  ...(address.is_primary !== '1' ? [
+                    {command: 'default', label: translate('Set as default')},
+                    {command: 'remove', label: translate('Delete'), danger: true}
+                  ] : [])
+                ]"
+                @command="(action) => handleAddressCommand({action, data: address})"
+            >
                   <span class="more-btn">
                       <DynamicIcon name="More"/>
                   </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item :command="{
-                          action: 'edit',
-                          data: address
-                        }">
-                    {{ translate('Edit') }}
-                  </el-dropdown-item>
-                  <template v-if="address.is_primary  !== '1'">
-                    <el-dropdown-item :command="{
-                          action: 'default',
-                          data: address
-                        }"
-                    >
-                      {{ translate('Set as default') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item :command="{
-                        action: 'remove',
-                        data: address
-                      }" class="item-destructive">
-                      {{ translate('Delete') }}
-                    </el-dropdown-item>
-                  </template>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            </fct-dropdown>
           </div>
         </div>
 
@@ -58,12 +43,12 @@
 
       </div>
       <div v-if="isEditAddress" class="edit_address">
-        <el-button text @click="() => isEditAddress = false" style="margin-bottom: 16px;">
+        <fct-button text @click="() => isEditAddress = false" style="margin-bottom: 16px;">
           <el-icon class="fct-address-back-icon">
             <Back/>
           </el-icon>
           {{ translate('Manage address') }}
-        </el-button>
+        </fct-button>
         <AddOrEditAddressModal
             @update:refresh-address="val => { isEditAddress = val; updateAddress() }"
             :customer_id="customer_id"
@@ -75,11 +60,11 @@
         />
       </div>
       <div class="dialog-footer is-border" v-if="!isEditAddress">
-        <el-button size="small" @click="emitAddNewAddress(modalAction.type)">
+        <fct-button size="small" @click="emitAddNewAddress(modalAction.type)">
           {{ translate('Add new address') }}
-        </el-button>
+        </fct-button>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

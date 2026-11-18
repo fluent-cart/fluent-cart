@@ -1,7 +1,4 @@
 import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {isValidRadius, normalizeRadius} from '../../resources/admin/Bits/Components/Form/Components/StoreSettings/radiusLength.js';
 
 /**
@@ -101,17 +98,5 @@ describe('radius errors in the form validation state', () => {
         expect(radiusBlockingSave(values, 'customize', {'appearance_radius.btn': ['Server says no']})).toBe('btn');
         expect(radiusBlockingSave(values, 'customize', {store_name: ['Required']})).toBe('');
         expect(radiusBlockingSave({...values, appearance_source: 'default'}, 'customize', {'appearance_radius.btn': ['x']})).toBe('');
-    });
-
-    it('is wired into the component and the save handler', () => {
-        const read = (file) => fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../resources/admin', file), 'utf8');
-        const component = read('Bits/Components/Form/Components/StoreSettings/AppearanceComponent.vue');
-        const settings = read('Modules/Settings/StoreSettings.vue');
-
-        expect(component).toContain('syncRadiusErrors(');
-        expect(component).toContain('props.form.setValidationErrors(');
-        expect(component).toContain('radiusFieldError(');
-        expect(settings).toMatch(/radiusBlockingSave\(\s*form\.values,\s*customSource,\s*form\.data\.validationErrors\s*\)/);
-        expect(settings).toContain('form.setValidationErrors(');
     });
 });

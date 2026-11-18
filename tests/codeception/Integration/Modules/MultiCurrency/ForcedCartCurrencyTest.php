@@ -16,7 +16,7 @@ use Tests\Support\RateFixture;
 
 /**
  * A plan upgrade is priced in the subscription's currency, whatever the
- * visitor browses in (dev-docs/multi-currency/plan.md decision #10, §12.4).
+ * visitor browses in (dev-docs/multi-currency/06-orders-subscriptions.md, "Plan upgrades").
  * Base USD, GBP 0.79.
  */
 class ForcedCartCurrencyTest extends DatabaseTestCase

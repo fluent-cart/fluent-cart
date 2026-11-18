@@ -16,6 +16,7 @@ use FluentCart\App\Models\OrderTaxRate;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
+use FluentCart\Framework\Database\QueryException;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -430,5 +431,44 @@ class OrderResourceTest extends DatabaseTestCase
     {
         $result = OrderResource::delete(999999);
         $this->assertInstanceOf(\WP_Error::class, $result);
+    }
+
+    public function test_updated_place_order_lets_a_database_failure_reach_the_caller(): void
+    {
+        $product = $this->productFactory->create();
+        $variant = $product->variants->first();
+
+        // The framework raises a QueryException when the database refuses a read.
+        $refused = 0;
+        $refuseStockLookup = function ($query) use (&$refused) {
+            if (preg_match('/^select \* from `[^`]*fct_product_variations` where `id` in/i', $query)) {
+                $refused++;
+                throw new QueryException($query, [], new \Exception('simulated database failure'));
+            }
+
+            return $query;
+        };
+        add_filter('query', $refuseStockLookup);
+
+        $thrown = null;
+        $result = null;
+        try {
+            $result = OrderResource::updatedPlaceOrder([
+                'order_items' => [
+                    ['post_id' => (int) $product->ID, 'object_id' => (int) $variant->id, 'quantity' => 1],
+                ],
+            ]);
+        } catch (QueryException $e) {
+            $thrown = $e;
+        } finally {
+            remove_filter('query', $refuseStockLookup);
+        }
+
+        $this->assertSame(1, $refused, 'The stock lookup is the query that failed.');
+        $this->assertNotNull(
+            $thrown,
+            'A database failure is not a stock rejection. The resource answered: ' . wp_json_encode($result)
+        );
+        $this->assertSame(0, Order::query()->count(), 'No order is created.');
     }
 }

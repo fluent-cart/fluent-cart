@@ -13,11 +13,11 @@
 			.el-radio-button {
 				@apply h-auto;
 				&__inner {
-					@apply bg-transparent !shadow-none !border-0 text-system-mid font-normal !rounded leading-5 py-1 px-2.5 dark:text-gray-500;
+					@apply outline-hidden bg-transparent shadow-none! border-0! text-system-mid font-normal rounded! leading-5 py-1 px-2.5 dark:text-gray-500;
 				}
 				&.is-active {
 					.el-radio-button__inner {
-						@apply bg-gray-100 font-medium text-system-dark dark:bg-primary-500 dark:text-gray-25 #{!important};
+						@apply bg-gray-100! font-medium! text-system-dark! dark:bg-primary-500! dark:text-gray-25!;
 					}
 				}
 			}
@@ -35,7 +35,11 @@
 		}
 		&:before {
 			content: '';
-			@apply bg-gray-200 w-[1px] absolute left-[13px] h-[calc(100%-24px)] top-9 dark:bg-dark-500;
+			@apply bg-gray-200 w-[1px] absolute left-[13px] h-[calc(100%-24px)] top-9;
+		}
+		// dark: can't target a pseudo-element, so scope the parent instead.
+		.fluent_theme_dark &:before {
+			@apply bg-dark-500;
 		}
 		.icon {
 			@apply flex items-center justify-center absolute top-0 left-0 border border-solid border-gray-200 w-7 h-7 rounded-full flex-none dark:border-dark-500;

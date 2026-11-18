@@ -2,6 +2,7 @@
 import {getCurrentInstance, onMounted, onUnmounted, ref, nextTick, computed} from "vue";
 import ConnectAccount from "@/Modules/Settings/Parts/_connect_account.vue";
 import Tabs from "@/Modules/Settings/PaymentComponet/Tabs.vue";
+import TestConnection from "@/Modules/Settings/PaymentComponet/TestConnection.vue";
 import ColorPicker   from "@/Bits/Components/Form/Components/Base/Inputs/ColorPicker.vue";
 import MediaInput from "@/Bits/Components/Inputs/MediaInput.vue";
 import RadioSelectDependants from "@/Modules/Settings/PaymentComponet/RadioSelectDependants.vue";
@@ -154,7 +155,7 @@ const installAndActivateAddon = (gateway) => {
   })
   .catch(error => {
     Notify.error({
-      message: error?.message || translate('Failed to install addon')
+      message: error?.data?.message || translate('Failed to install addon')
     });
     
     if (button) {
@@ -186,7 +187,7 @@ const activateAddon = (gateway) => {
   })
   .catch(error => {
     Notify.error({
-      message: error?.message || translate('Failed to activate addon')
+      message: error?.data?.message || translate('Failed to activate addon')
     });
     
     if (button) {
@@ -195,6 +196,9 @@ const activateAddon = (gateway) => {
     }
   });
 };
+
+// Same values v-for gave: array index or object key.
+const toOptions = (options) => Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
 
 const resolveList = (list) => {
   if (!list) return [];
@@ -229,12 +233,10 @@ onUnmounted(() => {
       <div class="fct-col" v-if="field.type === 'provider'">
         <template v-if="field.value == 'connect'">
           <template v-if="settings.payment_mode == 'test'">
-            <el-skeleton :loading="fetching_connect" animated>
-              <template #template>
-                <el-skeleton-item variant="h3" class="w-[150px] mb-3" />
-                <el-skeleton-item variant="p" class="h-[50px]" />
-              </template>
-            </el-skeleton>
+            <fct-skeleton v-if="fetching_connect" animated>
+              <fct-skeleton variant="p" class="w-[150px] h-[18px] mb-3" />
+              <fct-skeleton variant="p" class="h-[50px]" />
+            </fct-skeleton>
             <ConnectAccount v-if="!fetching_connect"
                             @reload_settings="getConnectConfig()"
                             :method="routeName"
@@ -247,15 +249,13 @@ onUnmounted(() => {
             />
           </template>
           <template v-else-if="settings.payment_mode == 'live'">
-            <el-skeleton :loading="fetching_connect" animated>
-              <template #template>
-                <div class="bg-gray-25 dark:bg-dark-500 p-5 rounded flex flex-col">
-                    <el-skeleton-item variant="h3" class="w-9 h-9 mb-7 mx-auto rounded" />
-                    <el-skeleton-item variant="h3" class="w-[200px] mx-auto mb-3" />
-                    <el-skeleton-item variant="h3" class="w-[120px] h-7.5 mx-auto" />
-                </div>
-              </template>
-            </el-skeleton>
+            <fct-skeleton v-if="fetching_connect" animated>
+              <div class="bg-gray-25 dark:bg-dark-500 p-5 rounded flex flex-col">
+                  <fct-skeleton variant="p" class="w-9 h-9 mb-7 mx-auto rounded" />
+                  <fct-skeleton variant="p" class="w-[200px] h-[18px] mx-auto mb-3" />
+                  <fct-skeleton variant="p" class="w-[120px] h-7.5 mx-auto" />
+              </div>
+            </fct-skeleton>
 
             <ConnectAccount v-if="!fetching_connect"
                             :method="routeName"
@@ -295,21 +295,21 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+        <TestConnection :mode="currentMode"/>
       </div>
       <div class="fct-col" v-if="field.type === 'enable'">
         <p class="setting-label">
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon>
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
-        <el-switch
+        <fct-switch
             v-model="settings[index]"
             active-value="yes"
             inactive-value="no"
@@ -320,43 +320,39 @@ onUnmounted(() => {
       </div>
 
       <div class="fct-col" v-if="field.type === 'checkbox'">
-        <el-checkbox
+        <fct-choice
             true-value="yes"
             false-value="no"
             v-model="settings[index]"
             :disabled="field.disabled"
         >
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
-        </el-checkbox>
+          </fct-tooltip>
+        </fct-choice>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
 
       <div class="fct-col" v-if="field.type === 'select'">
         <p class="setting-label">
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
-        <el-select :placeholder="field.placeholder" v-model="settings[index]"
-                   :filterable="(field.filterable !== false)">
-          <el-option v-for="(opt, ind) in field.options" :label="opt.label" :value="opt.value" :key="ind"/>
-        </el-select>
+        <fct-select :placeholder="field.placeholder" v-model="settings[index]"
+                   :filterable="(field.filterable !== false)" :options="Object.values(field.options || {})"/>
 
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
@@ -364,8 +360,7 @@ onUnmounted(() => {
       <div class="fct-col" v-if="field.type === 'radio'">
         <p class="setting-label flex items-center gap-1">
           {{ field.label }}
-          <el-tooltip v-if="field.tooltip" placement="top-start"
-                      popper-class="fct-tooltip">
+          <fct-tooltip v-if="field.tooltip" placement="top-start">
             <template #content>
               <p v-html="field.tooltip">
               </p>
@@ -373,43 +368,37 @@ onUnmounted(() => {
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
 
-        <el-radio-group 
+        <fct-choice
             v-model="settings[index]"
+            type="radio"
+            :options="toOptions(field.options)"
             :class="{
                 'fct-payment-setting-radio-box': typeof Object.values(field.options)[0] === 'object'
             }"
         >
-            <template v-for="(opt, ind) in field.options" :key="ind">
+            <template #option="{option}">
                 <!-- Object option -->
-                <el-radio
-                    v-if="typeof opt === 'object'"
-                    :value="ind"
-                >
+                <template v-if="typeof option.label === 'object'">
                     <div class="options-img">
-                        <img :src="opt.icon" alt="">
+                        <img :src="option.label.icon" alt="">
                     </div>
                     <div>
                         <span class="options-name">
-                            {{ opt.label }}
+                            {{ option.label.label }}
                         </span>
                         <span class="options-text">
-                            {{ opt.text }}
+                            {{ option.label.text }}
                         </span>
                     </div>
-                </el-radio>
+                </template>
 
                 <!-- Simple string option -->
-                <el-radio
-                    v-else
-                    :value="ind"
-                >
-                    {{ opt }}
-                </el-radio>
+                <template v-else>{{ option.label }}</template>
             </template>
-        </el-radio-group>
+        </fct-choice>
 
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div><!-- .fct-col -->
@@ -429,53 +418,49 @@ onUnmounted(() => {
 
       <div class="fct-col" v-if="field.type === 'input' || field.type === 'password'">
         <p class="setting-label">{{ field.label }}</p>
-        <el-input :type="field.type" :placeholder="field.placeholder" v-model="settings[index]" :maxlength="field.max_length"></el-input>
+        <fct-input :type="field.type === 'password' ? 'password' : 'text'" :placeholder="field.placeholder" v-model="settings[index]" :maxlength="field.max_length"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
 
       <div class="fct-col" v-if="field.type === 'email'">
         <p class="setting-label">{{ field.label }}</p>
-        <el-input type="email" :placeholder="field.placeholder" v-model="settings[index]">
-        </el-input>
+        <fct-input type="email" :placeholder="field.placeholder" v-model="settings[index]"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
 
       <div class="fct-col" v-if="field.type === 'number'">
         <p class="setting-label">{{ field.label }}</p>
-        <el-input-number  :placeholder="field.placeholder" v-model="settings[index]" :max="field.max" :min="field.min"></el-input-number>
+        <fct-input type="number" :placeholder="field.placeholder" v-model="settings[index]" :max="field.max" :min="field.min"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
 
       <div class="fct-col" v-if="field.type === 'text'">
         <p class="setting-label">
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
-        <el-input type="text" :placeholder="field.placeholder" v-model="settings[index]" :disabled="field.disabled" :maxlength="field.max_length">
-        </el-input>
+        <fct-input type="text" :placeholder="field.placeholder" v-model="settings[index]" :disabled="field.disabled" :maxlength="field.max_length"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
       </div>
 
       <div class="fct-col" v-if="field.type === 'color'">
         <p class="setting-label">
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
         <ColorPicker v-model="settings[index]" :field="field"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
@@ -484,15 +469,14 @@ onUnmounted(() => {
       <div class="fct-col" v-if="field.type === 'file'">
         <p class="setting-label">
           {{ field.label }}
-          <el-tooltip placement="top-start" v-if="field.tooltip"
-                      popper-class="fct-tooltip">
+          <fct-tooltip placement="top-start" v-if="field.tooltip">
             <template #content>
               <p v-html="field.tooltip"></p>
             </template>
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
         <MediaInput v-model="settings[index]" icon="Upload" :title="translate('Upload')"/>
         <p v-if="field.description" class="fct-settings-description">{{ field.description }}</p>
@@ -501,8 +485,7 @@ onUnmounted(() => {
       <div class="fct-col" v-if="field.type === 'checkbox_group'">
         <p class="setting-label">
           {{ field.title }}
-          <el-tooltip v-if="field.tooltip" placement="top-start"
-                      popper-class="fct-tooltip">
+          <fct-tooltip v-if="field.tooltip" placement="top-start">
             <template #content>
               <p>
                 {{ field.tooltip }}
@@ -511,12 +494,9 @@ onUnmounted(() => {
             <el-icon class="text-gray-500">
               <InfoFilled/>
             </el-icon>
-          </el-tooltip>
+          </fct-tooltip>
         </p>
-        <el-checkbox-group v-model="settings[index]">
-          <el-checkbox v-for="(opt, ind) in field.options" :label="ind" :key="ind">{{ opt }}
-          </el-checkbox>
-        </el-checkbox-group>
+        <fct-choice v-model="settings[index]" :options="toOptions(field.options)"/>
         <p class="fct-settings-description" v-if="field.description">{{ field.description }}</p>
       </div>
 
@@ -582,7 +562,6 @@ onUnmounted(() => {
         <div v-if="field.value?.activated_methods">
           <div v-if="settings.payment_mode === 'live' && index === 'live_active_methods'">
             <p class="setting-label">{{field.label}}</p>
-            {{active_methods}}
             <ul class="flex flex-wrap gap-2">
                 <el-tag v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</el-tag>
             </ul>
@@ -596,7 +575,6 @@ onUnmounted(() => {
           <div v-if="settings.payment_mode === 'test' && index === 'test_active_methods'">
             <p class="setting-label">{{field.label}}</p>
             <ul class="flex flex-wrap gap-2">
-              {{active_methods}}
               <el-tag v-for="(method, index) in field.value.activated_methods" :key="index">{{ method?.name ? method.name : method }}</el-tag>
             </ul>
             <p>

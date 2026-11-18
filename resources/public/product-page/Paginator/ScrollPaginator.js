@@ -12,6 +12,8 @@ export default class ScrollPaginator extends Paginator {
     #perPage;
 
     #observer = null;
+    #pendingLoads = 0;
+    #lastItemBeforeLoad = null;
     cursor;
     templateProvider;
     lastCursor = null;
@@ -159,11 +161,22 @@ export default class ScrollPaginator extends Paginator {
     onDataLoadError(errors) {
     }
 
+    onLoadingData() {
+        this.#pendingLoads++;
+    }
+
     onApiCallFinished() {
+        this.#pendingLoads--;
         setTimeout(() => {
             this.loading = false;
             const loaderContainer = document.querySelector('.loader-container');
             if (loaderContainer) loaderContainer.remove();
+            // The new last card reported while loading was still true, so it was dropped.
+            // Observe it again for a fresh report, but only when the list grew (no loop after a
+            // failed or empty load) and no other request, such as a filter, is still running.
+            if (this.#pendingLoads === 0 && this.#lastItem() !== this.#lastItemBeforeLoad) {
+                this.#observeLastItem();
+            }
         }, this.#timeoutThreshold)
     }
 
@@ -172,6 +185,7 @@ export default class ScrollPaginator extends Paginator {
     }
 
     loadNextPage(clearContainerAfterDataLoaded = false) {
+        this.#lastItemBeforeLoad = this.#lastItem();
         this.paginator.currentPage += 1;
         this.addSkeletonLoader("onPageScroll")
         this.loadData(clearContainerAfterDataLoaded)
@@ -183,7 +197,8 @@ export default class ScrollPaginator extends Paginator {
         const options = {
             root: null,
             rootMargin: '0px',
-            threshold: 1.0
+            // 0: a card cut off by a short page still counts. 1: reports again as it fully shows.
+            threshold: [0, 1]
         };
 
         this.#observer = new IntersectionObserver((entries) => {
@@ -197,11 +212,21 @@ export default class ScrollPaginator extends Paginator {
         this.#observeLastItem();
     }
 
+    #lastItem() {
+        const children = this.productList ? this.productList.children : [];
+        // The empty-state message is not a card; observing it re-requests pages forever.
+        for (let i = children.length - 1; i >= 0; i--) {
+            if (children[i].getAttribute('data-fluent-cart-shop-no-result-found') === null) {
+                return children[i];
+            }
+        }
+        return null;
+    }
+
     #observeLastItem() {
         if (!this.#observer || !this.productList) return;
 
-        const children = this.productList.children;
-        const lastItem = children[children.length - 1];
+        const lastItem = this.#lastItem();
 
         if (lastItem) {
             this.#observer.disconnect(); // Prevent duplicate observation

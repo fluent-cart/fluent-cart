@@ -73,19 +73,6 @@ trait BuildsRefundFixtures
         ]);
     }
 
-    protected function failRefundInserts(): callable
-    {
-        $filter = function ($query) {
-            if (preg_match('/^insert into `[^`]*fct_order_transactions`/i', $query)) {
-                return 'SELECT * FROM fct_missing_table_for_test';
-            }
-            return $query;
-        };
-        add_filter('query', $filter);
-
-        return $filter;
-    }
-
     protected function countOrderRefundedEvents(): \stdClass
     {
         $counter = new \stdClass();

@@ -8,6 +8,7 @@ import AddProductModal from "@/Modules/Products/AddProductModal.vue";
 import {computed, getCurrentInstance, onMounted, onUnmounted, ref} from "vue";
 import CreateDummyProduct from "@/Modules/Products/parts/CreateDummyProduct.vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
+import Permission from "@/utils/permission/Permission";
 import ProductsLoader from "./parts/ProductsLoader.vue";
 import ProductsLoaderMobile from "./parts/ProductsLoaderMobile.vue";
 import Rest from "@/utils/http/Rest";
@@ -23,6 +24,7 @@ const productTable = useProductTable({
   instance: getCurrentInstance()
 });
 
+const canCreateProducts = Permission.has('products/create');
 const isAddProductModalVisible = ref(false);
 const isProductActionModalVisible = ref(false);
 const currentAction = ref('duplicate'); // 'duplicate' or 'delete'
@@ -157,46 +159,38 @@ onUnmounted(() => {
     <PageHeading :title="translate('Products')">
       <template #action>
         <UserCan permission="products/view">
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
-              popper-class="fct-dropdown"
-              @command=""
               placement="bottom-end"
+              :items="canCreateProducts ? [
+                {name: 'dummy', class: 'item-link'},
+                {command: 'product_bulk_insert', label: translate('Bulk Product Insert'), icon: 'Insert'},
+                {command: 'product_bulk_edit', label: translate('Bulk Product Edit'), icon: 'Edit'}
+              ] : []"
+              @command="(command) => command && $router.push({ name: command })"
           >
-            <el-button>
+            <fct-button>
               {{ translate('More actions') }}
               <el-icon>
                 <ArrowDown/>
               </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <UserCan permission="products/create">
-                  <el-dropdown-item class="item-link">
-                    <CreateDummyProduct @on-product-created="productTable.fetch()" :products="productTable.getTableData()"/>
-                  </el-dropdown-item>
-
-                  <el-dropdown-item @click="$router.push({ name: 'product_bulk_insert' })">
-                    <DynamicIcon name="Insert" />
-                    {{ translate('Bulk Product Insert') }}
-                  </el-dropdown-item>
-
-                  <el-dropdown-item @click="$router.push({ name: 'product_bulk_edit' })">
-                    <DynamicIcon name="Edit" />
-                    {{ translate('Bulk Product Edit') }}
-                  </el-dropdown-item>
-                </UserCan>
-              </el-dropdown-menu>
+            </fct-button>
+            <template #item="{item}">
+              <CreateDummyProduct v-if="item.name === 'dummy'" @on-product-created="productTable.fetch()" :products="productTable.getTableData()"/>
+              <template v-else>
+                <DynamicIcon :name="item.icon" />
+                {{ item.label }}
+              </template>
             </template>
-          </el-dropdown>
+          </fct-dropdown>
         </UserCan>
 
         <UserCan permission="products/create">
-          <el-button type="primary" @click="()=>{
+          <fct-button type="primary" @click="()=>{
             isAddProductModalVisible = true;
           }">
             {{ translate('Add Product') }}
-          </el-button>
+          </fct-button>
         </UserCan>
       </template>
     </PageHeading>
@@ -210,23 +204,15 @@ onUnmounted(() => {
             <div v-if="hasSelectedProducts" class="bulk-actions-bar">
               <!-- Left side actions -->
               <div class="bulk-left flex items-center gap-2">
-                <el-select
+                <fct-select
                     size="small"
                     class="bulk-select min-w-[180px]"
                     :placeholder="translate('Select Bulk Action')"
                     v-model="selectedBulkAction"
-                >
-                  <el-option
-                      :label="translate('Duplicate')"
-                      value="duplicate"
-                  />
-                  <el-option
-                      :label="translate('Delete')"
-                      value="delete"
-                  />
-                </el-select>
+                    :options="[{label: translate('Duplicate'), value: 'duplicate'}, {label: translate('Delete'), value: 'delete'}]"
+                />
 
-                <el-button
+                <fct-button
                     size="small"
                     :type="selectedBulkAction === 'delete' ? 'danger' : 'primary'"
                     :disabled="!selectedBulkAction"
@@ -235,7 +221,7 @@ onUnmounted(() => {
                   <DynamicIcon v-if="selectedBulkAction === 'delete'" name="Delete" class="w-4 h-4"/>
                   <DynamicIcon v-else-if="selectedBulkAction === 'duplicate'" name="Copy" class="w-4 h-4"/>
                   {{ translate('Confirm') }}
-                </el-button>
+                </fct-button>
               </div>
 
               <!-- Right side count -->
@@ -272,11 +258,11 @@ onUnmounted(() => {
 
 
     <UserCan permission="products/create">
-      <el-dialog :append-to-body="true" v-model="isAddProductModalVisible" :title="translate('Add New Product')">
+      <fct-dialog :append-to-body="true" v-model="isAddProductModalVisible" :title="translate('Add New Product')">
         <template v-if="isAddProductModalVisible">
           <AddProductModal/>
         </template>
-      </el-dialog>
+      </fct-dialog>
 
       <ProductActionModal
           v-model="isProductActionModalVisible"

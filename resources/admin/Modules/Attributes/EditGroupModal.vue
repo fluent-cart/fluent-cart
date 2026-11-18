@@ -1,43 +1,44 @@
 <template>
 	<div class="fct-attr-group-edit-modal">
-		<el-form label-position='top' :data="group">
-			<el-row :gutter="24">
-				<el-col :span="24">
-					<el-form-item :label="$t('Group Title')">
-						<el-input ref="titleInputRef" type="text" v-model="group.title" :placeholder="$t('Group Title')" @keyup="handleTitleKeyup"/>
-						<template v-if="validationErrors['title']">
-							<span class="error" v-for="(error, index) in validationErrors['title']" :key="index">{{error}}</span>
-						</template>
-					</el-form-item>
-				</el-col>
-				<el-col :span="12">
-					<el-form-item :label="$t('Attribute Type')">
-						<el-select v-model="groupSettings.type" style="width: 100%">
-							<el-option :label="$t('Options')" value="options"/>
-							<el-option :label="$t('Color')" value="color"/>
-							<el-option :label="$t('Image')" value="image"/>
-						</el-select>
-					</el-form-item>
-				</el-col>
-				<el-col :span="12">
-					<el-form-item :label="$t('Styling')">
-						<el-select v-model="groupSettings.styling" clearable style="width: 100%">
-							<el-option :label="$t('Dropdown')" value="dropdown"/>
-							<el-option :label="$t('Button')" value="button"/>
-						</el-select>
-					</el-form-item>
-				</el-col>
-			</el-row>
-		</el-form>
+		<div>
+			<Field :label="$t('Group Title')">
+				<fct-input ref="titleInputRef" type="text" v-model="group.title" :placeholder="$t('Group Title')" @keyup="handleTitleKeyup"/>
+				<template v-if="validationErrors['title']">
+					<span class="error" v-for="(error, index) in validationErrors['title']" :key="index">{{error}}</span>
+				</template>
+			</Field>
+			<div class="fct-attr-group-modal-row">
+				<fct-select
+					v-model="groupSettings.type"
+					:label="$t('Attribute Type')"
+					style="width: 100%"
+					:options="[
+						{label: $t('Options'), value: 'options'},
+						{label: $t('Color'), value: 'color'},
+						{label: $t('Image'), value: 'image'}
+					]"
+				/>
+				<fct-select
+					v-model="groupSettings.styling"
+					:label="$t('Styling')"
+					clearable
+					style="width: 100%"
+					:options="[
+						{label: $t('Dropdown'), value: 'dropdown'},
+						{label: $t('Button'), value: 'button'}
+					]"
+				/>
+			</div>
+		</div>
 		<div class="dialog-footer">
-			<el-button
+			<fct-button
 				:disabled="!group.title || loading"
 				:loading="is_group_loading"
 				@click="updateGroup()"
 				type="primary"
 			> 
 				{{ $t('Save changes')}}
-			</el-button>
+			</fct-button>
 		</div>
 	</div>
 </template>
@@ -47,9 +48,11 @@
 import {ref, reactive} from "vue";
 import Rest from "@/utils/http/Rest";
 import {handleSuccess, handleError} from "@/Bits/common";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 export default {
 	name: "EditGroupModal",
+	components: {Field},
 	props: ['group', 'groupId'],
 	setup(props, ctx) {
 

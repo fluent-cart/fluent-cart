@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
  * Money is converted from the base currency once, when an amount is first
  * authored onto an order; everything downstream (transactions, renewals,
  * refunds, reports) copies the stored rate instead of looking one up.
- * dev-docs/multi-currency/plan.md §9.
+ * dev-docs/multi-currency/01-architecture.md, "Where conversion happens".
  *
  * `rate` = units of the order's currency per 1 unit of the base currency,
  * kept as a 12-decimal string so it round-trips DECIMAL(24,12) exactly.
@@ -150,7 +150,8 @@ class CurrencySnapshot
 
     /**
      * Classify a row that predates snapshots. Never guesses a rate: a
-     * non-base-currency row without one is `legacy_unknown` (plan §10).
+     * non-base-currency row without one is `legacy_unknown`
+     * (dev-docs/multi-currency/08-exchange-rates.md, "Old orders without a rate").
      */
     public static function legacy($currency, $rate = 1, $capturedAt = null): array
     {
@@ -220,11 +221,12 @@ class CurrencySnapshot
     }
 
     /**
-     * A transaction always carries its order's rate (plan §2.3 invariant #2).
+     * A transaction always carries its order's rate
+     * (dev-docs/multi-currency/06-orders-subscriptions.md, "The snapshot on new records").
      *
      * A currency that differs from the order's is detected and logged, never
      * rejected: refusing the insert after a gateway has taken the money would
-     * lose the only record of a real payment (plan §12.8). The comparison is
+     * lose the only record of a real payment. The comparison is
      * case-insensitive — some gateways report lowercase codes.
      */
     public static function applyToNewTransaction(OrderTransaction $transaction): void
@@ -271,7 +273,7 @@ class CurrencySnapshot
     /**
      * Give a new subscription its currency column and its parent order's
      * snapshot — renewals carry that rate for the subscription's life
-     * (plan §9.2, decision #8).
+     * (dev-docs/multi-currency/06-orders-subscriptions.md).
      */
     public static function applyToNewSubscription(Subscription $subscription): void
     {

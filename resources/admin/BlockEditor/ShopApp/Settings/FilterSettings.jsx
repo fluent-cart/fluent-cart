@@ -9,11 +9,56 @@ const {
 
 const FilterSettings = (props) => {
     const {attributes, setAttributes, blockEditorData} = props;
+    const attributeGroups = blockEditorData?.attribute_groups || [];
 
     const setFilters = (name, value) => {
         let filter = {...attributes.filters ?? {}};
         filter[name] = value;
         setAttributes({filters: {...filter}});
+    }
+
+    // One settings entry for the section; each chosen group is saved as its own attr_{id}
+    // filter, which is the shape the sidebar renderer reads.
+    const attributeSettings = attributes.filters?.attribute_filters || {};
+    const attributeFiltersActive = attributeSettings.active === true;
+    // Both off until turned on.
+    const attributeShowCount = attributeSettings.show_count === true;
+    const attributeShowEmpty = attributeSettings.show_empty === true;
+    const selectedGroups = Object.values(attributes.filters || {})
+        .filter((filter) => filter?.filter_type === 'attribute')
+        .map((filter) => attributeGroups.find((group) => Number(group.id) === Number(filter.group_id)))
+        .filter(Boolean);
+    // The storefront drops groups past this limit, so at the limit only chosen groups are listed.
+    const attributeGroupLimit = Number(blockEditorData?.attribute_group_limit) || attributeGroups.length;
+    const isAttributeGroupLimitReached = selectedGroups.length >= attributeGroupLimit;
+    const selectableAttributeGroups = isAttributeGroupLimitReached ? selectedGroups : attributeGroups;
+
+    const saveAttributeFilters = ({
+        active = attributeFiltersActive,
+        groupIds = selectedGroups.map((group) => group.id),
+        showCount = attributeShowCount,
+        showEmpty = attributeShowEmpty,
+    }) => {
+        const filters = {};
+        Object.entries(attributes.filters || {}).forEach(([key, filter]) => {
+            if (filter?.filter_type !== 'attribute') {
+                filters[key] = filter;
+            }
+        });
+
+        filters.attribute_filters = {filter_type: 'attribute_settings', active, show_count: showCount, show_empty: showEmpty};
+        groupIds.forEach((groupId) => {
+            filters['attr_' + groupId] = {
+                filter_type: 'attribute',
+                is_meta: false,
+                group_id: groupId,
+                show_count: showCount,
+                show_empty: showEmpty,
+                enabled: active,
+            };
+        });
+
+        setAttributes({filters});
     }
 
     return (
@@ -221,6 +266,71 @@ const FilterSettings = (props) => {
                                     }
                                 </div> : <></>
                         })
+                    }
+
+                    {attributeGroups.length > 0 &&
+                        <div className="mt-5">
+                            <div className="fct-block-editor-control-item">
+                                <div className="fct-inspector-control-row">
+                                    <span className="label">{blocktranslate('Attribute Filters')}</span>
+                                    <div className="actions">
+                                        <ToggleControl
+                                            aria-label={blocktranslate('Attribute Filters')}
+                                            checked={attributeFiltersActive}
+                                            onChange={(checked) => saveAttributeFilters({active: checked})}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            {attributeFiltersActive &&
+                                <>
+                                    <div className="fct-block-editor-control-item">
+                                        <div className="fct-inspector-control-row">
+                                            <span className="label">{blocktranslate('Attributes')}</span>
+                                            <div className="actions">
+                                                <CustomSelect
+                                                    isMulti={true}
+                                                    customKeys={{key: 'value', label: 'label'}}
+                                                    defaultValue={selectedGroups.map((group) => group.id)}
+                                                    options={selectableAttributeGroups.map((group) => ({value: group.id, label: group.title}))}
+                                                    onChange={(groupIds) => saveAttributeFilters({groupIds: groupIds.slice(0, attributeGroupLimit)})}
+                                                />
+                                            </div>
+                                        </div>
+                                        {isAttributeGroupLimitReached &&
+                                            <p className="components-base-control__help" role="status">{blockEditorData?.attribute_group_limit_note}</p>
+                                        }
+                                    </div>
+                                    <div className="fct-block-editor-control-item">
+                                        <div className="fct-inspector-control-row">
+                                            <span className="label">{blocktranslate('Show counts')}</span>
+                                            <div className="actions">
+                                                <ToggleControl
+                                                    aria-label={blocktranslate('Show counts')}
+                                                    checked={attributeShowCount}
+                                                    onChange={(checked) => saveAttributeFilters({showCount: checked})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="fct-block-editor-control-item">
+                                        <div className="fct-inspector-control-row">
+                                            <span className="label">{blocktranslate('Show empty')}</span>
+                                            <div className="actions">
+                                                <ToggleControl
+                                                    aria-label={blocktranslate('Show empty')}
+                                                    checked={attributeShowEmpty}
+                                                    onChange={(checked) => saveAttributeFilters({showEmpty: checked})}
+                                                />
+                                            </div>
+                                        </div>
+                                        <span className="text-xs text-system-light leading-tight">
+                                            {blocktranslate('Display attribute values even if no product uses them.')}
+                                        </span>
+                                    </div>
+                                </>
+                            }
+                        </div>
                     }
 
                 </>

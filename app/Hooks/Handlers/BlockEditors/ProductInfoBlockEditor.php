@@ -55,7 +55,7 @@ class ProductInfoBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
         AssetLoader::enqueueProductInfoFrontendStyles();
 
         $queryType = Arr::get($shortCodeAttribute, 'query_type', 'default');

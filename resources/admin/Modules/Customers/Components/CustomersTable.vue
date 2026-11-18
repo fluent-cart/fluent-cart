@@ -23,14 +23,14 @@ const handleSelectionChange = (selectedRows) => {
 </script>
 
 <template>
-  <el-table
+  <fct-table
       :data="table.getTableData()"
       class="w-full compact-table"
       @selection-change="handleSelectionChange"
   >
-    <el-table-column type="selection" width="45"/>
+    <fct-table-column type="selection" width="45"/>
 
-    <el-table-column :label="translate('Customer')" width="300">
+    <fct-table-column :label="translate('Customer')" width="300">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -55,9 +55,9 @@ const handleSelectionChange = (selectedRows) => {
           </div>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column :label="translate('Address')" width="300">
+    <fct-table-column :label="translate('Address')" width="300">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -70,9 +70,9 @@ const handleSelectionChange = (selectedRows) => {
 
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column :label="translate('Purchases')" :width="90">
+    <fct-table-column :label="translate('Purchases')" :width="90">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -84,9 +84,9 @@ const handleSelectionChange = (selectedRows) => {
           {{ translateNumber(scope.row.purchase_count) }}
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="table.isColumnVisible('ltv')" :label="translate('LTV')" :width="100">
+    <fct-table-column v-if="table.isColumnVisible('ltv')" :label="translate('LTV')" :width="100">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -99,9 +99,9 @@ const handleSelectionChange = (selectedRows) => {
 
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column
+    <fct-table-column
         v-if="table.isColumnVisible('last_purchase_date')"
         :label="translate('Last Purchase Date')"
         width="200"
@@ -120,9 +120,9 @@ const handleSelectionChange = (selectedRows) => {
           <span v-else>---</span>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column
+    <fct-table-column
         v-if="table.isColumnVisible('customer_since')"
         :label="translate('Customer Since')"
         width="150"
@@ -139,12 +139,12 @@ const handleSelectionChange = (selectedRows) => {
 
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
     <template #empty>
       <Empty icon="Empty/ListView" :has-dark="true" :text="translate('No customer found!')"/>
     </template>
-  </el-table>
+  </fct-table>
 </template>
 
 <style scoped>

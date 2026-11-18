@@ -2,6 +2,7 @@
 
 namespace Tests\Integration\Modules\MCP;
 
+use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Modules\MCP\Tools\ReportTools;
@@ -36,7 +37,11 @@ class CustomerOverviewTest extends DatabaseTestCase
 
         $res = ReportTools::queryCustomers(['view' => 'overview', 'currency' => 'USD', 'start_date' => '2025-10-01', 'end_date' => '2025-10-31'])['data'];
 
-        $this->assertSame($admin, $res['summary']);
+        // Same figures as the page, money in currency units instead of the page's cents
+        foreach (['new_net', 'returning_net', 'renewal_net', 'net', 'average_ltv'] as $key) {
+            $admin[$key] = Helper::toDecimalWithoutComma($admin[$key]);
+        }
+        $this->assertEquals($admin, $res['summary']);
         $this->assertSame(1, $res['summary']['new_customers']);
         $this->assertSame(1, $res['summary']['returning_customers']);
     }

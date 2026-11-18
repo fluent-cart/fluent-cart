@@ -72,7 +72,7 @@ class JobRunner
             $data['retry_count'] = 0;
         }
 
-        $data['created_at'] = current_time('mysql');
+        $data['created_at'] = current_time('mysql', true);
         return ScheduledAction::query()->insertGetId($data);
     }
 }

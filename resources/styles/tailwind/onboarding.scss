@@ -14,7 +14,10 @@
         background-position: center;
         background-repeat: no-repeat;
         opacity: 0.6;
-        @apply bg-gray-50 dark:bg-dark-700;
+        @apply bg-gray-50;
+      }
+      .fluent_theme_dark &:before {
+          @apply bg-dark-700;
       }
     }
     #wpfooter{
@@ -174,13 +177,16 @@
                 @apply w-5 h-5 rounded-full absolute right-4 top-4 border-[1.5px] border-solid border-gray-outline;
                 &:before {
                   content: '';
-                  @apply absolute w-[calc(100%-4px)] h-[calc(100%-4px)] transition duration-300 ease-in-out rounded-full bg-primary-500 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-0 dark:bg-gray-50;
+                  @apply absolute w-[calc(100%-4px)] h-[calc(100%-4px)] transition duration-300 ease-in-out rounded-full bg-primary-500 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-0;
+                }
+                .fluent_theme_dark &:before {
+                    @apply bg-gray-50;
                 }
               }
             }
             &.is-active {
               .el-radio-button__inner {
-                @apply dark:border-gray-200 bg-transparent shadow-none #{!important};
+                @apply dark:border-gray-200! bg-transparent! shadow-none!;
                 .marker {
                   &:before {
                     @apply transform -translate-x-1/2 -translate-y-1/2 scale-100;
@@ -202,9 +208,9 @@
           grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
           @apply grid gap-4 items-stretch;
           .el-radio-button {
-            @apply mb-0 h-full w-full !shadow-none outline-none;
+            @apply mb-0 h-full w-full shadow-none! outline-hidden;
             &__inner {
-               @apply rounded text-left p-4 relative gap-2 w-full h-full whitespace-pre-wrap border border-solid border-gray-outline flex flex-col items-start justify-between bg-transparent dark:border-dark-400 outline-none #{!important};
+               @apply rounded! text-left! p-4! relative! gap-2! w-full! h-full! whitespace-pre-wrap! border! border-solid! border-gray-outline! flex! flex-col! items-start! justify-between! bg-transparent! dark:border-dark-400! outline-hidden!;
               .label {
                 @apply text-system-mid text-sm leading-5 block transition duration-300 ease-in-out dark:text-gray-300 mb-0 mt-2 w-auto;
               }
@@ -217,7 +223,7 @@
             }
             &.is-active {
               .el-radio-button__inner {
-                @apply bg-transparent shadow-none border-primary-500 dark:border-gray-200 outline-none #{!important};
+                @apply bg-transparent! shadow-none! border-primary-500! dark:border-gray-200! outline-hidden!;
                 .marker {
                   @apply transform scale-100;
                 }
@@ -311,7 +317,7 @@
       @apply relative z-10 px-5 pb-5 flex items-center gap-2.5 justify-between;
       .fct-onboarding-skip-all{
         .el-button.is-text{
-          @apply text-system-mid focus:shadow-none hover:underline dark:text-gray-300 #{!important};
+          @apply text-system-mid! focus:shadow-none! hover:underline! dark:text-gray-300!;
         }
       }
     }
@@ -346,7 +352,7 @@
   .el-steps--simple{
     @apply p-0 bg-transparent gap-2;
     .el-step.is-simple {
-      @apply cursor-pointer flex-none #{!important};
+      @apply cursor-pointer! flex-none!;
       .el-step{
         &__head {
           @apply pr-0 w-15 h-1.5 bg-primary-50 dark:bg-gray-700 rounded-[2px];
@@ -425,7 +431,10 @@
     @apply flex-none mt-0.5 w-4 h-4 rounded-full border-[1.5px] border-solid border-gray-300 relative dark:border-primary-400;
     &::before {
       content: '';
-      @apply absolute w-2 h-2 rounded-full bg-primary-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-0 transition-transform duration-200 dark:bg-gray-50;
+      @apply absolute w-2 h-2 rounded-full bg-primary-500 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-0 transition-transform duration-200;
+    }
+    .fluent_theme_dark &::before {
+        @apply bg-gray-50;
     }
     &.is-active {
       @apply border-primary-500 dark:border-gray-200;
@@ -452,7 +461,7 @@
   &_lists {
     @apply flex flex-col gap-4;
     .fc_dashboard_onboarding_item {
-      @apply flex items-start cursor-pointer gap-3 focus:outline-none focus:shadow-none;
+      @apply flex items-start cursor-pointer gap-3 focus:outline-hidden focus:shadow-none;
 
       &:hover {
         .circle-shape {

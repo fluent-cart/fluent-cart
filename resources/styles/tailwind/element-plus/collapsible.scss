@@ -68,9 +68,12 @@
                 .el-collapse-item__arrow{
                     @apply relative mr-0 top-1;
                     &:after{
-                        @apply absolute top-0 right-0 transition-all duration-300 w-3 h-2 dark:brightness-[2];
+                        @apply absolute top-0 right-0 transition-all duration-300 w-3 h-2;
                         content: "";
                         background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22 fill=%22none%22%3E%3Cpath d=%22M1 1.5L5.29289 5.79289C5.62623 6.12623 5.79289 6.29289 6 6.29289C6.20711 6.29289 6.37377 6.12623 6.70711 5.79289L11 1.5%22 stroke=%22%23565865%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E');
+                    }
+                    .fluent_theme_dark &:after {
+                        @apply brightness-[2];
                     }
                     svg{
                         @apply hidden;

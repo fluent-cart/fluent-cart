@@ -10,6 +10,7 @@ import Badge from "@/Bits/Components/Badge.vue";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
 import CustomColumnRenderer from "@/Bits/Components/CustomColumnRenderer.vue";
+import {useRouter} from "vue-router";
 
 const props = defineProps({
   productTable: {
@@ -20,18 +21,24 @@ const props = defineProps({
 
 
 const emit = defineEmits(['delete']);
+const router = useRouter();
 
-const handleProductCommand = (command) => {
-  if (command.action === 'delete') {
+const productActions = (product) => [
+  ...(product.ID ? [{command: 'edit', label: translate('Edit'), icon: 'Edit', href: router.resolve({name: 'product_edit', params: {product_id: product.ID}}).href}] : []),
+  {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+];
+
+const handleProductCommand = (command, product) => {
+  if (command === 'delete') {
     /* translators: %s - product title */
-    $confirm(translate("Are you sure you want to delete this product : %s ?", command.product.post_title), translate("Confirm Delete!"),
+    $confirm(translate("Are you sure you want to delete this product : %s ?", product.post_title), translate("Confirm Delete!"),
         {
           confirmButtonText: translate("Yes, Delete!"),
           cancelButtonText: translate("Cancel"),
           type: 'warning'
         }
     ).then(() => {
-      emit('delete', command.product.ID);
+      emit('delete', product.ID);
     }).catch((errors) => {
     });
   }
@@ -80,11 +87,9 @@ const getVariationTypeText = (type) => {
           <div class="flex items-center gap-1.5">
             <Badge :key="row.ID" :status="row.post_status"
                    @click="$router.push({ name: 'product_edit', params: { product_id: row.ID } })"/>
-            <el-tooltip
+            <fct-tooltip
                 v-if="row.post_status === 'future'"
-                effect="dark"
-                placement="top"
-                popper-class="fct-label-hint-popover fct-tooltip"
+                popper-class="fct-label-hint-popover"
                 :show-after="400"
                 :hide-after="0"
             >
@@ -95,51 +100,22 @@ const getVariationTypeText = (type) => {
                 }}
               </template>
               <DynamicIcon name="InformationFill" class="w-4 h-4"/>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </div>
 
         <div class="fct-product-action">
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
               class="fct-more-option-wrap"
-              popper-class="fct-dropdown"
-              @command="handleProductCommand"
+              :items="productActions(row)"
+              @command="(command) => handleProductCommand(command, row)"
               placement="bottom-end"
           >
           <span class="more-btn">
             <DynamicIcon name="More"/>
           </span>
-
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item class="item-link" v-if="row.ID">
-                  <router-link
-                      :to="{
-                        name: 'product_edit',
-                        params: {
-                          product_id: row.ID
-                        }
-                      }"
-                  >
-                    <DynamicIcon name="Edit"/>
-                    {{ translate('Edit') }}
-                  </router-link>
-                </el-dropdown-item>
-
-                <el-dropdown-item
-                    :command="{
-                      action: 'delete',
-                      product: row
-                    }"
-                    class="item-destructive"
-                >
-                  <DynamicIcon name="Delete"/>
-                  {{ translate('Delete') }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </fct-dropdown>
         </div>
       </div><!-- fct-product-table-mobile-header -->
 

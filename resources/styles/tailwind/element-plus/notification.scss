@@ -31,6 +31,6 @@
         }
     }
     &.fct-file-upload-notification{
-        @apply z-[99999] #{!important};
+        @apply z-[99999]!;
     }
 }

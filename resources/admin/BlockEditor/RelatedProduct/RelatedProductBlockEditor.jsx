@@ -5,11 +5,13 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import RelatedProductInspectorSettings from "@/BlockEditor/RelatedProduct/Components/RelatedProductInspectorSettings";
 import ProductDropdownPicker from "@/BlockEditor/Components/ProductPicker/ProductDropdownPicker.jsx";
 import "@/BlockEditor/RelatedProduct/Components/ProductTemplateBlock.jsx";
+import {anyLoopUsesDisplayElements} from "@/BlockEditor/RelatedProduct/Components/productTemplate";
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
 const {Placeholder} = wp.components;
 const {useEffect, useState} = wp.element;
+const {useSelect} = wp.data;
 
 const blockEditorData = window.fluent_cart_related_product_data;
 const rest = window['fluentCartRestVars'].rest;
@@ -95,10 +97,15 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     supports: {
         innerBlocks: true,
     },
-    edit: ({attributes, setAttributes}) => {
+    edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps({
             className: 'fluent-cart-related-product-block'
         });
+        // Older related cards hold the blocks the Display Elements toggles hide; a Product Card does not.
+        const showDisplayElements = useSelect(
+            select => anyLoopUsesDisplayElements(select('core/block-editor').getBlocks(clientId)),
+            [clientId]
+        );
         const [selectedProduct, setSelectedProduct] = useState({});
         const [relatedProducts, setRelatedProducts] = useState(attributes.related_products || []);
         const [isLoading, setIsLoading] = useState(false);
@@ -187,6 +194,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                         setAttributes={setAttributes}
                         selectedProduct={selectedProduct}
                         setSelectedProduct={setSelectedProduct}
+                        showDisplayElements={showDisplayElements}
                     />
                     <Placeholder
                         icon={RelatedProduct}
@@ -214,7 +222,22 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     setAttributes={setAttributes}
                     selectedProduct={selectedProduct}
                     setSelectedProduct={setSelectedProduct}
+                    showDisplayElements={showDisplayElements}
                 />
+
+                {/* Editor only: the same picker the sidebar has, so the product can change without leaving the canvas. */}
+                {attributes.query_type === 'custom' && (
+                    <div className="fct-related-products-canvas-picker">
+                        <ProductDropdownPicker
+                            compactLabel={blocktranslate('Related to')}
+                            selectedProduct={selectedProduct}
+                            onSelect={(product) => {
+                                setAttributes({product_id: product.ID || ''});
+                                setSelectedProduct(product);
+                            }}
+                        />
+                    </div>
+                )}
 
                 {isLoading && (
                     <Placeholder

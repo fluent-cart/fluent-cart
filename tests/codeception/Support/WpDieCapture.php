@@ -48,6 +48,7 @@ class WpDieCapture
         add_filter('wp_die_ajax_handler', $ajaxHandler, 10000);
         add_filter('status_header', $statusCapture, 10000, 2);
 
+        $obLevel = ob_get_level();
         ob_start();
         $died = false;
         $dieStatus = 0;
@@ -57,7 +58,7 @@ class WpDieCapture
             $died = true;
             $dieStatus = (int) $e->getCode();
         }
-        $body = ob_get_clean();
+        $body = self::closeBuffersTo($obLevel);
         remove_filter('wp_doing_ajax', $forceAjax, 10000);
         remove_filter('wp_die_ajax_handler', $ajaxHandler, 10000);
         remove_filter('status_header', $statusCapture, 10000);
@@ -79,6 +80,11 @@ class WpDieCapture
      * `wp_send_json()` / `wp_die()` termination that happens inside the
      * controller.
      *
+     * The request runs in a Fiber and the wp_die handler suspends it for good,
+     * which stops the controller the way `die` does. A thrown exception would
+     * pass through Route::callback(), which treats every Throwable as an
+     * application error and writes it and its trace to the error log.
+     *
      * @return array{status:int, body:string, json:?array, died:bool, response:?\WP_REST_Response}
      */
     public static function dispatchRestWithDie(\WP_REST_Request $request): array
@@ -89,36 +95,48 @@ class WpDieCapture
             $capturedStatus = (int) $code;
             return $statusHeader;
         };
-        $ajaxHandler = function () {
-            return function ($message, $title = '', $args = []) {
-                $code = 0;
+        $dieStatus = 0;
+        $ajaxHandler = function () use (&$dieStatus) {
+            return function ($message, $title = '', $args = []) use (&$dieStatus) {
                 if (is_array($args) && isset($args['response'])) {
-                    $code = (int) $args['response'];
+                    $dieStatus = (int) $args['response'];
                 }
-                throw new \WPDieException(is_string($message) ? $message : '', $code);
+                \Fiber::suspend();
             };
         };
         add_filter('wp_doing_ajax', $forceAjax, 10000);
         add_filter('wp_die_ajax_handler', $ajaxHandler, 10000);
         add_filter('status_header', $statusCapture, 10000, 2);
 
+        // A die inside a transaction rolls it back when the connection closes.
+        $db          = \FluentCart\App\App::db();
+        $startLevel  = $db->transactionLevel();
+
+        $obLevel  = ob_get_level();
         ob_start();
         $status   = 0;
-        $died     = false;
         $response = null;
-        try {
-            $response = rest_do_request($request);
-        } catch (\WPDieException $e) {
-            $died   = true;
-            $status = (int) $e->getCode();
+        $fiber    = new \Fiber(function () use ($request) {
+            return rest_do_request($request);
+        });
+        $fiber->start();
+        $died = !$fiber->isTerminated();
+        if (!$died) {
+            $response = $fiber->getReturn();
         }
-        $body = ob_get_clean();
+        // Destroying the suspended fiber unwinds it through `finally` blocks only.
+        $fiber = null;
+        if ($died && $db->transactionLevel() > $startLevel) {
+            $db->rollBack($startLevel);
+        }
+
+        $body = self::closeBuffersTo($obLevel);
         remove_filter('wp_doing_ajax', $forceAjax, 10000);
         remove_filter('wp_die_ajax_handler', $ajaxHandler, 10000);
         remove_filter('status_header', $statusCapture, 10000);
         $json = json_decode($body, true);
         if ($died) {
-            $status = $capturedStatus ?: $status;
+            $status = $capturedStatus ?: $dieStatus;
         }
         if (!$died && $response instanceof \WP_REST_Response) {
             $status = (int) $response->get_status();
@@ -127,9 +145,7 @@ class WpDieCapture
                 $json = $data;
             }
         }
-        // rest_do_request() catches the throwing wp_die test handler and turns
-        // it into an artificial 500 response. When wp_send_json() already
-        // emitted a JSON body, its captured status is the actual wire status.
+        // wp_send_json($data) omits status_header() for its default HTTP 200.
         if ($body !== '' && is_array($json)) {
             $status = $capturedStatus ?: 200;
         }
@@ -140,5 +156,19 @@ class WpDieCapture
             'died'     => $died,
             'response' => $response,
         ];
+    }
+
+    /**
+     * Close the capture buffer and any buffer the code under test left open when
+     * it died, and return their output in the order PHP flushes it at exit.
+     */
+    private static function closeBuffersTo(int $level): string
+    {
+        $output = '';
+        while (ob_get_level() > $level) {
+            $output = ob_get_clean() . $output;
+        }
+
+        return $output;
     }
 }

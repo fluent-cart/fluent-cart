@@ -39,8 +39,8 @@ class TransactionTools
     {
         return [
             'fluent-cart/list-transactions' => [
-                'label'       => __('List Transactions', 'fluent-cart'),
-                'description' => __('The payment ledger across every order and subscription — charges, refunds, disputes, signup fees. Filter by type, status, order_id, subscription_id, customer_id, payment_method, currency, mode or a date window, then paginate. Answers cross-record questions the per-order and per-subscription views cannot: "all refunds last week", failed renewal charges for dunning, one customer\'s payment history. Money is summed PER currency in summary.amount_by_currency, never across. summary_only:true returns just the counts and totals with no rows.', 'fluent-cart'),
+                'label'       => 'List Transactions',
+                'description' => 'The payment ledger across every order and subscription — charges, refunds, disputes, signup fees. Filter by type, status, order_id, subscription_id, customer_id, payment_method, currency, mode or a date window, then paginate. Answers cross-record questions the per-order and per-subscription views cannot: "all refunds last week", failed renewal charges for dunning, one customer\'s payment history. Money is summed PER currency in summary.amount_by_currency, never across, and per transaction type in its by_type (charges and refunds are not added together there). summary_only:true returns just the counts and totals with no rows.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -50,12 +50,12 @@ class TransactionTools
                         'subscription_id' => ['type' => 'integer', 'description' => 'Transactions for one subscription — its renewal charges, signup fee, refunds.'],
                         'customer_id'     => ['type' => 'integer', 'description' => 'All transactions for one customer, matched via the parent order.'],
                         'payment_method'  => ['type' => 'string', 'description' => 'Gateway slug, e.g. stripe, paypal, mollie.'],
-                        'currency'        => ['type' => 'string', 'description' => 'ISO currency filter. Omit to include all currencies; totals stay split per currency.'],
-                        'mode'            => ['type' => 'string', 'enum' => ['live', 'test', 'all'], 'default' => 'all', 'description' => 'Payment mode. all (default) includes both; pass live to exclude test transactions. Echoed as meta.mode.'],
-                        'range'           => ['type' => 'string', 'enum' => ReportTools::RANGES, 'description' => 'Relative date window on created_at, in store days, using the same range vocabulary as the reports. Defaults to last_30_days. Or pass date_from/date_to, or since.'],
-                        'date_from'       => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Window start; overrides range.'],
-                        'date_to'         => ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Window end; overrides range.'],
-                        'since'           => ['type' => 'string', 'description' => 'ISO 8601 datetime, store timezone unless an offset is given. Only transactions after this instant — "what settled since my last check".'],
+                        'currency'        => ['type' => 'string', 'description' => 'Filter. Omit for all currencies (not the standard default); totals stay per currency.'],
+                        'mode'            => ['type' => 'string', 'enum' => ['live', 'test', 'all'], 'default' => 'all', 'description' => 'Live transactions, test transactions or both. Default all.'],
+                        'range'           => ['type' => 'string', 'enum' => ReportTools::RANGES, 'description' => 'Preset window in store days, on created_at.'],
+                        'date_from'       => ['type' => 'string', 'description' => 'Window start: ISO 8601 or YYYY-MM-DD, store timezone unless it has an offset. With date_to; overrides range.'],
+                        'date_to'         => ['type' => 'string', 'description' => 'Window end, same format as date_from.'],
+                        'since'           => ['type' => 'string', 'description' => 'ISO 8601 instant: only records after it, up to now. Overrides the other window parameters.'],
                         'summary_only'    => ['type' => 'boolean', 'description' => 'Return ONLY the aggregate summary — matching_count, per-type and per-status counts, amount_by_currency — with no per-transaction rows. Answers "how much did we refund" cheaply.'],
                         'page'            => ['type' => 'integer', 'default' => 1],
                         'per_page'        => ['type' => 'integer', 'default' => 25, 'description' => 'Max 100.'],
@@ -63,54 +63,6 @@ class TransactionTools
                         'sort_type'       => ['type' => 'string', 'enum' => ['ASC', 'DESC'], 'default' => 'DESC'],
                     ],
                 ],
-                'output_schema' => MCPHelper::envelopeSchema([
-                    'type'       => 'object',
-                    'properties' => [
-                        'transactions' => [
-                            'type'        => 'array',
-                            'description' => 'One page of matching transactions (absent when summary_only is set).',
-                            'items'       => [
-                                'type'       => 'object',
-                                'properties' => [
-                                    'id'               => ['type' => 'integer'],
-                                    'order_id'         => ['type' => 'integer'],
-                                    'subscription_id'  => ['description' => 'Subscription id, or null for one-off charges.'],
-                                    'type'             => ['type' => 'string', 'enum' => self::TYPES],
-                                    'status'           => ['type' => 'string'],
-                                    'payment_method'   => ['type' => 'string'],
-                                    'mode'             => ['type' => 'string', 'description' => 'live or test.'],
-                                    'amount'           => ['type' => 'number', 'description' => 'Compact decimal in the row currency.'],
-                                    'currency'         => ['type' => 'string', 'description' => 'ISO 4217; per-row, since a result can span currencies.'],
-                                    'card_brand'       => ['description' => 'Card brand, or null.'],
-                                    'card_last_4'      => ['description' => 'Last 4 digits, or null.'],
-                                    'vendor_charge_id' => ['type' => 'string'],
-                                    'customer'         => ['description' => 'id, name, email resolved via the parent order; null if unresolved.'],
-                                    'created_at'       => ['description' => 'ISO-8601 UTC, or null.'],
-                                ],
-                            ],
-                        ],
-                        'summary' => [
-                            'type'       => 'object',
-                            'properties' => [
-                                'matching_count'     => ['type' => 'integer'],
-                                'by_type'            => ['type' => 'object', 'description' => 'Count keyed by transaction type.'],
-                                'by_status'          => ['type' => 'object', 'description' => 'Count keyed by status.'],
-                                'amount_by_currency' => [
-                                    'type'        => 'array',
-                                    'description' => 'One total per currency — money is never summed across currencies.',
-                                    'items'       => [
-                                        'type'       => 'object',
-                                        'properties' => [
-                                            'currency' => ['type' => 'string'],
-                                            'count'    => ['type' => 'integer'],
-                                            'total'    => MCPHelper::moneyDef(),
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
-                ], ['date_basis' => ['type' => 'string'], 'mode' => ['type' => 'string'], 'page' => ['type' => 'object']]),
                 'execute_callback'    => [self::class, 'listTransactions'],
                 'permission_callback' => function () {
                     return PermissionGate::can('orders/view');
@@ -124,6 +76,9 @@ class TransactionTools
     {
         // Same store-day window + range vocabulary as every report.
         $range = ReportTools::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode  = self::mode($params);
 
         $base = OrderTransaction::query()
@@ -236,34 +191,47 @@ class TransactionTools
      */
     private static function summarize($query)
     {
-        $byCurrency = (clone $query)
-            ->selectRaw('currency, COUNT(*) as cnt, COALESCE(SUM(total), 0) as total')
-            ->groupBy('currency')
+        // Per type too: a refund is stored as a positive amount, so one sum per currency mixes money in and out
+        $rows = (clone $query)
+            ->selectRaw('currency, transaction_type, COUNT(*) as cnt, COALESCE(SUM(total), 0) as total')
+            ->groupBy('currency', 'transaction_type')
             ->get();
 
-        $amountByCurrency = [];
-        $count            = 0;
-        foreach ($byCurrency as $row) {
+        $perCurrency = [];
+        $count       = 0;
+        foreach ($rows as $row) {
             $cnt    = (int) $row->cnt;
             $count += $cnt;
             $code   = $row->currency ? strtoupper($row->currency) : MCPHelper::currencyCode();
+            if (!isset($perCurrency[$code])) {
+                $perCurrency[$code] = ['count' => 0, 'total' => 0, 'by_type' => []];
+            }
+            $type = $row->transaction_type ? $row->transaction_type : 'unknown';
+            $perCurrency[$code]['count'] += $cnt;
+            $perCurrency[$code]['total'] += (int) $row->total;
+            $perCurrency[$code]['by_type'][$type] = (isset($perCurrency[$code]['by_type'][$type]) ? $perCurrency[$code]['by_type'][$type] : 0) + (int) $row->total;
+        }
+
+        $amountByCurrency = [];
+        foreach ($perCurrency as $code => $c) {
             $amountByCurrency[] = [
                 'currency' => $code,
-                'count'    => $cnt,
-                'total'    => MCPHelper::money((int) $row->total, $code),
+                'count'    => $c['count'],
+                'total'    => MCPHelper::money($c['total'], $code),
+                'by_type'  => array_map([MCPHelper::class, 'moneyCompact'], $c['by_type']),
             ];
         }
 
         return [
             'matching_count'     => $count,
-            // Cast to object: the output_schema types these as 'object', but a
+            // Cast to object: these are JSON objects, but a
             // dynamically-built PHP map is an empty array [] when nothing matches,
             // which json_encodes to [] and fails structured-output validation.
             // (object) forces {} when empty and a JSON object otherwise.
             'by_type'            => (object) self::countBy((clone $query), 'transaction_type'),
             'by_status'          => (object) self::countBy((clone $query), 'status'),
             'amount_by_currency' => $amountByCurrency,
-            'note'               => 'amount_by_currency sums transaction total within each currency; charges and refunds are both stored as positive amounts, so filter by type for a single-sided figure.',
+            'note'               => 'Read amount_by_currency[].by_type for money: one sum per transaction type, in that currency. total adds every type together (charges and refunds are both stored as positive amounts), so it is not revenue. Amounts cover every status in the result: add status=succeeded for charges that were taken.',
         ];
     }
 
@@ -316,15 +284,17 @@ class TransactionTools
 
     private static function summaryLine($summary)
     {
+        // One amount per type and currency: charges and refunds are never added together
         $parts = [];
         foreach ($summary['amount_by_currency'] as $c) {
-            $parts[] = $c['total']['display'];
+            foreach ($c['by_type'] as $type => $amount) {
+                $parts[] = $type . ' ' . MCPHelper::displayAmount((int) round($amount * 100), $c['currency']);
+            }
         }
         $money = $parts ? implode(', ', $parts) : MCPHelper::displayAmount(0);
 
         return sprintf(
-            /* translators: 1: transaction count, 2: total amount per currency */
-            _n('%1$d transaction totaling %2$s.', '%1$d transactions totaling %2$s.', (int) $summary['matching_count'], 'fluent-cart'),
+            (int) $summary['matching_count'] === 1 ? '%1$d transaction: %2$s.' : '%1$d transactions: %2$s.',
             (int) $summary['matching_count'],
             $money
         );

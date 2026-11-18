@@ -10,8 +10,8 @@ use Tests\Support\Factory\OrderFactory;
 use Tests\Support\Factory\OrderItemFactory;
 
 /**
- * Multi-currency invariant #1: an order's currency is stamped once at creation
- * and never changes. dev-docs/multi-currency/plan.md §2.3, §12.
+ * An order's currency is stamped once at creation and never changes.
+ * dev-docs/multi-currency/06-orders-subscriptions.md.
  */
 class OrderCurrencyImmutabilityTest extends DatabaseTestCase
 {

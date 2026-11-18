@@ -6,13 +6,13 @@
           {{ translate("Storage Providers") }}
         </el-breadcrumb-item>
         <el-breadcrumb-item v-if="Str.headline(route_name)">
-          {{ Str.headline(route_name) }}
+          <span role="heading" aria-level="1">{{ Str.headline(route_name) }}</span>
         </el-breadcrumb-item>
       </el-breadcrumb>
-      <div class="fct-setting-header-action" v-if="!hasDynamicTemplate">
-        <el-button type="primary" @click="saveSettings" :loading="saving" :disabled="saving || fetching" size="small">
+      <div class="fct-setting-header-action" v-if="!hasCustomScreen">
+        <fct-button type="primary" @click="saveSettings" :loading="saving" :disabled="saving || fetching" size="small">
           {{ translate('Save') }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
 
@@ -21,13 +21,21 @@
 
       <Card.Container v-if="fetching">
         <Card.Body>
-          <el-skeleton :loading="fetching" animated :rows="5"/>
+          <fct-skeleton animated :rows="5"/>
         </Card.Body>
       </Card.Container>
 
       <template v-else>
+        <!-- A plugin's own screen for this driver (module API 3); it saves itself. Keyed: the page is reused across drivers. -->
+        <ExtensionComponent
+            v-if="extensionScreen"
+            :key="route_name"
+            :name="extensionName"
+            :payload="dynamicTemplatePayload"
+            :data="{ route_name }"
+        />
         <VueTemplateLoader
-            v-if="hasDynamicTemplate"
+            v-else-if="hasDynamicTemplate"
             :widget="{
               type: 'vue-template',
               component: dynamicTemplate,
@@ -63,6 +71,8 @@ import VueForm from "@/Bits/Components/Form/VueForm.vue";
 import VueTemplateLoader from "@/Bits/Components/DynamicTemplates/VueTemplateLoader.vue";
 import {ArrowRight} from "@element-plus/icons-vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import ExtensionComponent from "@/Bits/Components/Extension/ExtensionComponent.vue";
+import {hasExtensionComponent} from "@/utils/extensionComponents";
 
 // Reactive data
 const settings = ref({})
@@ -74,6 +84,9 @@ const route_name = ref('')
 const form = useFormModel();
 const validationErrors = ref({});
 const hasDynamicTemplate = computed(() => !!dynamicTemplate.value);
+const extensionName = computed(() => 'storage_' + route_name.value + '_settings');
+const extensionScreen = computed(() => hasExtensionComponent(extensionName.value));
+const hasCustomScreen = computed(() => extensionScreen.value || hasDynamicTemplate.value);
 
 // Vue instances and composables
 const route = useRoute()
@@ -108,7 +121,7 @@ const getSettings = () => {
 }
 
 const saveSettings = () => {
-  if (hasDynamicTemplate.value) {
+  if (hasCustomScreen.value) {
     return;
   }
 
@@ -152,7 +165,7 @@ watch(route, (to, from) => {
 
 // Save shortcut setup
 saveShortcut.onSave(() => {
-  if (!hasDynamicTemplate.value) {
+  if (!hasCustomScreen.value) {
     saveSettings()
   }
 })

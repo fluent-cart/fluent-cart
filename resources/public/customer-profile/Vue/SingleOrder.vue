@@ -22,14 +22,14 @@
             <h1 :id="orderTitleId" class="sr-only">{{ $t('Order Details') }} <span v-if="order.uuid">#{{ order.uuid }}</span></h1>
 
             <el-alert
-                v-if="order.custom_payment_link && (order.total_amount - order.total_paid - order.total_refund) > 0"
+                v-if="order.custom_payment_link && (order.total_amount - order.total_paid) > 0"
                 class="mb-4"
                 :title="$t('This order has some due amount. Please complete the payment.')"
                 type="error"
                 :show-icon="true"
                 :closable="false"
             >
-                <el-button
+                <fct-button
                     class="el-button--x-small"
                     tag="a"
                     :href="order.custom_payment_link"
@@ -37,7 +37,7 @@
                     rel="noopener noreferrer"
                 >
                     {{ $t('Pay Now') }}
-                </el-button>
+                </fct-button>
             </el-alert>
 
             <article v-if="showDelivery" class="fct-single-order-box" role="region" aria-labelledby="delivery-title">
@@ -141,14 +141,12 @@
                                                             class="fct-unit-price-breakdown"
                                                         >
                                                             <span>{{ formatOrderAmount(filteredOrderItem.unit_price) }} × {{ translateNumber(filteredOrderItem.quantity) }}</span>
-                                                            <el-tooltip
-                                                                effect="dark"
+                                                            <fct-tooltip
                                                                 :content="$t('Unit price is rounded for display. The line total is calculated at full precision.')"
                                                                 placement="top"
-                                                                popper-class="fct-tooltip"
                                                             >
                                                                 <el-icon class="fct-unit-price-rounding-icon"><InfoFilled /></el-icon>
-                                                            </el-tooltip>
+                                                            </fct-tooltip>
                                                         </div>
 
                                                       <BundleProducts
@@ -273,12 +271,12 @@
                                         <div class="tr fct-customer-tax-simple-line">
                                             <span style="display:flex;align-items:center;gap:6px;">
                                                 <span>{{ order.tax_summary.simpleLine.label }}</span>
-                                                <el-popover v-if="order.tax_summary.simpleLine.hasDetails" :placement="taxPopoverPlacement" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
+                                                <fct-popover v-if="order.tax_summary.simpleLine.hasDetails" :placement="taxPopoverPlacement" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
                                                     <template #reference>
                                                         <a href="javascript:void(0)" class="fct-customer-tax-see-details">{{ $t('See details') }} &#9662;</a>
                                                     </template>
                                                     <CustomerTaxBreakdownBox :order="order" />
-                                                </el-popover>
+                                                </fct-popover>
                                             </span>
                                             <span>{{ order.tax_summary.simpleLine.value }}</span>
                                         </div>
@@ -457,20 +455,20 @@
             <article class="fct-single-order-box pb-5 lg:pb-0" v-if="order.billing_address_text || order.shipping_address_text" role="region" aria-labelledby="addresses-title">
                 <h2 id="addresses-title" class="sr-only">{{ $t('Order addresses') }}</h2>
 
-                <el-row :gutter="30">
-                    <el-col :md="12" :sm="24">
+                <div class="flex flex-wrap -mx-[15px]">
+                    <div class="box-border w-full px-[15px] min-[992px]:w-1/2">
                         <section class="fct-customer-dashboard-address mb-5 lg:mb-0" aria-labelledby="billing-title">
                           <h3 id="billing-title" class="title">{{ $t('Billing Address') }}</h3>
                           <div class="text" v-html="order.billing_address_text"></div>
                         </section>
-                    </el-col>
-                    <el-col :md="12" :sm="24" v-if="order.fulfillment_type == 'physical'">
+                    </div>
+                    <div class="box-border w-full px-[15px] min-[992px]:w-1/2" v-if="order.fulfillment_type == 'physical'">
                         <section class="fct-customer-dashboard-address" aria-labelledby="shipping-title">
                           <h3 id="shipping-title" class="title">{{ $t('Shipping Address') }}</h3>
                           <div class="text" v-html="order.shipping_address_text"></div>
                         </section>
-                    </el-col>
-                </el-row>
+                    </div>
+                </div>
             </article>
 
             <div v-if="sectionParts.end_of_order" v-html="sectionParts.end_of_order"></div>

@@ -14,7 +14,7 @@
     </table>
 
     <div class="fct-advanced-filter-intro">
-      <el-popover
+      <fct-popover
           placement="right"
           width="450"
           popper-class="fct-advanced-filter-popover"
@@ -37,12 +37,12 @@
         </div>
 
         <template #reference>
-          <el-button class="el-button--x-small">
+          <fct-button size="x-small">
             <DynamicIcon name="Plus"/>
             {{ $t('Add') }}
-          </el-button>
+          </fct-button>
         </template>
-      </el-popover>
+      </fct-popover>
 
       <span class="px-2">{{ $t('Add new properties') }}</span>
 

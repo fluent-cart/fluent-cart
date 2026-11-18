@@ -1,6 +1,6 @@
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import { defineModel, ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick } from "vue";
 import translate from "@/utils/translator/Translator";
 import { COLOR_SWATCHES } from "@/utils/colorPresets";
 
@@ -139,7 +139,7 @@ const onSwatchKeydown = (e, index) => {
                         :disabled="field && field.disabled"
                     />
                 </div>
-                <el-input
+                <fct-input
                     v-model="model"
                     :placeholder="translate('#000000')"
                     :aria-label="translate('Hex color code')"

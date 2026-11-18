@@ -90,42 +90,41 @@ const handleManageStockChange = (value) => {
     <Card.Container class="overflow-hidden">
       <Card.Header :class="product.detail?.manage_stock.toString() === '0' ? 'pb-5' : ''">
         <template #action>
-          <el-switch v-if="product.detail?.manage_stock" v-model="product.detail.manage_stock" @change="handleManageStockChange" active-value="1" inactive-value="0" :active-text="translate('Inventory Management')">
-          </el-switch>
+          <fct-switch v-if="product.detail?.manage_stock" v-model="product.detail.manage_stock" @change="handleManageStockChange" active-value="1" inactive-value="0" :active-text="translate('Inventory Management')"/>
         </template>
       </Card.Header>
       <Animation :visible="product.detail?.manage_stock.toString() === '1'" accordion>
 
         <Card.Body class="px-0 pb-0">
           <div class="fct-product-inventory-inner-wrap hide-on-mobile">
-            <el-table :data="product.variants" :row-class-name="inventoryTableRowClass">
-              <el-table-column :label="translate('Title')" width="180">
+            <fct-table :data="product.variants" :row-class-name="inventoryTableRowClass">
+              <fct-table-column :label="translate('Title')" width="180">
                 <template #default="scope">
                   <div class="relative" :class="{ 'fct-inventory-title-cell--has-badge': scope.row.other_info?.payment_type === 'subscription' }">
-                    <el-tooltip
+                    <fct-tooltip
                         :content="scope.row.variation_title"
                         placement="top"
                         :show-after="300"
-                        :disabled="!truncatedMap[`title_${scope.$index}`]"
+                        :disabled="!truncatedMap[`title_${scope.index}`]"
                     >
                       <span
                           class="fct-inventory-cell-text truncate block"
-                          :ref="el => trackTruncation(el, `title_${scope.$index}`)"
+                          :ref="el => trackTruncation(el, `title_${scope.index}`)"
                       >{{ scope.row.variation_title || '--' }}</span>
-                    </el-tooltip>
+                    </fct-tooltip>
 
                     <span v-if="scope.row.other_info?.payment_type === 'subscription'" class="fct-variant-badge fct-variant-badge--light">
                     {{scope.row.other_info.repeat_interval}}
                   </span>
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('SKU')" width="220">
+              <fct-table-column :label="translate('SKU')" width="220">
                 <template #default="scope">
                   <SkuInput :variant="scope.row" :product-title="product.post_title" @saved="sku => scope.row.sku = sku" />
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
               <!-- <el-table-column :label="translate('Stock Status')" width="140">
                 <template #default="scope">
@@ -140,49 +139,49 @@ const handleManageStockChange = (value) => {
                 </template>
               </el-table-column> -->
 
-              <el-table-column :label="translate('Total Stock')" width="120">
+              <fct-table-column :label="translate('Total Stock')" width="120">
                 <template #default="scope">
                   <div>
-                    <el-input
+                    <fct-input
                         v-model="scope.row.total_stock"
                         class="input-with-total-stock fct-input-group"
                         readonly
                         size="small"
-                        @click="adjusters[scope.$index]?.toggle()"
+                        @click="adjusters[scope.index]?.toggle()"
                     >
                       <template #append>
                         <StockAdjuster
-                          :ref="el => adjusters[scope.$index] = el"
+                          :ref="el => adjusters[scope.index] = el"
                           :variant="scope.row"
-                          :field-key="scope.$index"
+                          :field-key="scope.index"
                           :product-edit-model="productEditModel"
-                          @save="saveStock(scope.$index)"
+                          @save="saveStock(scope.index)"
                           @click.stop
                         />
                       </template>
-                    </el-input>
+                    </fct-input>
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Available')" width="100">
+              <fct-table-column :label="translate('Available')" width="100">
                 <template #default="scope">
                   <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.available) }}</span>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('On hold')" width="100">
+              <fct-table-column :label="translate('On hold')" width="100">
                 <template #default="scope">
                   <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.on_hold) }}</span>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Delivered')" width="100">
+              <fct-table-column :label="translate('Delivered')" width="100">
                 <template #default="scope">
                   <span class="fct-inventory-cell-text ps-5">{{ translateNumber(scope.row.committed) }}</span>
                 </template>
-              </el-table-column>
-            </el-table>
+              </fct-table-column>
+            </fct-table>
           </div>
 
 
@@ -196,7 +195,7 @@ const handleManageStockChange = (value) => {
               </div><!-- fct-product-inventory-mobile-col -->
 
               <div class="fct-product-inventory-mobile-col">
-                <el-input
+                <fct-input
                     v-model="row.total_stock"
                     class="input-with-total-stock fct-input-group"
                     readonly
@@ -210,7 +209,7 @@ const handleManageStockChange = (value) => {
                       @save="saveStock(rowIndex)"
                     />
                   </template>
-                </el-input>
+                </fct-input>
               </div><!-- fct-product-inventory-mobile-col -->
 
               <div class="fct-product-inventory-mobile-col">

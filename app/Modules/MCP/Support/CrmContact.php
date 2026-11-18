@@ -150,7 +150,7 @@ class CrmContact
         // order. Only say something when the section was explicitly requested.
         if (!\FluentCrm\App\Services\PermissionManager::currentUserCan('fcrm_read_contacts')) {
             if ($full) {
-                $data[self::SECTION . '_omitted'] = __('FluentCRM contact data requires the fcrm_read_contacts capability.', 'fluent-cart');
+                $data[self::SECTION . '_omitted'] = 'FluentCRM contact data requires the fcrm_read_contacts capability.';
             }
             return $data;
         }

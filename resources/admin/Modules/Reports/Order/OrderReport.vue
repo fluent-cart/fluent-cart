@@ -18,15 +18,15 @@
         :reportFilter="reportFilter"
       />
 
-      <el-row :gutter="30">
-        <el-col :lg="12">
+      <div class="grid grid-cols-1 gap-x-[30px] min-[1200px]:grid-cols-2">
+        <div class="min-w-0">
           <AverageOrderChart variant="gross" :chartData="orderReport.data.orderChartData" :is-empty="!orderReport.data.summary.gross_sale" />
-        </el-col>
+        </div>
 
-        <el-col :lg="12">
+        <div class="min-w-0">
           <AverageOrderChart variant="items" :chartData="orderReport.data.orderChartData" :is-empty="!orderReport.data.summary.order_count" />
-        </el-col>
-      </el-row>
+        </div>
+      </div>
 
       <ExtensionComponent name="reports.orders.patterns" :report-filter="reportFilter">
         <ProReportPreview

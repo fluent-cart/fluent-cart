@@ -2062,6 +2062,15 @@ class Helper
         return $result;
     }
 
+    /**
+     * Older one-time bundle variations lost is_bundle_product, so bundle_child_ids also counts.
+     */
+    public static function isBundleItem($otherInfo): bool
+    {
+        return Arr::get($otherInfo, 'is_bundle_product', 'no') == 'yes'
+            || !empty(Arr::get($otherInfo, 'bundle_child_ids', []));
+    }
+
     public static function loadBundleChild(array $variants, $select = ['id', 'variation_title']): array
     {
         $allChildVariants = Arr::pluck($variants, 'other_info.bundle_child_ids');
@@ -2103,6 +2112,22 @@ class Helper
         }
 
         return $variants;
+    }
+
+    public static function formatBundleChildTitle($productTitle, $variationTitle): string
+    {
+        $productTitle = (string) $productTitle;
+        $variationTitle = (string) $variationTitle;
+
+        if ($variationTitle === '' || $productTitle === $variationTitle) {
+            return $productTitle;
+        }
+
+        if ($productTitle === '') {
+            return $variationTitle;
+        }
+
+        return $productTitle . ' - ' . $variationTitle;
     }
 
     /**

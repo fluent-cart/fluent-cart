@@ -186,8 +186,8 @@ class MultiCurrencySettings
     /**
      * How prices in $currency are derived from the converted base price:
      * a % adjustment, then rounding up to a step, then a charm ending
-     * (plan §15.4). Applies to product prices only, never to shipping or
-     * coupon amounts.
+     * (dev-docs/multi-currency/04-conversion-engine.md, "Pricing rules").
+     * Applies to product prices only, never to shipping or coupon amounts.
      *
      * @return array{rounding: string, charm: string, adjustment: string}
      */
@@ -234,8 +234,8 @@ class MultiCurrencySettings
 
     /**
      * Changing the base currency would re-label every historical amount, so
-     * it is refused once orders exist while multi-currency is on (plan §10,
-     * invariant #7).
+     * it is refused once orders exist while multi-currency is on
+     * (dev-docs/multi-currency/08-exchange-rates.md, "Safeguards").
      *
      * @return true|\WP_Error
      */

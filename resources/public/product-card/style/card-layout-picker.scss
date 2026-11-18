@@ -1,0 +1,90 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-card.config.mjs";
+
+// The block editor's Card Layout picker (CardLayoutSettings.jsx). Editor only, so the storefront's
+// card-layouts.scss does not carry it.
+// The Layout panel, as in the swatches design's Layout panel v2: a Card style heading over two tiles a
+// row, one grey line under them, and the Masonry grid switch below a thin divider.
+.fct-card-style { @apply flex flex-col gap-2.5 w-full; }
+.fct-card-style-head { @apply flex items-baseline justify-between gap-2; }
+.fct-card-style-title {
+  @apply text-[11px] font-semibold uppercase leading-tight;
+  letter-spacing: 0.06em;
+  color: var(--wp-components-color-foreground, theme('colors.system.dark'));
+}
+// Doubled class: the sidebar resets paragraph margins with the same weight.
+.fct-card-style-note.fct-card-style-note {
+  @apply m-0 text-xs leading-normal;
+  color: var(--wp-components-color-gray-700, theme('colors.gray.800'));
+}
+.fct-card-preset-undo {
+  @apply p-0 border-0 bg-transparent text-xs underline cursor-pointer;
+  color: var(--wp-admin-theme-color);
+  &:focus-visible { outline: 2px solid var(--wp-admin-theme-color); outline-offset: 2px; }
+}
+
+.fct-card-preset-picker { @apply grid grid-cols-2 gap-2 w-full; }
+.fct-card-preset-choice {
+  @apply relative flex flex-col items-stretch gap-1.5 p-1.5 rounded border border-solid text-left cursor-pointer min-w-0;
+  color: var(--wp-components-color-foreground, theme('colors.system.dark'));
+  background: var(--wp-components-color-background, theme('colors.white'));
+  border-color: theme('colors.gray.outline');
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  &:hover { border-color: var(--wp-admin-theme-color); }
+  // A 2px ring on the chosen tile, drawn without changing its size.
+  &[aria-pressed="true"] { border-color: var(--wp-admin-theme-color); box-shadow: 0 0 0 1px var(--wp-admin-theme-color); }
+  // A tick on the chosen tile's picture; aria-pressed already tells screen readers.
+  &[aria-pressed="true"]::after {
+    content: '';
+    @apply absolute w-[18px] h-[18px] rounded-full;
+    top: 11px;
+    right: 11px;
+    background: var(--wp-admin-theme-color) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 11px no-repeat;
+  }
+  &:focus-visible { outline: 2px solid var(--wp-admin-theme-color); outline-offset: 2px; }
+  > strong { @apply px-0.5 text-[13px] leading-tight font-medium; }
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
+
+// Each layout drawn small: a grey picture, a title bar and a dark button bar.
+.fct-card-preset-thumb {
+  @apply relative flex flex-col gap-1 h-[72px] p-2 rounded-sm overflow-hidden box-border;
+  background: theme('colors.gray.50');
+  [aria-pressed="true"] > & { background: color-mix(in srgb, var(--wp-admin-theme-color, #3858e9) 9%, white); }
+  .fct-card-preset-thumb-image { @apply block shrink-0 h-[26px] rounded-sm; background: theme('colors.gray.300'); }
+  .fct-card-preset-thumb-details { @apply flex flex-col grow gap-1 min-h-0; }
+  .fct-card-preset-thumb-title { @apply block w-3/5 h-[5px] rounded-full; background: theme('colors.gray.700'); }
+  .fct-card-preset-thumb-price { @apply block w-[30%] h-1.5 rounded-full; background: theme('colors.gray.700'); }
+  .fct-card-preset-thumb-button { @apply block w-full h-2 mt-auto rounded-full; background: theme('colors.system.dark'); }
+  .fct-card-preset-thumb-row {
+    @apply flex items-center justify-between mt-auto;
+    .fct-card-preset-thumb-button { @apply w-[32%] mt-0; }
+  }
+  // Floating: the picture fills the tile, a white panel overlaps its foot.
+  &.fct-card-preset-thumb--floating {
+    .fct-card-preset-thumb-image { @apply absolute h-auto rounded-sm; inset: 8px 8px 22px 8px; }
+    .fct-card-preset-thumb-details {
+      @apply relative grow-0 mt-auto mx-2 p-[5px] gap-[3px] rounded-sm shadow;
+      background: var(--wp-components-color-background, theme('colors.white'));
+    }
+    .fct-card-preset-thumb-title { @apply w-[55%]; }
+    .fct-card-preset-thumb-button { @apply w-[32%] h-1.5 mt-0 self-end; }
+  }
+  // Framed: details and a full-width button in an inset grey tile under the picture.
+  &.fct-card-preset-thumb--framed {
+    .fct-card-preset-thumb-image { @apply h-[22px]; }
+    .fct-card-preset-thumb-details { @apply p-[5px] gap-[3px] rounded-sm; background: theme('colors.gray.200'); }
+    .fct-card-preset-thumb-title { @apply w-1/2; }
+    .fct-card-preset-thumb-button { @apply h-[7px]; }
+  }
+}
+
+// The Masonry grid switch: its words on the left, the switch on the right, below a thin divider.
+.fct-card-masonry-toggle {
+  @apply flex items-start justify-between gap-3 mt-4 pt-4 border-0 border-t border-solid;
+  border-top-color: theme('colors.gray.divider');
+  .fct-card-masonry-text { @apply flex flex-col gap-0.5 min-w-0; }
+  .fct-card-masonry-title { @apply text-[13px] font-medium leading-snug; }
+  .fct-card-masonry-help { @apply text-xs leading-normal; color: var(--wp-components-color-gray-700, theme('colors.gray.800')); }
+  .components-form-toggle { @apply shrink-0 mt-0.5; }
+}

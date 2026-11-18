@@ -10,10 +10,10 @@ if (!defined('ABSPATH')) {
 
 /**
  * How a converted price is rounded in its presentment currency. Rounding
- * applies to prices, never to the rate (dev-docs/multi-currency/plan.md
- * §11.5, §15.4). Per currency the admin picks a rounding step (prices round
- * up to it) and an optional charm ending (.99 / .95), as WooPayments and
- * Shopify Markets do.
+ * applies to prices, never to the rate
+ * (dev-docs/multi-currency/04-conversion-engine.md, "Pricing rules"). Per
+ * currency the admin picks a rounding step (prices round up to it) and an
+ * optional charm ending (.99 / .95), as WooPayments and Shopify Markets do.
  */
 class RoundingRules
 {

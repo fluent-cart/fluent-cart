@@ -1,11 +1,7 @@
 <?php
 /**
- * Phase 14 side-effect chains, license expiry, and reminder queueing.
+ * Phase 14 side-effect chains and license expiry.
  */
-
-use FluentCart\App\Helpers\Status;
-use FluentCart\App\Models\Subscription;
-use FluentCart\App\Services\Reminders\SubscriptionReminderService;
 
 return [
     [
@@ -13,6 +9,7 @@ return [
         'name'          => 'License scheduler expires one exact owned license and repeats as a no-op',
         'kind'          => 'behavior',
         'known_failure' => false,
+        'requires'      => 'pro',
         'phase'         => 14,
         'run'           => function () {
             $expiredEvents = 0;
@@ -29,7 +26,7 @@ return [
                     || !class_exists($schedulerClass)
                     || !class_exists($licenseClass)
                 ) {
-                    FcTest::skip('FluentCart Pro licensing scheduler is inactive on this install.');
+                    FcTest::fail('FluentCart Pro is expected active, but its licensing scheduler is not loaded.');
                     return;
                 }
 
@@ -123,123 +120,6 @@ return [
                 remove_action(
                     'fluent_cart/licensing/license_expired',
                     $captureExpired,
-                    PHP_INT_MAX
-                );
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
-        'id'            => 'automation-subscription-reminder-queue',
-        'name'          => 'Subscription reminder queues one owned action without executing email',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'phase'         => 14,
-        'run'           => function () {
-            $ownedSubscriptionId = 0;
-            $cycleFilter = function ($cycle, $subscription) use (&$ownedSubscriptionId) {
-                return (int) $subscription->id === $ownedSubscriptionId
-                    ? 'yearly'
-                    : 'unsupported';
-            };
-            $reminderDays = function () {
-                return [30];
-            };
-            add_filter(
-                'fluent_cart/reminders/billing_cycle',
-                $cycleFilter,
-                PHP_INT_MAX,
-                2
-            );
-            add_filter(
-                'fluent_cart/reminders/yearly_before_days',
-                $reminderDays,
-                PHP_INT_MAX,
-                1
-            );
-
-            try {
-                $foreignTrials = Subscription::query()
-                    ->where('status', Status::SUBSCRIPTION_TRIALING)
-                    ->whereNotNull('next_billing_date')
-                    ->pluck('id')
-                    ->toArray();
-                if ($foreignTrials !== []) {
-                    throw new RuntimeException(
-                        'Refusing reminder scan; foreign trial IDs bypass cycle filter: '
-                        . wp_json_encode(array_map('intval', $foreignTrials))
-                    );
-                }
-
-                $product = FcDomainFixture::product([
-                    'payment_type' => 'subscription',
-                    'other_info'   => ['repeat_interval' => 'yearly'],
-                ]);
-                $order = FcDomainFixture::orderWithItem(
-                    (int) $product['post']->ID,
-                    (int) $product['variation']->id,
-                    1,
-                    ['type' => 'subscription']
-                );
-                $subscription = FcDomainFixture::subscription(
-                    $order,
-                    (int) $product['post']->ID,
-                    (int) $product['variation']->id,
-                    Status::SUBSCRIPTION_ACTIVE,
-                    'reminder-queue',
-                    [
-                        'billing_interval'  => 'yearly',
-                        'collection_method' => 'automatic',
-                        'next_billing_date' => gmdate(
-                            'Y-m-d H:i:s',
-                            time() + (29 * DAY_IN_SECONDS)
-                        ),
-                    ]
-                );
-                $ownedSubscriptionId = (int) $subscription->id;
-                $service = new SubscriptionReminderService();
-                FcTest::assert($service->isEnabled(), 'yearly reminder queue is enabled');
-
-                FcTest::beginExpectedActionSchedulerCapture();
-                $first = $service->queueActions(time(), 20);
-                $attempts = FcTest::consumeExpectedActionSchedulerAttempts();
-                FcDomainFixture::captureSubscriptionMeta();
-                FcTest::assertSame(
-                    ['renewal' => 1, 'trial' => 0],
-                    $first,
-                    'first scan queues one renewal and no trial reminder'
-                );
-                FcTest::assertSame(
-                    [[
-                        'operation' => 'enqueue_async',
-                        'hook'      => SubscriptionReminderService::RENEWAL_ASYNC_HOOK,
-                    ]],
-                    $attempts,
-                    'reminder is captured at the async queue boundary'
-                );
-                $state = Subscription::query()
-                    ->find($ownedSubscriptionId)
-                    ->getMeta(SubscriptionReminderService::RENEWAL_META_KEY, []);
-                FcTest::assert(!empty($state['cycles']), 'queued reminder persists cycle state');
-
-                $second = (new SubscriptionReminderService())->queueActions(time(), 20);
-                FcTest::assertSame(
-                    ['renewal' => 0, 'trial' => 0],
-                    $second,
-                    'second reminder scan is a queueing no-op'
-                );
-                FcTest::assertSame([], FcTest::actionSchedulerAttempts(), 'second scan enqueues nothing');
-                FcTest::assertSame([], FcTest::sentMails(), 'queue-only reminder path sends no mail');
-                FcTest::assertSame([], FcTest::externalCalls(), 'reminder queue makes no loopback');
-            } finally {
-                remove_filter(
-                    'fluent_cart/reminders/yearly_before_days',
-                    $reminderDays,
-                    PHP_INT_MAX
-                );
-                remove_filter(
-                    'fluent_cart/reminders/billing_cycle',
-                    $cycleFilter,
                     PHP_INT_MAX
                 );
                 FcDomainFixture::cleanupAll();

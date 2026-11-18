@@ -1,13 +1,12 @@
 <script setup>
-import Card from "@/Bits/Components/Card/Card.vue";
-import CardBody from "@/Bits/Components/Card/CardBody.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import {onMounted, ref, watch, nextTick} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import Popover from "@/Modules/Settings/Parts/input-popover-dropdown.vue";
-import {ArrowRight} from "@element-plus/icons-vue";
-import SettingsHeader from "../Parts/SettingsHeader.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
+import SettingsPage from "../Parts/SettingsPage.vue";
 import NewEditorFrame from "@/Bits/Components/BlockEditorFrame.vue";
 import EmailBodySkeleton from "@/Bits/Components/EmailBodySkeleton.vue";
 import Alert from "../../../../public/customer-profile/Vue/parts/Alert.vue";
@@ -234,65 +233,54 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="setting-wrap fct-edit-email-notification-wrapper">
-      <SettingsHeader
-          :loading="saving"
-          :loading-text="translate('Updating')"
-          :save-button-text="translate('Update')"
-          @on-save="updateNotification"
-      >
+    <SettingsPage
+        class="fct-edit-email-notification-wrapper"
+        :breadcrumbs="[{label: translate('Email Notifications'), to: {path: '/settings/email_notifications'}}]"
+        :loading="saving"
+        :save-button-text="translate('Update')"
+        @on-save="updateNotification"
+    >
         <template #heading>
-          <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-            <el-breadcrumb-item :to="{ path: '/settings/email_notifications' }">
-              {{ $t("Email Notifications") }}
-            </el-breadcrumb-item>
-            <el-breadcrumb-item>
-              <span class="capitalize">{{ notificationData.title }}</span>
-            </el-breadcrumb-item>
-          </el-breadcrumb>
+          <span class="capitalize">{{ notificationData.title }}</span>
         </template>
-      </SettingsHeader>
 
-      <div class="setting-wrap-inner">
         <AdminNotice/>
         
         <template v-if="loading">
-          <el-skeleton animated>
-            <template #template>
+          <fct-skeleton animated>
+            <div class="mb-5">
+              <div class="setting-switcher flex items-center gap-3">
+                <fct-skeleton variant="text" style="width: 40px; height: 20px; border-radius: 10px;"/>
+                <span class="text-sm text-system-dark dark:text-gray-50">{{ translate('Enable this email notification!') }}</span>
+              </div>
+            </div>
+            <div class="fct-card p-6">
               <div class="mb-5">
-                <div class="setting-switcher flex items-center gap-3">
-                  <el-skeleton-item variant="text" style="width: 40px; height: 20px; border-radius: 10px;"/>
-                  <span class="text-sm text-system-dark dark:text-gray-50">{{ translate('Enable this email notification!') }}</span>
-                </div>
+                <label class="el-form-item__label block mb-2">{{ translate('Email Subject') }}</label>
+                <fct-skeleton variant="text" style="width: 100%; height: 36px; border-radius: 4px; display: block;"/>
               </div>
-              <div class="fct-card p-6">
-                <div class="mb-5">
-                  <label class="el-form-item__label block mb-2">{{ translate('Email Subject') }}</label>
-                  <el-skeleton-item variant="text" style="width: 100%; height: 36px; border-radius: 4px; display: block;"/>
-                </div>
-                <div class="mb-5">
-                  <label class="el-form-item__label block mb-2">{{ translate('Email Body Type') }}</label>
-                  <el-skeleton-item variant="text" style="width: 260px; height: 34px; border-radius: 6px; display: block;"/>
-                </div>
-                <div>
-                  <label class="el-form-item__label block mb-2">{{ translate('Email Body') }}</label>
-                  <EmailBodySkeleton />
-                </div>
+              <div class="mb-5">
+                <label class="el-form-item__label block mb-2">{{ translate('Email Body Type') }}</label>
+                <fct-skeleton variant="text" style="width: 260px; height: 34px; border-radius: 6px; display: block;"/>
               </div>
-            </template>
-          </el-skeleton>
+              <div>
+                <label class="el-form-item__label block mb-2">{{ translate('Email Body') }}</label>
+                <EmailBodySkeleton />
+              </div>
+            </div>
+          </fct-skeleton>
         </template>
 
         <template v-if="!loading">
-          <div class="mb-5">
+          <div>
             <!-- manage_toggle 'no' notifications are always on; show their label instead of a switch -->
             <div v-if="notificationData?.manage_toggle !== 'no'" class="setting-switcher">
-              <el-switch
+              <fct-switch
                   v-model="notificationData.settings.active"
                   active-value="yes"
                   inactive-value="no"
                   :active-text="translate('Enable this email notification!')"
-              ></el-switch>
+              />
             </div>
 
             <div v-else class="setting-switcher text-system-mid text-sm dark:text-gray-300">
@@ -300,11 +288,9 @@ onMounted(() => {
             </div>
           </div>
 
-          <Card>
-            <CardBody>
-              <el-form label-position="top">
-                <el-form-item :label="translate('Email Subject')">
-                  <el-input v-model="notificationData.settings.subject"
+          <Section>
+              <div>
+                  <fct-input v-model="notificationData.settings.subject"
                             autocomplete="rutjfkde"
                             :class="{ 'is-focus': focusSubjectInput }" @focus="focusSubjectInput = true"
                             @blur="focusSubjectInput = false" :label="translate('Email Subject')">
@@ -320,9 +306,8 @@ onMounted(() => {
                         {{ translate("Add ShortCodes") }}
                       </Popover>
                     </template>
-                  </el-input>
-                </el-form-item>
-                <el-form-item :label="translate('Email Body Type')">
+                  </fct-input>
+                <Field :label="translate('Email Body Type')">
                   <div class="fct-seg-wrap">
                     <button
                         type="button"
@@ -344,7 +329,7 @@ onMounted(() => {
                       <DynamicIcon v-if="!isProActive" name="Crown" class="fct-pro-icon" style="margin-left: 4px; display: inline-flex;" />
                     </button>
                   </div>
-                </el-form-item>
+                </Field>
                 <div v-if="notificationData.settings.is_default_body === 'yes'" class="fct-default-template-preview">
                   <label class="el-form-item__label">{{ translate('Email Body') }}</label>
                   <EmailBodySkeleton v-if="defaultTemplateLoading" />
@@ -370,7 +355,7 @@ onMounted(() => {
                       :feature-title="translate('Custom Email Templates')"
                       :feature-text="translate('Settings_Design_Beautiful')"
                   >
-                    <el-form-item :label="translate('Email Body')">
+                    <Field :label="translate('Email Body')">
                       <Alert
                           class="mb-3"
                           type="warning"
@@ -386,16 +371,14 @@ onMounted(() => {
                           @preview-request="onPreviewRequest"
                           v-model="notificationData.settings.email_body"
                       />
-                    </el-form-item>
+                    </Field>
                   </ProVersionGuard>
                 </template>
-              </el-form>
-            </CardBody>
-          </Card>
+              </div>
+          </Section>
 
           <!-- Dynamic forms declared by the notification (`extra_fields`). -->
-          <Card v-for="form in extraForms" :key="form.form_key" class="mt-4">
-            <CardBody>
+          <Section v-for="form in extraForms" :key="form.form_key">
               <h3 v-if="form.title" class="el-form-item__label">{{ form.title }}</h3>
               <p v-if="form.sub_title" class="text-system-mid mb-3">{{ form.sub_title }}</p>
               <DynamicFormLoader
@@ -404,51 +387,36 @@ onMounted(() => {
                   :form_name="form.form_key"
                   ref="extraFormRefs"
               />
-            </CardBody>
-          </Card>
+          </Section>
         </template>
 
-        <div v-if="hasFluentPdf && pdfTemplates.length" class="mb-4">
-          <Card>
-            <CardBody>
-              <el-form label-position="top">
-                <el-form-item :label="translate('Attach PDF Template')">
-                  <el-select
-                      v-model="notificationData.settings.attach_pdf_template"
-                      :placeholder="translate('No PDF attachment')"
-                      clearable
-                      style="width: 100%; max-width: 360px;"
-                  >
-                    <el-option
-                        v-for="tmpl in pdfTemplates"
-                        :key="tmpl.id"
-                        :label="tmpl.title"
-                        :value="tmpl.id"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-form>
-            </CardBody>
-          </Card>
-        </div>
+          <Section v-if="hasFluentPdf && pdfTemplates.length">
+              <fct-select
+                  v-model="notificationData.settings.attach_pdf_template"
+                  :placeholder="translate('No PDF attachment')"
+                  clearable
+                  style="width: 100%; max-width: 360px;"
+                  :options="pdfTemplates.map((tmpl) => ({label: tmpl.title, value: tmpl.id}))"
+                  :label="translate('Attach PDF Template')"
+              />
+          </Section>
 
         <div class="setting-save-action">
-          <el-button
+          <fct-button
               @click="updateNotification"
               type="primary"
               :disabled="saving"
               :loading="saving"
           >
             {{ translate("Update") }}
-          </el-button>
+          </fct-button>
         </div>
-      </div>
 
       <!-- Email Preview Drawer -->
-      <el-drawer
+      <fct-dialog
+          drawer
           v-model="previewVisible"
-          direction="rtl"
-          size="70%"
+          width="70%"
           :title="translate('Email Preview')"
           :append-to-body="true"
           :close-on-click-modal="true"
@@ -508,8 +476,8 @@ onMounted(() => {
         </template>
 
         <template #footer>
-          <el-button @click="closePreview">{{ translate('Close') }}</el-button>
+          <fct-button @click="closePreview">{{ translate('Close') }}</fct-button>
         </template>
-      </el-drawer>
-    </div>
+      </fct-dialog>
+    </SettingsPage>
 </template>

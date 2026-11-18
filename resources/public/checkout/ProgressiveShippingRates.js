@@ -46,6 +46,7 @@ export default class ProgressiveShippingRates {
         }
 
         const waiting = new Set(pending.map((item) => `${item.carrier}|${item.source}`));
+        const rendered = new Set(this.ids(list));
 
         pending.forEach((item) => {
             this.request(item, key)
@@ -53,6 +54,7 @@ export default class ProgressiveShippingRates {
                     // A newer list (another address) replaced this one: its own fetches add its rates.
                     if (list.isConnected && data?.rates_key === key) {
                         this.append(list, data.view || '');
+                        this.dropHidden(list, rendered, data.list_ids);
                     }
                 })
                 // A source that fails is left out, like one that times out on the server.
@@ -102,6 +104,23 @@ export default class ProgressiveShippingRates {
             list.insertBefore(item, this.loader(list));
         });
 
+        this.shown.ids = this.ids(list);
+    }
+
+    // The available_rates filter may hide a rendered row once a source has quoted.
+    // Only rows rendered with the list are dropped: another source's rows may
+    // arrive before this answer knew of them.
+    dropHidden(list, rendered, listIds) {
+        if (!Array.isArray(listIds)) {
+            return;
+        }
+        const keep = new Set(listIds.map(String));
+        list.querySelectorAll(`:scope > ${ITEM}`).forEach((item) => {
+            const value = item.querySelector(RADIO)?.value;
+            if (value && rendered.has(value) && !keep.has(value)) {
+                item.remove();
+            }
+        });
         this.shown.ids = this.ids(list);
     }
 

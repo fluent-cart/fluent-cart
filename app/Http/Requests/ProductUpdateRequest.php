@@ -16,7 +16,8 @@ class ProductUpdateRequest extends RequestGuard
     /**
      * Drop the subscription fields from any variant saved as one-time, so a
      * product switched back to a single payment does not keep billing settings
-     * the merchant can no longer see.
+     * the merchant can no longer see. An empty title on a simple product's
+     * variant takes the product title, as core sets it on create.
      *
      * This does NOT fill missing keys. The block below it — which rebuilt
      * `other_info` and `fulfillment_type` from defaults, as ProductRequest still
@@ -27,14 +28,22 @@ class ProductUpdateRequest extends RequestGuard
      * Models/Product/productUpdatePayload.js by merging each change record with
      * the variation it came from.
      *
-     * @return array The request data, with dead subscription fields removed.
+     * @return array The request data, with dead subscription fields removed and
+     *               empty simple variant titles filled.
      */
     public function beforeValidation()
     {
         $data = $this->all();
 
+        $isSimple = Arr::get($data, 'detail.variation_type', 'simple') === 'simple';
         $subscriptionFields = ['trial_days', 'times', 'repeat_interval', 'billing_summary', 'manage_setup_fee', 'signup_fee', 'signup_fee_name', 'setup_fee_per_item'];
         foreach (Arr::get($data, 'variants', []) as $index => $variant) {
+            // Imported simple products can carry an empty title on their single, hidden price row
+            $title = is_array($variant) ? Arr::get($variant, 'variation_title') : [];
+            if ($isSimple && (is_null($title) || is_scalar($title)) && trim((string)$title) === '') {
+                $data['variants'][$index]['variation_title'] = Arr::get($data, 'post_title', '');
+            }
+
             if (Arr::get($variant, 'other_info.payment_type') === 'onetime') {
                 foreach ($subscriptionFields as $field) {
                     unset($data['variants'][$index]['other_info'][$field]);
@@ -158,6 +167,87 @@ class ProductUpdateRequest extends RequestGuard
         }
 
         return null;
+    }
+
+    /** @var array|null times each sku appears in this save, keyed by lower-case sku */
+    private $skuCounts = null;
+
+    /** @var array ids of the stored variations that hold each sku of this save, keyed by that sku */
+    private $skuOwners = [];
+
+    public function validateSkuIsUnique($attribute, $value): ?string
+    {
+        $sku = sanitize_text_field((string) $value);
+        if ($sku === '') {
+            return null;
+        }
+
+        if ($this->skuCounts === null) {
+            $this->loadSkuUsage();
+        }
+
+        $index = explode('.', $attribute)[1];
+        $message = __('The SKU must be unique.', 'fluent-cart');
+
+        if (($this->skuCounts[$this->skuKey($sku)] ?? 0) > 1) {
+            return $message;
+        }
+
+        $variantId = (int) $this->get("variants.$index.id");
+        foreach ($this->skuOwners[$sku] ?? [] as $ownerId) {
+            if ($ownerId !== $variantId) {
+                return $message;
+            }
+        }
+
+        return null;
+    }
+
+    // mbstring is optional on a WordPress host.
+    private function skuKey(string $sku): string
+    {
+        return function_exists('mb_strtolower') ? mb_strtolower($sku) : strtolower($sku);
+    }
+
+    // One pass over the save and one query, so the check does not cost a query per variant.
+    private function loadSkuUsage(): void
+    {
+        $this->skuCounts = [];
+        $submitted = [];
+        $cleared = [];
+        foreach ((array) $this->get('variants', []) as $variant) {
+            if (!array_key_exists('sku', $variant)) {
+                continue;
+            }
+            $sku = sanitize_text_field((string) Arr::get($variant, 'sku'));
+            if ($sku === '') {
+                $cleared[(int) Arr::get($variant, 'id')] = true;
+                continue;
+            }
+            $submitted[$sku] = true;
+            $key = $this->skuKey($sku);
+            $this->skuCounts[$key] = ($this->skuCounts[$key] ?? 0) + 1;
+        }
+
+        if (!$submitted) {
+            return;
+        }
+
+        $submitted = array_map('strval', array_keys($submitted));
+        // FIELD() compares with the column collation, so the database says which sku of this
+        // save a stored sku equals. PHP cannot reproduce its case and accent rules.
+        $stored = ProductVariation::query()
+            ->selectRaw('id, post_id, FIELD(sku, ' . implode(', ', array_fill(0, count($submitted), '?')) . ') AS submitted_position', $submitted)
+            ->whereIn('sku', $submitted)
+            ->get();
+        $postId = (int) Arr::get((array) $this->get_url_params(), 'postId');
+        foreach ($stored as $variation) {
+            // Only this product's explicitly cleared rows release their SKU during this save.
+            if ((int) $variation->post_id === $postId && isset($cleared[(int) $variation->id])) {
+                continue;
+            }
+            $this->skuOwners[$submitted[(int) $variation->submitted_position - 1]][] = (int) $variation->id;
+        }
     }
 
     public function validatePostDate($attribute, $value): ?string
@@ -308,6 +398,13 @@ class ProductUpdateRequest extends RequestGuard
                     return null;
                 },
             ],
+            // The unique index rejects a repeated sku, but only after the batch
+            // write, and that failure reached the admin as "Product has been updated".
+            // No "nullable": the validator skips nullable rules for a falsy value,
+            // and "0" is a real sku. The callback ignores null and '' itself.
+            'variants.*.sku'                      => [function ($attribute, $value) {
+                return $this->validateSkuIsUnique($attribute, $value);
+            }],
             'variants.*.manage_cost'              => 'nullable|sanitizeText|maxLength:10',
             // Variant tax classes are stored as slugs, not numeric IDs like the
             // older product-detail tax field.

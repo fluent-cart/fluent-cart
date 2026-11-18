@@ -53,6 +53,22 @@ class ListCouponsTest extends DatabaseTestCase
         $this->assertNotContains('BLACKFRIDAY', $codes, 'The inactive coupon is excluded.');
     }
 
+    public function test_scheduled_coupon_is_valid_now_once_its_start_has_passed(): void
+    {
+        $this->couponFactory->create(['code' => 'STARTED', 'status' => 'scheduled', 'start_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS)]);
+        $this->couponFactory->create(['code' => 'NOTYET', 'status' => 'scheduled', 'start_date' => gmdate('Y-m-d H:i:s', time() + HOUR_IN_SECONDS)]);
+
+        $rows = array_column(CouponTools::listCoupons(['status' => 'scheduled'])['data']['coupons'], 'valid_now', 'code');
+        $this->assertSame(['NOTYET' => false, 'STARTED' => true], [
+            'NOTYET'  => $rows['NOTYET'],
+            'STARTED' => $rows['STARTED'],
+        ], 'valid_now follows the start date, as checkout does');
+
+        $usable = array_column(CouponTools::listCoupons(['active_now' => true, 'code' => 'T'])['data']['coupons'], 'code');
+        $this->assertContains('STARTED', $usable);
+        $this->assertNotContains('NOTYET', $usable);
+    }
+
     public function test_rows_include_times_used_and_paging_meta(): void
     {
         $this->seed();

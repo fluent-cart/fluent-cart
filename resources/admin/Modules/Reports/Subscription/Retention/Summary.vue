@@ -7,11 +7,11 @@
             <div class="summary-item-inner">
               <div class="title text-[16px] mb-2.5 flex items-center gap-1.5">
                 {{ card.title }}
-                <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+                <fct-tooltip :content="card.info" placement="top" :trigger="['hover', 'focus']">
                   <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
                   </button>
-                </el-tooltip>
+                </fct-tooltip>
               </div>
 
               <div class="grid grid-cols-2 items-center">

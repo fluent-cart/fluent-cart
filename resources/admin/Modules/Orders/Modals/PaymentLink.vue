@@ -6,9 +6,9 @@
 
       <CopyToClipboard v-if="paymentUrl" :text="paymentUrl" :tooltipText="translate('Copy Link')"
                        :placeholder="translate('No payment link available,Please setup custom checkout page!')"/>
-      <el-button target="_blank" v-else link tag="router-link" :to="{ name: 'pages_setup' }">
+      <fct-button target="_blank" v-else link :to="{ name: 'pages_setup' }">
         {{ translate('Create a custom checkout page to generate custom links.') }}
-      </el-button>
+      </fct-button>
 
     </div>
 <!--Vendor checkout will be test and add later-->
@@ -46,22 +46,14 @@
 <!--        </el-form-item>-->
 <!--      </el-col>-->
 <!--    </el-row>-->
-    <el-row v-if="'paypal' === selectedMethod && use_vendor_checkout" class="el-form--label-top" :gutter="20">
-      <el-col :md="24" :lg="11">
-        <el-form-item :label="translate('PayPal Business/Seller Email')">
-          <el-input v-model="business_email" :placeholder="translate('Enter your PayPal business/seller email')"/>
-        </el-form-item>
-      </el-col>
-      <el-col :md="24" :lg="11">
-        <el-form-item :label="translate('PayPal Buyer Email (optional)')">
-          <el-input v-model="buyer_email" :placeholder="translate('Enter The buyer email')"/>
-        </el-form-item>
-      </el-col>
-    </el-row>
+    <div v-if="'paypal' === selectedMethod && use_vendor_checkout" class="grid grid-cols-1 min-[1200px]:grid-cols-2 gap-x-5">
+      <fct-input v-model="business_email" :label="translate('PayPal Business/Seller Email')" :placeholder="translate('Enter your PayPal business/seller email')"/>
+      <fct-input v-model="buyer_email" :label="translate('PayPal Buyer Email (optional)')" :placeholder="translate('Enter The buyer email')"/>
+    </div>
     <div class="fct-payment-link-block" v-if="use_vendor_checkout">
-      <el-button type="primary" @click="getPaymentLink">
+      <fct-button type="primary" @click="getPaymentLink">
         {{ translate('Create new transaction & link') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

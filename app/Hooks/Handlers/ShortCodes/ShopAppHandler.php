@@ -11,6 +11,7 @@ use FluentCart\App\Helpers\Helper;
 //use FluentCart\App\Hooks\Handlers\ShortCodes\Buttons\AddToCartShortcode;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
 use FluentCart\App\Services\Renderer\RenderContext;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
 use FluentCart\App\Services\TemplateService;
@@ -40,7 +41,7 @@ class ShopAppHandler
 
             if (TemplateService::getCurrentFcPageType() === 'shop') {
                 $this->enqueueStyles();
-            } else if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/products')) {
+            } else if (has_shortcode(ShortCode::currentPostContent(), static::SHORT_CODE) || has_block('fluent-cart/products')) {
                 $this->enqueueStyles();
             }
         }, 5);
@@ -122,7 +123,12 @@ class ShopAppHandler
             'orderby'                          => '',
             'order'                            => '',
             'limit'                            => '',
-        ), $shortcodeAttributes, static::SHORT_CODE);
+            'card_layout'                      => '',
+        ) + ProductCardLayoutPresets::SHORTCODE_CARD_ATTRIBUTES, $shortcodeAttributes, static::SHORT_CODE);
+
+        // A Product Card layout (classic, compact, floating, framed); anything else keeps the current card.
+        $cardLayout = sanitize_key($this->shortcodeAttributes['card_layout']);
+        $this->shortcodeAttributes['card_layout'] = ProductCardLayoutPresets::cardBlock($cardLayout) ? $cardLayout : '';
 
         // Alias: limit → per_page
         if (!empty($this->shortcodeAttributes['limit']) && is_numeric($this->shortcodeAttributes['limit'])) {
@@ -352,6 +358,8 @@ class ShopAppHandler
         $excludeIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['exclude_ids'])))));
 
         // --- Shortcode attribute: category (by slug) and category_id ---
+        $hasCategoryConstraint = trim((string) $this->shortcodeAttributes['category']) !== '' ||
+            trim((string) $this->shortcodeAttributes['category_id']) !== '';
         $categoryTermIds = [];
         if (!empty($this->shortcodeAttributes['category'])) {
             $categoryTermIds = Taxonomy::getTermIdsBySlugs($this->shortcodeAttributes['category'], 'product-categories');
@@ -359,6 +367,11 @@ class ShopAppHandler
         if (!empty($this->shortcodeAttributes['category_id'])) {
             $catIds = array_values(array_filter(array_map('intval', array_map('trim', explode(',', $this->shortcodeAttributes['category_id'])))));
             $categoryTermIds = array_unique(array_merge($categoryTermIds, $catIds));
+        }
+        // A supplied category constraint that resolves to nothing must fail closed.
+        // Use -1 rather than 0 because the AJAX filter parser removes empty values.
+        if ($hasCategoryConstraint && empty($categoryTermIds)) {
+            $categoryTermIds = [-1];
         }
         if (!empty($categoryTermIds)) {
             $existing = Arr::get($mergedTerms, 'product-categories', []);
@@ -414,6 +427,9 @@ class ShopAppHandler
             'product_box_grid_size'    => $this->shortcodeAttributes['product_box_grid_size'],
             'view_mode'                => $this->shortcodeAttributes['view_mode'],
             'price_format'             => $this->shortcodeAttributes['price_format'],
+            'card_layout'              => $this->shortcodeAttributes['card_layout'],
+            'grid_only'                => ProductCardLayoutPresets::isGridOnly($this->shortcodeAttributes['card_layout']),
+            'layout_options'           => $this->shortcodeAttributes['card_layout'] ? ProductCardLayoutPresets::shortcodeCardOptions($this->shortcodeAttributes) : [],
         ];
 
         return $params;

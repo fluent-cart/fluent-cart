@@ -5,11 +5,9 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 <template>
   <div class="fct-single-customer-loader-wrap fct-layout-width">
     <div class="single-page-header fct-page-loader-header flex items-start justify-between">
-      <el-skeleton animated class="flex items-start gap-2">
-        <template #template>
-          <el-skeleton-item v-for="index in 3" :key="index" class="max-w-[100px]" />
-        </template>
-      </el-skeleton>
+      <fct-skeleton animated class="flex items-start gap-2">
+        <fct-skeleton variant="p" v-for="index in 3" :key="index" class="max-w-[100px]" />
+      </fct-skeleton>
     </div>
 
     <div class="single-page-body">
@@ -21,7 +19,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
             </Card.Header>
 
             <Card.Body>
-              <el-skeleton animated :rows="5" />
+              <fct-skeleton animated :rows="5" />
             </Card.Body>
           </Card.Container>
         </div>
@@ -38,7 +36,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
               >
               </Card.Header>
               <Card.Body>
-                <el-skeleton animated :rows="5" />
+                <fct-skeleton animated :rows="5" />
               </Card.Body>
             </Card.Container>
 
@@ -50,7 +48,7 @@ import * as Card from "@/Bits/Components/Card/Card.js";
               >
               </Card.Header>
               <Card.Body>
-                <el-skeleton animated :rows="1" />
+                <fct-skeleton animated :rows="1" />
               </Card.Body>
             </Card.Container>
 

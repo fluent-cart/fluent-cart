@@ -23,6 +23,15 @@ export function isShippingDestinationKey(key, shipToDifferent) {
  * Mirrors the fields ShippingModule::maybeRecalculateShippingCharges() re-quotes on,
  * contact included.
  */
+/**
+ * A field a live carrier builds its rate request from (only listed while such a
+ * carrier is on): saving it re-quotes, so Place Order waits.
+ */
+export function isShippingQuoteFormKey(key) {
+    const fields = window.fluentcart_checkout_vars?.shipping_quote_form_fields;
+    return Array.isArray(fields) && !!key && fields.includes(key);
+}
+
 export function destinationSignature(formData, column, value, shipToDifferent) {
     const read = (key) => {
         if (key === column) {
@@ -122,7 +131,9 @@ export const saveResponseSequence = new SaveResponseSequence();
 export function startCheckoutSave(formData, column, value, shipToDifferent, uiService) {
     const sequence = saveResponseSequence.next();
     const destination = destinationSignature(formData, column, value, shipToDifferent);
-    const hold = isShippingDestinationKey(column, shipToDifferent) || destinationTracker.needsHold(destination);
+    const hold = isShippingDestinationKey(column, shipToDifferent)
+        || isShippingQuoteFormKey(column)
+        || destinationTracker.needsHold(destination);
     const holdOwner = hold ? 'shipping_destination_' + sequence : null;
 
     if (holdOwner && uiService?.holdCheckoutButton) {

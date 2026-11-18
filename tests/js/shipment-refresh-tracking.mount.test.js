@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin} from './support/fct-stubs.js';
 
 /**
  * Refresh tracking on a shipment row: a carrier refresh can store newer scan
@@ -79,6 +80,7 @@ const mountRow = () => {
         .component('ElPopconfirm', {render: () => null})
         .component('ElDropdown', {render: () => null})
         .component('ElPopover', {render: () => null})
+        .use(fctPlugin({FctDropdown: {render: () => null}, FctPopover: {render: () => null}}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(new FakeNode('div'));
     return {app, onUpdated};

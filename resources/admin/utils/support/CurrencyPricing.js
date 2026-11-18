@@ -1,4 +1,4 @@
-// Mirrors PriceConverter::toPrice() (dev-docs/multi-currency/plan.md §15.4):
+// Mirrors PriceConverter::toPrice() (dev-docs/multi-currency/04-conversion-engine.md):
 // rate, then the % adjustment, rounding up to the step, the charm ending.
 // Amounts are cents, ×100 for every currency.
 

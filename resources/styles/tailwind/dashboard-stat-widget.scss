@@ -6,7 +6,7 @@
 			@apply bg-white dark:bg-dark-700 flex items-start p-4 rounded-[12px] gap-3 h-full flex-col;
 			&:focus,
 			&:active {
-				@apply shadow-none outline-none #{!important};
+				@apply shadow-none! outline-hidden!;
 			}
 		}
 		&__icon {

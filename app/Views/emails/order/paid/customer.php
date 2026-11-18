@@ -41,6 +41,20 @@ if ($licenses && $licenses->count() > 0) {
     ]);
 }
 
+// The admin preview renders this with a stub order whose id may match a real order.
+if ($order instanceof \FluentCart\App\Models\Order) {
+    /**
+     * Print what the order grants beyond licenses (memberships, course access, ...).
+     * Output is echoed inside the email body, so listeners escape their own HTML.
+     *
+     * @param array $data order (Order), context (string: 'order_paid_customer' | 'payment_receipt')
+     */
+    do_action('fluent_cart/email/order_entitlements', [
+        'order'   => $order,
+        'context' => 'order_paid_customer',
+    ]);
+}
+
 $downloads = $order->getDownloads();
 
 if ($downloads) {

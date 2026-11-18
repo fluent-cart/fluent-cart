@@ -24,6 +24,20 @@ class CartHelper
 
     const QUANTITY_HARD_LIMIT = 10000000;
 
+    // Product and class rows one method and item set read, reused within a request.
+    private static $chargeLookupFingerprint = null;
+
+    private static $chargeProducts = null;
+
+    private static $chargeShippingClasses = null;
+
+    public static function resetChargeLookupCache()
+    {
+        static::$chargeLookupFingerprint = null;
+        static::$chargeProducts = null;
+        static::$chargeShippingClasses = null;
+    }
+
     /**
      * The ceiling is what keeps `unit_price * quantity` inside PHP's integer range —
      * without one the product overflows to a float and casts back to a wrapped total.
@@ -255,7 +269,7 @@ class CartHelper
         return ($shippingClass->cost * 100) * $factor;
     }
 
-    private static function itemHasFreeShipping($item): bool
+    public static function itemHasFreeShipping($item): bool
     {
         return Arr::get($item, 'other_info.free_shipping', 'no') === 'yes';
     }
@@ -283,12 +297,12 @@ class CartHelper
         }
 
         $physicalItems = (new CheckoutService($items))->physicalItems;
-        static::excludeFreeShippingPhysicalItems($items, $physicalItems);
+        self::excludeFreeShippingPhysicalItems($items, $physicalItems);
         if (!$physicalItems) {
             return true;
         }
 
-        return static::findWeightTier(Arr::get($settings, 'weight_tiers', []), static::physicalItemsWeight($physicalItems)) !== null;
+        return self::findWeightTier(Arr::get($settings, 'weight_tiers', []), self::physicalItemsWeight($physicalItems)) !== null;
     }
 
     /**
@@ -380,6 +394,7 @@ class CartHelper
             $lineCharges[$key] = 0;
             $product = $products->get(Arr::get($item, 'post_id'));
             $classId = isset($product->detail->other_info['shipping_class']) ? $product->detail->other_info['shipping_class'] : null;
+            /** @var ShippingClass|null $shippingClass */
             $shippingClass = $classId ? $shippingClasses->get($classId) : null;
             if (!$shippingClass) {
                 continue;
@@ -426,11 +441,6 @@ class CartHelper
 
     public static function calculateShippingMethodCharge(ShippingMethod $method, ?array $items = null, $returnType = 'amount')
     {
-        static $onceCalculated = false;
-        static $lastFingerprint = null;
-        static $products = null;
-        static $shippingClasses = null;
-
         // Per-call locals: $physicalItems/$isAllDigital are rebuilt fresh from $items on every
         // call (via CheckoutService below), and $totalItemPrice/$totalQuantity/
         // $totalShippingCharge are accumulated fresh in the per-item
@@ -475,9 +485,9 @@ class CartHelper
         // the old $lastMethodId check, which missed same-method-id calls made with different
         // items). The per-call locals above are already reinitialized on every call, so only
         // the "once" guard needs resetting here.
-        if ($lastFingerprint !== $fingerprint) {
-            $onceCalculated = false;
-            $lastFingerprint = $fingerprint;
+        if (static::$chargeLookupFingerprint !== $fingerprint) {
+            static::$chargeProducts = null;
+            static::$chargeLookupFingerprint = $fingerprint;
         }
 
         if ($method->type === 'free_shipping') {
@@ -502,7 +512,7 @@ class CartHelper
         $physicalItems = $cartCheckoutService->physicalItems;
 
         // Exclude only physical items marked for free shipping from charge calculation.
-        static::excludeFreeShippingPhysicalItems($items, $physicalItems);
+        self::excludeFreeShippingPhysicalItems($items, $physicalItems);
 
         // No shipping is charged for all-digital carts or when every physical item has free shipping.
         if ($isAllDigital || empty($physicalItems)) {
@@ -519,31 +529,32 @@ class CartHelper
             return 0;
         }
 
-        if (!$onceCalculated) {
-            $onceCalculated = true;
+        if (static::$chargeProducts === null) {
             $productIds = array_unique(array_column($physicalItems, 'post_id'));
-            $products = Product::query()->whereIn('ID', $productIds)
+            static::$chargeProducts = Product::query()->whereIn('ID', $productIds)
                 ->with(['detail'])
                 ->get()
                 ->keyBy('ID');
 
-            $shippingClassIds = $products->pluck('detail.other_info.shipping_class')->filter(function ($item) {
+            $shippingClassIds = static::$chargeProducts->pluck('detail.other_info.shipping_class')->filter(function ($item) {
                 return !empty($item);
             })->toArray();
 
-            $shippingClasses = ShippingClass::query()->whereIn('id', $shippingClassIds)->get()->keyBy('id');
+            static::$chargeShippingClasses = ShippingClass::query()->whereIn('id', $shippingClassIds)->get()->keyBy('id');
         }
+        $products = static::$chargeProducts;
+        $shippingClasses = static::$chargeShippingClasses;
 
         $settings = Arr::wrap($method->settings);
         $configureRate = Arr::get($settings, 'configure_rate', 'per_order');
         $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
 
-        // Per-item annotation must run on every call, not gated behind $onceCalculated:
+        // Per-item annotation must run on every call, not gated behind the lookup cache:
         // $physicalItems is always re-derived fresh from the current $items argument above, so
         // a cache-hit call still needs its own $items populated with shipping_charge and its
         // own totals accumulated. Only the $products/$shippingClasses DB lookups above are
         // safe to reuse across calls in the same request.
-        $lineClassCharges = static::lineClassCharges($physicalItems, $products, $shippingClasses, $classAggregation);
+        $lineClassCharges = self::lineClassCharges($physicalItems, $products, $shippingClasses, $classAggregation);
         foreach ($physicalItems as $key => &$item) {
             $totalQuantity += Arr::get($item, 'quantity');
             $totalItemPrice += (Arr::get($item, 'quantity') * Arr::get($item, 'unit_price')) - Arr::get($item, 'discount_total');
@@ -554,13 +565,14 @@ class CartHelper
         $totalShippingCharge = array_sum($lineClassCharges);
 
         // Flat amounts are authored in the base currency; percentage rates
-        // already work on converted item prices (multi-currency plan §2.5.2)
+        // already work on converted item prices
+        // (dev-docs/multi-currency/05-storefront-cart-checkout.md, "The cart")
         if ($configureRate === 'per_order') {
             $shippingMethodAmount = StorefrontPrice::fee($method->amount * 100);
         } else if ($configureRate === 'per_price') {
             $shippingMethodAmount = Money::roundIfZeroDecimal($totalItemPrice * ($method->amount / 100), (string) CurrencySettings::get('currency'));
         } else if ($configureRate === 'per_weight') {
-            $tier = static::findWeightTier(Arr::get($settings, 'weight_tiers', []), static::physicalItemsWeight($physicalItems));
+            $tier = self::findWeightTier(Arr::get($settings, 'weight_tiers', []), self::physicalItemsWeight($physicalItems));
             // No tier: shippingMethodCoversItems() keeps the method out of the rate list.
             $shippingMethodAmount = $tier ? StorefrontPrice::fee(Helper::toCent(floatval(Arr::get($tier, 'cost', 0)))) : 0;
         } else {
@@ -575,7 +587,7 @@ class CartHelper
 
         // Distribution must run on every call (not gated behind a "once" flag): $physicalItems
         // above is always re-derived fresh from the current $items argument regardless of the
-        // $onceCalculated cache, so a cached call still needs its own $items populated with
+        // lookup cache, so a cached call still needs its own $items populated with
         // itemwise_shipping_charge — a stale "already distributed" flag would leave a freshly
         // passed-in items array with missing/zero shares even though the fingerprint matched.
         $totalLineTotal = array_sum(array_column($physicalItems, 'line_total'));
@@ -640,7 +652,7 @@ class CartHelper
         $physicalItems = $cartCheckoutService->physicalItems;
 
         // Exclude only physical items marked for free shipping from profile-based charges.
-        static::excludeFreeShippingPhysicalItems($cartItems, $physicalItems);
+        self::excludeFreeShippingPhysicalItems($cartItems, $physicalItems);
 
         // No shipping is charged for all-digital carts or when every physical item has free shipping.
         if ($isAllDigital || empty($physicalItems)) {
@@ -724,20 +736,21 @@ class CartHelper
         $classAggregation = Arr::get($settings, 'class_aggregation', 'sum_all');
 
         // Flat amounts are authored in the base currency; percentage rates
-        // already work on converted item prices (multi-currency plan §2.5.2)
+        // already work on converted item prices
+        // (dev-docs/multi-currency/05-storefront-cart-checkout.md, "The cart")
         if ($configureRate === 'per_order') {
             $methodBaseRate = StorefrontPrice::fee(Helper::toCent($selectedMethod->amount));
         } elseif ($configureRate === 'per_price') {
             $methodBaseRate = Money::roundIfZeroDecimal($cartTotalPrice * ($selectedMethod->amount / 100), (string) CurrencySettings::get('currency'));
         } elseif ($configureRate === 'per_weight') {
-            $tier = static::findWeightTier(Arr::get($settings, 'weight_tiers', []), static::physicalItemsWeight($physicalItems));
+            $tier = self::findWeightTier(Arr::get($settings, 'weight_tiers', []), self::physicalItemsWeight($physicalItems));
             $methodBaseRate = $tier ? StorefrontPrice::fee(Helper::toCent(floatval(Arr::get($tier, 'cost', 0)))) : 0;
         } else {
             // per_item
             $methodBaseRate = StorefrontPrice::fee(Helper::toCent($selectedMethod->amount)) * $cartTotalQuantity;
         }
 
-        $lineClassCharges = static::lineClassCharges($physicalItems, $products, $shippingClasses, $classAggregation);
+        $lineClassCharges = self::lineClassCharges($physicalItems, $products, $shippingClasses, $classAggregation);
         foreach ($groups as &$group) {
             foreach ($group['keys'] as $i => $key) {
                 $group['items'][$i]['shipping_charge'] = $lineClassCharges[$key];

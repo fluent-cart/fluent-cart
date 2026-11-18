@@ -14,13 +14,15 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductGallery extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name = 'fct-product-gallery';
     public $icon = 'ti-gallery fluent-cart-element-icon';
 
     public function enqueue_scripts()
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
     }
 
     public function get_label()

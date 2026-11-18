@@ -58,6 +58,11 @@ class PaymentMethodController extends Controller
         $method = sanitize_text_field($request->method);
         if (GatewayManager::has($method)) {
             $methodInstance = GatewayManager::getInstance($method);
+            if (GlobalPaymentHandler::isPlaceholder($methodInstance)) {
+                return $this->sendError([
+                    'message' => __('Install and activate this payment method first.', 'fluent-cart')
+                ], 423);
+            }
             wp_send_json(
                 $methodInstance->updateSettings($data),
                 200
@@ -94,6 +99,10 @@ public function saveDesign(Request $request)
      
         if (!$methodInstance) {
             return $this->sendError(['message' => __('Invalid payment method instance', 'fluent-cart')], 422);
+        }
+
+        if (GlobalPaymentHandler::isPlaceholder($methodInstance)) {
+            return $this->sendError(['message' => __('Install and activate this payment method first.', 'fluent-cart')], 423);
         }
 
         // Merge into existing settings and persist via gateway's updateSettings
@@ -137,6 +146,39 @@ public function saveDesign(Request $request)
             sanitize_text_field($request->method),
             sanitize_text_field($request->mode),
         );
+    }
+
+    public function testConnection(Request $request)
+    {
+        $method = $request->getSafe('method', 'sanitize_text_field');
+        $mode = $request->getSafe('mode', 'sanitize_text_field');
+
+        if (!in_array($mode, ['test', 'live'], true)) {
+            return $this->sendError(['message' => __('Invalid payment mode.', 'fluent-cart')], 422);
+        }
+
+        if (!$method || !GatewayManager::has($method)) {
+            return $this->sendError(['message' => __('Invalid payment method', 'fluent-cart')], 422);
+        }
+
+        $methodInstance = GatewayManager::getInstance($method);
+
+        if (!GlobalPaymentHandler::canTestConnection($methodInstance)) {
+            return $this->sendError(['message' => __('Connection test is not available for this payment method.', 'fluent-cart')], 422);
+        }
+
+        $result = $methodInstance->testConnection($mode);
+
+        if (is_wp_error($result)) {
+            return $this->sendError([
+                'message' => $result->get_error_message(),
+                'code'    => $result->get_error_code()
+            ], 422);
+        }
+
+        return $this->sendSuccess([
+            'message' => Arr::get($result, 'message', __('Connection successful.', 'fluent-cart'))
+        ]);
     }
 
     public function setPayPalWebhook(Request $request)

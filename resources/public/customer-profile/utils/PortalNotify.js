@@ -25,9 +25,26 @@ class PortalNotify {
         this.notify(message, title || translate('Information'), 'info');
     }
 
+    validationErrors(errors) {
+        if (!errors) {
+            return;
+        }
+
+        if (errors.data?.message) {
+            return this.error(errors.data.message);
+        }
+
+        if (errors.data && typeof errors.data === 'object') {
+            const messages = Object.values(errors.data)
+                .flatMap(fieldErrors => typeof fieldErrors === 'object' ? Object.values(fieldErrors) : [fieldErrors]);
+            this.error(messages.join(' '));
+        }
+    }
+
     notify(message, title, type = 'success', duration = null) {
         ElNotification({
             type: type,
+            position: globalThis.document?.documentElement?.dir === 'rtl' ? 'top-left' : 'top-right',
             title: title,
             offset: this.offset,
             message: this.parseMessage(message),

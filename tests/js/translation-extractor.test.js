@@ -150,4 +150,13 @@ describe('generated PHP round-trips the string the JS runtime asks for', () => {
         expect(php).toContain("'Orders' => __('Orders', 'fluent-cart'),");
         expect(php).toContain("'No Order' => __('No Order', 'fluent-cart'),");
     });
+
+    it('scans a file given in place of a directory', () => {
+        const file = path.join(dir, 'Shared.vue');
+        fs.writeFileSync(file, `<template><h4>{{ translate('Bundle Of') }}</h4></template>`);
+
+        const {translations} = Helper.extractTranslations([file], makeTranslationRegex(), [], []);
+
+        expect(Object.keys(translations)).toEqual(['Bundle Of']);
+    });
 });

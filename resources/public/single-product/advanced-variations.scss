@@ -1,5 +1,6 @@
-@config "./advanced-variation.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./advanced-variation.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
 
 /* Advanced Variations - Attribute Selectors */
 .fct-advanced-variation-wrap {
@@ -28,7 +29,7 @@
 
 .fct-attribute-selector {
   .fct-swatch-item {
-    @apply text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] inline-flex items-center justify-center border border-solid border-[var(--fct-single-product-border-color,theme('colors.gray.outline'))] cursor-pointer transition-all duration-150 bg-[var(--fct-card-bg-color,#ffffff)] p-0 relative outline-none shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-none;
+    @apply text-[var(--fct-single-product-primary-text-color,theme('colors.system.dark'))] inline-flex items-center justify-center border border-solid border-[var(--fct-single-product-border-color,theme('colors.gray.outline'))] cursor-pointer transition-all duration-150 bg-[var(--fct-card-bg-color,#ffffff)] p-0 relative outline-hidden shadow-none hover:shadow-none focus:shadow-none focus:ring-0 focus:outline-hidden;
     border-radius: var(--fct-variant-radius, theme('borderRadius.DEFAULT'));
 
     &:hover:not(.disabled):not(.selected) {
@@ -156,7 +157,7 @@
 }
 
 .fct-custom-select {
-  @apply relative w-full max-w-[300px] outline-none;
+  @apply relative w-full max-w-[300px] outline-hidden;
 
   /* Keyboard focus indicator — the trigger is a tabindex=0 role=combobox
      div; outline-none above kills the UA default, so re-assert a visible

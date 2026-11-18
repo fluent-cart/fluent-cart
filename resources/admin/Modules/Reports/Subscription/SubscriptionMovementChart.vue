@@ -108,29 +108,24 @@ onUnmounted(() => {
     <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h5 class="fct-card-header-title is-small">{{ translate("Subscription movement") }}</h5>
-          <el-tooltip popper-class="fct-tooltip" placement="top"
+          <h2 class="fct-card-header-title is-small">{{ translate("Subscription movement") }}</h2>
+          <fct-tooltip placement="top"
                       :content="translate('SubRpt_New_Subscriptions')">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
       <template #action>
         <div class="flex items-center gap-3">
-          <el-radio-group v-model="metric" size="small">
-            <el-radio-button value="count">{{ translate("Subscriptions") }}</el-radio-button>
-            <el-radio-button value="mrr">{{ translate("MRR") }}</el-radio-button>
-          </el-radio-group>
-          <el-select v-model="selectedGroupKey" size="small" class="w-[140px]" :aria-label="translate('Group by')" @change="onGroup">
-            <el-option v-for="option in groupKeys" :key="option.value" :value="option.value" :label="option.label" />
-          </el-select>
+          <fct-choice v-model="metric" size="small" type="radio" button :options="[{label: translate('Subscriptions'), value: 'count'}, {label: translate('MRR'), value: 'mrr'}]"/>
+          <fct-select v-model="selectedGroupKey" size="small" class="w-[140px]" :aria-label="translate('Group by')" @change="onGroup" :options="groupKeys"/>
         </div>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="6" />
+      <fct-skeleton v-if="loading" animated :rows="6" />
       <div v-else-if="isEmpty" class="py-10 text-center text-sm text-system-light dark:text-gray-400">
         {{ translate("No new or churned subscriptions in this period") }}
       </div>

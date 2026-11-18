@@ -1,4 +1,5 @@
-@config "./thank_you.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./thank_you.mjs";
 
 :root {
   // button
@@ -86,7 +87,7 @@ body:not(.fluent-cart-no-colors) {
         &-list {
           @apply flex items-start justify-between py-2 px-4;
           &-quantity {
-            @apply text-sm text-[var(--fct-primary-text-color,#2F3448)] font-semibold overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
+            @apply text-sm text-[var(--fct-primary-text-color,#2F3448)] overflow-hidden leading-[18px] font-medium mt-0 mb-[5px];
             span {
               @apply text-xs font-normal text-[var(--fct-secondary-text-color,#4b5563)];
             }
@@ -247,7 +248,7 @@ body:not(.fluent-cart-no-colors) {
       &-billing-infos {
         @apply text-end text-sm;
         &-next-billing {
-          @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 !mt-[3px];
+          @apply text-xs text-[var(--fct-secondary-text-color,#4b5563)] leading-5 m-0 mt-[3px]!;
         }
       }
     }
@@ -361,7 +362,7 @@ body:not(.fluent-cart-no-colors) {
   @apply relative inline-flex items-center cursor-pointer;
 
   &-icon {
-    @apply w-[14px] h-[14px] rounded-full border border-[color:var(--fct-secondary-text-color,#94a3b8)] text-[10px] italic inline-flex items-center justify-center text-[var(--fct-secondary-text-color,#94a3b8)];
+    @apply w-[14px] h-[14px] rounded-full [border-width:1px] border-[color:var(--fct-secondary-text-color,#94a3b8)] text-[10px] italic inline-flex items-center justify-center text-[var(--fct-secondary-text-color,#94a3b8)];
   }
 
   &-tooltip {

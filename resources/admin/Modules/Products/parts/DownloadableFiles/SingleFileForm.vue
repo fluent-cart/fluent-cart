@@ -4,6 +4,7 @@ import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import {onBeforeMount, computed} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import LabelHint from "@/Bits/Components/LabelHint.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import Str from "@/utils/support/Str";
 import VariationSelector from "@/Bits/Components/VariationSelector.vue";
 import translate from "@/utils/translator/Translator";
@@ -49,8 +50,8 @@ onBeforeMount(() => {
   // on an advanced-variation product, the cascade removes the variants
   // it owned — but any downloadable asset that had pointed at those
   // variants still holds their now-orphan ids. Without this filter the
-  // el-select renders the raw numeric id (e.g. "6218") in a tag because
-  // v-model can't find a matching <el-option>. Reconcile against the
+  // select renders the raw numeric id (e.g. "6218") in a tag because
+  // v-model can't find a matching option. Reconcile against the
   // current variant list once on mount.
   if (props.file && Array.isArray(props.file.product_variation_id) && props.product?.variants) {
     const variantList = Array.isArray(props.product.variants) ? props.product.variants : [];
@@ -67,28 +68,20 @@ onBeforeMount(() => {
 
 <template>
   <div class="el-form el-form--default el-form--label-top ">
-    <el-form-item :label="$t('Choose variant')">
-      <el-select class="" size="small" v-model="file.product_variation_id" multiple
-                 :id="`downloadable_files.${index}.product_variation_id`"
-                 :placeholder="$t('Keep empty for all')"
-                 popper-class="fct-choose-variant-popover"
-                 collapse-tags collapse-tags-tooltip>
-        <el-option
-            v-for="(variant) in productDownloadableModel.generateVariantOptions(product)"
-            :key="variant.id"
-            :label="getVariantLabel(variant, groupOrder)"
-            :value="variant.id"
-        >
+    <fct-select :label="$t('Choose variant')" :id="`downloadable_files.${index}.product_variation_id`"
+                size="small" v-model="file.product_variation_id" multiple
+                :placeholder="$t('Keep empty for all')"
+                popper-class="fct-choose-variant-popover"
+                collapse-tags collapse-tags-tooltip
+                :options="productDownloadableModel.generateVariantOptions(product).map(variant => ({label: getVariantLabel(variant, groupOrder), value: variant.id, variant}))"
+                :validation-errors="productDownloadableModel.data.validationErrors"
+                :field-key="`downloadable_files.${index}.product_variation_id`">
+      <template #option="{option}">
+        <VariationSelector :variant="option.variant" :group-order="groupOrder"/>
+      </template>
+    </fct-select>
 
-          <VariationSelector :variant="variant" :group-order="groupOrder"/>
-
-        </el-option>
-      </el-select>
-      <ValidationError :validation-errors="productDownloadableModel.data.validationErrors"
-                       :field-key="`downloadable_files.${index}.product_variation_id`"/>
-    </el-form-item>
-
-    <el-form-item v-if="isEditing || productDownloadableModel.insertableFiles.length === 1">
+    <div v-if="isEditing || productDownloadableModel.insertableFiles.length === 1" class="fct-product-download-form-item">
       <FileUploaderDialog
           :isMultiple="!singleMode"
           @on-file-selected="value => {
@@ -140,11 +133,11 @@ onBeforeMount(() => {
 
       <ValidationError :validation-errors="productDownloadableModel.data.validationErrors"
                        :field-key="`downloadable_files.${index}.file_url`"/>
-    </el-form-item>
+    </div>
 
-    <el-form-item v-if="file.title" :label="$t('File Title')">
+    <Field v-if="file.title" :label="$t('File Title')">
       <p>{{file.title}}</p>
-      <el-input v-if="false" size="small"
+      <fct-input v-if="false" size="small"
                 :class="productDownloadableModel.hasValidationError(`downloadable_files.${index}.title`) ? 'is-error' : ''"
                 :id="`downloadable_files.${index}.title`"
                 :placeholder="$t('File Title')" type="text" v-model="file.title"
@@ -155,14 +148,14 @@ onBeforeMount(() => {
 
       <ValidationError :validation-errors="productDownloadableModel.data.validationErrors"
                        :field-key="`downloadable_files.${index}.title`"/>
-    </el-form-item>
+    </Field>
 
-    <el-form-item v-if="file.driver">
+    <div v-if="file.driver" class="fct-product-download-form-item">
       <p>{{
           /* translators: %s is the driver name */
           translate('Driver: %s', file.driver)
         }}</p>
-    </el-form-item>
+    </div>
 
   </div>
 </template>

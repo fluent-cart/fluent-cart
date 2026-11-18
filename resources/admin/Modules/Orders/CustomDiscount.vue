@@ -45,7 +45,7 @@
     </tr>
   </template>
 
-  <el-dialog
+  <fct-dialog
       :append-to-body="true"
       width="50%"
       v-model="discountModalIsOpen"
@@ -62,7 +62,7 @@
           @emit-cancel-discount-modal="discountModalIsOpen = false"
       />
     </div>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>

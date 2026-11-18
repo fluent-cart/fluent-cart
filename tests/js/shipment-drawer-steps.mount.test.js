@@ -1,6 +1,8 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick, reactive, watch} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin, popoverStub} from './support/fct-stubs.js';
+import {fctComponents} from '@/Bits/Components/Fct';
 
 /**
  * The Create shipment drawer: Method quotes on its own and re-quotes after a
@@ -120,6 +122,7 @@ const mountForm = async (listeners = {}, orderOverrides = {}, page = reactive({o
         .component('ElOption', stub)
         .component('ElPopconfirm', PopconfirmStub)
         .component('ElDrawer', DrawerStub)
+        .use(fctPlugin({FctDatePicker: DatePickerStub, FctSelect: stub, FctDialog: DrawerStub, FctPopover: popoverStub({confirm: PopconfirmStub, popover: fctComponents.FctPopover})}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await flush();
@@ -613,6 +616,7 @@ describe('Create shipment drawer', () => {
                 .component('ElOption', stub)
                 .component('ElPopconfirm', PopconfirmStub)
                 .component('ElDrawer', DrawerStub)
+                .use(fctPlugin({FctDatePicker: DatePickerStub, FctSelect: stub, FctDialog: DrawerStub, FctPopover: popoverStub({confirm: PopconfirmStub, popover: fctComponents.FctPopover})}))
                 .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
                 .mount(root);
             await flush();

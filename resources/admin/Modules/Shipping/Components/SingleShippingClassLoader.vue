@@ -3,41 +3,33 @@
     <div class="single-page-header flex items-center justify-between">
       <el-breadcrumb :separator-icon="ArrowRight">
         <el-breadcrumb-item>
-          <el-skeleton animated class="h-4">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[90px] h-4" />
-            </template>
-          </el-skeleton>
+          <fct-skeleton animated class="h-4">
+            <fct-skeleton variant="p" class="w-[90px] h-4" />
+          </fct-skeleton>
         </el-breadcrumb-item>
         <el-breadcrumb-item>
-          <el-skeleton animated class="h-4">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[90px] h-4" />
-            </template>
-          </el-skeleton>
+          <fct-skeleton animated class="h-4">
+            <fct-skeleton variant="p" class="w-[90px] h-4" />
+          </fct-skeleton>
         </el-breadcrumb-item>
         <el-breadcrumb-item>
-          <el-skeleton animated class="h-4">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[60px] h-4" />
-            </template>
-          </el-skeleton>
+          <fct-skeleton animated class="h-4">
+            <fct-skeleton variant="p" class="w-[60px] h-4" />
+          </fct-skeleton>
         </el-breadcrumb-item>
       </el-breadcrumb>
 
       <div class="fct-page-header__actions">
-        <el-skeleton animated class="h-9 w-[172px]">
-          <template #template>
-            <el-skeleton-item variant="p" class="w-full h-9 rounded" />
-          </template>
-        </el-skeleton>
+        <fct-skeleton animated class="h-9 w-[172px]">
+          <fct-skeleton variant="p" class="w-full h-9 rounded" />
+        </fct-skeleton>
       </div>
     </div>
 
     <CardContainer class="mb-4">
       <CardHeader :title="translate('Class Details')" border_bottom title_size="small"/>
       <CardBody>
-        <el-skeleton :rows="4" :animated="true"/>
+        <fct-skeleton :rows="4" :animated="true"/>
       </CardBody>
     </CardContainer>
 

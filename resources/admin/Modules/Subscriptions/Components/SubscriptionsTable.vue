@@ -1,9 +1,9 @@
 <template>
   <div class="fct-subscriptions-table-wrap">
     <!--          use full-compact class for compact mode-->
-    <el-table :data="subscriptions" class="w-full compact-table"
+    <fct-table :data="subscriptions" class="w-full compact-table"
               :tooltip-options="{ popperClass: 'fct-tooltip-long' }">
-      <el-table-column fixed :label="translate('ID')" width="100">
+      <fct-table-column fixed :label="translate('ID')" width="100">
         <template #default="scope">
 
           <RouteCell class="link block"
@@ -12,9 +12,9 @@
           </RouteCell>
 
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column v-if="columns.indexOf('customer') !== -1" :label="translate('Customer')" :width="150">
+      <fct-table-column v-if="columns.indexOf('customer') !== -1" :label="translate('Customer')" :width="150">
         <template #default="scope">
 
           <CustomerInfoPopover
@@ -24,9 +24,9 @@
           />
           <span v-else>{{ translate('Customer Not Found') }}</span>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Product')" width="360" show-overflow-tooltip>
+      <fct-table-column :label="translate('Product')" width="360" show-overflow-tooltip>
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
@@ -34,63 +34,63 @@
             <div class="truncate"> {{ scope.row.display_item_name }}</div>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Status')" width="120">
+      <fct-table-column :label="translate('Status')" width="120">
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             <Badge :status="subscriptionStatus(scope.row)" kind="subscription" :key="scope.row.id" size="small" :hide-icon="true"/>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Billing')" width="230">
+      <fct-table-column :label="translate('Billing')" width="230">
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             <span v-html="scope.row.payment_info"></span>
             <!-- An installment plan has a fixed number of payments (bill_times); a recurring plan needs no marker -->
             <!-- translators: %1$s is the number of payments in the installment plan -->
-            <el-tooltip v-if="scope.row.bill_times > 0" placement="top"
+            <fct-tooltip v-if="scope.row.bill_times > 0" placement="top"
                         :content="translate('Installment plan: %1$s payments', translateNumber(scope.row.bill_times))">
               <span class="fct-installment-icon ml-1 inline-flex align-middle" :aria-label="translate('Installment plan')">
                 <DynamicIcon name="Calendar" class="text-gray-500 w-4 h-4"/>
               </span>
-            </el-tooltip>
+            </fct-tooltip>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="translate('Created At')" width="130">
+      <fct-table-column :label="translate('Created At')" width="130">
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             <ConvertedTime :date-time="scope.row.created_at" :with-time="false"/>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column v-if="columns.indexOf('next_billing_date') !== -1" :label="translate('Next Billing Date')" width="160">
+      <fct-table-column v-if="columns.indexOf('next_billing_date') !== -1" :label="translate('Next Billing Date')" width="160">
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             <ConvertedTime :date-time="scope.row.next_billing_date" :with-time="false"/>
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column v-if="columns.indexOf('collection_method') !== -1" :label="translate('Collection Method')" width="160">
+      <fct-table-column v-if="columns.indexOf('collection_method') !== -1" :label="translate('Collection Method')" width="160">
         <template #default="scope">
           <RouteCell class="link block hover:no-underline"
                      :to="{ name: 'view_subscription', params: { subscription_id: scope.row?.id } }">
             {{ collectionMethodLabel(scope.row.collection_method) }}
           </RouteCell>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
 
-      <el-table-column v-if="columns.indexOf('bills_count') !== -1" :label="translate('Bills Count')" width="100">
+      <fct-table-column v-if="columns.indexOf('bills_count') !== -1" :label="translate('Bills Count')" width="100">
         <template #default="scope">
           <!-- Payments made of the plan's total -->
           <template v-if="scope.row.bill_times > 0">
@@ -98,15 +98,15 @@
           </template>
           <template v-else>{{ translateNumber(scope.row.bill_count) }}</template>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column v-if="columns.indexOf('payment_method') !== -1" :label="translate('Payment Method')" width="150">
+      <fct-table-column v-if="columns.indexOf('payment_method') !== -1" :label="translate('Payment Method')" width="150">
         <template #default="scope">
           {{ paymentMethodAdminTitle(scope.row.current_payment_method) || '-' }}
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column v-if="columns.indexOf('order_id') !== -1" :label="translate('Order ID')" width="100">
+      <fct-table-column v-if="columns.indexOf('order_id') !== -1" :label="translate('Order ID')" width="100">
         <template #default="scope">
           <router-link
               class="link"
@@ -115,12 +115,12 @@
             #{{ translateNumber(scope.row.parent_order_id) }}
           </router-link>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
       <template #empty>
         <Empty icon="Empty/ListView" :has-dark="true" :text="translate('No subscriptions found.')"/>
       </template>
-    </el-table>
+    </fct-table>
 
   </div>
 </template>

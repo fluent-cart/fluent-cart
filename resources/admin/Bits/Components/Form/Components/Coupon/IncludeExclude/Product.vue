@@ -50,24 +50,14 @@ onMounted(() => {
 <template>
     <div class="fct-multiple-select-group">
         <div class="input-prepend">
-            <el-select
+            <fct-select
                 v-model="isExcludeOrIncludeProducts"
                 :placeholder="$t('Select')"
-            >
-                <el-option
-                    :disabled="excluded_products.length > 0"
-                    :label="$t('Include')"
-                    value="include"
-                />
-                <el-option
-                    :disabled="included_products.length > 0"
-                    :label="$t('Exclude')"
-                    value="exclude"
-                />
-            </el-select>
+                :options="[{label: $t('Include'), value: 'include', disabled: excluded_products.length > 0}, {label: $t('Exclude'), value: 'exclude', disabled: included_products.length > 0}]"
+            />
         </div>
         <div class="input-append">
-            <el-select
+            <fct-select
                 v-if="isExcludeOrIncludeProducts === 'exclude'"
                 v-model="value['excluded_products']"
                 multiple
@@ -77,20 +67,15 @@ onMounted(() => {
                 :reserve-keyword="false"
                 :remote-method="searchVariantByName"
                 :loading="loading"
+                :options="products.map(product => ({label: product.variation_title, value: product.id}))"
             >
-                <el-option
-                    v-for="product in products"
-                    :key="product.id"
-                    :label="product.variation_title"
-                    :value="product.id"
-                ></el-option>
                 <template #loading>
                     <svg class="circular" viewBox="0 0 50 50">
                     <circle class="path" cx="25" cy="25" r="20" fill="none" />
                     </svg>
                 </template>
-            </el-select>
-            <el-select
+            </fct-select>
+            <fct-select
                 v-else
                 v-model="value['included_products']"
                 multiple
@@ -100,19 +85,14 @@ onMounted(() => {
                 :remote-method="searchVariantByName"
                 :reserve-keyword="false"
                 :loading="loading"
+                :options="products.map(product => ({label: product.variation_title, value: product.id}))"
             >
-                <el-option
-                    v-for="product in products"
-                    :key="product.id"
-                    :label="product.variation_title"
-                    :value="product.id"
-                ></el-option>
                 <template #loading>
                     <svg class="circular" viewBox="0 0 50 50">
                     <circle class="path" cx="25" cy="25" r="20" fill="none" />
                     </svg>
                 </template>
-            </el-select>
+            </fct-select>
         </div>
     </div>
 </template>

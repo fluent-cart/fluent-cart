@@ -11,7 +11,7 @@ use FluentCart\Framework\Support\Arr;
 
 /**
  * Currency switcher block — the block form of [fluent_cart_currency_switcher]
- * (dev-docs/multi-currency/plan.md §8.2). Server-rendered; renders nothing
+ * (dev-docs/multi-currency/05-storefront-cart-checkout.md). Server-rendered; renders nothing
  * unless more than one currency can be offered.
  */
 class CurrencySwitcherBlockEditor extends BlockEditor

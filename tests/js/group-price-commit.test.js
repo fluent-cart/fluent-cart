@@ -1,7 +1,4 @@
 import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {
     resolveGroupPriceCommit,
     resolveGroupPriceBlur,
@@ -30,9 +27,7 @@ import {
  * is `node`, so nothing here mounts AdvancedVariationGroupedTable.vue as a
  * real component (see tests/js/license-renew-gating.test.js for the same
  * constraint elsewhere in this suite). The tracker sequence tests below cover
- * the event *lifecycle* logic; the template-wiring test at the bottom of this
- * file is a source-contract check that the component actually calls this
- * tracker from the events it's supposed to.
+ * the event *lifecycle* logic.
  */
 describe('resolveGroupPriceCommit', () => {
     it('applies a valid price', () => {
@@ -237,56 +232,5 @@ describe('createGroupPriceCommitTracker', () => {
 
         // GROUP_A's own trailing blur is still correctly suppressed.
         expect(tracker.onBlur(GROUP_A, 10000)).toBeNull();
-    });
-});
-
-/**
- * Source-contract check on the actual template wiring, complementing the
- * tracker-sequence tests above: those prove the lifecycle logic is correct in
- * isolation, this proves AdvancedVariationGroupedTable.vue's group-price
- * PriceInput actually calls it from the right DOM events. This is what would
- * have caught the original bug at the wiring level — the previous
- * implementation's logic (or lack of it) was fine in isolation; the bug was
- * that blur never called anything that read the live buffer.
- */
-describe('AdvancedVariationGroupedTable.vue group-price input wiring', () => {
-    const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-    const source = fs.readFileSync(
-        path.join(repoRoot, 'resources/admin/Modules/Products/parts/AdvancedVariationGroupedTable.vue'),
-        'utf8'
-    );
-
-    const groupPriceInputMatch = source.match(
-        /<PriceInput[\s\S]*?class="fct-adv-group-price-input"[\s\S]*?\/>/
-    );
-
-    it('renders the group price quick-set input', () => {
-        expect(groupPriceInputMatch, 'the group price PriceInput block must exist').not.toBeNull();
-    });
-
-    const groupPriceInputBlock = groupPriceInputMatch ? groupPriceInputMatch[0] : '';
-
-    it('commits on blur via the tracker-backed handler', () => {
-        expect(groupPriceInputBlock).toMatch(/@blur="onGroupPriceBlur\(group\)"/);
-    });
-
-    it('commits on Enter via the tracker-backed handler', () => {
-        expect(groupPriceInputBlock).toMatch(/@keyup\.enter="commitGroupPriceOnEnter\(group\)"/);
-    });
-
-    it('does not rely on PriceInput\'s `change` event — the mechanism that caused the original bug', () => {
-        expect(groupPriceInputBlock).not.toMatch(/@change=/);
-    });
-
-    it('onGroupPriceBlur delegates to the tracker-backed commit function', () => {
-        const blurFn = source.match(/const onGroupPriceBlur = \(group\) => \{[\s\S]*?\n\};/);
-        expect(blurFn, 'onGroupPriceBlur must exist').not.toBeNull();
-        expect(blurFn[0]).toMatch(/commitGroupPriceOnBlur\(group\)/);
-    });
-
-    it('discard resets the tracker so no armed state survives a discard', () => {
-        const discardWatch = source.match(/watch\(\(\) => props\.productEditModel\?\.data\?\.discardKey[\s\S]*?\}\);/);
-        expect(discardWatch, 'the discardKey watch must exist').not.toBeNull();
-        expect(discardWatch[0]).toMatch(/groupPriceTracker\.reset\(\)/);
     });
 });

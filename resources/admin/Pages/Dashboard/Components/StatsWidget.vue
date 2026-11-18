@@ -2,16 +2,16 @@
 
   <div class="fct-dashboard-stat-widgets">
 
-    <el-skeleton v-if="loading" v-for="i in 4" :key="i" animated
+    <fct-skeleton v-if="loading" v-for="i in 4" :key="i" animated
                  class="bg-white dark:bg-dark-700 flex flex-col items-start py-5 px-4.5 rounded-[12px] gap-3">
-      <template #template>
-        <el-skeleton-item variant="circle" class="w-10 h-10 flex-none"/>
+      <template #default>
+        <fct-skeleton variant="circle" class="w-10 h-10 flex-none"/>
         <div class="right w-full">
-          <el-skeleton-item variant="p" class="w-full"/>
-          <el-skeleton-item variant="p" class="w-10"/>
+          <fct-skeleton variant="p" class="w-full"/>
+          <fct-skeleton variant="p" class="w-10"/>
         </div>
       </template>
-    </el-skeleton>
+    </fct-skeleton>
     <template v-else>
       <div v-for="(stat, index) in stats" :key="index" class="fct-dashboard-stat-widget">
         <a v-if="stat.url" :href="stat.url" class="fct-dashboard-stat-widget__inner no-underline">
@@ -19,11 +19,11 @@
             <DynamicIcon class="w-5" :name="stat.icon"/>
           </div>
           <div class="fct-dashboard-stat-widget__content">
-            <h3 class="fct-dashboard-stat-widget__title">
+            <h2 class="fct-dashboard-stat-widget__title">
               <span>
               {{ stat.title }}
               </span>
-            </h3>
+            </h2>
             <span class="fct-dashboard-stat-widget__value inner-value">
               <span v-if="stat.has_currency">
                 {{ CurrencyFormatter.scaled(stat.current_count, true, false, stat.currency) }}
@@ -61,14 +61,14 @@
             </svg>
           </div>
           <div class="fct-dashboard-stat-widget__content">
-            <h3 class="fct-dashboard-stat-widget__title">
+            <h2 class="fct-dashboard-stat-widget__title">
               <a class="link" v-if="stat.url" :href="stat.url">
                 {{ stat.title }}
               </a>
               <span v-else>
               {{ stat.title }}
             </span>
-            </h3>
+            </h2>
             <span class="fct-dashboard-stat-widget__value">{{ stat.current_count }}</span>
           </div>
         </div>

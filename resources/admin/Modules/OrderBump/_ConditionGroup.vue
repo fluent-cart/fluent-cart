@@ -3,11 +3,11 @@
         <div v-for="(line, index) in group" :key="'fct_condition_line_' + index" class="fct_condition_line mb-3">
             <ConditionalLine @remove-item="handleRemoveItem(index)" v-model="group[index]"/>
         </div>
-        <el-button type="info" class="fct_add_condition_btn"
+        <fct-button type="info" class="fct_add_condition_btn"
                 @click="group.push({ condition_key: '', condition_type: '', condition_value: '' })">
           <DynamicIcon name="Plus"/>
           {{ translate('Add Condition') }}
-        </el-button>
+        </fct-button>
     </div>
 </template>
 

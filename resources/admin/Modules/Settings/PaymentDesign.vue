@@ -1,76 +1,60 @@
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        @on-save="savePaymentDesign"
-        :loading="saving"
-        :save-button-text="$t('Update')"
-        :loading-text="$t('Updating')"
-    >
-      <template #heading>
-        <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-          <el-breadcrumb-item :to="{ path: '/settings/payments' }">
-            {{ $t("Payment Settings") }}
-          </el-breadcrumb-item>
-          <el-breadcrumb-item>
-            <span class="cursor-pointer" @click="goBack">{{ $route.params.method }}</span>
-          </el-breadcrumb-item>
-          <el-breadcrumb-item>
-            <span>{{ $t('Checkout Customization') }}</span>
-          </el-breadcrumb-item>
-        </el-breadcrumb>
+  <SettingsPage
+      :heading="translate('Checkout Customization')"
+      :breadcrumbs="[
+        {label: translate('Payment Settings'), to: {path: '/settings/payments'}},
+        {label: $route.params.method, to: {path: `/settings/payments/${route_name}`}}
+      ]"
+      @on-save="savePaymentDesign"
+      :loading="saving"
+      :save-button-text="translate('Update')"
+  >
+
+    <Section :title="translate('Customization')" divided>
+      <template #actions>
+        <fct-button @click="goBack" link class="cursor-pointer border-none p-0">
+          <el-icon class="text-gray-500 cursor-pointer" @click="goBack"> <ArrowLeft />
+          </el-icon> {{ translate('Back to Gateway Settings') }} </fct-button>
       </template>
-    </SettingsHeader>
+      <fct-skeleton v-if="fetching" animated :rows="4" class="pt-2" />
+      <el-form v-if="!fetching" label-position="left">
+        <el-form-item :label="translate('Checkout Label')">
+          <fct-input type="text" v-model="checkout_label"/>
+        </el-form-item>
+        <el-form-item :label="translate('Checkout Logo')">
+          <MediaInput v-model="mediaSelection" icon="Upload" :title="translate('Upload Logo')"/>
+        </el-form-item>
+        <el-form-item label-position="top">
+          <LabelHint :title="translate('Checkout Instructions')" :content="translate('Checkout Instructions will be displayed on the checkout page gateway section.')"/>
+          <WpEditor
+              v-model="checkout_instructions"
+              @update="(val) => { checkout_instructions = val; }"
+          ></WpEditor>
+        </el-form-item>
+        <!-- gap 10px -->
+        <div class="h-10"></div>
+        <el-form-item label-position="top">
+          <LabelHint :title="translate('Thank you page Instruction')" :content="translate('Settings_Thank_Page')"/>
+          <WpEditor
+              v-model="thank_you_page_instructions"
+              @update="(val) => { thank_you_page_instructions = val; }"
+          ></WpEditor>
+        </el-form-item>
+      </el-form>
+    </Section>
 
-    <div class="setting-wrap-inner">
-      <Card.Container>
-        <Card.Header :title="$t('Customization')" border_bottom>
-          <template #action>
-            <el-button @click="goBack" link class="cursor-pointer border-none p-0">
-              <el-icon class="text-gray-500 cursor-pointer" @click="goBack"> <ArrowLeft />
-              </el-icon> {{ $t('Back to Gateway Settings') }} </el-button>
-          </template>
-        </Card.Header>
-        <Card.Body>
-          <el-skeleton :loading="fetching" animated :rows="4" class="pt-2" />
-          <el-form v-if="!fetching" label-position="left">
-            <el-form-item :label="$t('Checkout Label')">
-              <el-input type="text" v-model="checkout_label"/>
-            </el-form-item>
-            <el-form-item :label="$t('Checkout Logo')">
-              <MediaInput v-model="mediaSelection" icon="Upload" :title="$t('Upload Logo')"/>
-            </el-form-item>
-            <el-form-item label-position="top">
-              <LabelHint :title="$t('Checkout Instructions')" :content="$t('Checkout Instructions will be displayed on the checkout page gateway section.')"/>
-              <WpEditor
-                  v-model="checkout_instructions"
-                  @update="(val) => { checkout_instructions = val; }"
-              ></WpEditor>
-            </el-form-item>
-            <!-- gap 10px -->
-            <div class="h-10"></div>
-            <el-form-item label-position="top">
-              <LabelHint :title="$t('Thank you page Instruction')" :content="$t('Settings_Thank_Page')"/>
-              <WpEditor
-                  v-model="thank_you_page_instructions"
-                  @update="(val) => { thank_you_page_instructions = val; }"
-              ></WpEditor>
-            </el-form-item>
-          </el-form>
-        </Card.Body>
-      </Card.Container>
-
-      <div class="setting-save-action">
-        <el-button type="primary" :loading="saving" @click="savePaymentDesign">
-          {{ $t('Update') }}
-        </el-button>
-      </div>
+    <div class="setting-save-action">
+      <fct-button type="primary" :loading="saving" @click="savePaymentDesign">
+        {{ translate('Update') }}
+      </fct-button>
     </div>
-  </div>
+  </SettingsPage>
 </template>
 
 <script setup>
-import * as Card from '@/Bits/Components/Card/Card.js';
-import {ArrowRight, ArrowLeft} from "@element-plus/icons-vue";
+import translate from "@/utils/translator/Translator";
+import Section from "@/Bits/Components/Layout/Section.vue";
+import {ArrowLeft} from "@element-plus/icons-vue";
 import MediaInput from "@/Bits/Components/Inputs/MediaInput.vue";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import LabelHint from "@/Bits/Components/LabelHint.vue";
@@ -78,12 +62,12 @@ import LabelHint from "@/Bits/Components/LabelHint.vue";
 
 <script type="text/babel">
 import {handleSuccess, handleError} from "@/Bits/common";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
+import SettingsPage from "./Parts/SettingsPage.vue";
 
 export default {
   name: 'PaymentDesign',
   components: {
-    SettingsHeader,
+    SettingsPage,
   },
   data() {
     return {

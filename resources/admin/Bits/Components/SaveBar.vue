@@ -3,16 +3,16 @@
       <div class="fct-save-bar-inner">
         <div class="fct-save-bar-left">
           <DynamicIcon name="AlertIcon"/>
-          <h4 class="title">{{ unSaveChangesText }}</h4>
+          <p class="title">{{ unSaveChangesText }}</p>
         </div><!-- .fct-save-bar-left -->
 
         <div class="fct-save-bar-right">
           <div class="fct-btn-group">
-            <el-button @click="discardEmitEvent" type="info" soft :disabled="loading"> {{ discardButtonText}}</el-button>
-            <el-button type="primary" @click="saveEmitEvent" :loading="loading">
+            <fct-button @click="discardEmitEvent" type="info" soft :disabled="loading"> {{ discardButtonText}}</fct-button>
+            <fct-button type="primary" @click="saveEmitEvent" :loading="loading">
               <span v-if="showCmndIcon" class="cmd">⌘s</span>
               {{ saveButtonText }}
-            </el-button>
+            </fct-button>
           </div>
         </div><!-- .fct-save-bar-right -->
       </div>
@@ -21,7 +21,7 @@
 
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import {defineProps, defineEmits, onBeforeUnmount, ref, onMounted, watch} from 'vue';
+import {onBeforeUnmount, ref, onMounted, watch} from 'vue';
 import {onBeforeRouteLeave} from "vue-router";
 import translate from "@/utils/translator/Translator";
 

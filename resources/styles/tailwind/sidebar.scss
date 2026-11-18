@@ -34,7 +34,7 @@
             @apply text-ellipsis overflow-hidden text-[13px] block text-system-mid leading-6 dark:text-gray-300;
         }
         a.text{
-            @apply text-[13px] text-dark-500 focus:shadow-none focus:outline-none hover:text-dark-600 dark:text-gray-50 dark:hover:text-gray-50;
+            @apply text-[13px] text-dark-500 focus:shadow-none focus:outline-hidden hover:text-dark-600 dark:text-gray-50 dark:hover:text-gray-50;
         }
         .text-sub{
             @apply text-system-mid text-[13px] dark:text-gray-300;

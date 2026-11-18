@@ -138,25 +138,25 @@ onMounted(() => {
             :text="translate('Override tax rates for specific product categories or shipping.')"
         >
         <template #action>
-            <el-button size="small" @click="addNewTaxOverride">
+            <fct-button size="small" @click="addNewTaxOverride">
                 {{ translate('Add Tax Override') }}
-            </el-button>
+            </fct-button>
         </template>
     </CardHeader>
         <CardBody>
             <div class="fct-tax-rates-country-view">
                 <div
                     v-if="loadingOverrides"
-                    class="border border-gray-200 rounded-md overflow-hidden dark:border-dark-300"
+                    class="[border-width:1px] border-gray-200 rounded-md overflow-hidden dark:border-dark-300"
                 >
-                    <div class="grid grid-cols-[110px_1fr_1fr_1fr_100px_110px] gap-4 px-4 py-3 border-b border-gray-200 dark:border-dark-300">
+                    <div class="grid grid-cols-[110px_1fr_1fr_1fr_100px_110px] gap-4 px-4 py-3 [border-bottom-width:1px] border-gray-200 dark:border-dark-300">
                         <div v-for="index in 6" :key="'loading-header-' + index" class="fct-sk h-3 rounded-xs" />
                     </div>
 
                     <div
                         v-for="row in 3"
                         :key="'loading-row-' + row"
-                        class="grid grid-cols-[110px_1fr_1fr_1fr_100px_110px] gap-4 px-4 py-4 border-b border-gray-100 last:border-b-0 dark:border-dark-400"
+                        class="grid grid-cols-[110px_1fr_1fr_1fr_100px_110px] gap-4 px-4 py-4 [border-bottom-width:1px] border-gray-100 last:border-b-0 dark:border-dark-400"
                     >
                         <div class="fct-sk w-16 h-6 rounded-full" />
                         <div class="fct-sk w-28 h-3.5 rounded-xs" />
@@ -167,48 +167,48 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <el-table v-else :data="overrideRows" :empty-text="translate('No overrides configured')">
-                    <el-table-column :label="translate('Type')" width="110">
+                <fct-table v-else :data="overrideRows" :empty-text="translate('No overrides configured')">
+                    <fct-table-column :label="translate('Type')" width="110">
                         <template #default="{ row }">
                             <el-tag :type="row.type === 'products' ? 'primary' : 'info'" size="small">
                                 {{ row.type === 'products' ? translate('Product') : translate('Shipping') }}
                             </el-tag>
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Category')">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Category')">
                         <template #default="{ row }">
                             {{ row.category_name || '—' }}
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Tax Class')" width="130">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Tax Class')" width="130">
                         <template #default="{ row }">
                             {{ row.class_label || translate('All') }}
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Tax Label')">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Tax Label')">
                         <template #default="{ row }">
                             {{ row.tax_label || '—' }}
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Location')">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Location')">
                         <template #default="{ row }">
                             {{ row.location }}
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('City / Postcode')">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('City / Postcode')">
                         <template #default="{ row }">
                             <span v-if="row.city || row.postcode">
                                 {{ [row.city, row.postcode].filter(Boolean).join(' / ') }}
                             </span>
                             <span v-else>—</span>
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Rate')" width="100">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Rate')" width="100">
                         <template #default="{ row }">
                             {{ row.rate }}%
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Actions')" width="110" align="right">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Actions')" width="110" align="right">
                         <template #default="{ row }">
                             <div class="fct-btn-group sm justify-end">
                                 <IconButton tag="button" size="small" @click="editOverride(row)">
@@ -219,8 +219,8 @@ onMounted(() => {
                                 </IconButton>
                             </div>
                         </template>
-                    </el-table-column>
-                </el-table>
+                    </fct-table-column>
+                </fct-table>
             </div>
         </CardBody>
     </Card>

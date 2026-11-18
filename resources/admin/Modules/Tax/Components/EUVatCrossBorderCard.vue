@@ -210,22 +210,25 @@ watch(() => props.countries, (val) => {
         <CardBody>
             <div class="fct-vat-card-header">
                 <div class="fct-vat-card-title">
-                    <h3>{{ translate('Collect VAT cross-border') }}</h3>
-                    <el-tooltip :content="translate('Choose how to collect VAT for sales to other EU countries.')" placement="top">
+                    <h2>{{ translate('Collect VAT cross-border') }}</h2>
+                    <fct-tooltip :content="translate('Choose how to collect VAT for sales to other EU countries.')" placement="top">
                         <DynamicIcon name="InformationFill" class="w-4 h-4 text-system-mid cursor-pointer" />
-                    </el-tooltip>
+                    </fct-tooltip>
                 </div>
-                <el-dropdown v-if="hasConfiguredCrossBorderCollection" trigger="click" @command="handleCrossBorderAction" popper-class="fct-dropdown" placement="bottom-end">
+                <fct-dropdown
+                    v-if="hasConfiguredCrossBorderCollection"
+                    trigger="click"
+                    placement="bottom-end"
+                    :items="[
+                        {command: 'edit', label: translate('Edit registration')},
+                        {command: 'stop', label: translate('Stop collecting')},
+                    ]"
+                    @command="handleCrossBorderAction"
+                >
                     <IconButton border="none" size="small" tag="button">
                         <DynamicIcon name="More" />
                     </IconButton>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item command="edit">{{ translate('Edit registration') }}</el-dropdown-item>
-                            <el-dropdown-item command="stop">{{ translate('Stop collecting') }}</el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                </fct-dropdown>
             </div>
 
             <div class="fct-vat-card-body">
@@ -258,7 +261,7 @@ watch(() => props.countries, (val) => {
                     <Alert
                         v-if="crossBorderForm.method === 'home'"
                         :type="homeCountryConfigured ? 'info' : 'warning'"
-                        icon="Info"
+                        icon="Information"
                         class="mb-4 mt-4"
                         :content="homeCountryConfigured
                             ? /* translators: %1$s: home country name (e.g. Cyprus) */ translate('Tax_Collecting_Cross', getCountryName(crossBorderForm.home_country))
@@ -284,7 +287,7 @@ watch(() => props.countries, (val) => {
                                     <img :src="`https://flagcdn.com/w40/${storeCountry.toLowerCase()}.png`" :alt="storeCountryEU.label" class="fct-flag-icon" />
                                     <span class="fct-vat-country-name">{{ storeCountryEU.label }}</span>
                                 </div>
-                                <el-button size="small" @click="addCountryRegistration">{{ translate('Configure') }}</el-button>
+                                <fct-button size="small" @click="addCountryRegistration">{{ translate('Configure') }}</fct-button>
                             </div>
 
                             <div
@@ -302,7 +305,7 @@ watch(() => props.countries, (val) => {
                                     <IconButton v-if="hasValidRates(registration)" border="none" size="small" tag="button" :title="translate('Edit')" @click="editCountryRegistration(registration)">
                                         <DynamicIcon name="Edit" />
                                     </IconButton>
-                                    <el-button v-else size="small" @click="editCountryRegistration(registration)">{{ translate('Configure') }}</el-button>
+                                    <fct-button v-else size="small" @click="editCountryRegistration(registration)">{{ translate('Configure') }}</fct-button>
                                     <IconButton border="none" size="small" tag="button" :title="translate('Delete')" @click="removeCountryRegistration(registration.country)">
                                         <DynamicIcon name="Delete" />
                                     </IconButton>
@@ -311,14 +314,14 @@ watch(() => props.countries, (val) => {
 
                             <div v-if="!initialRegistrations.length && !storeCountryEU" class="fct-vat-empty-state">
                                 <p class="text-system-mid text-sm">{{ translate('No country VAT registrations configured.') }}</p>
-                                <el-button type="primary" size="small" @click="addCountryRegistration">{{ translate('Configure') }}</el-button>
+                                <fct-button type="primary" size="small" @click="addCountryRegistration">{{ translate('Configure') }}</fct-button>
                             </div>
                         </div>
 
                         <div v-if="initialRegistrations.length || storeCountryEU" class="px-5 py-3">
-                            <el-button type="primary" link @click="addCountryRegistration">
+                            <fct-button type="primary" link @click="addCountryRegistration">
                                 + {{ translate('Collect in another country') }}
-                            </el-button>
+                            </fct-button>
                         </div>
                     </div>
 
@@ -334,9 +337,9 @@ watch(() => props.countries, (val) => {
                         <p class="fct-vat-cross-border-empty-title">{{ translate('Not collecting cross-border VAT') }}</p>
                         <p class="fct-vat-cross-border-empty-desc">{{ translate('Tax_Set_Oss') }}</p>
                     </div>
-                    <el-button size="small" @click="showCrossBorderModal = true" type="primary">
+                    <fct-button size="small" @click="showCrossBorderModal = true" type="primary">
                         {{ translate('Configure') }}
-                    </el-button>
+                    </fct-button>
                 </div>
             </div>
         </CardBody>

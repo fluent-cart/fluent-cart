@@ -11,6 +11,7 @@ use FluentCart\App\Helpers\CartCheckoutHelper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\OrderTransaction;
+use FluentCart\App\Models\Subscription;
 use FluentCart\Api\Resource\ActivityResource;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Renderer\Receipt\ReceiptRenderer;
@@ -20,6 +21,9 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
 {
 
     private $methodSlug = '';
+
+    // Set by enqueue(); a gateway without a checkout script gets no skeleton.
+    protected bool $hasCheckoutScripts = false;
 
     public array $supportedFeatures = [];
 
@@ -119,6 +123,19 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
     public static function beforeSettingsUpdate($data, $oldSettings): array
     {
         return $data;
+    }
+
+    /**
+     * Check the saved credentials of one mode against the gateway API, without creating anything.
+     * Writes nothing: no option, cache, lock or token storage.
+     * A gateway gets the admin "Test connection" button by overriding this method.
+     *
+     * @param string $mode 'test' or 'live'
+     * @return array|\WP_Error ['message' => string] on success
+     */
+    public function testConnection(string $mode)
+    {
+        return new \WP_Error('not_supported', __('Connection test is not available for this payment method.', 'fluent-cart'));
     }
 
     public function updateSettings($data)
@@ -242,6 +259,24 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
     public function supportsSetupWithoutCharge(): bool
     {
         return false;
+    }
+
+    /** Whether the customer can update this subscription's payment method now. */
+    public function canUpdateSubscriptionPaymentMethod(Subscription $subscription): bool
+    {
+        return false;
+    }
+
+    /** Whether the customer can switch this subscription to another gateway now. */
+    public function canSwitchSubscriptionPaymentMethod(Subscription $subscription, bool $requirePaidDays = true): bool
+    {
+        return false;
+    }
+
+    /** Gateway slugs this subscription can be switched to. */
+    public function getSwitchableSubscriptionPaymentMethods(Subscription $subscription): array
+    {
+        return [];
     }
 
     /**
@@ -444,6 +479,21 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
         return [];
     }
 
+    /**
+     * Placeholder shown while the gateway's script mounts its form, so the
+     * payment block keeps its size. Override to match your form; '' shows none.
+     */
+    public function getCheckoutSkeleton(): string
+    {
+        // Nothing mounts without a script, so there is nothing to wait for.
+        if (!$this->hasCheckoutScripts) {
+            return '';
+        }
+
+        return '<span class="fct-payment-skeleton__bar"></span>'
+            . '<span class="fct-payment-skeleton__bar fct-payment-skeleton__bar--short"></span>';
+    }
+
     public function getTransactionUrl($url, $data)
     {
         return $url;
@@ -468,6 +518,7 @@ abstract class AbstractPaymentGateway implements PaymentGatewayInterface
     {
         $styles = $this->getEnqueueStyleSrc();
         $scripts = $this->getEnqueueScriptSrc($hasSubscription);
+        $this->hasCheckoutScripts = !empty($scripts);
 
         foreach ($styles as $style) {
             wp_enqueue_style(

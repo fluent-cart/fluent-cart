@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <mask id="fct-aa-cut-black"><rect width="64" height="64" fill="#fff"/><path d="M46 53C46 53 56 43.3 56 33C56 27.5 51.5 23 46 23C40.5 23 36 27.5 36 33C36 43.3 46 53 46 53Z" fill="#000" stroke="#000" stroke-width="10" stroke-linejoin="round"/></mask>
+  <g mask="url(#fct-aa-cut-black)" stroke="#565865" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5.4" y="11" width="44" height="30" rx="4"/>
+    <path d="M13 20H31M13 28H25"/>
+  </g>
+  <path d="M46 53C46 53 56 43.3 56 33C56 27.5 51.5 23 46 23C40.5 23 36 27.5 36 33C36 43.3 46 53 46 53Z" stroke="#565865" stroke-width="3.6" stroke-linejoin="round"/>
+  <circle cx="46" cy="33" r="3.8" fill="#565865"/>
+</svg>

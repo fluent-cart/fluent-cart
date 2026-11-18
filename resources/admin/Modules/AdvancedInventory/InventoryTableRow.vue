@@ -2,7 +2,7 @@
     <tr class="fct-inventory-row">
         <td width="50">
             <div class="flex items-center gap-1">
-                <el-checkbox
+                <fct-choice
                     :model-value="isRowSelected(row.variants[0])"
                     @change="toggleRowSelection(row.variants[0])"
                 />
@@ -41,7 +41,7 @@
         </td>
 
         <td>
-            <el-input
+            <fct-input
                 v-model="row.variants[0].total_stock"
                 class="el-input--x-small input-with-total-stock fct-input-group"
                 readonly
@@ -53,7 +53,7 @@
                         @save="$emit('stock-save', $event)"
                     />
                 </template>
-            </el-input>
+            </fct-input>
         </td>
 
         <td v-if="inventoryTable?.isColumnVisible('available')">
@@ -83,7 +83,6 @@
 </template>
 
 <script setup>
-import { defineOptions } from 'vue';
 import translate from '@/utils/translator/Translator';
 import InventoryStockAdjuster from './InventoryStockAdjuster.vue';
 import IconButton from '@/Bits/Components/Buttons/IconButton.vue';
@@ -107,10 +106,6 @@ const props = defineProps({
         required: true
     },
     navigateToProduct: {
-        type: Function,
-        required: true
-    },
-    getPlaceholderImage: {
         type: Function,
         required: true
     }

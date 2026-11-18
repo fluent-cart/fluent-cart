@@ -463,12 +463,12 @@ const selectVariation = (item) => {
             </td>
             <td>
               <div class="fct-product-pricing-table-item">
-                <el-input
+                <fct-input
                     :class="productEditModel.hasValidationError(`variants.${index}.variation_title`) ? 'is-error' : ''"
                     :id="`variants.${index}.variation_title`"
                     :placeholder="$t('e.g. Small, Medium, Large')" type="text" v-model="variant.variation_title" @input="value => {productEditModel.onChangePricing('variation_title', index,value)}" :disabled="product?.detail?.variation_type === 'simple' || readonly"
                     @focus="productEditModel.clearValidationError(`variants.${index}.variation_title`)">
-                </el-input>
+                </fct-input>
 
                 <span v-if="variant.other_info?.installment === 'yes'" class="fct-variant-badge">
                   {{variant.other_info.times}} {{translate('Installment')}}
@@ -632,10 +632,11 @@ const selectVariation = (item) => {
       @open-editor="openSharedDrawer"
     />
 
-    <el-drawer
+    <fct-dialog
+      drawer
       v-model="showSharedDrawer"
       :title="$t('Pricing')"
-      :size="sharedDrawerSize"
+      :width="sharedDrawerSize"
       :append-to-body="true"
       :close-on-click-modal="true"
       :close-on-press-escape="false"
@@ -699,9 +700,9 @@ const selectVariation = (item) => {
             </div>
         </div>
       </div>
-    </el-drawer>
+    </fct-dialog>
 
-    <el-dialog
+    <fct-dialog
       v-model="showDirtyDraftDialog"
       :close-on-click-modal="false"
       :close-on-press-escape="!dirtyDialogSubmitting"
@@ -721,33 +722,33 @@ const selectVariation = (item) => {
 
       <div class="dialog-footer">
         <div class="fct-btn-group sm">
-            <el-button 
+            <fct-button 
                 :disabled="dirtyDialogSubmitting" 
                 @click="handleContinueEditing" 
                 size="small"
             >
             {{ translate('Continue editing') }}
-            </el-button>
+            </fct-button>
 
-            <el-button 
+            <fct-button 
                 :disabled="dirtyDialogSubmitting" 
                 @click="handleDiscardDirtyDrafts" 
                 size="small"
             >
             {{ translate('Discard') }}
-            </el-button>
+            </fct-button>
 
-            <el-button 
+            <fct-button 
                 type="primary" 
                 :loading="dirtyDialogSubmitting" 
                 @click="handleSaveDirtyDraft" 
                 size="small"
             >
             {{ translate('Save') }}
-            </el-button>
+            </fct-button>
         </div>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 
 </template>

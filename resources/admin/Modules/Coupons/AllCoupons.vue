@@ -3,15 +3,14 @@
     <div class="fct-all-coupons-page fct-layout-width">
       <PageHeading :title="translate('Coupons')">
         <template #action>
-          <el-button
-              tag="router-link"
+          <fct-button
               type="primary"
               :to="{
                 name: 'add_or_edit_coupon'
               }"
           >
             {{ translate("Add Coupon") }}
-          </el-button>
+          </fct-button>
         </template>
       </PageHeading>
 
@@ -20,217 +19,188 @@
           <AllCouponsLoader v-if="couponTable.isLoading()" :couponTable="couponTable"
                             :next-page-count="couponTable.nextPageCount" />
           <div v-else>
-            <el-table
+            <fct-table
                 :data="couponTable.getTableData()"
                 class="w-full compact-table full-compact"
             >
-              <el-table-column :width="100" :label="translate('ID')">
-                <template #default="scope">
+              <fct-table-column :width="100" :label="translate('ID')">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id },
+                      params: { coupon_id: row.id },
                     }"
                   >
-                    #{{ translateNumber(scope.row.id) }}
+                    #{{ translateNumber(row.id) }}
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="couponTable.isColumnVisible('title')"
                   :label="translate('Title')"
                   :width="220"
               >
-                <template #default="scope">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
-                    {{ scope.row.title }}
+                    {{ row.title }}
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Code')" :width="200">
-                <template #default="scope">
-                  <code class="copyable-content" @click="Clipboard.copy(scope.row.code);">
-                    {{ scope.row.code }}
+              <fct-table-column :label="translate('Code')" :width="200">
+                <template #default="{ row }">
+                  <code class="copyable-content" @click="Clipboard.copy(row.code);">
+                    {{ row.code }}
                   </code>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Amount')" :width="120">
-                <template #default="scope">
+              <fct-table-column :label="translate('Amount')" :width="120">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
                     {{
-                      scope.row.type !== "percentage"
-                          ? formatNumber(scope.row.amount, true)
-                          : scope.row.amount + "%"
+                      row.type !== "percentage"
+                          ? formatNumber(row.amount, true)
+                          : row.amount + "%"
                     }}
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Usage')" :width="150">
-                <template #default="scope">
+              <fct-table-column :label="translate('Usage')" :width="150">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
                     <span>
-                      {{ translateNumber(scope.row.use_count ?? 0) }}
+                      {{ translateNumber(row.use_count ?? 0) }}
                     </span>
                     <span class="px-1">/</span>
                     <span>
                       {{
-                        scope.row.conditions.max_uses > 0
-                            ? scope.row.conditions.max_uses
+                        row.conditions.max_uses > 0
+                            ? row.conditions.max_uses
                             : translate("Unlimited")
                       }}
                     </span>
                   </RouteCell>
                 </template>
-              </el-table-column>
-              <el-table-column
+              </fct-table-column>
+              <fct-table-column
                   v-if="couponTable.isColumnVisible('stackable')"
                   :label="translate('Stackable')"
                   :width="120"
               >
-                <template #default="scope">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
                     <span class="capitalize">
-                      {{ scope.row.stackable }}
+                      {{ row.stackable }}
                     </span>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Status')" :width="120">
-                <template #default="scope">
+              <fct-table-column :label="translate('Status')" :width="120">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
-                    <Badge :status="scope.row.status" kind="coupon">
+                    <Badge :status="row.status" kind="coupon">
                       {{
-                        isExpired(scope.row.end_date)
+                        isExpired(row.end_date)
                             ? _x('Expired', 'Coupon status')
-                            : scope.row.status
+                            : row.status
                       }}
                     </Badge>
-                    <el-tooltip
-                        v-if="scope.row.status === 'scheduled'"
-                        effect="dark"
+                    <fct-tooltip
+                        v-if="row.status === 'scheduled'"
                         placement="top"
-                        popper-class="fct-label-hint-popover fct-tooltip"
+                        popper-class="fct-label-hint-popover"
                         :show-after="400"
                         :hide-after="0"
                     >
                       <template #content>
                         {{
                           /* translators: %s - date */
-                          translate('Available On: %s', formatDate(scope.row.start_date, true))
+                          translate('Available On: %s', formatDate(row.start_date, true))
                         }}
                       </template>
                       <DynamicIcon name="InformationFill" class="w-4 h-4 flex-none"/>
-                    </el-tooltip>
+                    </fct-tooltip>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Expiry Date')" :width="120">
-                <template #default="scope">
+              <fct-table-column :label="translate('Expiry Date')" :width="120">
+                <template #default="{ row }">
                   <RouteCell
                       class="hover:no-underline"
                       :to="{
                       name: 'add_or_edit_coupon',
-                      params: { coupon_id: scope.row.id, action: 'edit' },
+                      params: { coupon_id: row.id },
                     }"
                   >
                     <span>
                       <ConvertedTime
-                          :date-time="scope.row.end_date"
-                          v-if="!isNaN(Date.parse(scope.row.end_date))"
+                          :date-time="row.end_date"
+                          v-if="!isNaN(Date.parse(row.end_date))"
                           :with-time="true"
                       />
                       <template v-else>n/a</template>
                     </span>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="couponTable.isColumnVisible('actions')"
                   :label="translate('Actions')"
                   :width="100"
                   align="right"
                   fixed="right"
               >
-                <template #default="scope">
-                  <el-dropdown
+                <template #default="{ row }">
+                  <fct-dropdown
                       trigger="click"
                       class="fct-more-option-wrap"
-                      popper-class="fct-dropdown"
-                      @command="handleCommand"
+                      :items="rowActions(row)"
+                      @command="(command) => handleCommand(command, row)"
                       placement="bottom-end"
                   >
                     <span class="more-btn me-2">
                       <DynamicIcon name="More"/>
                     </span>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item class="item-link" v-if="scope.row.id">
-                          <router-link
-                              :to="{
-                              name: 'add_or_edit_coupon',
-                              params: {
-                                coupon_id: scope.row.id,
-                                action: 'edit',
-                              },
-                            }"
-                          >
-                            <DynamicIcon name="Edit"/>
-                            {{ translate("Edit") }}
-                          </router-link>
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            :command="{
-                            action: 'delete',
-                            coupon: scope.row,
-                          }"
-                            class="item-destructive"
-                        >
-                          <DynamicIcon name="Delete"/>
-                          {{ translate("Delete") }}
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
+                  </fct-dropdown>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
               <template #empty>
                 <Empty
@@ -239,7 +209,7 @@
                     :text="translate('No coupons available at the moment.')"
                 />
               </template>
-            </el-table>
+            </fct-table>
           </div>
 
           <template #mobile>
@@ -254,6 +224,7 @@
 
 <script setup>
 import {getCurrentInstance, onMounted, ref} from "vue";
+import {useRouter} from "vue-router";
 import {$confirm, formatDate} from "@/Bits/common";
 import useCouponTable from "@/utils/table-new/CouponTable";
 import TableWrapper from "@/Bits/Components/TableNew/TableWrapper.vue";
@@ -279,17 +250,23 @@ import CouponsTableMobile from "@/Modules/Coupons/CouponsTableMobile.vue";
 import CouponsLoaderMobile from "@/Modules/Coupons/CouponsLoaderMobile.vue";
 
 const couponTable = useCouponTable();
+const router = useRouter();
 
 const show_on_checkout = ref(false);
 
-const handleCommand = (command) => {
+const rowActions = (row) => [
+  row.id && {command: 'edit', label: translate('Edit'), icon: 'Edit', href: router.resolve({name: 'add_or_edit_coupon', params: {coupon_id: row.id}}).href},
+  {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+].filter(Boolean);
+
+const handleCommand = (command, coupon) => {
   /* translators: %s - coupon title */
   let deleteMessage = translate(
       "Are you sure you want to delete this %s coupon. This action is not recoverable",
-      command.coupon.title
+      coupon.title
   );
 
-  if (command.action === "delete") {
+  if (command === "delete") {
 
 
     $confirm(deleteMessage, translate("Confirm Delete!"), {
@@ -298,7 +275,7 @@ const handleCommand = (command) => {
       type: "warning",
     })
         .then(() => {
-          Rest.delete("coupons/" + command.coupon.id)
+          Rest.delete("coupons/" + coupon.id)
               .then((response) => {
                 Notify.success(response.message);
                 couponTable.fetch();

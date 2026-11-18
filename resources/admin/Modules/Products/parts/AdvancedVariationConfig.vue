@@ -1,6 +1,6 @@
 <script setup>
 import {ref, onMounted, onUnmounted, computed, nextTick} from "vue";
-import {VueDraggableNext} from 'vue-draggable-next';
+import SortableList from '@/Bits/Components/Layout/SortableList.vue';
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
@@ -1194,11 +1194,11 @@ const addTypedTermFromEmpty = () => {
   showInlineTermForm(query);
 };
 
-// Enter handler on the color/image option-values el-select. Bound in the
+// Enter handler on the color/image option-values select, bound on its wrapper div in the
 // CAPTURE phase (@keydown.capture) — NOT bubble — because Element Plus's
 // own inner-input Enter handler runs with the "stop" modifier
-// (event.stopPropagation()), so a bubble-phase listener on the el-select
-// root never sees Enter at all. The capture listener on the root fires
+// (event.stopPropagation()), so a bubble-phase listener on the select
+// never sees Enter at all. The capture listener on the wrapper fires
 // before the event reaches the input, so EP's later stopPropagation is
 // irrelevant. Reads the typed text directly off the input via
 // event.target.value (rather than relying on the filter-method query)
@@ -1542,18 +1542,18 @@ const termCreatingIsDone = (newTerm) => {
 
       <!-- Option Cards — only mount once the library has loaded so the
            term-name chips have something to resolve against. -->
-      <VueDraggableNext
+      <!-- Reordering is off while a card is open: expandedIndex points at a position. -->
+      <SortableList
           v-if="selectedAttributes.length > 0 && !loading"
           v-model="selectedAttributes"
-          handle=".fct-option-drag-handle"
-          :disabled="selectedAttributes.length <= 1 || expandedIndex !== null"
+          tag="div"
           class="fct-option-card-list"
+          :item-key="(attr, index) => attr.group_id || ('new-' + index)"
+          :disabled="selectedAttributes.length <= 1 || expandedIndex !== null"
+          :handle-label="attr => translate('Reorder %1$s — drag, or use arrow up and down keys', optionDisplayTitle(attr, selectedAttributes.indexOf(attr)))"
       >
-        <div
-            v-for="(attr, index) in selectedAttributes"
-            :key="attr.group_id || ('new-' + index)"
-            class="fct-option-card"
-        >
+       <template #item="{item: attr, index, handle}">
+        <div class="fct-option-card">
 
           <!-- Always-visible accordion header. Click toggles open/closed:
                opening seeds the draft from the attr (expandCard); closing
@@ -1568,9 +1568,7 @@ const termCreatingIsDone = (newTerm) => {
               @click="toggleCard(index)"
               @keydown.enter.space.prevent="toggleCard(index)"
           >
-            <span class="fct-option-drag-handle" v-if="selectedAttributes.length > 1" @click.stop>
-              <DynamicIcon name="ReorderDotsVertical"/>
-            </span>
+            <component :is="handle" v-if="selectedAttributes.length > 1" class="fct-option-drag-handle"/>
             <div class="fct-option-card-summary">
               <div class="fct-option-card-summary-header">
                 <strong>{{ optionDisplayTitle(attr, index) }}</strong>
@@ -1629,7 +1627,7 @@ const termCreatingIsDone = (newTerm) => {
                 <!-- allow-create lets the merchant type a brand-new option name (e.g. "Fabric")
                      that isn't yet in the library. The typed string becomes draft.group_id;
                      onGroupChange detects the string and offers the "Save as Template" button. -->
-                <el-select
+                <fct-select
                     v-model="draft.group_id"
                     filterable
                     :allow-create="canCreateGroupFromQuery"
@@ -1638,15 +1636,9 @@ const termCreatingIsDone = (newTerm) => {
                     popper-class="fct-option-name-select"
                     :placeholder="translate('Select or type a new option')"
                     @change="onGroupChange($event)"
+                    :options="filteredGroupsFor(index).map(group => ({label: group.title, value: group.id}))"
                     @visible-change="onGroupNamePickerVisibleChange"
-                >
-                  <el-option
-                      v-for="group in filteredGroupsFor(index)"
-                      :key="group.id"
-                      :label="group.title"
-                      :value="group.id"
-                  />
-                </el-select>
+                />
                 <!-- Inline shortcut to the full Add-Group form (title + slug + type
                      + styling + description). Without this, the merchant has to
                      leave the product editor and visit #/attributes to create a
@@ -1659,7 +1651,7 @@ const termCreatingIsDone = (newTerm) => {
                      pattern below — without the wrapper, parent flex/form layout
                      centers the el-button. -->
                 <div v-if="!draft.group_id" class="mt-2">
-                  <el-button
+                  <fct-button
                       type="primary"
                       size="small"
                       text
@@ -1668,7 +1660,7 @@ const termCreatingIsDone = (newTerm) => {
                   >
                     <DynamicIcon name="Plus"/>
                     {{ translate('Create new attribute group') }}
-                  </el-button>
+                  </fct-button>
                 </div>
                 <div v-if="draft.errors?.name" class="fct-option-error">
                   <DynamicIcon name="AlertIcon"/>
@@ -1678,7 +1670,7 @@ const termCreatingIsDone = (newTerm) => {
               <div class="fct-option-field" :class="{ 'fct-option-field--error': draft.errors?.values }">
                 <label class="fct-option-label">{{ translate('Option values') }}</label>
                 <!-- SELECT TYPE -->
-                <el-select
+                <fct-select
                     v-if="getGroupType(draft.group_id) === 'options'"
                     :ref="setOptionsPickerRef"
                     v-model="draft.variants"
@@ -1696,6 +1688,10 @@ const termCreatingIsDone = (newTerm) => {
                     :loading-text="translate('Loading...')"
                     @change="handleVariantChange($event)"
                     @visible-change="onOptionsPickerVisibleChange"
+                    :options="[
+                      ...filteredOptionsTerms.map(term => ({label: term.title, value: term.id, term})),
+                      ...filteredPendingTermStrings.map(pending => ({label: pending, value: pending}))
+                    ]"
                 >
                   <!-- Draggable selected values — reorder changes the combination
                        order (serial_index) for THIS product; the new order flows
@@ -1709,7 +1705,7 @@ const termCreatingIsDone = (newTerm) => {
                   </template>
                   <template #header>
                     <div v-if="getGroupTerms(draft.group_id).length > 0" class="fct-select-all-header">
-                      <el-checkbox
+                      <fct-choice
                         :model-value="isAllTermsSelected"
                         :indeterminate="someTermsSelected"
                         @change="toggleSelectAllTerms"
@@ -1717,42 +1713,30 @@ const termCreatingIsDone = (newTerm) => {
                       <span>{{ translate('Select all') }}</span>
                     </div>
                   </template>
-                  <el-option
-                      v-for="term in filteredOptionsTerms"
-                      :key="term.id"
-                      :label="term.title"
-                      :value="term.id"
-                  >
-                    <div class="fct-option-item">
-                      <el-checkbox
-                        :model-value="draft.variants.some(function(variantId){ return sameId(variantId, term.id); })"
+                  <template #option="{option}">
+                    <div v-if="option.term" class="fct-option-item">
+                      <fct-choice
+                        :model-value="draft.variants.some(function(variantId){ return sameId(variantId, option.term.id); })"
                         tabindex="-1"
                         @click.stop
-                        @change="toggleTerm(term.id)"
+                        @change="toggleTerm(option.term.id)"
                       />
-                      <span>{{ term.title }}</span>
+                      <span>{{ option.term.title }}</span>
                     </div>
-                  </el-option>
-                  <el-option
-                      v-for="pending in filteredPendingTermStrings"
-                      :key="pending"
-                      :label="pending"
-                      :value="pending"
-                  >
-                    <div class="fct-option-item">
-                      <el-checkbox
+                    <div v-else class="fct-option-item">
+                      <fct-choice
                         :model-value="true"
                         tabindex="-1"
                         @click.stop
-                        @change="toggleTerm(pending)"
+                        @change="toggleTerm(option.value)"
                       />
-                      <span>{{ pending }}</span>
+                      <span>{{ option.value }}</span>
                     </div>
-                  </el-option>
+                  </template>
                   <template #footer>
                     <div class="fct-picker-inline-form" @mousedown.self.prevent>
                       <template v-if="!inlineTermVisible">
-                        <el-button
+                        <fct-button
                           v-if="optionsPickerQuery.trim() && !getGroupTerms(draft.group_id).some(function(term){ return term.title.toLowerCase() === optionsPickerQuery.trim().toLowerCase(); })"
                           type="primary"
                           size="small"
@@ -1763,7 +1747,7 @@ const termCreatingIsDone = (newTerm) => {
                           <DynamicIcon name="Plus"/>
                           <!-- translators: %1$s: the term title the user typed -->
                           {{ translate('Add "%1$s" as new value', optionsPickerQuery.trim()) }}
-                        </el-button>
+                        </fct-button>
                       </template>
                       <template v-else>
                         <div class="fct-picker-inline-form-body">
@@ -1777,27 +1761,28 @@ const termCreatingIsDone = (newTerm) => {
                             @remove="hideInlineTermForm"
                           />
                           <div class="fct-picker-inline-form-actions">
-                            <el-button
+                            <fct-button
                               type="primary"
                               size="small"
                               :loading="inlineTermLoading"
                               :disabled="!inlineTerm.title.trim() || inlineTermLoading"
                               @click="submitInlineTerm(index)"
-                            >{{ translate('Add') }}</el-button>
-                            <el-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</el-button>
+                            >{{ translate('Add') }}</fct-button>
+                            <fct-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</fct-button>
                           </div>
                         </div>
                       </template>
                     </div>
                   </template>
-                </el-select>
+                </fct-select>
 
                 <!-- COLOR TYPE -->
                 <div
                     v-else-if="getGroupType(draft.group_id) === 'color'"
                     class="fct-option-field-values"
+                    @keydown.capture="(event) => handleValuesPickerKeyup(event, index)"
                 >
-                  <el-select
+                  <fct-select
                       :ref="setValuesPickerRef"
                       v-model="draft.variants"
                       multiple
@@ -1810,15 +1795,15 @@ const termCreatingIsDone = (newTerm) => {
                       :disabled="!draft.group_id"
                       :loading="isTermsLoading"
                       :loading-text="translate('Loading...')"
-                      @keydown.capture="(event) => handleValuesPickerKeyup(event, index)"
                       @visible-change="onPickerVisibleChange"
+                      :options="filteredGroupTerms.map(term => ({label: term.title, value: term.id, term}))"
                   >
                     <template #empty>
                       <div class="fct-option-empty-default">{{ translate('No matching data') }}</div>
                     </template>
                     <template #header>
                       <div v-if="getGroupTerms(draft.group_id).length > 0" class="fct-select-all-header">
-                        <el-checkbox
+                        <fct-choice
                           :model-value="isAllTermsSelected"
                           :indeterminate="someTermsSelected"
                           @change="toggleSelectAllTerms"
@@ -1833,30 +1818,25 @@ const termCreatingIsDone = (newTerm) => {
                           type="color"
                       />
                     </template>
-                    <el-option
-                        v-for="term in filteredGroupTerms"
-                        :key="term.id"
-                        :label="term.title"
-                        :value="term.id"
-                    >
+                    <template #option="{option}">
                       <div class="fct-color-option">
-                        <el-checkbox
-                          :model-value="draft.variants.some(function(variantId){ return sameId(variantId, term.id); })"
+                        <fct-choice
+                          :model-value="draft.variants.some(function(variantId){ return sameId(variantId, option.term.id); })"
                           tabindex="-1"
                           @click.stop
-                          @change="toggleTerm(term.id)"
+                          @change="toggleTerm(option.term.id)"
                         />
                         <span
                             class="fct-color-dot"
-                            :style="{ background: term.settings && term.settings.color ? term.settings.color : '' }"
+                            :style="{ background: option.term.settings && option.term.settings.color ? option.term.settings.color : '' }"
                         ></span>
-                        {{ term.title }}
+                        {{ option.term.title }}
                       </div>
-                    </el-option>
+                    </template>
                     <template #footer>
                       <div class="fct-picker-inline-form" @mousedown.self.prevent>
                         <template v-if="!inlineTermVisible">
-                          <el-button
+                          <fct-button
                             v-if="valuesPickerQuery.trim() && !filteredGroupTerms.some(function(term){ return term.title.toLowerCase() === valuesPickerQuery.trim().toLowerCase(); })"
                             type="primary"
                             size="small"
@@ -1867,8 +1847,8 @@ const termCreatingIsDone = (newTerm) => {
                             <DynamicIcon name="Plus"/>
                             <!-- translators: %1$s: the term title the user typed -->
                             {{ translate('Add "%1$s" as new value', valuesPickerQuery.trim()) }}
-                          </el-button>
-                          <el-button
+                          </fct-button>
+                          <fct-button
                             v-else
                             type="primary"
                             size="small"
@@ -1878,7 +1858,7 @@ const termCreatingIsDone = (newTerm) => {
                           >
                             <DynamicIcon name="Plus"/>
                             {{ translate('Add new value') }}
-                          </el-button>
+                          </fct-button>
                         </template>
                         <template v-else>
                           <div class="fct-picker-inline-form-body">
@@ -1892,28 +1872,29 @@ const termCreatingIsDone = (newTerm) => {
                               @remove="hideInlineTermForm"
                             />
                             <div class="fct-picker-inline-form-actions">
-                              <el-button
+                              <fct-button
                                 type="primary"
                                 size="small"
                                 :loading="inlineTermLoading"
                                 :disabled="!inlineTerm.title.trim() || inlineTermLoading"
                                 @click="submitInlineTerm(index)"
-                              >{{ translate('Add') }}</el-button>
-                              <el-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</el-button>
+                              >{{ translate('Add') }}</fct-button>
+                              <fct-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</fct-button>
                             </div>
                           </div>
                         </template>
                       </div>
                     </template>
-                  </el-select>
+                  </fct-select>
                 </div>
 
                 <!-- IMAGE TYPE -->
                 <div
                     v-else-if="getGroupType(draft.group_id) === 'image'"
                     class="fct-option-field-values"
+                    @keydown.capture="(event) => handleValuesPickerKeyup(event, index)"
                 >
-                  <el-select
+                  <fct-select
                       :ref="setValuesPickerRef"
                       v-model="draft.variants"
                       multiple
@@ -1926,15 +1907,15 @@ const termCreatingIsDone = (newTerm) => {
                       :disabled="!draft.group_id"
                       :loading="isTermsLoading"
                       :loading-text="translate('Loading...')"
-                      @keydown.capture="(event) => handleValuesPickerKeyup(event, index)"
                       @visible-change="onPickerVisibleChange"
+                      :options="filteredGroupTerms.map(term => ({label: term.title, value: term.id, term}))"
                   >
                     <template #empty>
                       <div class="fct-option-empty-default">{{ translate('No matching data') }}</div>
                     </template>
                     <template #header>
                       <div v-if="getGroupTerms(draft.group_id).length > 0" class="fct-select-all-header">
-                        <el-checkbox
+                        <fct-choice
                           :model-value="isAllTermsSelected"
                           :indeterminate="someTermsSelected"
                           @change="toggleSelectAllTerms"
@@ -1949,30 +1930,25 @@ const termCreatingIsDone = (newTerm) => {
                           type="image"
                       />
                     </template>
-                    <el-option
-                        v-for="term in filteredGroupTerms"
-                        :key="term.id"
-                        :label="term.title"
-                        :value="term.id"
-                    >
+                    <template #option="{option}">
                       <div class="fct-image-option">
-                        <el-checkbox
-                          :model-value="draft.variants.some(function(variantId){ return sameId(variantId, term.id); })"
+                        <fct-choice
+                          :model-value="draft.variants.some(function(variantId){ return sameId(variantId, option.term.id); })"
                           tabindex="-1"
                           @click.stop
-                          @change="toggleTerm(term.id)"
+                          @change="toggleTerm(option.term.id)"
                         />
                         <img
-                            :src="term.settings && term.settings.image ? term.settings.image : ''"
+                            :src="option.term.settings && option.term.settings.image ? option.term.settings.image : ''"
                             alt=""
                         />
-                        {{ term.title }}
+                        {{ option.term.title }}
                       </div>
-                    </el-option>
+                    </template>
                     <template #footer>
                       <div class="fct-picker-inline-form" @mousedown.self.prevent>
                         <template v-if="!inlineTermVisible">
-                          <el-button
+                          <fct-button
                             v-if="valuesPickerQuery.trim() && !filteredGroupTerms.some(function(term){ return term.title.toLowerCase() === valuesPickerQuery.trim().toLowerCase(); })"
                             type="primary"
                             size="small"
@@ -1983,8 +1959,8 @@ const termCreatingIsDone = (newTerm) => {
                             <DynamicIcon name="Plus"/>
                             <!-- translators: %1$s: the term title the user typed -->
                             {{ translate('Add "%1$s" as new value', valuesPickerQuery.trim()) }}
-                          </el-button>
-                          <el-button
+                          </fct-button>
+                          <fct-button
                             v-else
                             type="primary"
                             size="small"
@@ -1994,7 +1970,7 @@ const termCreatingIsDone = (newTerm) => {
                           >
                             <DynamicIcon name="Plus"/>
                             {{ translate('Add new value') }}
-                          </el-button>
+                          </fct-button>
                         </template>
                         <template v-else>
                           <div class="fct-picker-inline-form-body">
@@ -2008,20 +1984,20 @@ const termCreatingIsDone = (newTerm) => {
                               @remove="hideInlineTermForm"
                             />
                             <div class="fct-picker-inline-form-actions">
-                              <el-button
+                              <fct-button
                                 type="primary"
                                 size="small"
                                 :loading="inlineTermLoading"
                                 :disabled="!inlineTerm.title.trim() || inlineTermLoading"
                                 @click="submitInlineTerm(index)"
-                              >{{ translate('Add') }}</el-button>
-                              <el-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</el-button>
+                              >{{ translate('Add') }}</fct-button>
+                              <fct-button size="small" @click="hideInlineTermForm">{{ translate('Cancel') }}</fct-button>
                             </div>
                           </div>
                         </template>
                       </div>
                     </template>
-                  </el-select>
+                  </fct-select>
                 </div>
 
                 <div v-if="draft.errors?.values" class="fct-option-error">
@@ -2035,14 +2011,15 @@ const termCreatingIsDone = (newTerm) => {
                    single "Save to update variants" bar below commits + generates all
                    combinations at once. Delete is the one in-card action. -->
               <div class="fct-option-card-actions">
-                <el-button class="fct-adv-var-del-button" type="default" size="small" @click="removeAttribute(index)">
+                <fct-button class="fct-adv-var-del-button" size="small" @click="removeAttribute(index)">
                   {{ translate('Delete') }}
-                </el-button>
+                </fct-button>
               </div>
             </div>
           </Animation>
         </div>
-      </VueDraggableNext>
+       </template>
+      </SortableList>
 
       <!-- Add option button — V3: opens the library picker dialog instead of dropping
            a blank card. The picker shows the full templates list with search;
@@ -2053,7 +2030,7 @@ const termCreatingIsDone = (newTerm) => {
           class="fct-option-add-wrap"
           :class="{ 'fct-option-add-wrap--empty': selectedAttributes.length === 0 }"
       >
-        <el-button
+        <fct-button
             class="fct-option-add"
             :class="{ 'fct-option-add--empty': selectedAttributes.length === 0 }"
             size="small"
@@ -2062,7 +2039,7 @@ const termCreatingIsDone = (newTerm) => {
           <svg fill="currentColor" width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4.25 8a.75.75 0 0 1 .75-.75h2.25v-2.25a.75.75 0 0 1 1.5 0v2.25h2.25a.75.75 0 0 1 0 1.5h-2.25v2.25a.75.75 0 0 1-1.5 0v-2.25h-2.25a.75.75 0 0 1-.75-.75"></path><path fill-rule="evenodd" d="M8 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14m0-1.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 1 0 0 11"></path></svg>
 
           {{ selectedAttributes.length === 0 ? translate('Add options like size or color') : translate('Add more') }}
-        </el-button>
+        </fct-button>
 
         <!-- Combinations counter — always shows the count the current
              option config would produce. When changes are pending, the
@@ -2094,12 +2071,12 @@ const termCreatingIsDone = (newTerm) => {
       <div v-if="(hasPendingChanges || isDraftDirty) && !isPersisting" class="fct-adv-order-save-bar">
         <span class="fct-adv-order-save-bar__msg">{{ saveBarMessage }}</span>
         <div class="fct-adv-order-save-bar__actions">
-          <el-button size="small" :disabled="generating" @click="discardOrderChange">
+          <fct-button size="small" :disabled="generating" @click="discardOrderChange">
             {{ translate('Discard') }}
-          </el-button>
-          <el-button size="small" type="primary" :loading="generating" @click="saveOrderChange">
+          </fct-button>
+          <fct-button size="small" type="primary" :loading="generating" @click="saveOrderChange">
             {{ translate('Save') }}
-          </el-button>
+          </fct-button>
         </div>
       </div>
 
@@ -2145,7 +2122,7 @@ const termCreatingIsDone = (newTerm) => {
     <!-- Add-term modal is only ever opened from the expanded editor, so the draft's
          group_id is the right source of truth (the underlying attribute may still be a
          stub for a brand-new option). -->
-    <el-dialog :append-to-body="true" v-model="createModalIsOpen" :title="translate('Add new attribute term')" @close="addTermInitialTitle = ''">
+    <fct-dialog :append-to-body="true" v-model="createModalIsOpen" :title="translate('Add new attribute term')" @close="addTermInitialTitle = ''">
       <AddTermModal
         v-if="createModalIsOpen && currentEditingAttrIndex !== null && draft"
         :group-id="draft.group_id"
@@ -2153,13 +2130,13 @@ const termCreatingIsDone = (newTerm) => {
         :initial-title="addTermInitialTitle"
         @is-term-creating-done="termCreatingIsDone"
       />
-    </el-dialog>
+    </fct-dialog>
 
     <!-- Add new attribute group — same modal the standalone Attributes admin page
          uses, so the merchant gets the full Title + Slug + Type + Styling form
          without leaving the product editor. v-if gates mounting so the form
          resets between opens. -->
-    <el-dialog
+    <fct-dialog
         :append-to-body="true"
         width="50%"
         v-model="createGroupModalOpen"
@@ -2169,7 +2146,7 @@ const termCreatingIsDone = (newTerm) => {
           v-if="createGroupModalOpen"
           @when-group-create-is-done="onGroupCreated"
       />
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

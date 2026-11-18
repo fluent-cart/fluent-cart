@@ -40,35 +40,35 @@
             />
             </UserCan>
 
-            <el-row :gutter="24">
+            <div class="grid grid-cols-1 gap-x-6 min-[1200px]:grid-cols-2">
             <UserCan permission="reports/view">
                 <!-- It names customers: only for users with customer access -->
                 <UserCan permission="customers/view">
-                    <el-col :lg="12">
+                    <div class="min-w-0">
                     <RecentOrders/>
-                    </el-col>
+                    </div>
                 </UserCan>
             </UserCan>
 
             <UserCan permission="reports/view">
-                <el-col :lg="12" class="mt-6 xl:mt-0">
+                <div class="min-w-0 mt-6 xl:mt-0">
                 <TopSoldProducts
                     :data="dashBoardReport.topSoldProducts"
                     :currency="AppConfig.get('shop.currency')"
                     :loading="dashBoardReport.isBusy.topSoldProducts"
                 />
-                </el-col>
+                </div>
             </UserCan>
 
 
             <UserCan permission="reports/view">
-                <el-col class="mt-6">
+                <div class="col-span-full min-w-0 mt-6">
                 <HeatMap :data="dashBoardReport.data.countryHeatMap"/>
-                </el-col>
+                </div>
             </UserCan>
 
 
-            </el-row>
+            </div>
 
         </div>
 
@@ -80,7 +80,7 @@
 
     <!--       <RecentActivity/> -->
 
-    <el-dialog
+    <fct-dialog
         class="fct-congrats-dialog"
         v-model="isCongratsPopoverOpen"
         :append-to-body="true"
@@ -92,14 +92,14 @@
           <div class="icon">🎉</div>
           <h3>{{ translate('Congratulations!') }}</h3>
           <p>{{ translate('You successfully finished your onboarding & your store is ready.') }}</p>
-          <el-button type="primary" @click="isCongratsPopoverOpen = false">{{ translate("Let's go") }}</el-button>
+          <fct-button type="primary" @click="isCongratsPopoverOpen = false">{{ translate("Let's go") }}</fct-button>
         </div>
       </div>
       <div
           class="fct-confetti-wrap pointer-events-none fixed left-0 top-0 w-full h-full flex justify-center items-center">
         <ConfettiExplosion :particleCount="100" :force="1"/>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

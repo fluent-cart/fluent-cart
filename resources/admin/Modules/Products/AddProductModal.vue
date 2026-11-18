@@ -1,77 +1,66 @@
 <template>
   <div class="fct-product-create">
     <div class="fct-product-step">
-      <el-form label-position="top" :model="product" require-asterisk-position="right">
-        <el-form-item :label="product.detail.other_info.is_bundle_product === 'yes' ? translate('Bundle Title') : translate('Product Title')" required>
-          <el-input
-              type="text"
-              v-model="product.post_title"
-              :placeholder="product.detail.other_info.is_bundle_product === 'yes'? translate('Bundle Title') : translate('Product Title')"
-              minlength="3"
-              maxlength="200"
-              show-word-limit
-              autofocus
-              ref="fcProductTitle"
-              @keydown.enter="onEnter"
-          />
-        </el-form-item>
+      <div>
+        <fct-input
+            ref="fcProductTitle"
+            v-model="product.post_title"
+            :label="product.detail.other_info.is_bundle_product === 'yes' ? translate('Bundle Title') : translate('Product Title')"
+            required
+            :placeholder="product.detail.other_info.is_bundle_product === 'yes'? translate('Bundle Title') : translate('Product Title')"
+            minlength="3"
+            maxlength="200"
+            show-word-limit
+            autofocus
+            @keydown.enter="onEnter"
+        />
 
-        <el-form-item v-if="customModal !== 'order_modal'" :label="translate('Variation Type')">
-          <el-select
-              v-model="product.detail.variation_type"
-              :placeholder="translate('Select Variation Type')"
-              class="w-full"
+        <fct-select
+            v-if="customModal !== 'order_modal'"
+            v-model="product.detail.variation_type"
+            :label="translate('Variation Type')"
+            :options="Object.entries(variationTypes).map(([value, label]) => ({label, value}))"
+            :placeholder="translate('Select Variation Type')"
+            class="w-full"
+        />
+
+        <ul class="fct-product-item-selector">
+          <li
+              v-for="fulfilmentType in fulfilmentTypes"
+              :key="fulfilmentType.type"
+              :class="{ active: fulfilmentType.type === product.detail.fulfillment_type }"
+              @click="handleSelectProductType(fulfilmentType.type)"
           >
-            <el-option
-                v-for="(label, value) in variationTypes"
-                :key="value"
-                :label="label"
-                :value="value"
-            />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item>
-          <ul class="fct-product-item-selector">
-            <li
-                v-for="fulfilmentType in fulfilmentTypes"
-                :key="fulfilmentType.type"
-                :class="{ active: fulfilmentType.type === product.detail.fulfillment_type }"
-                @click="handleSelectProductType(fulfilmentType.type)"
-            >
-              <div class="fct-product-item-selector-content">
-                <DynamicIcon :name="fulfilmentType.icon"/>
-                {{ fulfilmentType.title }}
-              </div>
-              <div class="fct-product-item-selector-dot-wrap">
-                <span class="fct-product-item-selector-dot"></span>
-              </div>
-            </li>
-          </ul>
-        </el-form-item>
+            <div class="fct-product-item-selector-content">
+              <DynamicIcon :name="fulfilmentType.icon"/>
+              {{ fulfilmentType.title }}
+            </div>
+            <div class="fct-product-item-selector-dot-wrap">
+              <span class="fct-product-item-selector-dot"></span>
+            </div>
+          </li>
+        </ul>
 
-        <el-form-item>
-          <div class="fct-bundle-product-condition">
-            <el-checkbox v-model="product.detail.other_info.is_bundle_product" true-value="yes" false-value="no">
-              {{ translate('Add as a Bundle') }}
-            </el-checkbox>
-            <span class="condition-text">
-              {{ translate('Combine multiple items into one package') }}
-            </span>
-          </div>
-        </el-form-item>
-      </el-form>
+        <div class="fct-bundle-product-condition">
+          <fct-choice v-model="product.detail.other_info.is_bundle_product" true-value="yes" false-value="no">
+            {{ translate('Add as a Bundle') }}
+          </fct-choice>
+          <span class="condition-text">
+            {{ translate('Combine multiple items into one package') }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <div class="dialog-footer">
-      <el-button
+      <fct-button
           :disabled="!product.post_title || creatingProduct"
           :loading="creatingProduct"
           @click="createProduct"
           type="primary"
       >
         {{ creatingProduct ? translate('Creating') : translate('Add Product') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin} from './support/fct-stubs.js';
 
 /**
  * A shipment row expands into a details row: latest tracking, carrier and the
@@ -40,6 +41,7 @@ const mountRow = async (shipment) => {
         .component('ElDropdown', stub)
         .component('ElPopconfirm', stub)
         .component('ElPopover', stub)
+        .use(fctPlugin({FctDropdown: stub, FctPopover: stub}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await nextTick();

@@ -30,6 +30,11 @@ const statusToggleLabel = (row) => {
     return translate('Toggle status for %1$s', row.display_name);
 };
 
+const actionItems = [
+    {command: 'edit', label: translate('Edit'), icon: 'Edit'},
+    {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+];
+
 const actionsLabel = (row) => {
     /* translators: %1$s: rule display name */
     return translate('Actions for %1$s', row.display_name);
@@ -194,11 +199,11 @@ const deleteRule = (row) => {
 </script>
 
 <template>
-    <el-table
+    <fct-table
         :data="pricingRuleTable.getTableData()"
         :class="['w-full', { 'compact-table': canManage }]"
     >
-        <el-table-column :label="translate('Rule')" :width="200">
+        <fct-table-column :label="translate('Rule')" :width="200">
             <template #default="scope">
                 <RouteCell v-if="canManage" class="hover:no-underline"
                            :to="{ name: 'dynamic_pricing_edit', params: { id: scope.row.id } }">
@@ -214,9 +219,9 @@ const deleteRule = (row) => {
                     <span class="block text-xs text-system-light dark:text-gray-400">{{ scope.row.name }}</span>
                 </div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column v-if="pricingRuleTable.isColumnVisible('type')" :label="translate('What it does')" :width="340">
+        <fct-table-column v-if="pricingRuleTable.isColumnVisible('type')" :label="translate('What it does')" :width="340">
             <template #default="scope">
                 <RouteCell v-if="canManage" class="hover:no-underline"
                            :to="{ name: 'dynamic_pricing_edit', params: { id: scope.row.id } }">
@@ -254,9 +259,9 @@ const deleteRule = (row) => {
                     </span>
                 </span>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column v-if="pricingRuleTable.isColumnVisible('date')" :label="translate('Schedule')" :width="160">
+        <fct-table-column v-if="pricingRuleTable.isColumnVisible('date')" :label="translate('Schedule')" :width="160">
             <template #default="scope">
                 <RouteCell v-if="canManage" class="hover:no-underline"
                            :to="{ name: 'dynamic_pricing_edit', params: { id: scope.row.id } }">
@@ -274,11 +279,11 @@ const deleteRule = (row) => {
                     </span>
                 </div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column v-if="pricingRuleTable.isColumnVisible('status')" :label="translate('Status')" :width="80" align="center">
+        <fct-table-column v-if="pricingRuleTable.isColumnVisible('status')" :label="translate('Status')" :width="80" align="center">
             <template #default="scope">
-                <el-switch
+                <fct-switch
                     v-if="canManage"
                     :model-value="scope.row.status === 'active'"
                     :disabled="pendingStatusUpdates.has(scope.row.id)"
@@ -288,35 +293,23 @@ const deleteRule = (row) => {
                 />
                 <Badge v-else :status="scope.row.status" kind="pricing_rule"/>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column v-if="canManage" :label="translate('Actions')" :width="80" align="right">
+        <fct-table-column v-if="canManage" :label="translate('Actions')" :width="80" align="right">
             <template #default="scope">
-                <el-dropdown
+                <fct-dropdown
                     trigger="click"
                     class="fct-more-option-wrap"
-                    popper-class="fct-dropdown"
                     placement="bottom-end"
+                    :items="actionItems"
                     @command="(command) => handleCommand(command, scope.row)"
                 >
                     <button class="more-btn me-2" type="button" :aria-label="actionsLabel(scope.row)">
                         <DynamicIcon name="More"/>
                     </button>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item command="edit">
-                                <DynamicIcon name="Edit"/>
-                                {{ translate("Edit") }}
-                            </el-dropdown-item>
-                            <el-dropdown-item class="item-destructive" command="delete">
-                                <DynamicIcon name="Delete"/>
-                                {{ translate("Delete") }}
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                </fct-dropdown>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
         <template #empty>
             <Empty 
@@ -324,5 +317,5 @@ const deleteRule = (row) => {
                 :text="translate('No pricing rules found!')"
             />
         </template>
-    </el-table>
+    </fct-table>
 </template>

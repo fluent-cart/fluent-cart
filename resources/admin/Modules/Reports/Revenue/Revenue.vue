@@ -207,37 +207,37 @@ export default {
     <Card.Header :title="translate('Revenue Breakdown')" title_size="small">
       <template #action v-if="!loading">
         <div class="fct-btn-group sm">
-          <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+          <fct-tooltip :content="translate('Export CSV')" placement="top">
             <IconButton tag="button" :disabled="!revenueReport.length" :aria-label="translate('Export CSV')" @click="exportCsv">
               <DynamicIcon name="Download"/>
             </IconButton>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
     </Card.Header>
 
     <Card.Body class="px-0 pb-0">
-      <el-skeleton v-if="loading" animated :rows="2" class="p-4" />
+      <fct-skeleton v-if="loading" animated :rows="2" class="p-4" />
 
-      <el-table
+      <fct-table
         v-else
         :data="tableData"
         row-key="year"
         :default-expand-all="false"
         class="w-full"
       >
-        <el-table-column type="expand" v-if="dateFormat">
+        <fct-table-column type="expand" v-if="dateFormat">
           <template #default="props">
-            <el-table
+            <fct-table
               :data="props.row.items"
               row-key="month"
               size="small"
               class="w-full fct-revenue-breakdown-inner"
             >
               <!-- Matches the outer expand column so each inner column sits under its outer one. -->
-              <el-table-column width="48" />
+              <fct-table-column width="48" />
 
-              <el-table-column
+              <fct-table-column
                 prop="group"
                 :label="translate('Date')"
                 min-width="80"
@@ -245,9 +245,9 @@ export default {
                 <template #default="scope">
                   {{ formatGroup(scope.row.group, rowDateFormat) }}
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 prop="order_count"
                 :label="translate('Order Count')"
                 min-width="100"
@@ -257,9 +257,9 @@ export default {
                 <template #default="scope">
                   {{ translateNumber(formatNumber(scope.row.order_count)) }}
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 prop="gross_sales"
                 :label="translate('Gross Sales')"
                 min-width="100"
@@ -269,15 +269,15 @@ export default {
                 <template #default="scope">
                   <div class="inline-flex">{{ decodeEntities(formatCurrency(Number(scope.row.gross_sales))) }}</div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
+              <fct-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
                 <template #default="scope">
                   <div class="inline-flex" :class="liabilityClass(scope.row.discounts)">{{ decodeEntities(maybeLiability(scope.row.discounts, null, reportFilter.reportCurrency)) }}</div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
 
                 :label="translate('Refunds')"
                 min-width="100"
@@ -289,15 +289,15 @@ export default {
 
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
+              <fct-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
                 <template #default="scope">
                   <div class="inline-flex font-medium">{{ decodeEntities(formatCurrency(Number(scope.row.net_sales))) }}</div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 prop="taxes_net"
                 :label="translate('Taxes')"
                 min-width="100"
@@ -310,9 +310,9 @@ export default {
                     {{ maybeLiability(scope.row.taxes_net, null, reportFilter.reportCurrency) }}
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 prop="shipping_net"
                 :label="translate('Shipping')"
                 min-width="100"
@@ -325,9 +325,9 @@ export default {
                     {{ maybeLiability(scope.row.shipping_net, null, reportFilter.reportCurrency) }}
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 v-if="hasExtras"
                 prop="total_collected"
                 :label="translate('Total Sales')"
@@ -338,9 +338,9 @@ export default {
                 <template #default="scope">
                   <div class="inline-flex">{{ decodeEntities(formatCurrency(Number(scope.row.total_collected))) }}</div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 v-if="hasComparison"
                 prop="compare_revenue"
                 :label="translate('Compare Net Sales')"
@@ -349,9 +349,8 @@ export default {
                 :sort-method="byNullableNumber('compare_revenue')"
               >
                 <template #default="scope">
-                  <el-tooltip
+                  <fct-tooltip
                       v-if="scope.row.compare_revenue !== null"
-                      popper-class="fct-tooltip"
                       :content="
                         /* translators: %s - date the row is compared with, e.g. Aug 17, 2026 */
                         translate('Compared with %s', scope.row.compare_date)
@@ -359,12 +358,12 @@ export default {
                       placement="top"
                   >
                     <div class="inline-flex cursor-pointer">{{ decodeEntities(formatCurrency(scope.row.compare_revenue)) }}</div>
-                  </el-tooltip>
+                  </fct-tooltip>
                   <span v-else class="text-system-light">n/a</span>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                 v-if="hasComparison"
                 prop="change_percent"
                 :label="translate('Change (%)')"
@@ -377,18 +376,18 @@ export default {
                     {{ scope.row.change_percent === null ? 'n/a' : scope.row.change_percent.toFixed(2) + '%' }}
                   </span>
                 </template>
-              </el-table-column>
-            </el-table>
+              </fct-table-column>
+            </fct-table>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           prop="year"
           :label="translate('Year')"
           min-width="80"
         />
 
-        <el-table-column
+        <fct-table-column
           prop="order_count"
           :label="translate('Order Count')"
           min-width="100"
@@ -398,9 +397,9 @@ export default {
           <template #default="scope">
             {{ translateNumber(formatNumber(scope.row.order_count)) }}
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           prop="gross_sales"
           :label="translate('Gross Sales')"
           min-width="100"
@@ -410,15 +409,15 @@ export default {
           <template #default="scope">
             <div class="inline-flex">{{ decodeEntities(formatCurrency(scope.row.gross_sales)) }}</div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
+        <fct-table-column :label="translate('Discounts')" min-width="100" sortable :sort-method="byNumber('discounts')">
           <template #default="scope">
             <div class="inline-flex" :class="liabilityClass(scope.row.discounts)">{{ decodeEntities(maybeLiability(scope.row.discounts, null, reportFilter.reportCurrency)) }}</div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           :label="translate('Refunds')"
           min-width="100"
           sortable
@@ -429,23 +428,23 @@ export default {
 
             </div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
+        <fct-table-column prop="net_sales" :label="translate('Net Sales')" min-width="100" sortable :sort-method="byNumber('net_sales')">
           <template #default="scope">
             <div class="inline-flex font-medium">{{ decodeEntities(formatCurrency(scope.row.net_sales)) }}</div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column prop="taxes_net" :label="translate('Taxes')" min-width="100" sortable :sort-method="byNumber('taxes_net')" v-if="tax_total > 0">
+        <fct-table-column prop="taxes_net" :label="translate('Taxes')" min-width="100" sortable :sort-method="byNumber('taxes_net')" v-if="tax_total > 0">
           <template #default="scope">
             <div class="inline-flex" v-html="formatCurrency(scope.row.taxes_net)">
 
             </div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           prop="shipping_net"
           :label="translate('Shipping')"
           min-width="100"
@@ -458,9 +457,9 @@ export default {
 
             </div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           v-if="hasExtras"
           prop="total_collected"
           :label="translate('Total Sales')"
@@ -471,9 +470,9 @@ export default {
           <template #default="scope">
             <div class="inline-flex">{{ decodeEntities(formatCurrency(scope.row.total_collected)) }}</div>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           v-if="hasComparison"
           prop="compare_revenue"
           :label="translate('Compare Net Sales')"
@@ -485,9 +484,9 @@ export default {
             <div v-if="scope.row.compare_revenue !== null" class="inline-flex">{{ decodeEntities(formatCurrency(scope.row.compare_revenue)) }}</div>
             <span v-else class="text-system-light">n/a</span>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column
+        <fct-table-column
           v-if="hasComparison"
           prop="change_percent"
           :label="translate('Change (%)')"
@@ -500,12 +499,12 @@ export default {
               {{ scope.row.change_percent === null ? 'n/a' : scope.row.change_percent.toFixed(2) + '%' }}
             </span>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
         <template #empty>
           <el-empty :description="translate('No data available')" />
         </template>
-      </el-table>
+      </fct-table>
     </Card.Body>
   </Card.Container>
 </template>

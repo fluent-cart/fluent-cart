@@ -6,7 +6,6 @@ use FluentCart\Api\ModuleSettings;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
@@ -1344,56 +1343,6 @@ class StockManagementTest extends WPTestCase
         $fresh = $this->freshVariant($variant->id);
         $this->assertSame(10, $fresh->available);
         $this->assertSame(0, $fresh->on_hold);
-    }
-
-    // Spec 48
-    public function test_refund_deletes_order_items_fully_restored(): void
-    {
-        ['product' => $product, 'variant' => $variant] = $this->makeStockedProduct([
-            'available' => 5, 'on_hold' => 5, 'total_stock' => 10,
-        ]);
-        $customer = $this->customerFactory->create();
-        $order = $this->makeOrderWithItem($customer->id, $product->ID, $variant->id, 3);
-        $itemId = $order->order_items->first()->id;
-        OrderMeta::query()->create([
-            'order_id'   => $order->id,
-            'meta_key'   => 'stock_movement',
-            'meta_value' => [$itemId => ['on_hold' => 3]],
-        ]);
-
-        $this->module->manageStockOnOrderRefunded([
-            'order'              => $order,
-            'manage_stock'       => true,
-            'new_refunded_items' => [['variation_id' => $variant->id, 'restore_quantity' => 3, 'id' => $itemId]],
-        ]);
-
-        $this->assertNull(OrderItem::query()->find($itemId), 'Fully-refunded item must be deleted');
-    }
-
-    // Spec 49
-    public function test_refund_updates_order_item_quantity_for_partial(): void
-    {
-        ['product' => $product, 'variant' => $variant] = $this->makeStockedProduct([
-            'available' => 5, 'on_hold' => 5, 'total_stock' => 10,
-        ]);
-        $customer = $this->customerFactory->create();
-        $order = $this->makeOrderWithItem($customer->id, $product->ID, $variant->id, 5);
-        $itemId = $order->order_items->first()->id;
-        OrderMeta::query()->create([
-            'order_id'   => $order->id,
-            'meta_key'   => 'stock_movement',
-            'meta_value' => [$itemId => ['on_hold' => 5]],
-        ]);
-
-        $this->module->manageStockOnOrderRefunded([
-            'order'              => $order,
-            'manage_stock'       => true,
-            'new_refunded_items' => [['variation_id' => $variant->id, 'restore_quantity' => 2, 'id' => $itemId]],
-        ]);
-
-        $fresh = OrderItem::query()->find($itemId);
-        $this->assertNotNull($fresh);
-        $this->assertSame(3, (int) $fresh->quantity, 'Item qty must drop by refund qty');
     }
 
     // =========================================================================

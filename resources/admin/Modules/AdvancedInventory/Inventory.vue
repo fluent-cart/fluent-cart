@@ -9,9 +9,9 @@
                         @export="handleExport"
                     /> -->
 
-                    <!-- <el-button @click="handleImport">
+                    <!-- <fct-button @click="handleImport">
                         {{ translate('Import') }}
-                    </el-button> -->
+                    </fct-button> -->
                 </UserCan>
             </template>
         </PageHeading>
@@ -70,7 +70,7 @@
 </template>
 
 <script setup>
-import { defineOptions, getCurrentInstance, provide, reactive, ref, computed, onMounted } from 'vue';
+import { getCurrentInstance, provide, reactive, ref, computed, onMounted } from 'vue';
 import translate from '@/utils/translator/Translator';
 import PageHeading from '@/Bits/Components/Layout/PageHeading.vue';
 import UserCan from '@/Bits/Components/Permission/UserCan.vue';

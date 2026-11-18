@@ -34,7 +34,7 @@
         <!-- Extra filters show only while set -->
         <div v-if="!hideAllFilters && extraFilterKeys.length" class="fct-report-filter-wrap fct-report-filter-chips">
           <AppliedFilters :filter-state="filter" :only="extraFilterKeys" />
-          <el-button size="small" text type="primary" @click="clearExtraFilters">{{ translate('Clear all') }}</el-button>
+          <fct-button size="small" text type="primary" @click="clearExtraFilters">{{ translate('Clear all') }}</fct-button>
         </div>
 
         <div class="fct-report-body-inner">
@@ -115,6 +115,10 @@ const extraFilterKeys = computed(() => {
   return Object.keys(filter.data.selectedFilters).filter((key) => {
     const item = filter.data.selectedFilters[key];
     if (["dateRange", "compareType", "compareDate", "currency"].includes(key)) {
+      return false;
+    }
+    const allowed = route.meta?.report_filters;
+    if (Array.isArray(allowed) && !allowed.includes(key)) {
       return false;
     }
     if (key === "orderTypes" && route.name === "reports_subscriptions") {

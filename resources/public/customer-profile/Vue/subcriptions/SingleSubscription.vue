@@ -60,23 +60,20 @@
                                     </div>
                                 </div>
                                 <div class="right-content !w-auto">
-                                    <el-dropdown v-if="hasSubscriptionActions" trigger="click" :hide-on-click="false" popper-class="fct-dropdown" role="menu" aria-haspopup="true" aria-expanded="false">
+                                    <fct-dropdown v-if="hasSubscriptionActions" trigger="click" :hide-on-click="false" :items="subscriptionActionItems">
                                         <IconButton tag="button" size="x-small" class="simple-icon-btn" :aria-label="$t('Subscription options')">
                                             <DynamicIcon name="More" class="w-[5px]" aria-hidden="true"/>
                                         </IconButton>
-                                        <template #dropdown>
-                                            <el-dropdown-menu role="menu">
+                                        <template #item="{item}">
                                                 <!-- Pause Subscription -->
-                                                <el-dropdown-item v-if="subscription.can_pause" role="menuitem">
-                                                    <el-popover
+                                                <template v-if="item.command === 'pause'">
+                                                    <fct-popover
                                                         popper-class="fluent-cart-customer-profile-app"
                                                         trigger="click"
                                                         placement="bottom"
                                                         :width="260"
                                                         ref="pausePopoverRef"
                                                         role="dialog"
-                                                        aria-modal="true"
-                                                        aria-labelledby="pause-popover-title"
                                                     >
                                                         <h3 id="pause-popover-title" class="sr-only">
                                                             {{ $t('Pause Subscription') }}
@@ -85,15 +82,15 @@
                                                             {{ $t('Pause your subscription? You can resume it anytime.') }}
                                                         </div>
                                                         <div class="flex justify-end gap-2">
-                                                            <el-button
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 text
                                                                 @click="$refs.pausePopoverRef.hide()"
                                                                 :aria-label="$t('Cancel')"
                                                             >
                                                                 {{ $t('Cancel') }}
-                                                            </el-button>
-                                                            <el-button
+                                                            </fct-button>
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 type="primary"
                                                                 :loading="pausing"
@@ -101,27 +98,25 @@
                                                                 :aria-label="$t('Pause') "
                                                             >
                                                                 {{ $t('Pause') }}
-                                                            </el-button>
+                                                            </fct-button>
                                                         </div>
                                                         <template #reference>
                                                             <span :aria-label="$t('Pause Subscription')">
                                                                 {{ $t('Pause Subscription') }}
                                                             </span>
                                                         </template>
-                                                    </el-popover>
-                                                </el-dropdown-item>
+                                                    </fct-popover>
+                                                </template>
 
                                                 <!-- Resume Subscription -->
-                                                <el-dropdown-item v-if="subscription.can_resume" role="menuitem">
-                                                    <el-popover
+                                                <template v-if="item.command === 'resume'">
+                                                    <fct-popover
                                                         popper-class="fluent-cart-customer-profile-app"
                                                         trigger="click"
                                                         placement="bottom"
                                                         :width="260"
                                                         ref="resumePopoverRef"
                                                         role="dialog"
-                                                        aria-modal="true"
-                                                        aria-labelledby="resume-popover-title"
                                                     >
                                                         <h3 id="resume-popover-title" class="sr-only">
                                                             {{ $t('Resume Subscription') }}
@@ -130,15 +125,15 @@
                                                             {{ $t('Resume your subscription to continue service.') }}
                                                         </div>
                                                         <div class="flex justify-end gap-2">
-                                                            <el-button
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 text
                                                                 @click="$refs.resumePopoverRef.hide()"
                                                                 :aria-label="$t('Cancel')"
                                                             >
                                                                 {{ $t('Cancel') }}
-                                                            </el-button>
-                                                            <el-button
+                                                            </fct-button>
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 type="primary"
                                                                 :loading="resuming"
@@ -146,27 +141,25 @@
                                                                 :aria-label="$t('Resume')"
                                                             >
                                                                 {{ $t('Resume') }}
-                                                            </el-button>
+                                                            </fct-button>
                                                         </div>
                                                         <template #reference>
                                                             <span :aria-label="$t('Resume Subscription')">
                                                                 {{ $t('Resume Subscription') }}
                                                             </span>
                                                         </template>
-                                                    </el-popover>
-                                                </el-dropdown-item>
+                                                    </fct-popover>
+                                                </template>
 
                                                 <!-- Cancel Subscription -->
-                                                <el-dropdown-item v-if="isCancelable" role="menuitem">
-                                                    <el-popover
+                                                <template v-if="item.command === 'cancel'">
+                                                    <fct-popover
                                                         popper-class="fluent-cart-customer-profile-app"
                                                         trigger="click"
                                                         placement="bottom"
                                                         :width="260"
                                                         ref="popoverRef"
                                                         role="dialog"
-                                                        aria-modal="true"
-                                                        aria-labelledby="cancel-popover-title"
                                                     >
 
                                                     <h3 id="cancel-popover-title" class="sr-only">
@@ -180,15 +173,15 @@
                                                         </div>
 
                                                         <div class="flex justify-end gap-2">
-                                                            <el-button
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 text
                                                                 @click="$refs.popoverRef.hide()"
                                                                 :aria-label="$t('Cancel')"
                                                             >
                                                                 {{ $t('Cancel') }}
-                                                            </el-button>
-                                                            <el-button
+                                                            </fct-button>
+                                                            <fct-button
                                                                 class="el-button--x-small"
                                                                 type="primary"
                                                                 :loading="cancelling"
@@ -196,7 +189,7 @@
                                                                 :aria-label="$t('Yes, Proceed')"
                                                             >
                                                                 {{ $t('Yes, Proceed') }}
-                                                            </el-button>
+                                                            </fct-button>
                                                         </div>
 
                                                         <template #reference>
@@ -204,11 +197,10 @@
                                                                 {{ $t('Cancel Subscription') }}
                                                             </span>
                                                         </template>
-                                                    </el-popover>
-                                                </el-dropdown-item>
-                                            </el-dropdown-menu>
+                                                    </fct-popover>
+                                                </template>
                                         </template>
-                                    </el-dropdown>
+                                    </fct-dropdown>
                                 </div>
                             </div>
                             <div class="fct-customer-dashboard-content-table-item border-0 pb-0">
@@ -342,7 +334,7 @@
 
             </template>
             <div v-else-if="loading" aria-live="polite">
-                <el-skeleton :rows="5" :animated="true"></el-skeleton>
+                <fct-skeleton :rows="5" :animated="true"></fct-skeleton>
             </div>
         </div>
     </div>
@@ -394,6 +386,13 @@ export default {
     canMakeEarlyPayment() {
       const subscription = this.subscription;
       return subscription && subscription.can_early_pay && subscription.remaining_installments > 0;
+    },
+    subscriptionActionItems() {
+      return [
+        this.subscription?.can_pause && {command: 'pause'},
+        this.subscription?.can_resume && {command: 'resume'},
+        this.isCancelable && {command: 'cancel'},
+      ].filter(Boolean);
     },
     hasSubscriptionActions() {
       return this.isCancelable || this.subscription?.can_pause || this.subscription?.can_resume;

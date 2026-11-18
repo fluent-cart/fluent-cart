@@ -1,101 +1,91 @@
 <template>
-    <div class="setting-wrap">
-      <SettingsHeader :heading="translate('Storage Providers')" :show-save-button="false" />
+    <SettingsPage :heading="translate('Storage Providers')" :show-save-button="false">
+      <AdminNotice/>
 
-      <div class="setting-wrap-inner">
-        <AdminNotice/>
+      <LayoutSection>
+        <fct-skeleton v-if="loading" animated :rows="6" />
 
-        <CardContainer>
-          <CardBody>
-            <el-skeleton :loading="loading" animated :rows="6" />
-
-            <div v-if="!loading" class="storage-setting-list fct-content-card-list">
-              <div
-                v-for="(storage, index) in availableDrivers"
-                :key="storage.route || index"
-                :class="[
-                  'fct-content-card-list-item',
-                  canManage(storage) ? 'cursor-pointer' : ''
-                ]"
-                :role="canManage(storage) ? 'button' : undefined"
-                :tabindex="canManage(storage) ? 0 : -1"
-                :aria-label="getRowLabel(storage)"
-                @click="handleDriverAction(storage)"
-                @keydown.enter.prevent="handleDriverAction(storage)"
-                @keydown.space.prevent="handleDriverAction(storage)"
-              >
-                <div class="flex items-start gap-3">
-                  <div :class="`fct-content-card-list-icon ${storage.title.toLowerCase()}`">
-                    <img
-                      :class="{ 'dark:hidden': getDarkLogo(storage.dark_logo) }"
-                      :src="getLogo(storage.logo)"
-                      :alt="storage.title"
-                    />
-                    <img
-                      v-if="getDarkLogo(storage.dark_logo)"
-                      :src="getDarkLogo(storage.dark_logo)"
-                      :alt="storage.title"
-                      class="hidden dark:block"
-                    />
-                  </div>
-
-                  <div class="flex-1 min-w-0 ps-15">
-                    <div class="fct-content-card-list-head">
-                      <div class="title-wrap">
-                        <h6>{{ storage.title }}</h6>
-                      </div>
-                      <Badge size="small" :status="storage.status ? 'active' : 'inactive'" :hide-icon="true" />
-                    </div>
-
-                    <div class="fct-content-card-list-content">
-                      <p>{{ storage.description }}</p>
-                    </div>
-                  </div>
-
-                  <div v-if="canToggle(storage)" class="fct-content-card-list-action" @click.stop @keydown.stop>
-                    <el-switch
-                      v-model="storage.is_active_input"
-                      :active-value="'yes'"
-                      :inactive-value="'no'"
-                      :loading="storage.saving"
-                      :aria-label="getToggleLabel(storage)"
-                      @change="toggleStatus(storage)"
-                    />
-                  </div>
-
-                  <div v-else-if="isProLocked(storage)" class="fct-content-card-list-action" @click.stop @keydown.stop>
-                    <el-button
-                      type="primary"
-                      class="el-button--x-small"
-                      tag="a"
-                      :href="storage.upgrade_url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <DynamicIcon name="Crown"/>
-                      {{ translate('Upgrade to Pro') }}
-                    </el-button>
-                  </div>
-
-                  <div v-else-if="canManage(storage)" class="fct-content-card-list-action" @click.stop @keydown.stop>
-                    <el-button class="el-button--x-small" @click="handleDriverAction(storage)">
-                      {{ translate('Manage') }}
-                    </el-button>
-                  </div>
-                </div>
+        <List v-if="!loading" class="storage-setting-list">
+          <ListItem
+            v-for="(storage, index) in availableDrivers"
+            :key="storage.route || index"
+            :class="canManage(storage) ? 'cursor-pointer' : ''"
+            :role="canManage(storage) ? 'button' : undefined"
+            :tabindex="canManage(storage) ? 0 : -1"
+            :aria-label="getRowLabel(storage)"
+            @click="handleDriverAction(storage)"
+            @keydown.enter.prevent="handleDriverAction(storage)"
+            @keydown.space.prevent="handleDriverAction(storage)"
+          >
+            <template #media>
+              <div :class="`fct-storage-provider-icon ${storage.title.toLowerCase()}`">
+                <img
+                  :class="{ 'dark:hidden': getDarkLogo(storage.dark_logo) }"
+                  :src="getLogo(storage.logo)"
+                  :alt="storage.title"
+                />
+                <img
+                  v-if="getDarkLogo(storage.dark_logo)"
+                  :src="getDarkLogo(storage.dark_logo)"
+                  :alt="storage.title"
+                  class="hidden dark:block"
+                />
               </div>
-            </div><!-- .storage-setting-list -->
-          </CardBody>
-        </CardContainer>
-      </div>
-    </div><!-- .setting-wrap -->
+            </template>
+
+            <template #title>
+              <span class="font-semibold">{{ storage.title }}</span>
+            </template>
+
+            <template #badges>
+              <Badge size="small" :status="storage.status ? 'active' : 'inactive'" :hide-icon="true" />
+            </template>
+
+            <template #meta>{{ storage.description }}</template>
+
+            <template v-if="canToggle(storage) || canManage(storage)" #actions>
+              <div @click.stop @keydown.stop>
+                <fct-switch
+                  v-if="canToggle(storage)"
+                  v-model="storage.is_active_input"
+                  :active-value="'yes'"
+                  :inactive-value="'no'"
+                  :loading="storage.saving"
+                  :aria-label="getToggleLabel(storage)"
+                  @change="toggleStatus(storage)"
+                />
+
+                <fct-button
+                  v-else-if="isProLocked(storage)"
+                  type="primary"
+                  size="x-small"
+                  tag="a"
+                  :href="storage.upgrade_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <DynamicIcon name="Crown"/>
+                  {{ translate('Upgrade to Pro') }}
+                </fct-button>
+
+                <fct-button v-else size="x-small" @click="handleDriverAction(storage)">
+                  {{ translate('Manage') }}
+                </fct-button>
+              </div>
+            </template>
+          </ListItem>
+        </List>
+      </LayoutSection>
+    </SettingsPage>
   </template>
 
   <script type="text/babel">
   import Badge from "@/Bits/Components/Badge.vue";
-  import {Container as CardContainer, Body as CardBody} from '@/Bits/Components/Card/Card.js';
   import translate from "@/utils/translator/Translator";
-  import SettingsHeader from "./Parts/SettingsHeader.vue";
+  import SettingsPage from "@/Modules/Settings/Parts/SettingsPage.vue";
+  import Section from "@/Bits/Components/Layout/Section.vue";
+  import List from "@/Bits/Components/Layout/List.vue";
+  import ListItem from "@/Bits/Components/Layout/ListItem.vue";
   import AdminNotice from "@/Bits/Components/AdminNotice.vue";
   import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 
@@ -103,9 +93,10 @@
     name: 'StorageSettings',
     components: {
       Badge,
-      CardBody,
-      CardContainer,
-      SettingsHeader,
+      LayoutSection: Section,
+      List,
+      ListItem,
+      SettingsPage,
       AdminNotice,
       DynamicIcon
     },

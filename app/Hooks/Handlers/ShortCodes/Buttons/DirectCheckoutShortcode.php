@@ -18,7 +18,7 @@ class DirectCheckoutShortcode extends ShortCode
     public function getStyles(): array
     {
         return [
-            'public/buttons/direct-checkout/style/style.scss'
+            ['source' => 'public/buttons/direct-checkout/style/style.scss', 'handle' => 'fluentcart-direct-checkout-btn-css', 'media' => 'all'],
         ];
     }
 
@@ -61,7 +61,7 @@ class DirectCheckoutShortcode extends ShortCode
             return '';
         }
 
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
 
         $rendererConfig = [];
         $product        = null;

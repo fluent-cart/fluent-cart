@@ -54,39 +54,39 @@ const formatDate = (date) => dayjs(date).locale(fluentDayjsLocale()).format(reso
     <Card.Container class="overflow-hidden">
       <Card.Header :title="translate('Top Customers')" title_size="small" border_bottom />
       <Card.Body class="px-0 pb-0">
-        <el-skeleton v-if="loading" class="px-5 pb-5" :rows="5" animated />
+        <fct-skeleton v-if="loading" class="px-5 pb-5" :rows="5" animated />
         <ReportLoadError v-else-if="failed" @retry="retry" />
-        <el-table v-else :data="insights?.top_customers || []" class="w-full" max-height="520">
-          <el-table-column :label="translate('Customer')" min-width="220">
+        <fct-table v-else :data="insights?.top_customers || []" class="w-full" max-height="520">
+          <fct-table-column :label="translate('Customer')" min-width="220">
             <template #default="scope">
               <router-link :to="{ name: 'view_customer', params: { customer_id: scope.row.customer_id } }" class="font-medium">
                 {{ scope.row.name || scope.row.email }}
               </router-link>
               <div v-if="scope.row.name" class="text-xs text-system-light dark:text-gray-300">{{ scope.row.email }}</div>
             </template>
-          </el-table-column>
-          <el-table-column :label="translate('Orders')" min-width="90">
+          </fct-table-column>
+          <fct-table-column :label="translate('Orders')" min-width="90">
             <template #default="scope">{{ formatNumber(scope.row.orders) }}</template>
-          </el-table-column>
-          <el-table-column :label="translate('Renewals')" min-width="100">
+          </fct-table-column>
+          <fct-table-column :label="translate('Renewals')" min-width="100">
             <template #default="scope">{{ formatNumber(scope.row.renewals) }}</template>
-          </el-table-column>
-          <el-table-column :label="translate('Net in Period')" min-width="130">
+          </fct-table-column>
+          <fct-table-column :label="translate('Net in Period')" min-width="130">
             <template #default="scope">{{ money(scope.row.range_net) }}</template>
-          </el-table-column>
-          <el-table-column :label="translate('Lifetime Value')" min-width="130">
+          </fct-table-column>
+          <fct-table-column :label="translate('Lifetime Value')" min-width="130">
             <template #default="scope">{{ money(scope.row.lifetime_net) }}</template>
-          </el-table-column>
-          <el-table-column :label="translate('First Order')" min-width="130">
+          </fct-table-column>
+          <fct-table-column :label="translate('First Order')" min-width="130">
             <template #default="scope">{{ formatDate(scope.row.first_order_at) }}</template>
-          </el-table-column>
-          <el-table-column :label="translate('Last Order')" min-width="130">
+          </fct-table-column>
+          <fct-table-column :label="translate('Last Order')" min-width="130">
             <template #default="scope">{{ formatDate(scope.row.last_order_at) }}</template>
-          </el-table-column>
+          </fct-table-column>
           <template #empty>
             <Empty icon="Empty/ListView" has-dark :text="translate('No customers in this period')" />
           </template>
-        </el-table>
+        </fct-table>
       </Card.Body>
     </Card.Container>
 </template>

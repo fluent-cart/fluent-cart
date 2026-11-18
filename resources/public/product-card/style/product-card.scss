@@ -1,4 +1,5 @@
-@config "./product-card.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-card.config.mjs";
 
 :root {
   // card
@@ -10,7 +11,9 @@
   // button
   --fct-card-btn-bg-color: var(--fct-btn-bg-color);
   --fct-card-btn-text-color: var(--fct-btn-text-color);
-  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+  // Without a palette hover colour, shift 12% toward the text colour, as FrontendTheme::withButtonPartners()
+  // does in PHP; falling back to the button colour gave no hover at all.
+  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, color-mix(in srgb, var(--fct-card-btn-bg-color) 88%, var(--fct-card-btn-text-color)));
   --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
 
   --fct-heading-color: var(--fct-primary-text-color);
@@ -24,7 +27,9 @@
 
 /* ==== fct-product-card ==== */
 .fct-product-card {
-  @apply relative h-full p-1 grid grid-cols-1 border border-solid transition-all duration-200 @[540px]/product-grid:group-[.list]:grid-cols-5;
+  // A column, not a one-column grid: a grid stretched every row of a short card, opening gaps
+  // between title, price and swatches. Now the buy control alone takes the spare height.
+  @apply relative h-full p-1 flex flex-col border border-solid transition-all duration-200 @[540px]/product-grid:group-[.list]:grid @[540px]/product-grid:group-[.list]:grid-cols-5;
   border-radius: var(--fct-card-radius, theme('borderRadius.DEFAULT'));
   *{
     box-sizing: border-box;
@@ -61,7 +66,7 @@
 
   h5.dynamic,
   .fct-dynamic-product-title {
-    @apply m-0 !important;
+    @apply m-0!;
   }
 
   img {
@@ -97,7 +102,7 @@
     padding-left: var(--fct-card-padding, theme('spacing.3'));
     padding-right: var(--fct-card-padding, theme('spacing.3'));
     + p {
-        @apply mt-auto !important;
+        @apply mt-auto!;
     }
     // Keep each price (currency + amount) one bidi unit inside RTL text.
     [dir="rtl"] & .fct-compare-price,
@@ -125,6 +130,14 @@
 
     &.out-of-stock {
       @apply bg-white shadow-none text-system-light font-medium cursor-not-allowed border border-solid border-[var(--fct-card-border-color,#d6dae1)];
+    }
+
+    &.fct-card-buy-button {
+      @apply relative;
+
+      &.fct-loading .fluent-cart-loader {
+        @apply flex;
+      }
     }
   }
 
@@ -233,7 +246,7 @@ body:not(.fluent-cart-no-colors) {
     // button
     --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
     --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
-    --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+    --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, color-mix(in srgb, var(--fct-card-btn-bg-color) 88%, var(--fct-card-btn-text-color)));
     --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
 
     --fct-heading-color: var(--fct-primary-text-color, #2F3448);
@@ -255,7 +268,7 @@ body:not(.fluent-cart-no-colors) {
   // buttons use. Inside the gate on purpose: the stand-aside path is untouched.
   --fct-card-btn-bg-color: var(--fct-btn-bg-color, #253241);
   --fct-card-btn-text-color: var(--fct-btn-text-color, #ffffff);
-  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, var(--fct-card-btn-bg-color));
+  --fct-card-btn-hover-bg-color: var(--fct-btn-hover-bg-color, color-mix(in srgb, var(--fct-card-btn-bg-color) 88%, var(--fct-card-btn-text-color)));
   --fct-card-btn-hover-text-color: var(--fct-btn-hover-text-color, var(--fct-card-btn-text-color));
   --fct-card-bg: var(--fct-card-bg-color);
   --fct-card-border-color: var(--fct-border-color, #d6dae1);
@@ -320,6 +333,12 @@ body:not(.fluent-cart-no-colors) {
  */
 body.fluent-cart-custom:not(.fluent-cart-no-colors) .fct-product-card {
   background-color: var(--fct-card-bg-color, transparent);
+}
+
+// Sits at the foot of the card, so buttons line up across a row of cards of different heights.
+// .fct-dynamic-product-button: the Bricks Products element wraps its button in a field.
+:is(.fct-product-card, .fct-product-card-template) > :is(.fluent-cart-add-to-cart-button, .fct-product-view-button, .fct-card-buy-row, .fct-dynamic-product-button) {
+  margin-top: auto;
 }
 
 /* ==== end fct-product-card ==== */

@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./related-product-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./related-product-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 
 .fct-no-related-products {
@@ -15,11 +17,53 @@
 .fct-related-products-grid {
   @apply grid gap-5;
   --fct-related-product-columns: 3;
-  grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
+  // minmax(0, …): equal columns; a card's content never widens its own past the grid.
+  grid-template-columns: repeat(var(--fct-related-product-columns), minmax(0, 1fr));
 }
 
 .fct-related-product-card {
   @apply h-full flex flex-col justify-between;
+}
+
+// The picker above the canvas preview in Custom mode: one line, the search list opening beneath it.
+.fct-related-products-canvas-picker {
+  margin-bottom: 1rem;
+}
+.fct-product-picker-compact {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.25rem 0.875rem 0.25rem 0.25rem;
+  border: 1px solid #e3e8ee;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #1b2533;
+  .fct-product-picker-dropdown { right: auto; width: 20rem; max-width: calc(100vw - 2rem); }
+}
+.fct-product-picker-compact-img {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.fct-product-picker-compact-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  strong { font-weight: 600; }
+}
+.fct-product-picker-compact-change.components-button {
+  flex-shrink: 0;
+  height: auto;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 // Product Picker styles
@@ -44,7 +88,7 @@
 
 .fct-product-picker-btn {
   @apply w-full justify-center rounded-md font-medium gap-1;
-  @apply border border-solid shadow-none text-system-dark border-gray-outline hover:border-gray-outline hover:bg-gray-50 !important;
+  @apply border! border-solid! shadow-none! text-system-dark! border-gray-outline! hover:border-gray-outline! hover:bg-gray-50!;
 }
 
 .fct-product-picker-dropdown {
@@ -55,7 +99,7 @@
 .fct-product-picker-search {
   @apply mx-[-8px];
   input {
-    @apply rounded-tl rounded-tr rounded-bl-none rounded-br-none h-auto min-h-[auto] py-2.5 pl-3 border-x-0 border-t-0 border-gray-outline focus:border-x-0 focus:border-t-0 focus:shadow-none !important;
+    @apply rounded-tl! rounded-tr! rounded-bl-none! rounded-br-none! h-auto! min-h-[auto]! py-2.5! pl-3! border-x-0! border-t-0! border-gray-outline! focus:border-x-0! focus:border-t-0! focus:shadow-none!;
   }
 }
 
@@ -110,18 +154,19 @@
 }
 
 // Show/Hide element toggles in editor
-.fct-hide-image [data-type="fluent-cart/shopapp-product-image"] {
-  @apply hidden !important;
+// Like the storefront, the toggles hide the loop's own blocks, never those inside a Product Card.
+.fct-hide-image [data-type="fluent-cart/shopapp-product-image"]:not([data-type="fluent-cart/product-card"] *) {
+  @apply hidden!;
 }
 
-.fct-hide-title [data-type="fluent-cart/shopapp-product-title"] {
-  @apply hidden !important;
+.fct-hide-title [data-type="fluent-cart/shopapp-product-title"]:not([data-type="fluent-cart/product-card"] *) {
+  @apply hidden!;
 }
 
-.fct-hide-price [data-type="fluent-cart/shopapp-product-price"] {
-  @apply hidden !important;
+.fct-hide-price [data-type="fluent-cart/shopapp-product-price"]:not([data-type="fluent-cart/product-card"] *) {
+  @apply hidden!;
 }
 
-.fct-hide-button [data-type="fluent-cart/shopapp-product-buttons"] {
-  @apply hidden !important;
+.fct-hide-button [data-type="fluent-cart/shopapp-product-buttons"]:not([data-type="fluent-cart/product-card"] *) {
+  @apply hidden!;
 }

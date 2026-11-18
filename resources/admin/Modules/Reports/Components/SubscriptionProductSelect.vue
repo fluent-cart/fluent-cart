@@ -34,7 +34,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-select
+  <fct-select
       v-model="selected"
       multiple
       collapse-tags
@@ -46,9 +46,6 @@ onMounted(() => {
       :loading="loading"
       :placeholder="translate('All products')"
       :aria-label="translate('Filter by product')"
-  >
-    <el-option-group v-for="product in products" :key="product.product_id" :label="product.product_title">
-      <el-option v-for="variation in product.variations" :key="variation.id" :label="variation.title" :value="variation.id"/>
-    </el-option-group>
-  </el-select>
+      :options="products.map(product => ({label: product.product_title, options: product.variations.map(variation => ({label: variation.title, value: variation.id}))}))"
+  />
 </template>

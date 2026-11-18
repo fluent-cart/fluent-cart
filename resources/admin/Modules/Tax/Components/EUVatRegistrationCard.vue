@@ -185,10 +185,10 @@ onMounted(() => {
         <CardBody>
             <div class="fct-vat-card-header">
                 <div class="fct-vat-card-title">
-                    <h3>{{ translate('Collect VAT in an EU country') }}</h3>
-                    <el-tooltip :content="translate('Add countries where you\'re registered to collect VAT in the EU.')" placement="top">
+                    <h2>{{ translate('Collect VAT in an EU country') }}</h2>
+                    <fct-tooltip :content="translate('Add countries where you\'re registered to collect VAT in the EU.')" placement="top">
                         <DynamicIcon name="InformationFill" class="w-4 h-4 text-system-mid cursor-pointer" />
-                    </el-tooltip>
+                    </fct-tooltip>
                 </div>
             </div>
 
@@ -218,7 +218,7 @@ onMounted(() => {
                                 <img :src="`https://flagcdn.com/w40/${storeCountry.toLowerCase()}.png`" :alt="storeCountryEU.label" class="fct-flag-icon" />
                                 <span class="fct-vat-country-name">{{ storeCountryEU.label }}</span>
                             </div>
-                            <el-button size="small" @click="addCountryRegistration">{{ translate('Collect VAT') }}</el-button>
+                            <fct-button size="small" @click="addCountryRegistration">{{ translate('Collect VAT') }}</fct-button>
                         </div>
 
                         <!-- Home country suggestion (micro-business, not yet registered in Card 1) -->
@@ -228,7 +228,7 @@ onMounted(() => {
                                 <span class="fct-vat-country-name">{{ homeCountryForCard1.label }}</span>
                                 <span class="fct-vat-number">{{ translate('Home country') }}</span>
                             </div>
-                            <el-button size="small" @click="addHomeCountryRegistration">{{ translate('Collect VAT') }}</el-button>
+                            <fct-button size="small" @click="addHomeCountryRegistration">{{ translate('Collect VAT') }}</fct-button>
                         </div>
 
                         <!-- Registered countries -->
@@ -250,7 +250,7 @@ onMounted(() => {
                                 <IconButton v-if="isCollecting(reg)" border="none" size="small" tag="button" :title="translate('Edit')" @click="editCountryRegistration(reg)">
                                     <DynamicIcon name="Edit" />
                                 </IconButton>
-                                <el-button v-else size="small" @click="editCountryRegistration(reg)">{{ translate('Collect VAT') }}</el-button>
+                                <fct-button v-else size="small" @click="editCountryRegistration(reg)">{{ translate('Collect VAT') }}</fct-button>
                                 <IconButton
                                     border="none"
                                     size="small"
@@ -268,14 +268,14 @@ onMounted(() => {
                         <!-- True empty state: no registrations and no suggestions to show -->
                         <div v-if="!countryRegistrations.length && !storeCountryEU && !homeCountryForCard1" class="fct-vat-empty-state">
                             <p class="text-system-mid text-sm">{{ translate('No country VAT registrations configured.') }}</p>
-                            <el-button type="primary" size="small" @click="addCountryRegistration">{{ translate('Collect VAT') }}</el-button>
+                            <fct-button type="primary" size="small" @click="addCountryRegistration">{{ translate('Collect VAT') }}</fct-button>
                         </div>
                     </div>
 
                     <div class="px-5 py-3">
-                        <el-button type="primary" link @click="addCountryRegistration">
+                        <fct-button type="primary" link @click="addCountryRegistration">
                             + {{ translate('Collect in another location') }}
-                        </el-button>
+                        </fct-button>
                     </div>
                 </div>
         </CardBody>

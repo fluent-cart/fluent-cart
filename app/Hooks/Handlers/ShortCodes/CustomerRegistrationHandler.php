@@ -32,7 +32,7 @@ class CustomerRegistrationHandler extends ShortCode
                 }
                 return;
             }
-            if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/registration-form')) {
+            if (has_shortcode(static::currentPostContent(), static::SHORT_CODE) || has_block('fluent-cart/registration-form')) {
                 (new static())->enqueueStyles();
             }
         }, 10);

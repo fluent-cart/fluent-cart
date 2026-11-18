@@ -189,7 +189,8 @@ class CustomCheckout
 
         // Paying an existing order (re-pay, renewal invoice): its items are
         // already in the order's currency — pin the cart to it before the
-        // first save so it is never converted (multi-currency plan §9.1)
+        // first save so it is never converted
+        // (dev-docs/multi-currency/06-orders-subscriptions.md)
         CartCurrency::pin($instantCart, CurrencySnapshot::fromOrder($order));
 
         $instantCart->save();

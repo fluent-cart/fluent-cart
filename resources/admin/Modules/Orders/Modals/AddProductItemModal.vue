@@ -1,6 +1,6 @@
 <template>
   <div class="fluent-cart-admin-pages">
-    <el-dialog
+    <fct-dialog
         class="fct-add-product-item-modal"
         ref="fc_product_search_container"
         @close="searchQuery= ''"
@@ -9,7 +9,7 @@
     >
       <div class="-mx-5 pb-5 border border-solid border-t-0 border-x-0 border-gray-divider dark:border-dark-400">
         <div class="px-5">
-          <el-input
+          <fct-input
               :placeholder="$t('Search products')"
               autofocus
               ref="fc_product_search_new"
@@ -20,12 +20,12 @@
             <template #prefix>
               <DynamicIcon name="Search"/>
             </template>
-          </el-input>
+          </fct-input>
         </div>
       </div>
 
       <div class="fc_product_search_table" ref="fc_product_search_table">
-        <el-skeleton class="px-5 py-4" :loading="loading" :rows="5" animated/>
+        <fct-skeleton v-if="loading" class="px-5 py-4" :rows="5" animated/>
 
         <template v-if="!loading">
           <ul class="fct-collapsible-list">
@@ -42,8 +42,8 @@
                     </div>
                     <div class="content-indent" v-if="!product?.children?.length > 0"></div>
                     <div class="content-checkbox">
-                      <el-checkbox v-model="product.checked" @change="handleCheckboxChange(productIndex, product)"
-                                   :disabled="product.disable === true || isAlreadyAdded(product.object_id)"/>
+                      <fct-choice v-model="product.checked" @change="handleCheckboxChange(productIndex, product)"
+                                  :disabled="product.disable === true || isAlreadyAdded(product.object_id)"/>
                     </div>
                     <div class="content-img">
                       <img
@@ -51,7 +51,9 @@
                           :alt="product.title"/>
                     </div>
                     <div class="content-title">
-                      <div class="title">{{ product.post_title }}</div>
+                      <fct-tooltip :content="product.post_title" :disabled="!titleTruncated" :show-after="200" placement="top">
+                        <div class="title" @mouseenter="checkTitleTruncated">{{ product.post_title }}</div>
+                      </fct-tooltip>
                       <small v-if="product?.other_info?.payment_type === 'subscription' && product.other_info?.billing_summary !== ''" class="text-gray-500 dark:text-gray-400">
                         {{ priceQuote ? billingSummary(product) : product.other_info?.billing_summary }}
                       </small>
@@ -94,9 +96,9 @@
                         <div class="fct-collapsible-content-wrapper">
                           <div class="fct-collapsible-content-group">
                             <div class="content-checkbox">
-                              <el-checkbox v-model="productChildren.checked"
-                                           @change="handleCheckboxChange(productChildrenIndex, productChildren)"
-                                           :disabled="productChildren.disable === true || isAlreadyAdded(productChildren.object_id)"/>
+                              <fct-choice v-model="productChildren.checked"
+                                          @change="handleCheckboxChange(productChildrenIndex, productChildren)"
+                                          :disabled="productChildren.disable === true || isAlreadyAdded(productChildren.object_id)"/>
                             </div>
                             <div class="content-img">
                               <img
@@ -167,14 +169,14 @@
       </div>
 
       <div class="dialog-footer">
-        <el-button @click="orderAddModal = false">
+        <fct-button @click="orderAddModal = false">
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button :disabled="!selectedProducts.length" type="primary" @click="processProducts">
+        </fct-button>
+        <fct-button :disabled="!selectedProducts.length" type="primary" @click="processProducts">
           {{ translate('Add Items') }}
-        </el-button>
+        </fct-button>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 
@@ -211,7 +213,8 @@ export default {
         total: 0,
         last_page: 1
       },
-      collapsedStates: null
+      collapsedStates: null,
+      titleTruncated: false
     }
   },
   computed: {
@@ -249,6 +252,10 @@ export default {
     this.initializeCollapsedStates();
   },
   methods: {
+    // The tooltip only helps when CSS has cut the title with an ellipsis
+    checkTitleTruncated(e) {
+      this.titleTruncated = e.currentTarget.scrollWidth > e.currentTarget.clientWidth;
+    },
     pickerPrice(cents) {
       if (!this.priceQuote) {
         return this.formatNumber(cents);
@@ -465,7 +472,7 @@ export default {
       let ref = this;
       nextTick(() => {
         setTimeout(() => {
-          ref.$refs.fc_product_search_new.ref.focus()
+          ref.$refs.fc_product_search_new.focus()
         }, 50)
       })
       clearTimeout(this.timeout);

@@ -1,19 +1,20 @@
 <template>
     <div class="fct-reason-dropdown-wrap">
         <label class="fct-reason-label">{{ translate('Reason') }}</label>
-        <el-select
+        <fct-select
             v-model="selectedReason"
             :placeholder="translate('Select reason')"
             class="w-full"
+            :options="[
+                {label: translate('Received Stock'), value: 'received'},
+                {label: translate('Damage/Loss'), value: 'damage'},
+                {label: translate('Return/Refund'), value: 'return'},
+                {label: translate('Count Correction'), value: 'correction'},
+                {label: translate('Inventory Transfer'), value: 'transfer'},
+                {label: translate('Other'), value: 'other'}
+            ]"
             @change="handleChange"
-        >
-            <el-option :label="translate('Received Stock')" value="received" />
-            <el-option :label="translate('Damage/Loss')" value="damage" />
-            <el-option :label="translate('Return/Refund')" value="return" />
-            <el-option :label="translate('Count Correction')" value="correction" />
-            <el-option :label="translate('Inventory Transfer')" value="transfer" />
-            <el-option :label="translate('Other')" value="other" />
-        </el-select>
+        />
 
         <!-- Custom Reason Textarea for "Other" -->
         <Animation
@@ -21,7 +22,7 @@
             accordion
             :duration="300"
         >
-            <el-input
+            <fct-input
                 v-model="customReasonText"
                 type="textarea"
                 :rows="3"
@@ -34,7 +35,7 @@
 </template>
 
 <script setup>
-import { defineOptions, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import translate from '@/utils/translator/Translator';
 import Animation from '@/Bits/Components/Animation.vue';
 

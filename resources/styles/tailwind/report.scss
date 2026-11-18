@@ -27,7 +27,7 @@
     @apply w-[164px];
   }
   .el-tag.is-closable{
-    @apply w-[100%] max-w-full #{!important};
+    @apply w-[100%]! max-w-full!;
   }
 }
 .fct-report-header{
@@ -37,7 +37,7 @@
   &-top{
     @apply border-0;
     &-inner {
-      @apply justify-between  flex-wrap flex items-center gap-2.5 max-w-[1350px] 3xl:max-w-[1600px] mx-auto border-0;
+      @apply justify-between flex-wrap flex items-center gap-2.5 max-w-[1350px] 3xl:max-w-[1600px] mx-auto border-0;
     }
   }
   .fct-applied-filters-wrap{
@@ -81,7 +81,7 @@
     }
     .link{
       @apply text-primary-500 text-[13px] dark:text-gray-50 focus:shadow-none;
-      @apply hover:underline #{!important};
+      @apply hover:underline!;
     }
   }
   &-body{
@@ -116,10 +116,18 @@
     &:active::-webkit-scrollbar-thumb,
     &:focus-within::-webkit-scrollbar-thumb,
     &:hover::-webkit-scrollbar-thumb {
-      @apply bg-gray-200 dark:bg-dark-400;
+      @apply bg-gray-200;
+    }
+    .fluent_theme_dark &:active::-webkit-scrollbar-thumb,
+    .fluent_theme_dark &:focus-within::-webkit-scrollbar-thumb,
+    .fluent_theme_dark &:hover::-webkit-scrollbar-thumb {
+    @apply bg-dark-400;
     }
     &::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-300 dark:bg-dark-500;
+    @apply bg-gray-300;
+    }
+    .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+      @apply bg-dark-500;
     }
   }
   .fct-empty-text{
@@ -186,7 +194,7 @@
   &-list{
     @apply -m-2;
     a{
-      @apply w-full flex items-center justify-between border-0 p-2 mb-0 duration-150 transition-all rounded hover:bg-gray-25 focus:shadow-none focus:outline-none dark:hover:bg-dark-500;
+      @apply w-full flex items-center justify-between border-0 p-2 mb-0 duration-150 transition-all rounded hover:bg-gray-25 focus:shadow-none focus:outline-hidden dark:hover:bg-dark-500;
     }
     li{
       @apply m-0;
@@ -236,7 +244,7 @@
   &-list{
     @apply -m-2 p-0 list-none;
     a{
-      @apply gap-2 mb-1.5 flex justify-between items-center p-2 duration-150 transition-all rounded last:mb-0 hover:bg-gray-25 focus:shadow-none focus:outline-none dark:hover:bg-dark-500;
+      @apply gap-2 mb-1.5 flex justify-between items-center p-2 duration-150 transition-all rounded last:mb-0 hover:bg-gray-25 focus:shadow-none focus:outline-hidden dark:hover:bg-dark-500;
     }
     li{
       @apply mb-0;
@@ -292,8 +300,11 @@
       }
     }
     &:after{
-      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
+      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100;
       content: "";
+    }
+    .fluent_theme_dark &:after {
+      @apply bg-dark-500;
     }
     &:last-child{
       &:after{
@@ -324,14 +335,17 @@
     @apply h-[415px];
   }
   .heatmap-cell{
-    @apply dark:text-gray-50 #{!important};
+    @apply dark:text-gray-50!;
   }
 }
 
 .el-popper.is-customized {
   @apply bg-white shadow-xl font-medium text-system-dark border border-solid border-gray-divider dark:bg-dark-300 dark:text-gray-50 dark:border-dark-300;
   .el-popper__arrow::before {
-    @apply bg-white dark:bg-dark-300;
+    @apply bg-white;
+  }
+  .fluent_theme_dark & .el-popper__arrow::before {
+    @apply bg-dark-300;
   }
 }
 
@@ -437,8 +451,11 @@
       @apply text-xs font-semibold flex gap-0.5 items-center;
     }
     &:after{
-      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100 dark:bg-dark-500;
+      @apply absolute top-0 -end-2 w-[1px] h-full bg-gray-100;
       content: "";
+    }
+    .fluent_theme_dark &:after {
+      @apply bg-dark-500;
     }
     &:last-child{
       &:after{
@@ -541,7 +558,7 @@
     }
 
     &:focus-visible {
-      @apply outline outline-2 outline-offset-2 outline-primary-500;
+      @apply outline-solid outline-2 outline-offset-2 outline-primary-500;
     }
   }
 
@@ -584,7 +601,7 @@
   // base.css gives every #wpbody-content element letter-spacing with !important. Chrome paints canvas text
   // with it while echarts measures on a detached canvas without it, so wrapped legend items overlapped.
   #wpbody-content & canvas {
-    @apply tracking-normal #{!important};
+    @apply tracking-normal!;
   }
 
   &__wrap {
@@ -691,9 +708,9 @@
   .fct-reports-view {
     .fct-report-header {
       overflow: inherit;
-      @apply fixed z-[999] right-3 bottom-3 bg-transparent !top-auto h-auto !w-auto p-0 border-0;
+      @apply fixed z-[999] right-3 bottom-3 bg-transparent top-auto! h-auto w-auto! p-0 border-0;
       &.is-fixed {
-        @apply top-auto w-auto right-3 #{!important};
+        @apply top-auto! w-auto! right-3!;
         .fct-report-header-top-inner {
           @apply p-0;
         }
@@ -708,7 +725,7 @@
   }
 
   .fct-reports-view-inner .fct-report-body {
-    @apply ps-0 #{!important};
+    @apply ps-0!;
   }
 }
 
@@ -780,13 +797,12 @@
   }
 }
 
-.fct-report-filter-compare-menu {
-  .el-dropdown-menu__item {
-    @apply flex flex-col items-start gap-0.5 leading-snug py-2;
+// Beats the .fct-dropdown item rules.
+.el-dropdown__popper.fct-dropdown .el-dropdown-menu__item.fct-report-filter-compare-item {
+  @apply flex flex-col items-start gap-0.5 leading-snug py-2;
 
-    &.is-active {
-      @apply font-medium text-blue-500 dark:text-blue-300;
-    }
+  &.is-active {
+    @apply font-medium text-blue-500 dark:text-blue-300;
   }
 
   .fct-report-filter-compare-range {

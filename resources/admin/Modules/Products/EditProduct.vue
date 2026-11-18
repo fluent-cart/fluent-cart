@@ -137,13 +137,16 @@ onBeforeRouteLeave(() => {
     <!--    route.name === 'product_edit'-->
     <teleport to="#fct-admin-product-header-buttons">
       <div class="fct-btn-group sm">
-        <el-dropdown
+        <fct-dropdown
             trigger="click"
             class="fct-more-option-wrap"
-            popper-class="fct-dropdown"
+            :items="[
+              {command: 'preview', label: translate('Preview'), icon: 'Eye', href: productEditModel.viewUrl(), target: '_blank'},
+              {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true}
+            ]"
             @command="handleProductAction">
 
-          <el-button>
+          <fct-button>
             <span class="hide-on-mobile">
               {{ translate('More Actions') }}
               <DynamicIcon name="ChevronDown"/>
@@ -152,24 +155,8 @@ onBeforeRouteLeave(() => {
             <span class="show-on-mobile">
               <DynamicIcon name="More"/>
             </span>
-          </el-button>
-
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="preview" class="item-link">
-                <a :href="productEditModel.viewUrl()" target="_blank">
-                  <DynamicIcon name="Eye"/>
-                  {{ translate('Preview') }}
-                </a>
-              </el-dropdown-item>
-
-              <el-dropdown-item command="delete" class="item-destructive">
-                <DynamicIcon name="Delete"/>
-                {{ translate('Delete') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+          </fct-button>
+        </fct-dropdown>
       </div>
     </teleport>
 

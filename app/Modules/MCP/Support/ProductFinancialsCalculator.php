@@ -144,6 +144,8 @@ class ProductFinancialsCalculator
      *   forward_statuses array of statuses that feed forward metrics, or ['all']
      *   include_schedule bool — emit payment_schedule[] (30d/90d scalars always computed)
      *   one_time         ['gross'=>int,'refunds'=>int,'units'=>int,'orders'=>int] | null
+     *   one_time_lifetime_net int — all-time one-time net for totals when one_time is windowed
+     *   bucket_timezone  \DateTimeZone — timezone of the payment_schedule periods (default UTC)
      *
      * Returns all money as integer cents; the tool wraps it through money().
      */
@@ -250,13 +252,14 @@ class ProductFinancialsCalculator
                         'recur'       => $recur,
                         'remaining_bills' => ($settle === 'finite') ? max(0, $billTimes - $billCount) : -1,
                         'anchor'      => (string) $anchor,
+                        'schedule'    => isset($sub['billing_schedule']) ? $sub['billing_schedule'] : null,
                     ];
                 }
             }
         }
 
         // ---- Forward calendar projection ----
-        $projection = self::project($projSubs, $asOfTs, $horizon, $bucket);
+        $projection = self::project($projSubs, $asOfTs, $horizon, $bucket, isset($opts['bucket_timezone']) ? $opts['bucket_timezone'] : null);
 
         // Fold recurring next_30d back into per-interval buckets.
         foreach ($projection['by_interval_next_30d'] as $iv => $cents) {
@@ -325,7 +328,10 @@ class ProductFinancialsCalculator
         }
 
         // ---- Headline totals ----
-        $collectedToDate = $oneTimeNet + (int) $finite['collected'] + (int) $recurring['collected'];
+        // Totals are lifetime figures: with a windowed one_time block the caller passes the
+        // all-time one-time net, so the total never adds a window to lifetime subscription money.
+        $lifetimeOneTimeNet = isset($opts['one_time_lifetime_net']) ? (int) $opts['one_time_lifetime_net'] : $oneTimeNet;
+        $collectedToDate = $lifetimeOneTimeNet + (int) $finite['collected'] + (int) $recurring['collected'];
         $committedFinite = (int) $finite['remaining'];
 
         $notes = [];
@@ -364,7 +370,7 @@ class ProductFinancialsCalculator
      *   recurring_next_30d/90d   int cents of recurring renewals within 30/90 days of as_of
      *   by_interval_next_30d     [ interval => int cents ] recurring renewals within 30d
      */
-    private static function project(array $projSubs, $asOfTs, $horizonMonths, $bucket)
+    private static function project(array $projSubs, $asOfTs, $horizonMonths, $bucket, $tz = null)
     {
         $horizonEndTs = strtotime('+' . (int) $horizonMonths . ' months', $asOfTs);
         if ($horizonEndTs === false) {
@@ -374,7 +380,7 @@ class ProductFinancialsCalculator
         // The walk itself lives in the shared PaymentProjector so get-upcoming-
         // payments projects on the exact same rules (anchor on next_billing_date,
         // step by interval, stop finite at remaining bills).
-        $p = PaymentProjector::project($projSubs, $asOfTs, $horizonEndTs, $bucket);
+        $p = PaymentProjector::project($projSubs, $asOfTs, $horizonEndTs, $bucket, $tz, time());
 
         $schedule = [];
         foreach ($p['buckets'] as $period => $b) {

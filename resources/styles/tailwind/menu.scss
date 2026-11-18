@@ -53,7 +53,10 @@
           left: 8px;
           right: 8px;
           height: 1px;
-          @apply bg-gray-divider dark:bg-dark-400;
+          @apply bg-gray-divider;
+        }
+        .fluent_theme_dark &::before {
+            @apply bg-dark-400;
         }
       }
     }
@@ -94,13 +97,13 @@
 }
 
 .fct_admin_menu_help_link {
-  @apply py-3 px-5 text-system-dark text-[15px] font-medium rounded focus:shadow-none focus:outline-none hover:text-system-dark hover:bg-gray-25 dark:text-gray-50 dark:hover:text-gray-50 dark:hover:bg-dark-600;
+  @apply py-3 px-5 text-system-dark text-[15px] font-medium rounded focus:shadow-none focus:outline-hidden hover:text-system-dark hover:bg-gray-25 dark:text-gray-50 dark:hover:text-gray-50 dark:hover:bg-dark-600;
 }
 
 .fct_admin_logo_wrap {
   @apply flex items-center;
   a {
-    @apply h-[32px] text-system-dark outline-none focus:shadow-none dark:text-white;
+    @apply h-[32px] text-system-dark outline-hidden focus:shadow-none dark:text-white;
     img {
       @apply w-full h-full;
     }
@@ -139,7 +142,7 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
   @apply flex justify-center items-center gap-1.5;
 }
 .fct_admin_settings_btn{
-  @apply flex items-center justify-center w-7 h-9 text-system-dark focus:shadow-none focus:outline-none focus:text-system-dark dark:focus:text-gray-300 dark:text-gray-300;
+  @apply flex items-center justify-center w-7 h-9 text-system-dark focus:shadow-none focus:outline-hidden focus:text-system-dark dark:focus:text-gray-300 dark:text-gray-300;
   svg{
     @apply w-[15px] h-[15px];
   }
@@ -207,10 +210,19 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
       @apply p-0 mb-0 relative before:hidden;
       a {
         @apply block relative text-xs font-medium text-system-mid hover:text-system-dark focus:shadow-none dark:text-gray-300 pb-0.5 dark:hover:text-gray-50;
+        .fct-admin-product-menu-icon {
+          @apply inline-flex align-middle me-1;
+          svg {
+            @apply w-3.5 h-3.5;
+          }
+        }
         &:after {
-          @apply absolute bottom-[-2px] right-0 w-full h-[1.5px] bg-primary-500 rounded-xs duration-200 transition-all opacity-0 dark:bg-gray-50;
+          @apply absolute bottom-[-2px] right-0 w-full h-[1.5px] bg-primary-500 rounded-xs duration-200 transition-all opacity-0;
           content: "";
           transform: scale(0.5);
+        }
+        .fluent_theme_dark &:after {
+            @apply bg-gray-50;
         }
       }
 
@@ -253,7 +265,7 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
 
 .fct-theme-button-container {
   .theme-selected-button {
-    @apply flex cursor-pointer items-center justify-center w-9 h-9 bg-transparent border-0 outline-none p-0;
+    @apply flex cursor-pointer items-center justify-center w-9 h-9 bg-transparent border-0 outline-hidden p-0;
   }
   svg {
     @apply w-4.5 h-4.5 dark:text-gray-300;
@@ -272,7 +284,10 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
   &::before {
     content: '';
     transition: opacity 0.3s ease-in-out;
-    @apply w-full h-full rounded-tl-md rounded-bl-md absolute top-0 left-0 bg-gray-50 dark:bg-dark-500 opacity-0 z-[-1];
+    @apply w-full h-full rounded-tl-md rounded-bl-md absolute top-0 left-0 bg-gray-50 opacity-0 z-[-1];
+  }
+  .fluent_theme_dark &::before {
+      @apply bg-dark-500;
   }
 }
 
@@ -354,7 +369,7 @@ html:not([data-fct-theme]) .fct-theme-icon--system {
       }
     }
     a {
-      @apply text-primary-500 dark:text-gray-300 no-underline focus:outline-none focus:shadow-none;
+      @apply text-primary-500 dark:text-gray-300 no-underline focus:outline-hidden focus:shadow-none;
     }
   }
 

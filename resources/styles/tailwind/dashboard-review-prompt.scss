@@ -11,7 +11,7 @@
 			@apply text-system-dark dark:text-gray-25;
 		}
 		&:focus-visible {
-			@apply outline-2 outline-offset-2 outline-primary-500;
+			@apply [outline-width:2px] outline-offset-2 outline-primary-500;
 		}
 	}
 	&__title {

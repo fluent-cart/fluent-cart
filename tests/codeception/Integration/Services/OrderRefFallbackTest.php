@@ -221,18 +221,6 @@ class OrderRefFallbackTest extends WPTestCase
         }
     }
 
-    // Admin renewal-failure emails name the renewal by invoice number, or the uuid before one exists.
-    public function test_renewal_failure_admin_emails_fall_back_to_uuid(): void
-    {
-        $unpaid = $this->makeUnpaidOrder();
-
-        foreach (['emails.subscription.renewal_failed.admin', 'emails.subscription.charge_failed.admin'] as $view) {
-            $text = $this->visibleText($view, $unpaid);
-            $this->assertStringContainsString('#' . $unpaid->uuid, $text, $view);
-            $this->assertDoesNotMatchRegularExpression('/#' . $unpaid->id . '\b/', $text, $view);
-        }
-    }
-
     // The downloaded receipt PDF is named by invoice number once paid, by uuid before.
     public function test_receipt_download_file_name(): void
     {

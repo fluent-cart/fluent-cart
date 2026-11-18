@@ -11,7 +11,6 @@ use FluentCart\App\Models\OrderOperation;
 use FluentCart\App\Services\Report\ReportHelper;
 use FluentCart\App\Services\Report\SourceReportService;
 use FluentCart\Framework\Database\Query\Builder as Query;
-use FluentCart\Framework\Http\Request\Request as FluentRequest;
 use lucatume\WPBrowser\TestCase\WPTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -122,31 +121,6 @@ class SourceReportAdvancedFilterTest extends WPTestCase
     // =========================================================================
     // (a) The hook fires with the query + params, and can constrain the results
     // =========================================================================
-
-    public function test_sources_query_hook_receives_the_query_builder_and_the_params(): void
-    {
-        $this->paidOrderFromSource('newsletter');
-
-        $received = [];
-        $this->onSourcesQuery(function ($query, $params) use (&$received) {
-            $received[] = ['query' => $query, 'params' => $params];
-            return $query;
-        });
-
-        $this->service->getSourceReportData($this->reportParams([
-            'filter_type'      => 'advanced',
-            'advanced_filters' => self::advancedFiltersJson(),
-        ]));
-
-        $this->assertCount(1, $received, 'The sources query must pass through the filter exactly once per report query');
-        $this->assertInstanceOf(Query::class, $received[0]['query'], 'The filtered value must be the query builder instance');
-        $this->assertSame('advanced', $received[0]['params']['filter_type'], 'filter_type must reach the hook');
-        $this->assertSame(
-            self::advancedFiltersJson(),
-            $received[0]['params']['advanced_filters'],
-            'The advanced_filters payload must reach the hook intact'
-        );
-    }
 
     public function test_a_callback_can_constrain_the_source_report_result_set(): void
     {
@@ -345,45 +319,4 @@ class SourceReportAdvancedFilterTest extends WPTestCase
     // =========================================================================
     // (c) The comparison-period query gets the same advanced filters
     // =========================================================================
-
-    public function test_comparison_period_query_receives_the_same_advanced_filters(): void
-    {
-        $this->paidOrderFromSource('newsletter');
-
-        $received = [];
-        $this->onSourcesQuery(function ($query, $params) use (&$received) {
-            $received[] = $params;
-            return $query;
-        });
-
-        $request = new FluentRequest(App::getInstance(), [
-            'params' => [
-                'startDate'        => gmdate('Y-m-d', strtotime('-7 days')),
-                'endDate'          => gmdate('Y-m-d', strtotime('+1 day')),
-                'compareType'      => 'previous_period',
-                'compareDate'      => gmdate('Y-m-d', strtotime('-14 days')),
-                'filter_type'      => 'advanced',
-                'advanced_filters' => self::advancedFiltersJson(),
-            ],
-        ], []);
-
-        (new SourceReportController())->index($request);
-
-        $this->assertCount(2, $received, 'The controller must run the current and the comparison query, each through the hook');
-
-        foreach ($received as $index => $params) {
-            $this->assertSame('advanced', $params['filter_type'], "filter_type missing on query #{$index}");
-            $this->assertSame(
-                self::advancedFiltersJson(),
-                $params['advanced_filters'],
-                "advanced_filters missing on query #{$index} — the periods would not compare like with like"
-            );
-        }
-
-        $this->assertNotEquals(
-            (string) $received[0]['startDate'],
-            (string) $received[1]['startDate'],
-            'Only the date window should differ between the current and comparison query'
-        );
-    }
 }

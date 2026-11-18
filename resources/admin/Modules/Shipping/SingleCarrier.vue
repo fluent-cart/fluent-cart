@@ -15,13 +15,13 @@
           <el-breadcrumb-item :to="{ name: 'shipping_carriers' }">
             {{ translate('Carriers') }}
           </el-breadcrumb-item>
-          <el-breadcrumb-item v-if="carrierName">{{ carrierName }}</el-breadcrumb-item>
+          <el-breadcrumb-item v-if="carrierName"><span role="heading" aria-level="1">{{ carrierName }}</span></el-breadcrumb-item>
         </el-breadcrumb>
       </template>
 
       <template #action>
         <span v-if="savedFlash && !dirty" class="fct-carrier-tag is-ok">{{ translate('Saved') }}</span>
-        <el-button
+        <fct-button
             v-if="hasFields"
             type="primary"
             size="small"
@@ -31,20 +31,20 @@
         >
           <span v-if="!saving" class="cmd" aria-hidden="true">⌘s</span>
           {{ saving ? translate('Saving') : translate('Save') }}
-        </el-button>
+        </fct-button>
       </template>
     </SettingsHeader>
 
     <div class="setting-wrap-inner fct-carrier-page">
       <Card.Container v-if="loading || loadFailed || !carrier">
         <Card.Body>
-          <el-skeleton :loading="loading" animated :rows="6" />
+          <fct-skeleton v-if="loading" animated :rows="6" />
 
           <div v-if="!loading && loadFailed" class="py-2">
             <Alert type="error" class="mb-3" role="alert" :content="translate('Failed to load carrier.')"/>
-            <el-button size="small" :loading="loading" :disabled="loading" @click="load">
+            <fct-button size="small" :loading="loading" :disabled="loading" @click="load">
               {{ translate('Retry') }}
-            </el-button>
+            </fct-button>
           </div>
 
           <div v-else-if="!loading" class="text-sm text-system-mid dark:text-gray-300">
@@ -71,7 +71,7 @@
           >
             <Card.Header v-if="group.section" border_bottom>
               <template #title>
-                <h3 class="fct-carrier-section__title">{{ group.section.label }}</h3>
+                <h2 class="fct-carrier-section__title">{{ group.section.label }}</h2>
               </template>
               <template v-if="sectionBadge(group) || group.section.aside" #action>
                 <span v-if="sectionBadge(group)" class="fct-carrier-tag" :class="'is-' + (sectionBadge(group).tone || 'mute')">
@@ -106,7 +106,7 @@
                       <template #default="{ option }">
                         <template v-for="optionField in option.fields" :key="optionField.key">
                           <div v-if="optionField.type === 'section'" class="fct-carrier-section">
-                            <h3 class="fct-carrier-section__title">{{ optionField.label }}</h3>
+                            <h2 class="fct-carrier-section__title">{{ optionField.label }}</h2>
                             <p v-if="optionField.hint" class="fct-carrier-section__hint">{{ optionField.hint }}</p>
                           </div>
                           <template v-else-if="optionField.type === 'webhook_url'">
@@ -137,11 +137,22 @@
                   </div>
                 </template>
               </div>
+              <!-- An add-on's own Vue for this card, registered through fluent_cart_admin_components
+                   as carrier_<slug>_<section key> ('intro' for the card before the first section).
+                   Keyed by slug: ExtensionComponent resolves its name once, and this page is reused
+                   when only the :slug param changes. -->
+              <ExtensionComponent
+                  v-if="hasExtensionComponent(extensionName(group))"
+                  :key="carrier.slug + ':' + group.key"
+                  :name="extensionName(group)"
+                  :carrier="carrier"
+                  @carrier="applyComponentCarrier"
+              />
               <!-- The URL carries the webhook secret; it is only on this store/sensitive payload.
                    A carrier with a webhook_url field places it in the form instead. -->
               <CarrierWebhookUrl
                   v-if="group === groups[groups.length - 1] && carrier.webhook_url && !placesWebhookUrl"
-                  class="mt-5 pt-5 border-t border-gray-divider dark:border-dark-500"
+                  class="mt-5 pt-5 [border-top-width:1px] border-gray-divider dark:border-dark-500"
                   :url="carrier.webhook_url"
                   :hint="webhookHint"
               />
@@ -156,7 +167,7 @@
             </p>
             <CarrierWebhookUrl
                 v-if="carrier.webhook_url"
-                class="mt-5 pt-5 border-t border-gray-divider dark:border-dark-500"
+                class="mt-5 pt-5 [border-top-width:1px] border-gray-divider dark:border-dark-500"
                 :url="carrier.webhook_url"
                 :hint="webhookHint"
             />
@@ -165,8 +176,8 @@
 
 
         <div v-if="hasFields" class="fct-carrier-foot">
-          <el-button :disabled="!dirty || saving" @click="discard">{{ translate('Discard') }}</el-button>
-          <el-button type="primary" :loading="saving" :disabled="!dirty || saving" @click="saveSettings">{{ translate('Save settings') }}</el-button>
+          <fct-button :disabled="!dirty || saving" @click="discard">{{ translate('Discard') }}</fct-button>
+          <fct-button type="primary" :loading="saving" :disabled="!dirty || saving" @click="saveSettings">{{ translate('Save settings') }}</fct-button>
         </div>
       </template>
 
@@ -196,6 +207,8 @@ import CarrierWebhookUrl from './Components/CarrierWebhookUrl.vue';
 import CarrierDisplayField from './Components/CarrierDisplayField.vue';
 import CarrierSelectField from './Components/CarrierSelectField.vue';
 import SaveBar from '@/Bits/Components/SaveBar.vue';
+import ExtensionComponent from '@/Bits/Components/Extension/ExtensionComponent.vue';
+import { hasExtensionComponent } from '@/utils/extensionComponents';
 import { CARRIER_MANUAL } from '@/utils/orderConstants';
 import { fetchCarriers, invalidateCarriersCache } from './useCarriers';
 
@@ -289,6 +302,21 @@ const applyCarrier = (nextCarrier) => {
   });
   carrier.value = nextCarrier;
   formState.value = Object.assign({}, nextCarrier.settings || {}, edits);
+};
+
+const extensionName = (group) => 'carrier_' + carrier.value.slug + '_' + group.key;
+
+// An add-on component saved through its own route and hands back the rebuilt carrier.
+const applyComponentCarrier = (nextCarrier) => {
+  if (!nextCarrier || typeof nextCarrier !== 'object' || Array.isArray(nextCarrier)) {
+    return;
+  }
+  invalidateCarriersCache();
+  // A late response for the carrier the admin has since left.
+  if (!carrier.value || (nextCarrier.slug && nextCarrier.slug !== carrier.value.slug)) {
+    return;
+  }
+  applyCarrier(nextCarrier);
 };
 
 const runAction = (action) => {

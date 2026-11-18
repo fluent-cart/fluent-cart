@@ -34,6 +34,15 @@ class SourcedStubCarrier extends AbstractShippingCarrier
 
     public static int $budget = 20;
 
+    /** @var string[]|null form fields the request holds; null keeps fetchLiveRates() */
+    public static ?array $requestFields = null;
+
+    /** @var array[] every request sent through sendLiveRatesRequest() */
+    public static array $requests = [];
+
+    /** @var array[] $args of every liveRatesRequest() call */
+    public static array $requestArgs = [];
+
     public static function install(array $sources, array $answers): void
     {
         self::$enabled = true;
@@ -42,6 +51,9 @@ class SourcedStubCarrier extends AbstractShippingCarrier
         self::$fetches = [];
         self::$destinations = [];
         self::$budget  = 20;
+        self::$requestFields = null;
+        self::$requests = [];
+        self::$requestArgs = [];
 
         if (!CarrierManager::carrier(self::SLUG)) {
             CarrierManager::getInstance()->register(self::SLUG, new self(new SourcedStubSettings()));
@@ -54,6 +66,7 @@ class SourcedStubCarrier extends AbstractShippingCarrier
         self::$sources = [];
         self::$answers = [];
         self::$fetches = [];
+        self::$requestFields = null;
     }
 
     public static function rate(string $id, int $cost): array
@@ -99,6 +112,29 @@ class SourcedStubCarrier extends AbstractShippingCarrier
         self::$destinations[] = $destination;
 
         return $this->answer('');
+    }
+
+    protected function liveRatesRequest(array $destination, array $items, string $currency, array $args, string $source): ?array
+    {
+        if (self::$requestFields === null) {
+            return null;
+        }
+        self::$requestArgs[] = $args;
+        $form = isset($args['form_data']) ? $args['form_data'] : [];
+
+        return ['to' => $destination['postcode'], 'form' => array_intersect_key($form, array_flip(self::$requestFields))];
+    }
+
+    public function buildsLiveRatesRequests(): bool
+    {
+        return self::$requestFields !== null;
+    }
+
+    protected function sendLiveRatesRequest(array $request, string $currency, string $source)
+    {
+        self::$requests[] = $request;
+
+        return $this->answer($source);
     }
 
     protected function fetchLiveRatesForSource(string $source, array $destination, array $items, string $currency)

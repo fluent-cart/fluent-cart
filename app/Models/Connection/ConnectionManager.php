@@ -23,6 +23,7 @@ class ConnectionManager
         ]);
 
         $resolver->setDefaultConnection('mysql');
+        $resolver->connection()->setTransactionManager($app->make('db.transactions'));
 
         Model::setConnectionResolver($resolver);
 

@@ -2,21 +2,15 @@
   <div class="fct-add-filter-wrapper">
     <div class="filter-select-option-wrap">
       <h3 class="filter-popover-title">{{ $t('Add Filter') }}</h3>
-      <el-select
+      <fct-select
           @mousedown.prevent="handleSelectClick"
           v-model="selectedFilters"
           multiple
           :placeholder="$t('Select Filters')"
+          :options="Object.keys(filterOptions).map(filterKey => ({label: filterOptions[filterKey].label, value: filterKey}))"
           @change="onSelectedFiltersChanged"
           @remove-tag="onSelectedFilterRemoved"
-      >
-        <el-option
-            v-for="(filterItem, filterKey) in filterOptions"
-            :key="filterKey"
-            :label="filterItem.label"
-            :value="filterKey"
-        />
-      </el-select>
+      />
     </div>
 
     <table style="width: 100%; margin-top: 10px;">
@@ -26,61 +20,38 @@
                         {{ filterOptions[filterItem.item_key].label }}:
                     </span>
           <template v-else>
-            <el-select @change="maybeChangeOperator(filterItem)" v-model="filterItem.item_key"
-                       :placeholder="$t('Select Filter Group')">
-              <el-option v-for="(filterItem, filterKey) in filterOptions"
-                         :key="filterKey"
-                         :label="filterItem.label"
-                         :value="filterKey"
-              />
-            </el-select>
+            <fct-select @change="maybeChangeOperator(filterItem)" v-model="filterItem.item_key"
+                        :placeholder="$t('Select Filter Group')"
+                        :options="Object.keys(filterOptions).map(filterKey => ({label: filterOptions[filterKey].label, value: filterKey}))"/>
           </template>
         </td>
         <td>
           <template v-if="filterItem.item_key">
-            <el-select
+            <fct-select
                 size="small"
                 v-if="filterOptions[filterItem.item_key]?.type == 'options'"
                 v-model="filterItem.item_values"
                 :multiple="true"
-                :placeholder="$t('Select Options')">
-              <el-option
-                  v-for="(option, optionKey) in filterOptions[filterItem.item_key]?.options"
-                  :key="optionKey"
-                  :label="option"
-                  :value="optionKey"
-              />
-            </el-select>
+                :placeholder="$t('Select Options')"
+                :options="toOptions(filterOptions[filterItem.item_key]?.options)"/>
             <div class="fct_inline_inputs" v-if="filterOptions[filterItem.item_key]?.type == 'text'">
-              <el-select class="fct_inline_operator" v-model="filterItem.operator" :placeholder="$t('Select')">
-                <el-option
-                    v-for="(option, optionKey) in textOptions"
-                    :key="optionKey"
-                    :label="option"
-                    :value="optionKey"
-                />
-              </el-select>
-              <el-input v-model="filterItem.item_values" :placeholder="$t('Search Value')" type="text"/>
+              <fct-select class="fct_inline_operator" v-model="filterItem.operator" :placeholder="$t('Select')"
+                          :options="toOptions(textOptions)"/>
+              <fct-input v-model="filterItem.item_values" :placeholder="$t('Search Value')" type="text"/>
             </div>
             <div class="fct_inline_inputs" v-if="filterOptions[filterItem.item_key]?.type == 'number'">
-              <el-select class="fct_inline_operator" v-model="filterItem.operator">
-                <el-option
-                    v-for="(option, optionKey) in number_options"
-                    :key="optionKey"
-                    :label="option"
-                    :value="optionKey"
-                />
-              </el-select>
-              <el-input v-model="filterItem.item_values" :placeholder="$t('Search Value')" type="number" :min="1"/>
+              <fct-select class="fct_inline_operator" v-model="filterItem.operator"
+                          :options="toOptions(number_options)"/>
+              <fct-input v-model="filterItem.item_values" :placeholder="$t('Search Value')" type="number" :controls="false" :min="1"/>
             </div>
           </template>
         </td>
       </tr>
     </table>
     <div class="filter-btn-wrap">
-      <el-button type="primary" @click="applyFilters()">
+      <fct-button type="primary" @click="applyFilters()">
         {{ $t('Apply Filters') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 
@@ -139,6 +110,13 @@ export default {
     }
   },
   methods: {
+    // Same values the old v-for gave: an array's index or an object's key.
+    toOptions(source) {
+      if (Array.isArray(source)) {
+        return source.map((label, value) => ({label, value}));
+      }
+      return Object.keys(source || {}).map(value => ({label: source[value], value}));
+    },
     handleSelectClick(event) {
       event.stopPropagation();
       // Handle select click if needed

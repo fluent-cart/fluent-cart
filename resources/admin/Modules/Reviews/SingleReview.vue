@@ -3,7 +3,7 @@
     <div class="fct-single-review-page fct-layout-width">
       <template v-if="loading">
         <div class="p-6">
-          <el-skeleton :rows="8" animated/>
+          <fct-skeleton :rows="8" animated/>
         </div>
       </template>
 
@@ -23,9 +23,9 @@
                   {{ review.product.post_title }}
                 </el-breadcrumb-item>
                 <el-breadcrumb-item>
-                  <el-tooltip v-if="review.reviewer_email" :content="review.reviewer_email" placement="bottom">
+                  <fct-tooltip v-if="review.reviewer_email" :content="review.reviewer_email" placement="bottom">
                     <span>{{ review.reviewer_name }}</span>
-                  </el-tooltip>
+                  </fct-tooltip>
                   <span v-else>{{ review.reviewer_name }}</span>
                   <!-- Compact pill beside the name linking to the customer profile -->
                   <router-link
@@ -43,47 +43,22 @@
             </div>
           </div>
           <div class="fct-btn-group sm">
-            <el-dropdown trigger="click">
-              <el-button size="small">
+            <fct-dropdown
+                trigger="click"
+                :items="[
+                  ...(review.status !== 'approved' ? [{command: 'approved', label: translate('Approve'), disabled: statusLoading}] : []),
+                  ...(review.status !== 'spam' ? [{command: 'spam', label: translate('Mark as Spam'), disabled: statusLoading}] : []),
+                  ...(review.status !== 'pending' ? [{command: 'pending', label: translate('Mark as Pending'), disabled: statusLoading}] : []),
+                  ...(review.status !== 'trash' ? [{command: 'trash', label: translate('Move to Trash'), disabled: statusLoading}] : []),
+                  {command: 'delete', label: translate('Delete Permanently'), danger: true}
+                ]"
+                @command="(command) => command === 'delete' ? deleteReview() : updateStatus(command)"
+            >
+              <fct-button size="small">
                 {{ translate('More Actions') }}
                 <el-icon class="el-icon--right"><ArrowDown/></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                      v-if="review.status !== 'approved'"
-                      :disabled="statusLoading"
-                      @click="updateStatus('approved')"
-                  >
-                    {{ translate('Approve') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                      v-if="review.status !== 'spam'"
-                      :disabled="statusLoading"
-                      @click="updateStatus('spam')"
-                  >
-                    {{ translate('Mark as Spam') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                      v-if="review.status !== 'pending'"
-                      :disabled="statusLoading"
-                      @click="updateStatus('pending')"
-                  >
-                    {{ translate('Mark as Pending') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                      v-if="review.status !== 'trash'"
-                      :disabled="statusLoading"
-                      @click="updateStatus('trash')"
-                    >
-                    {{ translate('Move to Trash') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="deleteReview" class="fct-dropdown-item--danger">
-                    {{ translate('Delete Permanently') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+              </fct-button>
+            </fct-dropdown>
           </div>
         </div>
 
@@ -174,9 +149,16 @@
                                  caret inside it that turns when the menu is open. The menu
                                  lists the statuses with an icon each, the current one ticked
                                  and tinted in its own colour. -->
-                            <el-dropdown
+                            <fct-dropdown
                                 trigger="click"
                                 :disabled="replyStatusLoading !== null"
+                                :items="replyStatusOptions.map((option) => ({
+                                  command: option.status,
+                                  label: option.label,
+                                  icon: option.status === reply.status ? 'Check' : option.icon,
+                                  disabled: option.status === reply.status,
+                                  class: ['fct-thread-status-option', `fct-thread-status-option--${option.status}`, {'is-current': option.status === reply.status}],
+                                }))"
                                 @command="(status) => updateReplyStatus(reply, status)"
                                 @visible-change="(open) => openReplyStatusMenu = open ? reply.id : null"
                             >
@@ -197,29 +179,12 @@
                                   <el-icon class="fct-thread-status-caret" aria-hidden="true"><ArrowDown/></el-icon>
                                 </Badge>
                               </button>
-                              <template #dropdown>
-                                <el-dropdown-menu class="fct-thread-status-menu">
-                                  <el-dropdown-item
-                                      v-for="option in replyStatusOptions"
-                                      :key="option.status"
-                                      :command="option.status"
-                                      :disabled="option.status === reply.status"
-                                      :class="[
-                                        'fct-thread-status-option',
-                                        `fct-thread-status-option--${option.status}`,
-                                        { 'is-current': option.status === reply.status },
-                                      ]"
-                                  >
-                                    <DynamicIcon
-                                        :name="option.status === reply.status ? 'Check' : option.icon"
-                                        class="fct-thread-status-option-icon"
-                                    />
-                                    <span>{{ option.label }}</span>
-                                  </el-dropdown-item>
-                                </el-dropdown-menu>
+                              <template #item="{item}">
+                                <DynamicIcon :name="item.icon" class="fct-thread-status-option-icon"/>
+                                <span>{{ item.label }}</span>
                               </template>
-                            </el-dropdown>
-                            <el-button
+                            </fct-dropdown>
+                            <fct-button
                                 type="danger"
                                 text
                                 size="small"
@@ -228,7 +193,7 @@
                                 @click="deleteReply(reply.id)"
                             >
                               <DynamicIcon name="TrashIcon"/>
-                            </el-button>
+                            </fct-button>
                           </div>
                           <div class="fct-thread-text">{{ reply.content }}</div>
                         </div>
@@ -239,16 +204,16 @@
                   <!-- Reply form -->
                   <div v-if="canReply" class="fct-thread-form">
                     <div class="fct-thread-form-box">
-                      <el-input
+                      <fct-input
                           v-model="replyContent"
                           type="textarea"
                           :rows="3"
                           :placeholder="translate('Type a message')"
                           :aria-label="translate('Reply to review')"
-                          :resize="'none'"
+                          resize="none"
                       />
                       <div class="fct-thread-form-actions">
-                        <el-button
+                        <fct-button
                             class="fct-thread-reply-btn"
                             size="small"
                             @click="postReply"
@@ -256,7 +221,7 @@
                             :disabled="replyLoading || !replyContent.trim()"
                         >
                           {{ translate('Reply') }}
-                        </el-button>
+                        </fct-button>
                       </div>
                     </div>
                   </div>
@@ -264,12 +229,11 @@
               </CardContainer>
 
               <!-- Media Preview Dialog -->
-              <el-dialog
+              <fct-dialog
                   v-model="previewVisible"
                   :title="translate('Review Media')"
                   width="720px"
                   destroy-on-close
-                  :aria-label="translate('Review media preview')"
               >
                 <div v-if="reviewMedia && reviewMedia[previewIndex]" class="fct-review-media-preview">
                   <img
@@ -285,24 +249,24 @@
                       class="fct-review-media-preview-video"
                   ></video>
                   <div class="fct-review-media-preview-nav" v-if="reviewMedia.length > 1">
-                    <el-button
+                    <fct-button
                         size="small"
                         :disabled="previewIndex === 0"
                         @click="previewIndex--"
                     >
                       &larr; {{ translate('Previous') }}
-                    </el-button>
+                    </fct-button>
                     <span class="text-sm text-gray-500">{{ previewIndex + 1 }} / {{ reviewMedia.length }}</span>
-                    <el-button
+                    <fct-button
                         size="small"
                         :disabled="previewIndex === reviewMedia.length - 1"
                         @click="previewIndex++"
                     >
                       {{ translate('Next') }} &rarr;
-                    </el-button>
+                    </fct-button>
                   </div>
                 </div>
-              </el-dialog>
+              </fct-dialog>
             </div>
 
             <!-- Sidebar Column -->
@@ -373,7 +337,7 @@
                         <div class="fct-review-verified-label">{{ translate('Verified purchase') }}</div>
                         <div class="fct-review-verified-hint">{{ translate('Show the verified badge on this review') }}</div>
                       </div>
-                      <el-switch
+                      <fct-switch
                           :model-value="!!review.is_verified"
                           :loading="verifiedLoading"
                           :disabled="verifiedLoading"

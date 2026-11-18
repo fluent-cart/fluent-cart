@@ -1,0 +1,309 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-swatches-block-editor.config.mjs";
+
+// One row per attribute, stacked, with the same side inset and bottom rhythm as the
+// card's title and price rows.
+.fct-card-swatch-rows {
+  @apply flex flex-col items-start gap-3 mt-0 pb-3;
+  padding-inline: var(--fct-card-padding, theme('spacing.3'));
+  // Hover colours for the options, the "+N" chip and the colour rings: a tint and a ring of the card's
+  // text colour, with plain greys where color-mix() is not supported.
+  --fct-card-swatch-hover-tint: #F3F4F6;
+  --fct-card-swatch-hover-ring: #A3A8B5;
+
+  @supports (color: color-mix(in srgb, red, blue)) {
+    --fct-card-swatch-hover-tint: color-mix(in srgb, var(--fct-card-primary-text-color, #2F3448) 6%, transparent);
+    --fct-card-swatch-hover-ring: color-mix(in srgb, var(--fct-card-primary-text-color, #2F3448) 35%, transparent);
+  }
+
+  // Captioned rows need more air, so each caption reads as the start of its own group.
+  &:has(.fct-card-swatch-heading) {
+    @apply gap-4;
+  }
+}
+
+.fct-card-swatches {
+  @apply flex flex-wrap items-center gap-2 max-w-full;
+}
+
+// List view gives the swatches their own cell beside the image and lines rows up with no
+// side inset (see shop-app.scss). Without an area they drop into the image column.
+@media (min-width: 600px) {
+  .fct-products-wrapper-inner.mode-list .fct-product-card .fct-card-swatch-rows {
+    grid-area: swatches;
+    @apply px-0 me-auto;
+  }
+}
+
+// Takes its own line above the swatches, as a small caption: "COLOR · BLACK".
+.fct-card-swatch-heading {
+  @apply flex basis-full min-w-0 items-center text-[11px] font-medium uppercase tracking-wider leading-none -mb-0.5;
+  color: var(--fct-card-text-color, #565865);
+}
+
+// "Selected: Navy · M" under the rows, when the choice shows below the options.
+.fct-card-swatch-selected {
+  @apply max-w-full text-[11px] font-semibold leading-tight;
+  color: var(--fct-card-primary-text-color, #2F3448);
+}
+
+// One line: a long selected name ends in "…" rather than wrapping away from the attribute name.
+.fct-card-swatch-group-name {
+  @apply shrink-0;
+}
+
+.fct-card-swatch-label {
+  @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+  // Room for the swatch ring's descenders; overflow-hidden would clip them at leading-none.
+  padding-block: 1px;
+}
+
+.fct-card-swatch-group-name + .fct-card-swatch-label::before {
+  content: "·";
+  margin-inline: 0.4em;
+}
+
+.fct-card-swatch-list {
+  @apply flex flex-wrap items-center gap-1.5 min-w-0 max-w-full;
+}
+
+// The long selector is for swatches inside a card: `.fct-product-card button` and the list
+// view's button rules (up to 0,5,1) would otherwise turn them into full-width buy buttons.
+.fct-card-swatch,
+.fct-product-card .fct-card-swatches .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch] {
+  @apply relative inline-flex items-center justify-center p-0 m-0 border-0 cursor-pointer rounded-full bg-transparent normal-case;
+  grid-area: auto;
+  width: 24px;
+  min-width: 24px;
+  max-width: none;
+  height: 24px;
+  min-height: 24px;
+  box-shadow: inset 0 0 0 1px var(--fct-card-border-color, #D6DAE1);
+  transition-property: background-color, color, box-shadow, outline-color, transform;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+  // A brief squeeze while pressed, so a pick feels physical.
+  &:active:not(:disabled) { transform: scale(0.96); }
+
+  // The selected label colours its text span, which would otherwise snap while the background fades.
+  .fct-card-swatch-text { transition: color 200ms cubic-bezier(0.2, 0, 0, 1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    &, .fct-card-swatch-text { transition: none; }
+    &:active:not(:disabled) { transform: none; }
+  }
+
+  // Hover previews the pick: a lighter copy of the chosen ring around the swatch. Only with a real
+  // pointer, so a tap leaves no ring behind on touch screens.
+  @media (hover: hover) {
+    &:hover:not([data-sold-out], [aria-pressed="true"]) {
+      box-shadow: inset 0 0 0 1px var(--fct-card-border-color, #D6DAE1), 0 0 0 1.5px var(--fct-card-swatch-hover-ring);
+    }
+  }
+
+  &[aria-pressed="true"] {
+    box-shadow: 0 0 0 1.5px var(--fct-card-primary-text-color, #2F3448);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fct-card-primary-text-color, #2F3448);
+    outline-offset: 2px;
+  }
+}
+
+// A sold-out value, crossed out and struck through. Sold out everywhere ([data-sold-out]) it cannot
+// be picked, so it may fade; sold out only with the other rows' picks ([data-unavailable]) it still
+// can, so its text keeps a readable colour (WCAG AA).
+.fct-card-swatch:is([data-sold-out], [data-unavailable]),
+.fct-product-card .fct-card-swatches .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch]:is([data-sold-out], [data-unavailable]) {
+  .fct-card-swatch-text {
+    @apply line-through;
+  }
+}
+
+.fct-card-swatch[data-sold-out],
+.fct-product-card .fct-card-swatches .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch][data-sold-out] {
+  opacity: 0.35;
+}
+
+.fct-card-swatches:is(.is-color, .is-image) .fct-card-swatch[data-unavailable]:not(:has(.fct-card-swatch-text)) .fct-card-swatch-fill {
+  opacity: 0.6;
+}
+
+.fct-card-swatch[data-sold-out],
+.fct-product-card .fct-card-swatches .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch][data-sold-out] {
+  @apply cursor-not-allowed;
+
+  // Not pickable: no squeeze, and the hover rules leave it out.
+  &:active { transform: none; }
+}
+
+// A colour or image shown without text has nothing to strike, so a diagonal line crosses it.
+.fct-card-swatches:is(.is-color, .is-image) .fct-card-swatch:is([data-sold-out], [data-unavailable]):not(:has(.fct-card-swatch-text))::after {
+  content: "";
+  @apply absolute pointer-events-none;
+  inset: 50% -2px auto;
+  height: 1.5px;
+  background: var(--fct-card-primary-text-color, #2F3448);
+  transform: rotate(-45deg);
+}
+
+.fct-card-swatch-fill {
+  @apply block rounded-full object-cover;
+  width: 18px;
+  height: 18px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+// "+N": the values past Max Swatches; it opens quick view. Sized like the row's swatches.
+.fct-card-swatch-more,
+.fct-product-card .fct-card-swatches .fct-card-swatch-list button.fct-card-swatch-more[type="button"][data-fct-card-swatch-more] {
+  @apply inline-flex items-center justify-center p-0 px-1.5 m-0 border-0 cursor-pointer rounded-full bg-transparent no-underline normal-case text-xs font-medium leading-none;
+  grid-area: auto;
+  width: auto;
+  min-width: 24px;
+  max-width: none;
+  height: 24px;
+  min-height: 24px;
+  color: var(--fct-card-text-color, #565865);
+  box-shadow: inset 0 0 0 1px var(--fct-card-border-color, #D6DAE1);
+  transition-property: background-color, color, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  // The same light tint and firmer border as the options, instead of a black outline.
+  @media (hover: hover) {
+    &:hover {
+      background: var(--fct-card-swatch-hover-tint);
+      color: var(--fct-card-primary-text-color, #2F3448);
+      box-shadow: inset 0 0 0 1px var(--fct-card-swatch-hover-ring);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--fct-card-primary-text-color, #2F3448);
+    outline-offset: 2px;
+  }
+}
+
+.fct-card-swatches.is-label .fct-card-swatch-more,
+.fct-product-card .fct-card-swatches.is-label .fct-card-swatch-list button.fct-card-swatch-more[type="button"][data-fct-card-swatch-more] {
+  @apply rounded-md px-2;
+  height: 26px;
+  min-height: 26px;
+}
+
+.fct-card-swatches.is-image .fct-card-swatch-more,
+.fct-product-card .fct-card-swatches.is-image .fct-card-swatch-list button.fct-card-swatch-more[type="button"][data-fct-card-swatch-more] {
+  @apply rounded-md;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+}
+
+// Option values (sizes, materials) are text chips; the chosen one is filled, like a segmented control.
+.fct-card-swatches.is-label .fct-card-swatch,
+.fct-product-card .fct-card-swatches.is-label .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch] {
+  @apply rounded-md px-2;
+  width: auto;
+  min-width: 32px;
+  // A long value ends in "…" inside the card; its title and aria-label keep the full name.
+  max-width: 100%;
+  height: 26px;
+  min-height: 26px;
+  box-shadow: inset 0 0 0 1px var(--fct-card-border-color, #D6DAE1);
+
+  // A light tint and a firmer border, instead of a black outline.
+  @media (hover: hover) {
+    &:hover:not([data-sold-out], [aria-pressed="true"]) {
+      background: var(--fct-card-swatch-hover-tint);
+      box-shadow: inset 0 0 0 1px var(--fct-card-swatch-hover-ring);
+    }
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--fct-card-btn-bg-color, #2F3448);
+    box-shadow: none;
+
+    .fct-card-swatch-text {
+      color: var(--fct-card-btn-text-color, #fff);
+    }
+  }
+}
+
+// Image attributes: a rounded square tile with only the picture; the name comes from Show selected name.
+.fct-card-swatches.is-image .fct-card-swatch,
+.fct-product-card .fct-card-swatches.is-image .fct-card-swatch-list button.fct-card-swatch[type="button"][data-fct-card-swatch] {
+  @apply rounded-md p-0.5;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+}
+
+.fct-card-swatches.is-image .fct-card-swatch-fill {
+  @apply rounded;
+  width: 100%;
+  height: 100%;
+  box-shadow: none;
+}
+
+// After a row's first change, product-attribute-swatches.js draws the selected look (fill, ring, corners,
+// copied from the swatch) as one highlight in the row that slides between swatches. It is positioned and
+// comes first, so it paints over the option tray and under the swatches, which are positioned too.
+.fct-card-swatches.has-swatch-indicator {
+  @apply relative;
+}
+
+.fct-card-swatch-indicator {
+  @apply absolute top-0 left-0 pointer-events-none;
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+
+  .is-swatch-sliding > & {
+    transition-property: transform, width, height, opacity;
+    transition-duration: 220ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &, .is-swatch-sliding > & { transition: none; }
+  }
+}
+
+// The chosen swatch drops its own fill and ring, which the highlight now draws; its text colour stays.
+// !important: each card layout styles the chosen option with its own long selectors.
+.fct-card-swatches.has-swatch-indicator .fct-card-swatch[data-fct-card-swatch][aria-pressed="true"] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.fct-card-swatch-text {
+  @apply text-xs leading-none font-medium min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+  color: var(--fct-card-primary-text-color, #2F3448);
+}
+
+.fct-card-swatch-label {
+  @apply no-underline;
+  color: var(--fct-card-primary-text-color, #2F3448);
+}
+
+// The View Options button product-attribute-swatches.js turned into the buy button.
+.fct-card-buy-button:disabled {
+  @apply cursor-not-allowed opacity-60;
+}
+
+// Editor canvas only: a card whose product gets no swatches.
+.fct-card-swatch-empty {
+  @apply text-xs italic;
+  color: var(--fct-card-text-color, #565865);
+}
+
+// Editor canvas: the Products loop draws its title and price without the card's side
+// padding, so the rows drop theirs to line up with them.
+.fct-product-block-editor-product-card .fct-card-swatch-rows {
+  padding-inline: 0;
+}

@@ -5,7 +5,6 @@ namespace Tests\Integration\Services;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
-use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\Cod\Cod;
 use FluentCart\App\Modules\PaymentMethods\Cod\CodHandler;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
@@ -65,13 +64,6 @@ class PaymentHooksAndEdgeTest extends WPTestCase
         $this->assertSame('offline_payment', $defaultFromFilter);
     }
 
-    // 210: Action fluent_cart/register_payment_methods
-    public function test_register_payment_methods_action_documented(): void
-    {
-        $src = file_get_contents(FLUENTCART_PLUGIN_PATH . 'app/Hooks/Handlers/GlobalPaymentHandler.php');
-        $this->assertStringContainsString("do_action('fluent_cart/register_payment_methods'", $src);
-    }
-
     // 211: Action fluent_cart/payments/after_payment_{status}
     public function test_after_payment_status_action_fires_from_base_gateway(): void
     {
@@ -100,14 +92,6 @@ class PaymentHooksAndEdgeTest extends WPTestCase
         $this->assertTrue($fired);
     }
 
-    // 212: Action fluent_cart/payment_paid listened by COD
-    public function test_payment_paid_action_has_cod_handler(): void
-    {
-        $cod = new Cod();
-        $cod->boot();
-        $this->assertNotFalse(has_action('fluent_cart/payment_paid', [$cod, 'handlePaymentPaid']));
-    }
-
     // 213: Action fluent_cart/order_placed_offline fired by CodHandler
     public function test_order_placed_offline_action_fires(): void
     {
@@ -134,19 +118,6 @@ class PaymentHooksAndEdgeTest extends WPTestCase
 
         remove_all_actions('fluent_cart/order_placed_offline');
         $this->assertTrue($fired);
-    }
-
-    // 214-215: Filter fluent_cart/transaction/url_{method} + subscription/url_{method}
-    public function test_transaction_url_filter_is_registered(): void
-    {
-        new Cod();
-        $this->assertNotFalse(has_filter('fluent_cart/transaction/url_offline_payment'));
-    }
-
-    public function test_subscription_url_filter_is_registered(): void
-    {
-        new Cod();
-        $this->assertNotFalse(has_filter('fluent_cart/subscription/url_offline_payment'));
     }
 
     // 216: Filter fluent_cart/order_refund_manually

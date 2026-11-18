@@ -154,9 +154,9 @@ defineExpose({onNextStep, inserting})
             }}
         </p>
         <div class="fct-btn-group mt-4">
-            <el-button type="primary" @click="redirectToDashboard">
+            <fct-button type="primary" @click="redirectToDashboard">
                 {{ translate('Continue to Dashboard') }}
-            </el-button>
+            </fct-button>
         </div>
     </div>
 
@@ -179,7 +179,7 @@ defineExpose({onNextStep, inserting})
                 }}
             </div>
         </div>
-        <el-progress :percentage="percentage" striped-flow :stroke-width="6" striped :show-text="false"/>
+        <fct-progress :percentage="percentage" striped-flow :stroke-width="6" striped :show-text="false"/>
 
         <p class="fct-dummy-product-hint">
             {{ translate("Please keep this window open, we'll take you to your") }}
@@ -189,27 +189,32 @@ defineExpose({onNextStep, inserting})
     </div>
 
     <div v-else class="fct-form-group">
-        <el-radio-group
+        <fct-choice
+            type="radio"
+            button
             class="fct-import-onboarding-products"
             v-model="selectedCategory"
             size="large"
+            :options="[
+                {value: 'start-from-scratch'},
+                ...Object.entries(dummyProductInfo).map(([key, info]) => ({value: key, info}))
+            ]"
         >
-            <el-radio-button value="start-from-scratch">
-                <DynamicIcon name="Scratch" />
-                <span class="label">{{ _x('Start', 'Onboarding action') }} <br/>
-                    {{ translate('From scratch') }}
-                </span>
+            <template #option="{option}">
+                <template v-if="option.info">
+                    <DynamicIcon :name="option.info.icon" />
+                    <span class="label">{{ option.info.title }}</span>
+                </template>
+                <template v-else>
+                    <DynamicIcon name="Scratch" />
+                    <span class="label">{{ _x('Start', 'Onboarding action') }} <br/>
+                        {{ translate('From scratch') }}
+                    </span>
+                </template>
                 <span class="marker">
                     <el-icon><CircleCheckFilled /></el-icon>
                 </span>
-            </el-radio-button>
-            <el-radio-button v-for="(info, key) in dummyProductInfo" :key="key" :value="key">
-                <DynamicIcon :name="info.icon" />
-                <span class="label">{{ info.title }}</span>
-                <span class="marker">
-                    <el-icon><CircleCheckFilled /></el-icon>
-                </span>
-            </el-radio-button>
-        </el-radio-group>
+            </template>
+        </fct-choice>
     </div>
 </template>

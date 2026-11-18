@@ -48,7 +48,7 @@ class BuySectionBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
         $product = null;
         $insideProductInfo = Arr::get($shortCodeAttribute, 'inside_product_info', 'no');
         $queryType = Arr::get($shortCodeAttribute, 'query_type', 'default');

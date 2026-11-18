@@ -15,7 +15,6 @@
 </template>
 
 <script setup>
-import { defineOptions } from 'vue';
 import { CircleCloseFilled } from '@element-plus/icons-vue';
 import translate from '@/utils/translator/Translator';
 

@@ -200,7 +200,7 @@ onMounted(() => {
           <!-- Customize section -->
           <div v-if="isCustom && option.value === customSource" class="fct-appearance-colors">
             <!-- Reset color button -->
-            <el-tooltip :content="translate('Reset all colors')" placement="top">
+            <fct-tooltip :content="translate('Reset all colors')" placement="top">
                 <IconButton
                     size="small"
                     tag="button"
@@ -211,7 +211,7 @@ onMounted(() => {
                 >
                     <DynamicIcon name="Reset" class="w-4 h-4"/>
                 </IconButton>
-            </el-tooltip>
+            </fct-tooltip>
 
 
             <div v-for="group in colorGroups" :key="group.key" class="fct-appearance-color-group">
@@ -258,7 +258,7 @@ onMounted(() => {
                       :for="`fct-appearance-radius-${radiusField.key}`"
                   >{{ radiusField.label }}</label>
 
-                  <el-input
+                  <fct-input
                       v-model="values.appearance_radius[radiusField.key]"
                       :id="`fct-appearance-radius-${radiusField.key}`"
                       :placeholder="translate('Default')"

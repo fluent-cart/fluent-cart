@@ -1,6 +1,6 @@
 <template>
   <div class="fct-manage-address-modal">
-    <el-dialog
+    <fct-dialog
         v-model="showModal"
         @close="
         () => {
@@ -13,7 +13,7 @@
         :append-to-body="true"
         modal-class="fct-manage-order-address-modal"
     >
-      <el-skeleton v-if="loading" animated :rows="4"/>
+      <fct-skeleton v-if="loading" animated :rows="4"/>
       <div v-if="!loading && !isEditAddress" class="fct-manage-address-wrap">
         <div
             class="fct-manage-address-block-wrap"
@@ -40,70 +40,24 @@
           </div>
 
           <div class="fct-address-action absolute top-0 end-0 pt-2">
-            <el-dropdown
+            <fct-dropdown
                 trigger="click"
                 class="fct-more-option-wrap"
-                popper-class="fct-dropdown"
-                @command="handleAddressCommand"
+                :items="[
+                  {command: 'edit', label: $t('Edit')},
+                  {command: 'use', label: $t('Use this address')},
+                  {command: 'set-as-also', label: modalAction.type === 'billing' ? $t('Copy to Shipping') : $t('Copy to Billing')},
+                  ...(address.is_primary !== '1' ? [
+                    {command: 'default', label: $t('Set as default')},
+                    {command: 'remove', label: $t('Delete'), danger: true}
+                  ] : [])
+                ]"
+                @command="(action) => handleAddressCommand({action, data: address})"
             >
               <span class="more-btn">
                 <DynamicIcon name="More"/>
               </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                      :command="{
-                      action: 'edit',
-                      data: address,
-                    }"
-                  >
-                    {{ $t("Edit") }}
-                  </el-dropdown-item>
-
-                  <el-dropdown-item
-                      :command="{
-                      action: 'use',
-                      data: address,
-                    }"
-                  >
-                    {{ $t("Use this address") }}
-                  </el-dropdown-item>
-
-                  <el-dropdown-item
-                      :command="{
-                      action: 'set-as-also',
-                      data: address,
-                    }"
-                  >
-                    {{
-                      modalAction.type === "billing"
-                          ? $t("Copy to Shipping")
-                          : $t("Copy to Billing")
-                    }}
-                  </el-dropdown-item>
-
-                  <template v-if="address.is_primary !== '1'">
-                    <el-dropdown-item
-                        :command="{
-                        action: 'default',
-                        data: address,
-                      }"
-                    >
-                      {{ $t("Set as default") }}
-                    </el-dropdown-item>
-                    <el-dropdown-item
-                        :command="{
-                        action: 'remove',
-                        data: address,
-                      }"
-                        class="item-destructive"
-                    >
-                      {{ $t("Delete") }}
-                    </el-dropdown-item>
-                  </template>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            </fct-dropdown>
           </div>
         </div>
 
@@ -116,7 +70,7 @@
         </div>
       </div>
       <div v-if="isEditAddress" class="edit_address">
-        <el-button
+        <fct-button
             text
             @click="() => (isEditAddress = false)"
             style="margin-bottom: 16px"
@@ -125,12 +79,12 @@
             <Back/>
           </el-icon>
           {{ $t("Manage address") }}
-        </el-button>
+        </fct-button>
         <AddOrEditAddressModal
             @update:refresh-address="
-            (val) => {
+            (val, savedAddress, orderAddress) => {
               isEditAddress = val;
-              updateAddress();
+              updateAddress(savedAddress, orderAddress);
             }
           "
             :customer_id="customer_id"
@@ -143,19 +97,19 @@
         />
       </div>
       <div class="dialog-footer" v-if="!isEditAddress">
-        <el-button
+        <fct-button
             v-if="selectedAddressIndex != null"
             @click="emitAddressSelected()"
         >
           <DynamicIcon name="LocationPin"/>
           {{ $t("Use this address") }}
-        </el-button>
+        </fct-button>
 
-        <el-button @click="emitAddNewAddress(modalAction.type)" type="primary">
+        <fct-button @click="emitAddNewAddress(modalAction.type)" type="primary">
           {{ $t("Add new address") }}
-        </el-button>
+        </fct-button>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 
@@ -302,9 +256,9 @@ export default {
             this.loading = false;
           });
     },
-    updateAddress() {
+    updateAddress(savedAddress = null, orderAddress = null) {
       this.fetchAddresses();
-      this.$emit("refresh-address");
+      this.$emit("refresh-address", savedAddress, orderAddress);
     },
     setAsAlso(address) {
       const type = this.modalAction.type === "billing" ? "shipping" : "billing";

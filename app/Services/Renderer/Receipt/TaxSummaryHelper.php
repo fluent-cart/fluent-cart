@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Services\Renderer\Receipt;
 
+use FluentCart\App\Services\Money;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Order;
 use FluentCart\Framework\Support\Arr;
@@ -478,6 +479,17 @@ class TaxSummaryHelper
      */
     public static function computeRateBaseMap($items, $excludeInclusive = false)
     {
+        // A cart line keeps its signup fee tax apart from its own rates; placed
+        // orders store the signup fee as its own item.
+        $expanded = [];
+        foreach ($items as $item) {
+            $expanded[] = $item;
+            if (is_array($item) && Arr::get($item, 'signup_fee_tax_config.rates')) {
+                $expanded[] = ['line_meta' => ['tax_config' => $item['signup_fee_tax_config']]];
+            }
+        }
+        $items = $expanded;
+
         $map = [];
         foreach ($items as $item) {
             if (is_array($item)) {
@@ -520,6 +532,20 @@ class TaxSummaryHelper
     }
 
     /**
+     * Whether a saved net base agrees with its tax. Tax is rounded to whole units
+     * in a zero-decimal currency, so the tolerance follows the currency's unit.
+     */
+    public static function baseMatchesTax($net, $ratePercent, $tax, $currency = null)
+    {
+        if ($net <= 0 || $ratePercent <= 0) {
+            return false;
+        }
+        $unit = $currency && Money::getDecimals($currency) === 0 ? 100 : 1;
+
+        return abs($net * $ratePercent / 100 - $tax) <= max(2 * $unit, $tax * 0.005);
+    }
+
+    /**
      * Build a folded per-rate row array for the 3-column tax breakdown table.
      *
      * Merges order-tax rate lines with shipping-tax lines by rate_id so each rate
@@ -542,9 +568,14 @@ class TaxSummaryHelper
         if (empty($rateLines) && empty($shippingLines)) {
             return [];
         }
-        $shippingByRate = [];
+        $shippingByRate     = [];
+        $shippingBaseByRate = [];
         foreach ($shippingLines as $shLine) {
-            $shippingByRate[(int) Arr::get($shLine, 'rate_id', 0)] = (int) Arr::get($shLine, 'shipping_tax', 0);
+            $shRateId = (int) Arr::get($shLine, 'rate_id', 0);
+            $shippingByRate[$shRateId] = (int) Arr::get($shLine, 'shipping_tax', 0);
+            if (isset($shLine['shipping_taxable_amount'])) {
+                $shippingBaseByRate[$shRateId] = (int) round($shLine['shipping_taxable_amount']);
+            }
         }
         $rows = [];
         foreach ($rateLines as $rateKey => $rateLine) {
@@ -555,13 +586,25 @@ class TaxSummaryHelper
             $productTax  = (int) Arr::get($rateLine, $taxAmountKey, 0);
             $combinedTax = $productTax + $shipForRate;
             $mapEntry    = isset($rateBaseMap[$rid]) ? $rateBaseMap[$rid] : null;
+            $storedNet   = (int) Arr::get($rateLine, 'net_taxable_amount', 0);
             if ($mapEntry && abs($mapEntry['tax'] - $productTax) <= 1) {
-                // Exact net base from item-level data. Shipping has no stored per-rate
-                // base, so its (small) contribution is still derived from its tax amount.
+                // Exact net base from item-level data. Shipping lines saved before
+                // shipping_taxable_amount existed derive their part from the tax amount.
                 $base = (int) round($mapEntry['base']);
-                if ($shipForRate > 0 && $ratePercent > 0) {
+                if ($shipForRate > 0 && isset($shippingBaseByRate[$rid])) {
+                    $base += $shippingBaseByRate[$rid];
+                } elseif ($shipForRate > 0 && $ratePercent > 0) {
                     $base += (int) round($shipForRate * 100 / $ratePercent);
                 }
+            } elseif (self::baseMatchesTax($storedNet, $ratePercent, $productTax, Arr::get($rateLine, 'currency'))) {
+                // No item data (renewal / legacy): the row saved its own base.
+                $base = $storedNet;
+                if ($shipForRate > 0) {
+                    $base += isset($shippingBaseByRate[$rid]) ? $shippingBaseByRate[$rid] : (int) round($shipForRate * 100 / $ratePercent);
+                }
+            } elseif ($ratePercent > 0 && $shipForRate > 0 && isset($shippingBaseByRate[$rid])) {
+                // No item data (renewal / legacy), but the shipping base was saved.
+                $base = (int) round($productTax * 100 / $ratePercent) + $shippingBaseByRate[$rid];
             } elseif ($ratePercent > 0) {
                 // No trustworthy item data (legacy order / fee tax folded into the row):
                 // approximate the base from the rounded tax.
@@ -589,7 +632,11 @@ class TaxSummaryHelper
                 }
             }
             $ratePercent = (float) Arr::get($shLine, 'rate_percent', 0);
-            $base        = $ratePercent > 0 ? (int) round($shAmount * 100 / $ratePercent) : 0;
+            if (isset($shippingBaseByRate[$sid])) {
+                $base = $shippingBaseByRate[$sid];
+            } else {
+                $base = $ratePercent > 0 ? (int) round($shAmount * 100 / $ratePercent) : 0;
+            }
             $rows[] = [
                 'label'     => (string) Arr::get($shLine, 'rate_label', Arr::get($shLine, 'label', '')),
                 'base'      => $base,

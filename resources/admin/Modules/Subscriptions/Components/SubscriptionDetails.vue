@@ -6,98 +6,30 @@
       <template #title>
         <h2 class="fct-card-header-title is-small inline-flex items-center gap-2">
           {{ $t('Subscription Details') }}
-          <el-tooltip :content="billingTypeBadge.description" placement="top-start" effect="dark">
+          <fct-tooltip :content="billingTypeBadge.description" placement="top-start">
             <el-tag :type="billingTypeBadge.type" :class="billingTypeBadge.class" size="small" effect="light" round>
               {{ billingTypeBadge.label }}
             </el-tag>
-          </el-tooltip>
+          </fct-tooltip>
         </h2>
       </template>
-      <el-dropdown
+      <fct-dropdown
+          v-if="actionItems.length"
           trigger="click"
           class="fct-more-option-wrap"
-          popper-class="fct-dropdown"
+          :items="actionItems"
           @command="(action) => handleSubscriptionAction(action)"
-          v-if="permissions.canFetch || permissions.canEdit || permissions.canEditVendorIds || permissions.canPause || permissions.canResume || permissions.canAdminReactivate || permissions.canCancel || permissions.canSendReminder || permissions.canCreateRenewal || permissions.canSkipRenewal || permissions.canChargeNow"
       >
           <span class="more-btn">
             <DynamicIcon name="More"/>
           </span>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="fetch_subscription" v-if="permissions.canFetch">
-              <el-icon>
-                <Refresh/>
-              </el-icon>
-              {{ $t('Sync from gateway -') }} {{ paymentMethod }}
-            </el-dropdown-item>
-
-            <el-dropdown-item command="edit_subscription" v-if="permissions.canEdit">
-              <el-icon>
-                <Edit/>
-              </el-icon>
-              {{ $t('Edit Subscription') }}
-            </el-dropdown-item>
-
-            <el-dropdown-item command="edit_vendor_ids" v-if="permissions.canEditVendorIds">
-              <el-icon>
-                <Edit/>
-              </el-icon>
-              {{ $t('Edit Vendor IDs') }}
-            </el-dropdown-item>
-
-            <el-dropdown-item command="pause_subscription" v-if="permissions.canPause" :disabled="loadingState.pause">
-              <el-icon>
-                <VideoPause/>
-              </el-icon>
-              {{ $t('Pause Subscription') }}
-            </el-dropdown-item>
-
-            <el-dropdown-item command="resume_subscription" v-if="permissions.canResume" :disabled="loadingState.resume">
-              <el-icon>
-                <VideoPlay/>
-              </el-icon>
-              {{ $t('Resume Subscription') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="reactivate_subscription" v-if="permissions.canAdminReactivate" :disabled="loadingState.reactivate">
-              <el-icon>
-                <VideoPlay/>
-              </el-icon>
-              {{ $t('Reactivate Subscription') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="cancel_subscription" v-if="permissions.canCancel">
-              <el-icon>
-                <Delete/>
-              </el-icon>
-              <span class="text-red-600">{{ $t("Cancel Subscription") }}</span>
-            </el-dropdown-item>
-            <el-dropdown-item command="send_reminder" v-if="permissions.canSendReminder" :disabled="loadingState.sendReminder">
-              <el-icon>
-                <Promotion/>
-              </el-icon>
-              {{ reminderLabel }}
-            </el-dropdown-item>
-            <el-dropdown-item command="create_renewal" v-if="permissions.canCreateRenewal" :disabled="loadingState.createRenewal">
-              <el-icon>
-                <component :is="createRenewalIcon"/>
-              </el-icon>
-              {{ createRenewalLabel }}
-            </el-dropdown-item>
-            <el-dropdown-item command="skip_renewal" v-if="permissions.canSkipRenewal" :disabled="loadingState.skipRenewal">
-              <el-icon>
-                <CircleClose/>
-              </el-icon>
-              {{ $t('Skip Next Period') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="charge_now" v-if="permissions.canChargeNow" :disabled="loadingState.chargeNow">
-              <el-icon>
-                <CreditCard/>
-              </el-icon>
-              {{ $t('Charge Now') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
+        <template #item="{item}">
+          <el-icon>
+            <component :is="item.iconComponent"/>
+          </el-icon>
+          <span :class="{'text-red-600': item.command === 'cancel_subscription'}">{{ item.label }}</span>
         </template>
-      </el-dropdown>
+      </fct-dropdown>
     </CardHeader>
     <CardBody>
       <el-alert
@@ -180,12 +112,12 @@
           <div class="fct-single-subscription-details-value">
             {{ formatNumberForOrder(subscription.recurring_total, subscription) }} on
             <ConvertedTime :date-time="subscription.next_billing_date" :withTime="false"/>
-            <el-tooltip v-if="subscription.has_pending_skip" :content="skipBadgeTooltip" placement="top" effect="dark" :trigger="['hover', 'focus']">
+            <fct-tooltip v-if="subscription.has_pending_skip" :content="skipBadgeTooltip" placement="top" :trigger="['hover', 'focus']">
               <el-tag type="warning" size="small" effect="light" round class="fct-skip-badge"
                       tabindex="0" role="note" :aria-label="skipBadgeTooltip">
                 {{ $t('Period skipped') }}
               </el-tag>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </li>
 
@@ -227,7 +159,7 @@
       @cancel-subscription="confirmCancel"
   />
   <!-- Edit Subscription Modal -->
-  <el-dialog
+  <fct-dialog
       v-model="editSubscriptionModal"
       :title="$t('Edit Subscription')"
       width="500px"
@@ -254,7 +186,8 @@
 
       <el-form :model="editForm" label-width="140px" v-loading="loadingState.edit">
           <el-form-item :label="$t('Next Renewal Amount')">
-              <el-input-number
+              <fct-input
+                  type="number"
                   v-model="editForm.recurring_total"
                   :precision="2"
                   :min="0"
@@ -265,7 +198,8 @@
           </el-form-item>
 
           <el-form-item :label="$t('Billing Times')">
-              <el-input-number
+              <fct-input
+                  type="number"
                   v-model="editForm.bill_times"
                   :min="billTimesMin"
                   :step="1"
@@ -279,29 +213,37 @@
           </el-form-item>
 
           <el-form-item :label="$t('Billing Interval')">
-              <el-select v-model="editForm.billing_interval" style="width: 100%">
-                  <el-option :label="$t('Daily')" value="daily" />
-                  <el-option :label="$t('Weekly')" value="weekly" />
-                  <el-option :label="$t('Monthly')" value="monthly" />
-                  <el-option :label="$t('Quarterly')" value="quarterly" />
-                  <el-option :label="$t('Half Yearly')" value="half_yearly" />
-                  <el-option :label="$t('Yearly')" value="yearly" />
-              </el-select>
+              <fct-select
+                  v-model="editForm.billing_interval"
+                  style="width: 100%"
+                  :options="[
+                    {label: $t('Daily'), value: 'daily'},
+                    {label: $t('Weekly'), value: 'weekly'},
+                    {label: $t('Monthly'), value: 'monthly'},
+                    {label: $t('Quarterly'), value: 'quarterly'},
+                    {label: $t('Half Yearly'), value: 'half_yearly'},
+                    {label: $t('Yearly'), value: 'yearly'},
+                  ]"
+              />
           </el-form-item>
 
           <el-form-item :label="$t('Status')">
-              <el-select v-model="editForm.status" style="width: 100%">
-                  <el-option :label="$t('Active')" value="active" />
-                  <el-option :label="$t('Paused')" value="paused" />
-                  <el-option :label="$t('Trialing')" value="trialing" />
-                  <el-option :label="$t('Past Due')" value="past_due" />
-                  <el-option :label="$t('Expired')" value="expired" />
-                  <el-option :label="$t('Completed')" value="completed" />
-              </el-select>
+              <fct-select
+                  v-model="editForm.status"
+                  style="width: 100%"
+                  :options="[
+                    {label: $t('Active'), value: 'active'},
+                    {label: $t('Paused'), value: 'paused'},
+                    {label: $t('Trialing'), value: 'trialing'},
+                    {label: $t('Past Due'), value: 'past_due'},
+                    {label: $t('Expired'), value: 'expired'},
+                    {label: $t('Completed'), value: 'completed'},
+                  ]"
+              />
           </el-form-item>
 
           <el-form-item :label="$t('Next Billing Date')">
-              <el-date-picker
+              <fct-date-picker
                   v-model="editForm.next_billing_date"
                   type="datetime"
                   :placeholder="$t('Select date')"
@@ -315,16 +257,16 @@
 
       <template #footer>
           <span class="dialog-footer">
-              <el-button @click="editSubscriptionModal = false">{{ $t('Cancel') }}</el-button>
-              <el-button type="primary" @click="confirmSaveSubscription" :loading="loadingState.save">
+              <fct-button @click="editSubscriptionModal = false">{{ $t('Cancel') }}</fct-button>
+              <fct-button type="primary" @click="confirmSaveSubscription" :loading="loadingState.save">
                   {{ $t('Save Changes') }}
-              </el-button>
+              </fct-button>
           </span>
       </template>
-  </el-dialog>
+  </fct-dialog>
 
   <!-- Edit Vendor IDs Modal -->
-  <el-dialog
+  <fct-dialog
       v-model="vendorIdsModal"
       :title="$t('Edit Vendor IDs')"
       width="520px"
@@ -339,24 +281,22 @@
           {{ $t('Sub_Renewals_Cancellations') }}
       </el-alert>
 
-      <el-form :model="vendorIdsForm" label-position="top">
-          <el-form-item :label="$t('Vendor Subscription ID')">
+      <div>
+          <Field :label="$t('Vendor Subscription ID')" id="fct-vendor-subscription-id">
               <div class="fct-vendor-ids-edit__row">
-                  <el-input v-model="vendorIdsForm.vendor_subscription_id" :placeholder="$t('e.g. sub_4L7nezJXHW')"/>
-                  <el-button
+                  <fct-input id="fct-vendor-subscription-id" v-model="vendorIdsForm.vendor_subscription_id" :placeholder="$t('e.g. sub_4L7nezJXHW')"/>
+                  <fct-button
                       v-if="permissions.canVerifyVendorIds"
                       @click="verifyVendorIds"
                       :loading="loadingState.verifyVendorIds"
                   >
                       {{ $t('Verify') }}
-                  </el-button>
+                  </fct-button>
               </div>
-          </el-form-item>
+          </Field>
 
-          <el-form-item :label="$t('Vendor Customer ID')">
-              <el-input v-model="vendorIdsForm.vendor_customer_id" :placeholder="$t('e.g. cst_9GrdvYmPPn')"/>
-          </el-form-item>
-      </el-form>
+          <fct-input v-model="vendorIdsForm.vendor_customer_id" :label="$t('Vendor Customer ID')" :placeholder="$t('e.g. cst_9GrdvYmPPn')"/>
+      </div>
 
       <el-alert
           v-if="vendorIdsVerification"
@@ -378,18 +318,18 @@
 
       <template #footer>
           <span class="dialog-footer">
-              <el-button @click="vendorIdsModal = false">{{ $t('Cancel') }}</el-button>
-              <el-button
+              <fct-button @click="vendorIdsModal = false">{{ $t('Cancel') }}</fct-button>
+              <fct-button
                   type="primary"
                   @click="confirmSaveVendorIds"
                   :loading="loadingState.saveVendorIds"
                   :disabled="!vendorIdsChanged"
               >
                   {{ $t('Save Changes') }}
-              </el-button>
+              </fct-button>
           </span>
       </template>
-  </el-dialog>
+  </fct-dialog>
   </CardContainer>
 </template>
 
@@ -407,26 +347,19 @@ import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import dayjs from "dayjs";
 import {resolveDateFormat, fluentDayjsLocale} from "@/utils/Utils";
 import CancelSubscription from "@/Modules/Subscriptions/Components/CancelSubscription.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 export default {
   name: "SubscriptionDetails",
   components: {
     CancelSubscription,
+    Field,
     ConvertedTime,
     CopyToClipboard,
     CardContainer,
     CardBody,
     CardHeader,
-    DynamicIcon,
-    Refresh,
-    Delete,
-    VideoPause,
-    VideoPlay,
-    Edit,
-    Promotion,
-    Document,
-    CreditCard,
-    CircleClose
+    DynamicIcon
   },
   props: ['subscription', 'orderId', 'reminderPermissions'],
   emits: ["reload", "fetchOrder"],
@@ -497,9 +430,6 @@ export default {
       return this.isSystemSubscription
           ? translate('Charge Next Renewal Now')
           : translate('Create Renewal Now');
-    },
-    createRenewalIcon() {
-      return this.isSystemSubscription ? 'CreditCard' : 'Document';
     },
     // Badge next to the card title — manual (store, admin-billed) vs
     // system (store, auto-charge) vs automatic (vendor/gateway-billed).
@@ -590,6 +520,23 @@ export default {
         canChargeNow:     canManage && !!sp.canChargeNow,
         canSendReminder:  !!(rp.canSendRenewal || rp.canSendTrialEnd),
       };
+    },
+    actionItems() {
+      const can = this.permissions;
+      const loading = this.loadingState;
+      return [
+        can.canFetch && {command: 'fetch_subscription', label: translate('Sync from gateway -') + ' ' + this.paymentMethod, iconComponent: Refresh},
+        can.canEdit && {command: 'edit_subscription', label: translate('Edit Subscription'), iconComponent: Edit},
+        can.canEditVendorIds && {command: 'edit_vendor_ids', label: translate('Edit Vendor IDs'), iconComponent: Edit},
+        can.canPause && {command: 'pause_subscription', label: translate('Pause Subscription'), iconComponent: VideoPause, disabled: loading.pause},
+        can.canResume && {command: 'resume_subscription', label: translate('Resume Subscription'), iconComponent: VideoPlay, disabled: loading.resume},
+        can.canAdminReactivate && {command: 'reactivate_subscription', label: translate('Reactivate Subscription'), iconComponent: VideoPlay, disabled: loading.reactivate},
+        can.canCancel && {command: 'cancel_subscription', label: translate('Cancel Subscription'), iconComponent: Delete},
+        can.canSendReminder && {command: 'send_reminder', label: this.reminderLabel, iconComponent: Promotion, disabled: loading.sendReminder},
+        can.canCreateRenewal && {command: 'create_renewal', label: this.createRenewalLabel, iconComponent: this.isSystemSubscription ? CreditCard : Document, disabled: loading.createRenewal},
+        can.canSkipRenewal && {command: 'skip_renewal', label: translate('Skip Next Period'), iconComponent: CircleClose, disabled: loading.skipRenewal},
+        can.canChargeNow && {command: 'charge_now', label: translate('Charge Now'), iconComponent: CreditCard, disabled: loading.chargeNow},
+      ].filter(Boolean);
     },
     reminderLabel() {
       const rp = this.reminderPermissions || {};

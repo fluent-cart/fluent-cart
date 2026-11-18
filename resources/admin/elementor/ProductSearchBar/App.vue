@@ -27,7 +27,7 @@ onMounted(() => {
       <div v-if="showCategory" class="mr-4">
         <select
             name="termId"
-            class="border border-gray-300 rounded-md text-lg bg-white h-full"
+            class="[border-width:1px] border-gray-300 rounded-md text-lg bg-white h-full"
         >
           <option selected disabled>
             {{ translate('Category') }}

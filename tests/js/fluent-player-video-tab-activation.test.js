@@ -41,7 +41,7 @@ vi.mock('@/Bits/Components/Icons/DynamicIcon.vue', () => ({default: {name: 'Dyna
 
 const Tab = (await import('@/Modules/Products/parts/FluentPlayerVideoTab.vue')).default;
 
-// el-button is registered globally by the admin app, so it resolves to nothing
+// fct-button is registered globally by the admin app, so it resolves to nothing
 // here and its subtree would render as a comment — the labels and data- hooks
 // under test live inside it.
 const ButtonStub = {
@@ -63,7 +63,7 @@ const settle = () => new Promise(resolve => setTimeout(resolve, 0));
  */
 const renderTab = (config, drive = null) => {
     const app = createSSRApp({render: () => h(Tab, {config})});
-    app.component('el-button', ButtonStub);
+    app.component('fct-button', ButtonStub);
     if (drive) {
         app.mixin({
             async serverPrefetch() {

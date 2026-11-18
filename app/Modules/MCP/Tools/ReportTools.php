@@ -72,18 +72,20 @@ class ReportTools
 
     public static function definitions()
     {
-        $rangeProp = ['type' => 'string', 'enum' => self::RANGES, 'description' => 'Relative window in store days (store timezone), as in the admin reports. today = store midnight to now; since_launch (alias: all_time) = the store\'s first paid order to now. Or pass start_date + end_date (dates), date_from + date_to (ISO 8601 datetimes), or since (delta).'];
-
-        // Shared custom-window params: read in the store timezone unless the value has its own offset.
-        $dateFrom = ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Time-precise custom window start; overrides range. A time of day is honored (e.g. launch hour).'];
-        $dateTo   = ['type' => 'string', 'description' => 'ISO 8601 datetime or YYYY-MM-DD, store timezone unless an offset is given. Time-precise custom window end; overrides range.'];
-        $since    = ['type' => 'string', 'description' => 'ISO 8601 datetime, store timezone unless an offset is given. Delta mode: only records after this instant, up to now — answers "what changed since my last check". Overrides range/date_from/date_to.'];
+        // Each schema says enough to call the action from tools/list alone: some MCP
+        // clients never show the server instructions to the model.
+        $rangeProp = ['type' => 'string', 'enum' => self::RANGES, 'description' => 'Preset window in store days. Default last_30_days.'];
+        $dateFrom  = ['type' => 'string', 'description' => 'Window start: ISO 8601 or YYYY-MM-DD, store timezone unless it has an offset. With date_to; overrides range.'];
+        $startDate = ['type' => 'string', 'description' => 'YYYY-MM-DD store day, inclusive, with end_date. Overrides range.'];
+        $endDate   = ['type' => 'string', 'description' => 'YYYY-MM-DD store day, inclusive.'];
+        $dateTo    = ['type' => 'string', 'description' => 'Window end, same format as date_from.'];
+        $since     = ['type' => 'string', 'description' => 'ISO 8601 instant: only records after it, up to now. Overrides the other window parameters.'];
 
         // Live/test order scoping. Reports historically counted BOTH, so 'all' is
         // the non-breaking default; pass 'live' to exclude test-mode orders from
         // revenue. The effective mode is always echoed as meta.mode so a number
         // is never silently polluted by test orders.
-        $modeProp = ['type' => 'string', 'enum' => ['live', 'test', 'all'], 'default' => 'all', 'description' => 'Order mode. all (default) counts both live and test orders; pass live to exclude test-mode orders. Echoed as meta.mode.'];
+        $modeProp = ['type' => 'string', 'enum' => ['live', 'test', 'all'], 'default' => 'all', 'description' => 'Live orders, test orders or both. Default all.'];
 
         // Pagination for the flexible query-* aggregates: when a grouping produces
         // more than per_page groups the response sets meta.page.has_more; raise
@@ -91,65 +93,28 @@ class ReportTools
         $pageProp    = ['type' => 'integer', 'default' => 1, 'description' => '1-based page over the grouped rows. Use with meta.page.has_more to page past the per_page cap.'];
         $perPageProp = ['type' => 'integer', 'default' => 200, 'description' => 'Grouped rows per page. Max 200.'];
 
-        // The query-* aggregates share one response shape: metrics/dimensions echo
-        // + a rows array whose keys are dynamic (one per requested dimension and
-        // metric). Declared for the model up front so it needn't probe a call to
-        // learn the envelope. Money in rows is a compact decimal in meta.currency.
-        $queryOutputSchema = MCPHelper::envelopeSchema([
-            'type'       => 'object',
-            'properties' => [
-                'metrics'    => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'The metrics that were computed.'],
-                'dimensions' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'The group-by dimensions.'],
-                'range'      => ['type' => 'object', 'description' => 'Resolved window as ISO 8601 instants (absent on query-customers, which is not date-scoped).'],
-                'rows'       => [
-                    'type'        => 'array',
-                    'description' => 'One object per group. Keys are the requested dimensions plus one key per metric; money metrics are compact decimals in meta.currency, counts are integers.',
-                    'items'       => ['type' => 'object'],
-                ],
-            ],
-        ], ['date_basis' => ['type' => 'string'], 'mode' => ['type' => 'string'], 'page' => ['type' => 'object'], 'truncated' => ['type' => 'boolean']]);
 
         $subStatuses = ContextTools::enums()['subscription_statuses'];
 
         $defs = [
             'fluent-cart/get-sales-report' => [
-                'label'       => __('Get Sales Report', 'fluent-cart'),
-                'description' => __('The admin Revenue report for a period, with the prior period for comparison: net sales, gross sales, discounts, refunds, tax, shipping, fees, total collected, orders, AOV and unique customers. One currency (default: store currency), or "__all__" for every currency converted to it.', 'fluent-cart'),
+                'label'       => 'Get Sales Report',
+                'description' => 'The admin Revenue report for a period, compared with the prior period. Net and gross sales, discounts, refunds, tax, total collected, orders and AOV. Also shipping, fees and unique customers.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'range'      => $rangeProp,
-                        'start_date' => ['type' => 'string', 'description' => 'YYYY-MM-DD, store day. Overrides range.'],
-                        'end_date'   => ['type' => 'string', 'description' => 'YYYY-MM-DD, store day. Overrides range.'],
+                        'start_date' => $startDate,
+                        'end_date'   => $endDate,
                         'date_from'  => $dateFrom,
                         'date_to'    => $dateTo,
                         'since'      => $since,
-                        'currency'   => ['type' => 'string', 'description' => 'ISO currency, or __all__. Defaults to the store currency.'],
+                        'currency'   => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency. __all__ converts every currency to it.'],
                         'compare'    => ['type' => 'boolean', 'default' => true, 'description' => 'Include prior-period comparison.'],
                         'needs_attention' => ['type' => 'boolean', 'description' => 'Adds data.needs_attention: failing subscriptions, high dispute rate, overdue installments, a refund rate jump. Slower.'],
                         'interval'   => ['type' => 'string', 'enum' => ['hour', 'day', 'week', 'month'], 'description' => 'Adds data.trend: paid orders and revenue per bucket (hour: at most 180 buckets).'],
                     ],
                 ],
-                'output_schema' => MCPHelper::envelopeSchema([
-                    'type'       => 'object',
-                    'properties' => [
-                        'range'   => ['type' => 'object', 'description' => 'Resolved window: start, end, label, currency.'],
-                        'metrics' => [
-                            'type'        => 'object',
-                            'description' => 'order_count, unique_customers and refunded_orders are integers; every other key is a money object. data.definitions explains each one.',
-                            'properties'  => [
-                                'order_count'      => ['type' => 'integer'],
-                                'unique_customers' => ['type' => 'integer'],
-                                'refunded_orders'  => ['type' => 'integer'],
-                            ],
-                            // Declare the money shape ONCE for all the money metrics
-                            // rather than inlining it per key (10x is real tokens).
-                            'additionalProperties' => MCPHelper::moneyDef(),
-                        ],
-                        'definitions' => ['type' => 'object', 'description' => 'Human-readable metric definitions.'],
-                        'comparison'  => ['type' => 'object', 'description' => 'Prior-period metrics and percent change (present when compare=true).'],
-                    ],
-                ], ['date_basis' => ['type' => 'string'], 'mode' => ['type' => 'string']]),
                 'execute_callback'    => [self::class, 'getSalesReport'],
                 'permission_callback' => function () {
                     return PermissionGate::can('reports/view');
@@ -158,18 +123,18 @@ class ReportTools
             ],
 
             'fluent-cart/get-refund-report' => [
-                'label'       => __('Get Refund Report', 'fluent-cart'),
-                'description' => __('The admin Refunds report for a period: refunds made in the window (on orders of any date), full vs partial, refund rate of the orders placed in the window, days to refund, splits by sale type and payment method, top reasons. One currency, or __all__ converted.', 'fluent-cart'),
+                'label'       => 'Get Refund Report',
+                'description' => 'The admin Refunds report for a period: amounts, rates, reasons and days to refund. Also full vs partial, by sale type and payment method. Refunds are those made in the window, on orders of any date; the refund rate is of the orders placed in the window.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'range'      => $rangeProp,
-                        'start_date' => ['type' => 'string'],
-                        'end_date'   => ['type' => 'string'],
+                        'start_date' => $startDate,
+                        'end_date'   => $endDate,
                         'date_from'  => $dateFrom,
                         'date_to'    => $dateTo,
                         'since'      => $since,
-                        'currency'   => ['type' => 'string'],
+                        'currency'   => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency. __all__ converts every currency to it.'],
                     ],
                 ],
                 'execute_callback'    => [self::class, 'getRefundReport'],
@@ -180,8 +145,8 @@ class ReportTools
             ],
 
             'fluent-cart/query-sources' => [
-                'label'       => __('Query Sources (UTM attribution)', 'fluent-cart'),
-                'description' => __('The admin Sources report: orders, gross and net sales, refunds, refund rate and first-order vs later net per UTM grouping (spellings merged, no-UTM orders in a (none) row). view=channels gives new customers won per channel with first-order net, LTV and repeat rate. Optional UTM and product filters.', 'fluent-cart'),
+                'label'       => 'Query Sources (UTM attribution)',
+                'description' => 'The admin Sources report: sales and refunds per UTM grouping or referrer. Orders, gross and net sales, refunds and refund rate; groupings are campaign, source, medium and more. Also first-order vs later net; spellings are merged and no-UTM orders are in a (none) row. view=channels gives new customers won per channel with first-order net, LTV and repeat rate. Optional UTM and product filters.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -195,12 +160,12 @@ class ReportTools
                         'product_id'   => ['type' => 'integer', 'description' => 'Limit attribution to orders containing this product (e.g. one product on a multi-product store).'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Limit attribution to orders containing this variation.'],
                         'range'        => $rangeProp,
-                        'start_date'   => ['type' => 'string'],
-                        'end_date'     => ['type' => 'string'],
+                        'start_date'   => $startDate,
+                        'end_date'     => $endDate,
                         'date_from'    => $dateFrom,
                         'date_to'      => $dateTo,
                         'since'        => $since,
-                        'currency'     => ['type' => 'string'],
+                        'currency'     => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency. __all__ converts every currency to it.'],
                         'limit'        => ['type' => 'integer', 'default' => 50, 'description' => 'Max 200.'],
                     ],
                 ],
@@ -212,8 +177,8 @@ class ReportTools
             ],
 
             'fluent-cart/query-orders' => [
-                'label'       => __('Query Orders (flexible aggregate)', 'fluent-cart'),
-                'description' => __('Flexible order analytics: pick metrics, group by dimensions with filters, when a fixed report does not fit — e.g. revenue by payment_status, orders by month, revenue by order_type (one-time payment vs new subscription vs renewal), or revenue by country. product_id or variation_id limits to orders containing that product. This is the tool for revenue BY GEOGRAPHY: group by country/state, which read each order\'s own billing address, falling back to the buyer\'s primary billing address. One currency; window filters on created_at, echoed as meta.date_basis.', 'fluent-cart'),
+                'label'       => 'Query Orders (flexible aggregate)',
+                'description' => 'Order analytics: pick metrics and dimensions when a fixed report does not fit. Group by payment_status, month, order_type, country or state, with filters. order_type is one-time payment, new subscription or renewal. Counts orders that captured payment only (paid, partially_paid, partially_refunded, refunded; echoed as meta.payment_statuses): pending and failed orders are left out, and a payment_status grouping says how many in meta.warnings. product_id or variation_id limits to orders containing that product. This is the tool for revenue BY GEOGRAPHY: group by country/state, which read each order\'s own billing address, falling back to the buyer\'s primary billing address. Window on created_at.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -221,7 +186,7 @@ class ReportTools
                         'view'       => ['type' => 'string', 'enum' => ['query', 'payment_methods', 'coupons'], 'default' => 'query', 'description' => 'payment_methods / coupons: the admin Payment Methods or Coupons report for the range (sales, success and decline rates per gateway; uses, discount and net per coupon). Coupon customer value needs Pro. coupons returns the top 25 unless limit is set. mode applies to coupons only.'],
                         'metrics'    => [
                             'type'        => 'array',
-                            'description' => 'One or more. Defaults to order_count and gross_revenue.',
+                            'description' => 'One or more. Defaults to order_count and gross_revenue. gross_revenue = item sales before discounts and refunds (gross_sales in get-sales-report); paid_revenue = payments captured, after discounts, with tax and shipping, before refunds; refunded_amount = refunds on these orders; aov = net sales / orders (aov in get-sales-report).',
                             'items'       => ['type' => 'string', 'enum' => ['order_count', 'gross_revenue', 'paid_revenue', 'refunded_amount', 'aov', 'unique_customers']],
                         ],
                         'dimensions' => [
@@ -233,12 +198,12 @@ class ReportTools
                         'product_id'   => ['type' => 'integer', 'description' => 'Limit to orders CONTAINING this product. Order-level metrics (revenue, count) reflect the whole order, not just this product\'s lines — for per-product line revenue use query-products.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Limit to orders containing this variation.'],
                         'range'      => $rangeProp,
-                        'start_date' => ['type' => 'string'],
-                        'end_date'   => ['type' => 'string'],
+                        'start_date' => $startDate,
+                        'end_date'   => $endDate,
                         'date_from'  => $dateFrom,
                         'date_to'    => $dateTo,
                         'since'      => $since,
-                        'currency'   => ['type' => 'string'],
+                        'currency'   => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency.'],
                         'sort_desc'  => ['type' => 'boolean', 'default' => true, 'description' => 'Sort by the first metric descending. When grouping by a time dimension (day/week/month), rows default to chronological order unless you set this explicitly.'],
                     ],
                 ],
@@ -250,8 +215,8 @@ class ReportTools
             ],
 
             'fluent-cart/query-products' => [
-                'label'       => __('Query Products (flexible aggregate)', 'fluent-cart'),
-                'description' => __('Flexible product-line analytics over sold items: pick metrics, group by product or variation, optionally split by order_type (one-time payment vs new subscription vs renewal), within a period and one currency. Rows self-describe: product_name always, plus variation_label when grouped by variation, so no follow-up lookup. For a time series use get-sales-report with interval. Window filters on the parent order created_at, echoed as meta.date_basis.', 'fluent-cart'),
+                'label'       => 'Query Products (flexible aggregate)',
+                'description' => 'Product analytics over sold items, grouped by product or variation. Pick metrics; an optional split by order_type. order_type is one-time payment, new subscription or renewal; one period and one currency. Rows self-describe: product_name always, plus variation_label when grouped by variation, so no follow-up lookup. For a time series use get-sales-report with interval. Window on the parent order created_at.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -260,12 +225,12 @@ class ReportTools
                         'product_id'   => ['type' => 'integer', 'description' => 'Limit to one product (by product/post id). Combine with dimensions=[variation] to break that single product down by variation.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Limit to one variation of the product.'],
                         'range'      => $rangeProp,
-                        'start_date' => ['type' => 'string'],
-                        'end_date'   => ['type' => 'string'],
+                        'start_date' => $startDate,
+                        'end_date'   => $endDate,
                         'date_from'  => $dateFrom,
                         'date_to'    => $dateTo,
                         'since'      => $since,
-                        'currency'   => ['type' => 'string'],
+                        'currency'   => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency.'],
                     ],
                 ],
                 'execute_callback'    => [self::class, 'queryProducts'],
@@ -276,16 +241,16 @@ class ReportTools
             ],
 
             'fluent-cart/query-customers' => [
-                'label'       => __('Query Customers (flexible aggregate)', 'fluent-cart'),
-                'description' => __('Flexible customer analytics: pick metrics and group by country, state, status, or first/last purchase month, with optional filters. LTV is in store currency. Returns up to 200 rows. country/state resolve from the customer\'s primary billing address, falling back to their profile location, then "unknown" — this is where a customer is REGISTERED, captured at their first purchase and not refreshed since. To attribute revenue to where each order was actually billed, group query-orders by country instead.', 'fluent-cart'),
+                'label'       => 'Query Customers (flexible aggregate)',
+                'description' => 'Customer analytics: pick metrics and group by country, state, status or purchase month. Purchase month is the first or the last one; filters are optional. LTV is in store currency. Returns up to 200 rows. country/state resolve from the customer\'s primary billing address, falling back to their profile location, then "unknown" — this is where a customer is REGISTERED, captured at their first purchase and not refreshed since. To attribute revenue to where each order was actually billed, group query-orders by country instead.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'view'               => ['type' => 'string', 'enum' => ['query', 'overview'], 'default' => 'query', 'description' => 'overview: the admin Customers overview for a date range (new vs returning vs renewing, their net, repeat rate, average LTV); takes range/dates and currency.'],
                         'range'              => $rangeProp,
-                        'start_date'         => ['type' => 'string', 'description' => 'overview only. YYYY-MM-DD, store day.'],
-                        'end_date'           => ['type' => 'string', 'description' => 'overview only. YYYY-MM-DD, store day.'],
-                        'currency'           => ['type' => 'string', 'description' => 'overview only. ISO currency or __all__.'],
+                        'start_date'         => ['type' => 'string', 'description' => 'overview only.'],
+                        'end_date'           => ['type' => 'string', 'description' => 'overview only.'],
+                        'currency'           => ['type' => 'string', 'description' => 'overview only. ISO 4217 code, default the store currency; __all__ converts every currency to it.'],
                         'metrics'            => ['type' => 'array', 'description' => 'Defaults to customer_count and total_ltv.', 'items' => ['type' => 'string', 'enum' => ['customer_count', 'total_ltv', 'avg_ltv', 'avg_purchase_count', 'repeat_customers']]],
                         'dimensions'         => ['type' => 'array', 'description' => 'state needs FluentCart Pro.', 'items' => ['type' => 'string', 'enum' => ['country', 'state', 'status', 'first_purchase_month', 'last_purchase_month']]],
                         'country'            => ['type' => 'string', 'description' => 'ISO-2 code, matched against the customer profile country (same caveat as the country dimension).'],
@@ -302,13 +267,13 @@ class ReportTools
             ],
 
             'fluent-cart/query-subscriptions' => [
-                'label'       => __('Query Subscriptions (flexible aggregate)', 'fluent-cart'),
-                'description' => __('view=overview: the admin Subscriptions page — MRR now, active/canceling/failing/paused, and the period\'s new, churned, churn rate, MRR change and renewals. Use it for MRR and churn. Default view: subscription counts and contract value grouped by month/plan_type/status/billing_interval; date_basis=next_billing_date lists upcoming renewals.', 'fluent-cart'),
+                'label'       => 'Query Subscriptions (flexible aggregate)',
+                'description' => 'Subscription analytics: MRR and churn (view=overview), or counts and contract value by group. view=overview is the admin Subscriptions page. Overview: MRR now, active/canceling/failing/paused, and the period\'s new, churned, churn rate, MRR change and renewals. Default view: grouped by month/plan_type/status/billing_interval; date_basis=next_billing_date lists upcoming renewals.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'view'       => ['type' => 'string', 'enum' => ['query', 'overview'], 'default' => 'query'],
-                        'currency'   => ['type' => 'string', 'description' => 'overview only: ISO currency or __all__. Defaults to the store currency.'],
+                        'currency'   => ['type' => 'string', 'description' => 'overview only. ISO 4217 code, default the store currency; __all__ converts every currency to it.'],
                         'metrics'    => ['type' => 'array', 'description' => 'Defaults to subscription_count and contract_value. contract_value = full committed price of installments, recurring_total x bill_times, and 0 for open-ended plans; recurring_value = one-cycle total.', 'items' => ['type' => 'string', 'enum' => ['subscription_count', 'contract_value', 'recurring_value']]],
                         'dimensions' => ['type' => 'array', 'description' => 'Group by these. Empty means a single total row. plan_type splits installment vs recurring; status keeps completed installments separate from canceled/expired churn.', 'items' => ['type' => 'string', 'enum' => ['month', 'plan_type', 'status', 'billing_interval']]],
                         'date_basis' => ['type' => 'string', 'enum' => ['created_at', 'canceled_at', 'next_billing_date'], 'default' => 'created_at', 'description' => 'Which date the range and the month dimension use: created_at for signups, canceled_at for cancellations (upgrades included; churn is in view=overview), next_billing_date for upcoming renewals.'],
@@ -316,8 +281,8 @@ class ReportTools
                         'status'     => ['type' => 'string', 'enum' => $subStatuses],
                         'product_id' => ['type' => 'integer', 'description' => 'Limit to subscriptions for one product.'],
                         'range'      => $rangeProp,
-                        'start_date' => ['type' => 'string'],
-                        'end_date'   => ['type' => 'string'],
+                        'start_date' => $startDate,
+                        'end_date'   => $endDate,
                         'date_from'  => $dateFrom,
                         'date_to'    => $dateTo,
                         'since'      => $since,
@@ -331,17 +296,17 @@ class ReportTools
             ],
 
             'fluent-cart/get-report' => [
-                'label'       => __('Get Report', 'fluent-cart'),
-                'description' => __('Fixed-shape admin report pages. report=installments: health of split-pay plans (collected, scheduled, overdue, lapsed, completion rate, at-risk plans). report=retention: subscription retention and churn per month or year over the range. report=cohorts: customer cohorts by signup year or month, read from the retention snapshots. Pro parts (installment schedule, MRR cohorts) need FluentCart Pro.', 'fluent-cart'),
+                'label'       => 'Get Report',
+                'description' => 'Three fixed admin reports: installments, subscription retention and customer cohorts. report=installments: health of split-pay plans (collected, scheduled, overdue, lapsed, completion rate, at-risk plans). report=retention: subscription retention and churn per month or year over the range. report=cohorts: customer cohorts by signup year or month, read from the retention snapshots. Pro parts (installment schedule, MRR cohorts) need FluentCart Pro.',
                 'input_schema' => [
                     'type'       => 'object',
                     'required'   => ['report'],
                     'properties' => [
                         'report'           => ['type' => 'string', 'enum' => ['installments', 'retention', 'cohorts']],
-                        'currency'         => ['type' => 'string', 'description' => 'ISO currency, or __all__ (installments, retention). Defaults to the store currency.'],
+                        'currency'         => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency. __all__ (installments, retention) converts every currency to it.'],
                         'range'            => $rangeProp,
-                        'start_date'       => ['type' => 'string', 'description' => 'retention: YYYY-MM-DD, store day.'],
-                        'end_date'         => ['type' => 'string', 'description' => 'retention: YYYY-MM-DD, store day.'],
+                        'start_date'       => ['type' => 'string', 'description' => 'retention only.'],
+                        'end_date'         => ['type' => 'string', 'description' => 'retention only.'],
                         'period'           => ['type' => 'string', 'enum' => ['month', 'year'], 'description' => 'retention: rows per month (default) or year; the latest 24 are kept.'],
                         'group_by'         => ['type' => 'string', 'enum' => ['year', 'month'], 'description' => 'cohorts: yearly (default) or monthly cohorts; the latest 24 are kept, a monthly cohort with its first 12 months.'],
                         'metric'           => ['type' => 'string', 'enum' => ['subscribers', 'mrr'], 'description' => 'cohorts: mrr needs Pro.'],
@@ -391,17 +356,6 @@ class ReportTools
             $defs[$pagedTool]['input_schema']['properties']['per_page'] = $perPageProp;
         }
 
-        // All five query-* aggregates share the same response envelope.
-        foreach ([
-            'fluent-cart/query-orders',
-            'fluent-cart/query-products',
-            'fluent-cart/query-customers',
-            'fluent-cart/query-subscriptions',
-            'fluent-cart/query-sources',
-        ] as $queryTool) {
-            $defs[$queryTool]['output_schema'] = $queryOutputSchema;
-        }
-
         return $defs;
     }
 
@@ -418,6 +372,9 @@ class ReportTools
         }
         $currency  = ReportCurrency::isConverted(['currency' => $requested]) ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode      = self::orderMode($params);
 
         $current = self::salesMetrics($range['start'], $range['end'], $requested, $mode);
@@ -443,8 +400,7 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: net sales, 2: order count, 3: average order value */
-            __('Net sales %1$s across %2$d paid orders, AOV %3$s.', 'fluent-cart'),
+            'Net sales %1$s across %2$d paid orders, AOV %3$s.',
             MCPHelper::displayAmount($current['net_sales'], $currency),
             $current['orders'],
             MCPHelper::displayAmount($current['aov'], $currency)
@@ -466,7 +422,7 @@ class ReportTools
     /**
      * The admin Overview's Needs Attention card, by its rules: failing subscriptions, a dispute rate above the card
      * networks' 0.75% monitoring line, installment plans with a failed payment, and a refund rate that rose at least
-     * 2 points and half again against the prior period. Subscription MRR in currency units, other amounts in cents.
+     * 2 points and half again against the prior period. Amounts in currency units.
      */
     private static function needsAttention(array $range, $currency)
     {
@@ -493,7 +449,7 @@ class ReportTools
 
         $installments = InstallmentReportService::make()->getReport(['currency' => $currency])['summary'];
         if (!empty($installments['overdue_count'])) {
-            $items[] = ['key' => 'installments', 'count' => $installments['overdue_count'], 'owed' => $installments['overdue']];
+            $items[] = ['key' => 'installments', 'count' => $installments['overdue_count'], 'owed' => MCPHelper::moneyCompact($installments['overdue'])];
         }
 
         $refunds = RefundReportService::make();
@@ -585,12 +541,12 @@ class ReportTools
         return [
             'source'          => 'The admin Revenue report (Reports > Revenue), same window, currency and paid orders.',
             'net_sales'       => 'Item sales after discounts and refunds, without tax, shipping and fees.',
-            'gross_sales'     => 'net_sales + discounts + sales_refunded. gross_revenue is the same value.',
+            'gross_sales'     => 'net_sales + discounts + sales_refunded: item sales before discounts and refunds. gross_revenue is the same value. Not the gross_sales of query-sources or query-orders view=payment_methods, which is payments captured (paid here).',
             'net_revenue'     => 'paid - refunded - tax kept.',
             'total_collected' => 'net_sales + tax + shipping + fees that were kept.',
-            'paid'            => 'Sum of what the paid orders captured.',
+            'paid'            => 'Sum of what the paid orders captured, after discounts, with tax, shipping and fees, before refunds.',
             'refunded'        => 'All refunds on these orders, by order date.',
-            'aov'             => 'net_sales / order_count.',
+            'aov'             => 'net_sales / order_count, as query-orders aov. average_order in query-sources and view=payment_methods is paid / orders, so it is higher.',
         ];
     }
 
@@ -605,6 +561,9 @@ class ReportTools
             return $currency;
         }
         $range    = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode     = self::orderMode($params);
         // `granularity` is an alias for `interval`; hour is for intraday launch
         // monitoring (MAX_BUCKETS caps it at 180 hours ~ 7.5 days per call).
@@ -646,8 +605,7 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: number of buckets, 2: interval, 3: total revenue */
-            __('%1$d %2$s buckets, total revenue %3$s.', 'fluent-cart'),
+            '%1$d %2$s buckets, total revenue %3$s.',
             count($trend),
             $interval,
             MCPHelper::displayAmount($sum, $currency)
@@ -709,8 +667,7 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: number of products, 2: ranking metric */
-            __('Top %1$d products by %2$s.', 'fluent-cart'),
+            'Top %1$d products by %2$s.',
             count($products),
             $metric
         );
@@ -730,6 +687,9 @@ class ReportTools
         }
         $currency  = $requested === ReportCurrency::ALL ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode      = self::orderMode($params);
         $utc       = new \DateTimeZone('UTC');
         $filters   = [
@@ -794,8 +754,7 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: refund count, 2: total refunded, 3: refund rate percent */
-            __('%1$d refunds totaling %2$s; %3$s%% of the orders placed in the period were refunded.', 'fluent-cart'),
+            '%1$d refunds totaling %2$s; %3$s%% of the orders placed in the period were refunded.',
             $s['refunds'],
             MCPHelper::displayAmount(Helper::toCent($s['refunded_amount']), $currency),
             $data['refund_rate_percent']
@@ -818,6 +777,9 @@ class ReportTools
         }
         $currency  = $requested === ReportCurrency::ALL ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode      = self::orderMode($params);
         $limit     = isset($params['limit']) ? min(max((int) $params['limit'], 1), self::MAX_ROWS) : 50;
         $utc       = new \DateTimeZone('UTC');
@@ -832,14 +794,14 @@ class ReportTools
 
         $groupBy = self::sourceGrouping($params);
         if ($groupBy === null) {
-            return MCPHelper::error('unsupported_grouping', __('Not a Sources report grouping.', 'fluent-cart'), [
+            return MCPHelper::error('unsupported_grouping', 'Not a Sources report grouping.', [
                 'fields' => ['group_by', 'dimensions'],
                 'hint'   => 'Use group_by: ' . implode(', ', array_keys(SourceReportService::UTM_GROUPS)) . '.',
             ]);
         }
         // Product, variation, time and referrer groupings are FluentCart Pro reports, as on REST
         if (in_array($groupBy, SourceReportService::OTHER_GROUPS, true) && !apply_filters('fluent_cart/report/source_groupings', false)) {
-            return MCPHelper::error('pro_required', __('This grouping needs FluentCart Pro. Use a UTM grouping or view=channels.', 'fluent-cart'), ['fields' => ['group_by']]);
+            return MCPHelper::error('pro_required', 'This grouping needs FluentCart Pro. Use a UTM grouping or view=channels.', ['fields' => ['group_by']]);
         }
 
         // The UTM and product filters narrow the report's own order query for this call
@@ -860,6 +822,7 @@ class ReportTools
 
             return $query;
         };
+        $report = [];
         add_filter('fluent_cart/report/sources_query', $narrow, 99);
         try {
             $service = SourceReportService::make();
@@ -883,8 +846,7 @@ class ReportTools
             unset($channels['chart']);
 
             $summary = sprintf(
-                /* translators: 1: new customers, 2: tracked share percent */
-                __('%1$d new customers; %2$s%% came through a tracked channel.', 'fluent-cart'),
+                '%1$d new customers; %2$s%% came through a tracked channel.',
                 $channels['coverage']['customers'],
                 $channels['coverage']['share']
             );
@@ -910,15 +872,18 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: row count, 2: grouping */
-            __('%1$d rows grouped by %2$s.', 'fluent-cart'),
+            '%1$d rows grouped by %2$s.',
             count($rows),
             $groupBy
         );
 
         return MCPHelper::envelope(
             $summary,
-            ['group_by' => $report['group_by'], 'range' => self::rangeBlock($range, $currency), 'rows' => $rows],
+            ['group_by' => $report['group_by'], 'range' => self::rangeBlock($range, $currency), 'rows' => $rows, 'definitions' => [
+                'gross_sales' => 'Payments captured on the paid orders: after discounts, with tax and shipping, before refunds (paid in get-sales-report). gross_revenue is the same value.',
+                'net_sales'   => 'Net sales as in get-sales-report. net_revenue is the same value.',
+                'aov'         => 'average_order = gross_sales / orders. average_net_order = net_sales / orders, which is the aov of get-sales-report.',
+            ]],
             $meta + ['returned' => count($rows), 'limit' => $limit, 'max_rows' => self::MAX_ROWS, 'truncated' => count($report['rows']) > $limit]
         );
     }
@@ -960,6 +925,9 @@ class ReportTools
             return $currency;
         }
         $range      = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode       = self::orderMode($params);
         $metrics    = self::pickList($params, 'metrics', ['order_count', 'gross_revenue', 'paid_revenue', 'refunded_amount', 'aov', 'unique_customers'], ['order_count', 'gross_revenue']);
         $dimensions = self::pickList($params, 'dimensions', ['day', 'week', 'month', 'status', 'payment_status', 'order_type', 'country', 'state'], []);
@@ -1178,14 +1146,31 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: row count, 2: metric list, 3: dimension list */
-            __('%1$d rows — metrics [%2$s] grouped by [%3$s].', 'fluent-cart'),
+            '%1$d rows — metrics [%2$s] grouped by [%3$s].',
             count($out),
             implode(', ', $metrics),
-            $dimensions ? implode(', ', $dimensions) : __('total', 'fluent-cart')
+            $dimensions ? implode(', ', $dimensions) : 'total'
         );
 
-        $meta = ['currency' => $currency, 'date_basis' => 'created_at', 'mode' => $mode];
+        $meta = ['currency' => $currency, 'date_basis' => 'created_at', 'mode' => $mode, 'payment_statuses' => self::PAID];
+        // A payment_status grouping looks complete without the unpaid orders: say how many are left out
+        if (in_array('payment_status', $dimensions, true)) {
+            $unpaid = Order::query()
+                ->whereNotIn('payment_status', self::PAID)
+                ->where('currency', $currency)
+                ->where('created_at', '>=', $range['start'])
+                ->where('created_at', '<=', $range['end']);
+            self::applyMode($unpaid, $mode);
+            self::applyOrderItemFilter($unpaid, $params);
+            $unpaidCount = (int) $unpaid->count();
+            if ($unpaidCount) {
+                $meta['warnings'] = [sprintf(
+                    '%1$d orders in this window are not counted: query-orders reads orders that captured payment only (payment_status %2$s). Use list-orders with payment_status to see pending or failed orders.',
+                    $unpaidCount,
+                    implode(', ', self::PAID)
+                )];
+            }
+        }
         // Only when geography was actually asked for — an agent grouping by month
         // should not have to read a note about addresses.
         if ($wantsGeo) {
@@ -1210,6 +1195,9 @@ class ReportTools
             return $currency;
         }
         $range      = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $mode       = self::orderMode($params);
         $metrics    = self::pickList($params, 'metrics', ['units_sold', 'line_revenue', 'list_price_sum', 'discount_amount', 'net_revenue', 'order_count', 'avg_unit_price', 'refund_amount'], ['units_sold', 'line_revenue']);
         $dimensions = self::pickList($params, 'dimensions', ['product', 'variation', 'order_type'], ['product']);
@@ -1350,8 +1338,7 @@ class ReportTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: row count, 2: metric list */
-                __('%1$d rows — product metrics [%2$s].', 'fluent-cart'),
+                '%1$d rows — product metrics [%2$s].',
                 count($out),
                 implode(', ', $metrics)
             ),
@@ -1533,8 +1520,7 @@ class ReportTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: row count, 2: metric list */
-                __('%1$d rows — customer metrics [%2$s].', 'fluent-cart'),
+                '%1$d rows — customer metrics [%2$s].',
                 count($out),
                 implode(', ', $metrics)
             ),
@@ -1561,6 +1547,9 @@ class ReportTools
         }
 
         $range      = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $dateBasis  = self::subDateBasis($params);
         $metrics    = self::pickList($params, 'metrics', ['subscription_count', 'contract_value', 'recurring_value'], ['subscription_count', 'contract_value']);
         $dimensions = self::pickList($params, 'dimensions', ['month', 'plan_type', 'status', 'billing_interval'], []);
@@ -1656,11 +1645,10 @@ class ReportTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: row count, 2: metric list, 3: dimension list */
-                __('%1$d rows — subscription metrics [%2$s] grouped by [%3$s].', 'fluent-cart'),
+                '%1$d rows — subscription metrics [%2$s] grouped by [%3$s].',
                 count($out),
                 implode(', ', $metrics),
-                $dimensions ? implode(', ', $dimensions) : __('total', 'fluent-cart')
+                $dimensions ? implode(', ', $dimensions) : 'total'
             ),
             ['metrics' => $metrics, 'dimensions' => $dimensions, 'date_basis' => $dateBasis, 'range' => self::rangeBlock($range, MCPHelper::currencyCode()), 'rows' => $out],
             array_merge([
@@ -1808,11 +1796,18 @@ class ReportTools
             }
             unset($cohort);
 
-            return MCPHelper::envelope(
-                sprintf(/* translators: %s: metric */ __('Cohorts by %s.', 'fluent-cart'), $cohorts['metric']),
-                ['report' => 'cohorts'] + $cohorts,
-                ['currency' => $currency]
-            );
+            $summary = sprintf('Cohorts by %s.', $cohorts['metric']);
+            $meta = ['currency' => $currency];
+            if (!empty($cohorts['rebuild_needed'])) {
+                $stale = sprintf(
+                    'Stale data: these cohorts come from snapshots built on %s, before an update changed the snapshot rules (rebuild_needed is true). Do not rely on them. Open Reports > Subscriptions > Cohorts in the admin to rebuild the snapshots. A period with null values has no snapshot.',
+                    !empty($cohorts['generated_at']) ? MCPHelper::toIso8601($cohorts['generated_at']) : 'an earlier date'
+                );
+                $summary .= ' ' . $stale;
+                $meta['warnings'] = [$stale];
+            }
+
+            return MCPHelper::envelope($summary, ['report' => 'cohorts'] + $cohorts, $meta);
         }
         if ($report === 'retention') {
             $requested = self::convertibleCurrency($params);
@@ -1820,6 +1815,9 @@ class ReportTools
                 return $requested;
             }
             $range     = self::resolveRange($params);
+            if (is_wp_error($range)) {
+                return $range;
+            }
             $utc       = new \DateTimeZone('UTC');
             $filters   = [
                 'startDate'       => new DateTime($range['start'], $utc),
@@ -1833,16 +1831,26 @@ class ReportTools
 
             // The latest periods only: a long monthly range is too big for an assistant's context
             $rows = array_values($service->getRetentionData($filters));
+            // The admin report keeps some counts and amounts as strings; a tool result gives numbers
+            foreach ($rows as &$row) {
+                foreach (['active_subscriptions', 'active_paid_subscriptions', 'active_free_subscriptions'] as $key) {
+                    $row[$key] = (int) $row[$key];
+                }
+                foreach (['retained_mrr', 'mrr', 'start_mrr'] as $key) {
+                    $row[$key] = (float) $row[$key];
+                }
+            }
+            unset($row);
 
             return MCPHelper::envelope(
-                __('Subscription retention by period.', 'fluent-cart'),
+                'Subscription retention by period.',
                 ['report' => 'retention', 'range' => self::rangeBlock($range, $currency), 'retention_data' => array_slice($rows, -self::MAX_PERIODS),
                     'periods_total' => count($rows), 'intervals' => $service->retentionIntervals($filters)],
                 ['currency' => $currency, 'converted' => $requested === ReportCurrency::ALL]
             );
         }
 
-        return MCPHelper::error('invalid_report', __('report must be installments, retention or cohorts.', 'fluent-cart'), ['fields' => ['report']]);
+        return MCPHelper::error('invalid_param', 'report must be installments, retention or cohorts.', ['fields' => ['report']]);
     }
 
     public static function getInstallmentReport($params = [])
@@ -1850,6 +1858,11 @@ class ReportTools
         $currency = self::convertibleCurrency($params);
         if (is_wp_error($currency)) {
             return $currency;
+        }
+        $badDate = MCPHelper::unreadableDateError((array) $params, ['as_of', 'started_from', 'started_to'])
+            ?: MCPHelper::reversedBoundsError((array) $params, ['started_from' => 'started_to']);
+        if ($badDate) {
+            return $badDate;
         }
         // The monthly schedule, plans started by month, collection rate and plans by variation are Pro reports
         $withPro = (bool) apply_filters('fluent_cart/report/installment_forecast', false);
@@ -1871,8 +1884,7 @@ class ReportTools
         $currency = $report['currency'] === ReportCurrency::ALL ? MCPHelper::currencyCode() : $report['currency'];
 
         $summary = sprintf(
-            /* translators: 1: started plans, 2: collected, 3: scheduled, 4: overdue, 5: lapsed unpaid, 6: completion rate */
-            __('%1$d installment plans started; collected %2$s, scheduled %3$s, overdue %4$s, lapsed unpaid %5$s; %6$s%% completed.', 'fluent-cart'),
+            '%1$d installment plans started; collected %2$s, scheduled %3$s, overdue %4$s, lapsed unpaid %5$s; %6$s%% completed.',
             $sum['plans_started'],
             MCPHelper::displayAmount($sum['collected'], $currency),
             MCPHelper::displayAmount($sum['scheduled'], $currency),
@@ -1892,14 +1904,39 @@ class ReportTools
             'upgraded'  => 'Replaced by a new plan through an upgrade (config.upgraded_to_sub_id). Its collected money still counts; it stays out of the completion rate and the at-risk list, unless it still bills (then it is running or overdue).',
             'running'   => 'Active or trialing with payments left, or paid and still waiting for the gateway to activate (pending, created, authenticated).',
             'completion_rate' => 'completed / (completed + lapsed + refunded) x 100: plans that have ended. Running and overdue plans can still complete, so they are left out.',
+            'schedule'  => 'Payments left on running and overdue plans, per store-timezone month, from next_billing_date by the billing interval. A payment already past due is in the as_of month. Same months as finite_count in get-upcoming-payments with bucket=month, which reads active, past_due and trialing plans only.',
         ];
 
-        return MCPHelper::envelope($summary, $report, ['currency' => $currency, 'amounts' => 'cents', 'date_basis' => 'as_of']);
+        // The admin report is in cents; a tool result is in currency units like the other tools
+        $report = self::centsToDecimal($report, ['collected', 'scheduled', 'overdue', 'lapsed_unpaid', 'amount', 'left_amount',
+            'at_risk_amount', 'min_price', 'max_price', 'overdue_amount', 'lapsed_amount', 'total']);
+
+        return MCPHelper::envelope($summary, $report, ['currency' => $currency, 'amounts' => 'decimal', 'date_basis' => 'as_of']);
+    }
+
+    /**
+     * The named keys of a report array from cents to currency units, at any depth. A key that holds an array
+     * (due_soon.overdue) is walked, not converted.
+     */
+    private static function centsToDecimal(array $data, array $keys)
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = self::centsToDecimal($value, $keys);
+            } elseif (is_numeric($value) && in_array($key, $keys, true)) {
+                $data[$key] = MCPHelper::moneyCompact($value);
+            }
+        }
+
+        return $data;
     }
 
     public static function getVariationRevenue($params = [])
     {
         $range = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $currency = ReportCurrency::resolve(Arr::get($params, 'currency'), true);
 
         $report = ProductReportService::make()->getVariationRevenue([
@@ -1914,8 +1951,7 @@ class ReportTools
         $totals = $report['totals'];
 
         $summary = sprintf(
-            /* translators: 1: variation count, 2: gross, 3: refunds, 4: net */
-            __('%1$d variations sold: gross %2$s, refunds %3$s, net %4$s.', 'fluent-cart'),
+            '%1$d variations sold: gross %2$s, refunds %3$s, net %4$s.',
             count($report['variations']),
             MCPHelper::displayAmount($totals['gross'], $metaCurrency),
             MCPHelper::displayAmount($totals['refunds'], $metaCurrency),
@@ -1947,7 +1983,7 @@ class ReportTools
             return $code;
         }
 
-        return MCPHelper::error('invalid_currency', __('currency must be a 3-letter ISO code. Converted totals (__all__) are in get-sales-report, get-refund-report and query-sources.', 'fluent-cart'), ['fields' => ['currency']]);
+        return MCPHelper::error('invalid_param', 'currency must be a 3-letter ISO code. Converted totals (__all__) are in get-sales-report, get-refund-report and query-sources.', ['fields' => ['currency']]);
     }
 
     /**
@@ -2005,18 +2041,27 @@ class ReportTools
      * Public so the single source of truth for MCP date-window resolution is
      * shared (e.g. list-transactions) instead of duplicated — every tool then
      * accepts the identical range vocabulary and store-day semantics.
+     *
+     * @return array|\WP_Error an error when a custom window starts after it ends
      */
     public static function resolveRange($params)
     {
         // Days are store days (WordPress timezone), as in the admin reports; the bounds come back in UTC.
         $tz = wp_timezone();
 
+        // An unreadable date must not fall through to the default window.
+        $unreadable = MCPHelper::unreadableDateError((array) $params, ['since', 'date_from', 'date_to', 'start_date', 'end_date']);
+        if ($unreadable) {
+            return $unreadable;
+        }
+
         // Delta mode: everything strictly after an instant, up to now. Time-precise
         // (not snapped to a day) so "what changed since 14:05" works during a launch.
         if (!empty($params['since'])) {
             $start = self::instant($params['since'], $tz, false);
             if ($start !== null) {
-                return self::withPrior($start, gmdate('Y-m-d H:i:s'), 'since');
+                $end = gmdate('Y-m-d H:i:s');
+                return $start > $end ? self::reversedRangeError($start, $end, ['since']) : self::withPrior($start, $end, 'since');
             }
         }
 
@@ -2026,13 +2071,16 @@ class ReportTools
             $start = self::instant(!empty($params['date_from']) ? $params['date_from'] : '-30 days', $tz, false);
             $end   = self::instant(!empty($params['date_to']) ? $params['date_to'] : 'now', $tz, true);
             if ($start !== null && $end !== null) {
-                return self::withPrior($start, $end, 'custom');
+                return $start > $end ? self::reversedRangeError($start, $end, ['date_from', 'date_to']) : self::withPrior($start, $end, 'custom');
             }
         }
 
         if (!empty($params['start_date']) || !empty($params['end_date'])) {
             $start = self::dayStart(!empty($params['start_date']) ? $params['start_date'] : '-30 days', $tz);
             $end   = self::dayEnd(!empty($params['end_date']) ? $params['end_date'] : 'now', $tz);
+            if ($start > $end) {
+                return self::reversedRangeError($start, $end, ['start_date', 'end_date']);
+            }
             return self::withPrior($start, $end, !empty($params['start_date']) ? 'custom' : 'last_30_days');
         }
 
@@ -2111,6 +2159,23 @@ class ReportTools
     }
 
     /**
+     * A window that starts after it ends matches nothing: an error, not a report of zeros.
+     * Public for the tools that resolve their own window.
+     */
+    public static function reversedRangeError($startUtc, $endUtc, array $fields)
+    {
+        return MCPHelper::error(
+            'invalid_param',
+            sprintf(
+                'The date range is reversed: it starts at %1$s, after its end at %2$s. Swap the two dates and retry.',
+                MCPHelper::toIso8601($startUtc),
+                MCPHelper::toIso8601($endUtc)
+            ),
+            ['fields' => $fields]
+        );
+    }
+
+    /**
      * The admin Payment Methods or Coupons report for a date range, as REST serves it to this store.
      */
     private static function orderReportView($params)
@@ -2121,6 +2186,9 @@ class ReportTools
         }
         $currency  = $requested === ReportCurrency::ALL ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $utc       = new \DateTimeZone('UTC');
         $filters   = [
             'startDate'     => new DateTime($range['start'], $utc),
@@ -2139,6 +2207,12 @@ class ReportTools
             // Disputes per gateway and card brands are Pro reports with their own routes; this report has neither
             $report = PaymentMethodReportService::make()->getReport($filters);
             unset($report['chart'], $report['previous']);
+            $report['definitions'] = [
+                'source'        => 'The admin Payment Methods report (Reports > Payment Methods), same window and currency.',
+                'gross_sales'   => 'Payments the gateway captured on the paid orders: after discounts, with tax, shipping and fees, before refunds. Equals paid in get-sales-report, not its gross_sales (item sales before discounts).',
+                'net_sales'     => 'Net sales as in get-sales-report: item sales after discounts and refunds, without tax, shipping and fees.',
+                'average_order' => 'gross_sales / orders: the average payment. aov in get-sales-report and query-orders is net_sales / orders.',
+            ];
         } else {
             // The value of the customers a coupon won and its refund rate are a FluentCart Pro report
             $withQuality = (bool) apply_filters('fluent_cart/report/coupon_quality', false);
@@ -2155,8 +2229,7 @@ class ReportTools
         }
 
         $summary = sprintf(
-            /* translators: 1: row count, 2: report name */
-            __('%1$d rows in the %2$s report.', 'fluent-cart'),
+            '%1$d rows in the %2$s report.',
             count($report['rows']),
             $view
         );
@@ -2166,7 +2239,7 @@ class ReportTools
 
     /**
      * The admin Customers overview for a date range: new, returning and renewing customers and their net, repeat
-     * purchase rate and average lifetime value. Amounts in cents.
+     * purchase rate and average lifetime value. Amounts in currency units.
      */
     private static function customerOverview($params)
     {
@@ -2176,6 +2249,9 @@ class ReportTools
         }
         $currency  = $requested === ReportCurrency::ALL ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $utc       = new \DateTimeZone('UTC');
         $overview  = CustomerReportService::make()->getOverview([
             'startDate'     => new DateTime($range['start'], $utc),
@@ -2184,16 +2260,15 @@ class ReportTools
             'paymentStatus' => Status::getReportStatuses(),
             'groupKey'      => 'monthly',
         ]);
-        $s = $overview['summary'];
+        $s = self::centsToDecimal($overview['summary'], ['new_net', 'returning_net', 'renewal_net', 'net', 'average_ltv']);
 
         $summary = sprintf(
-            /* translators: 1: new customers, 2: returning customers */
-            __('%1$d new and %2$d returning customers in the period.', 'fluent-cart'),
+            '%1$d new and %2$d returning customers in the period.',
             (int) Arr::get($s, 'new_customers', 0),
             (int) Arr::get($s, 'returning_customers', 0)
         );
 
-        return MCPHelper::envelope($summary, ['view' => 'overview', 'range' => self::rangeBlock($range, $currency), 'summary' => $s], ['currency' => $currency, 'converted' => $requested === ReportCurrency::ALL, 'amounts' => 'cents']);
+        return MCPHelper::envelope($summary, ['view' => 'overview', 'range' => self::rangeBlock($range, $currency), 'summary' => $s], ['currency' => $currency, 'converted' => $requested === ReportCurrency::ALL, 'amounts' => 'decimal']);
     }
 
     /**
@@ -2208,6 +2283,9 @@ class ReportTools
         }
         $currency  = $requested === ReportCurrency::ALL ? BaseCurrency::get() : $requested;
         $range     = self::resolveRange($params);
+        if (is_wp_error($range)) {
+            return $range;
+        }
         $utc       = new \DateTimeZone('UTC');
         $filters   = [
             'startDate' => new DateTime($range['start'], $utc),
@@ -2227,8 +2305,7 @@ class ReportTools
         $data = ['view' => 'overview', 'range' => self::rangeBlock($range, $currency), 'health' => $service->getHealth($filters)] + $overview;
 
         $summary = sprintf(
-            /* translators: 1: MRR, 2: active subscriptions, 3: new, 4: churned */
-            __('MRR %1$s across %2$d subscriptions; %3$d new and %4$d churned in the period.', 'fluent-cart'),
+            'MRR %1$s across %2$d subscriptions; %3$d new and %4$d churned in the period.',
             MCPHelper::displayAmount(Helper::toCent($data['health']['mrr']), $currency),
             $data['health']['subscriptions'],
             $overview['period']['new'],
@@ -2247,7 +2324,7 @@ class ReportTools
             return null;
         }
 
-        return MCPHelper::error('pro_required', __('Grouping by state needs FluentCart Pro. Group by country instead.', 'fluent-cart'), ['fields' => ['dimensions']]);
+        return MCPHelper::error('pro_required', 'Grouping by state needs FluentCart Pro. Group by country instead.', ['fields' => ['dimensions']]);
     }
 
     /**

@@ -2,6 +2,8 @@
 
 namespace FluentCart\App\Models;
 
+use FluentCart\App\Models\Concerns\CanSearch;
+
 /**
  *  Attributes Relations Model - DB Model for Attributes Terms to Specific Variations
  * Maybe we don't need this model. For now, it's here
@@ -14,6 +16,8 @@ namespace FluentCart\App\Models;
  */
 class AttributeRelation extends Model
 {
+	use CanSearch;
+
 	protected $table = 'fct_atts_relations';
 
 	protected $fillable = [

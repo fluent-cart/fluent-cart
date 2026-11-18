@@ -11,7 +11,7 @@ use Tests\Support\Factory\WPUserFactory;
 use Tests\Support\Traits\RequiresEmailVerification;
 
 /**
- * Case 1 of the customer identity binding fix (dev/CUSTOMER_IDENTITY_BINDING_AUDIT.md §3.1).
+ * Case 1 of the customer identity binding fix (dev-docs/CUSTOMER_IDENTITY_BINDING_AUDIT.md §3.1).
  *
  * CustomerResource::getCurrentCustomer() is the storefront's entire access
  * control: every `customer-profile` route trusts whatever record it returns.

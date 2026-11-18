@@ -29,17 +29,17 @@
         {{ translate("Free") }}
     </span>
       <span v-if="shouldEnableEditing && !hasFreeShipping()" class="max-w-[120px] block ms-auto text-end">
-      <el-input v-model="total_shipping" @change="value => {order.shipping_total = value * 100}" type="number">
+      <fct-input v-model="total_shipping" @change="value => {order.shipping_total = value * 100}" type="number" :controls="false">
         <template #prefix>
           {{ currency }}
         </template>
-      </el-input>
+      </fct-input>
     </span>
       <span v-else>{{ formatNumberForOrder(order.shipping_total - (order.tax_summary && order.tax_summary.rcShippingAdjustment ? order.tax_summary.rcShippingAdjustment : 0), order) }}</span>
     </td>
   </tr>
 
-  <el-dialog
+  <fct-dialog
       :append-to-body="true"
       width="50%"
       v-model="shippingModalIsOpen"
@@ -54,22 +54,32 @@
       <template v-if="shippingMethods.length || otherShippingMethods.length">
         <div v-if="shippingMethods.length" class="fct-shipping-methods-list-wrap">
           <h3>{{ translate('Shipping Methods') }}</h3>
-          <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
-            <el-radio v-for="(method, index) in shippingMethods" :value="method.id" :key="index">
-              {{ method.title }}
-              <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
-            </el-radio>
-          </el-radio-group>
+          <fct-choice
+              v-model="shipping.id"
+              type="radio"
+              class="fct-shipping-methods-radio"
+              :options="shippingMethods.map((method) => ({label: method.title, value: method.id, charge: method.shipping_charge}))"
+          >
+            <template #option="{option}">
+              {{ option.label }}
+              <span v-if="option.charge" class="charge">{{ formatNumberForOrder(option.charge, order) }}</span>
+            </template>
+          </fct-choice>
         </div>
 
         <div v-if="otherShippingMethods.length" class="fct-other-shipping-methods-list-wrap">
           <h3>{{ translate('Other Shipping Methods') }}</h3>
-          <el-radio-group v-model="shipping.id" class="fct-shipping-methods-radio">
-            <el-radio v-for="(method, index) in otherShippingMethods" :value="method.id" :key="index">
-              {{ method.title }}
-              <span v-if="method.shipping_charge" class="charge">{{ formatNumberForOrder(method.shipping_charge, order) }}</span>
-            </el-radio>
-          </el-radio-group>
+          <fct-choice
+              v-model="shipping.id"
+              type="radio"
+              class="fct-shipping-methods-radio"
+              :options="otherShippingMethods.map((method) => ({label: method.title, value: method.id, charge: method.shipping_charge}))"
+          >
+            <template #option="{option}">
+              {{ option.label }}
+              <span v-if="option.charge" class="charge">{{ formatNumberForOrder(option.charge, order) }}</span>
+            </template>
+          </fct-choice>
         </div>
       </template>
       <div v-else class="fct-no-shipping-methods-found">
@@ -77,10 +87,10 @@
       </div>
     </div>
     <template #footer v-if="shippingMethods.length || otherShippingMethods.length">
-      <el-button @click="shippingModalIsOpen = false">{{ translate('Cancel') }}</el-button>
-      <el-button type="primary" @click="updateShipping">{{ translate('Apply') }}</el-button>
+      <fct-button @click="shippingModalIsOpen = false">{{ translate('Cancel') }}</fct-button>
+      <fct-button type="primary" @click="updateShipping">{{ translate('Apply') }}</fct-button>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script type="text/babel">
@@ -268,6 +278,8 @@ export default {
 </script>
 
 <style lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../tailwind.config.mjs";
 .fct-shipping-methods-radio {
   @apply flex-col w-full gap-2;
   .el-radio {

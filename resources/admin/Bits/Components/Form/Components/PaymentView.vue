@@ -1,5 +1,4 @@
 <script setup>
-import {defineModel} from "vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 

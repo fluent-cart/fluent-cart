@@ -2,6 +2,11 @@
 
 namespace FluentCart\App\Services\PluginInstaller;
 
+use FluentCart\Api\StoreSettings;
+use FluentCart\App\Models\ProductVariation;
+use FluentCart\App\Services\Localization\LocalizationManager;
+use FluentCart\Framework\Support\Arr;
+
 class AddonManager
 {
     public function installAddon($sourceType, $sourceLink, $pluginSlug, $path = 'zipball_url')
@@ -63,6 +68,144 @@ class AddonManager
             'plugin_slug'  => $pluginSlug,
             'plugin_file'  => $pluginFile
         ];
+    }
+
+    /**
+     * What the dashboard recommendations look at: store country, another store plugin, physical products.
+     */
+    public static function getStoreSignals()
+    {
+        $country = strtoupper((string)(new StoreSettings())->get('store_country'));
+        $otherStore = '';
+        if (defined('WC_VERSION')) {
+            $otherStore = 'WooCommerce';
+        } elseif (defined('EDD_VERSION')) {
+            $otherStore = 'Easy Digital Downloads';
+        }
+
+        return [
+            'country'     => $country,
+            'eu'          => LocalizationManager::getInstance()->isEuTaxCountry($country),
+            'other_store' => $otherStore,
+            'physical'    => ProductVariation::query()->where('fulfillment_type', 'physical')->exists(),
+        ];
+    }
+
+    /**
+     * Page builders that are active while their FluentCart add-on is not. Constants only, so it costs nothing
+     * on the many requests where the list is empty.
+     */
+    public static function getBuilderSignals()
+    {
+        $builders = [
+            ['key' => 'elementor-block', 'name' => 'Elementor', 'builder' => defined('ELEMENTOR_VERSION'), 'addon' => defined('FLUENTCART_ELEMENTOR_BLOCKS_VERSION')],
+            ['key' => 'fluent-cart-bricks-blocks', 'name' => 'Bricks', 'builder' => defined('BRICKS_VERSION'), 'addon' => defined('FLUENT_CART_BRICKS_BLOCKS_VERSION')],
+            // FLUENTCART_DIVI_BLOCKS_VERSION covers installs from before the slug rename.
+            ['key' => 'fluent-cart-divi-modules', 'name' => 'Divi', 'builder' => strpos(get_template(), 'Divi') !== false, 'addon' => defined('FLUENTCART_DIVI_MODULES_VERSION') || defined('FLUENTCART_DIVI_BLOCKS_VERSION')],
+        ];
+
+        $missing = [];
+        foreach ($builders as $builder) {
+            if ($builder['builder'] && !$builder['addon']) {
+                $missing[] = ['key' => $builder['key'], 'name' => $builder['name']];
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Add-on list entries for the builders without their add-on, in order; the page shows the first one not closed.
+     * Only entries whose button this user may run: activate_plugins if installed, install_plugins if not.
+     */
+    public static function pickBuilderAddons(array $addons, array $missingBuilders)
+    {
+        $picked = [];
+        foreach ($missingBuilders as $builder) {
+            $addon = Arr::get($addons, $builder['key']);
+            if (!$addon) {
+                continue;
+            }
+
+            $pluginFile = Arr::get($addon, 'plugin_file', '');
+            $isInstalled = $pluginFile !== '' && file_exists(WP_PLUGIN_DIR . '/' . $pluginFile);
+
+            // Multisite: a subsite admin is a FluentCart admin but may not manage plugins.
+            if (!current_user_can($isInstalled ? 'activate_plugins' : 'install_plugins')) {
+                continue;
+            }
+
+            $picked[] = array_merge($addon, [
+                'key'          => $builder['key'],
+                'builder'      => $builder['name'],
+                'is_installed' => $isInstalled,
+            ]);
+        }
+
+        return $picked;
+    }
+
+    /**
+     * Add-ons from the plugin add-on list whose signal matches this store and that are not active.
+     * Builders are left out: the Getting Started checklist already lists them.
+     */
+    public static function pickRecommendations(array $addons, array $signals)
+    {
+        $isGermany = Arr::get($signals, 'country') === 'DE';
+        $otherStore = Arr::get($signals, 'other_store', '');
+
+        $rules = [
+            'fluent-cart-customer-rights' => [
+                'match'  => !empty($signals['eu']),
+                'reason' => $isGermany
+                    ? __('Your store is in Germany. German B2C stores need a withdrawal button.', 'fluent-cart')
+                    : __('Your store is in the EU. Let customers request withdrawals, refunds and cancellations.', 'fluent-cart'),
+                'badge'  => $isGermany ? __('Required in Germany', 'fluent-cart') : '',
+            ],
+            'fluent-cart-migrator'        => [
+                'match'  => $otherStore !== '',
+                /* translators: 1: the other store plugin, e.g. WooCommerce */
+                'reason' => sprintf(__('%1$s is installed. Import your products, customers and orders.', 'fluent-cart'), $otherStore),
+                'badge'  => '',
+            ],
+            'shipping-for-fluent-cart'    => [
+                'match'  => !empty($signals['physical']),
+                'reason' => __('You sell physical products. Get live carrier rates and print shipping labels.', 'fluent-cart'),
+                'badge'  => '',
+            ],
+        ];
+
+        if (!function_exists('is_plugin_active')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        $items = [];
+        foreach ($rules as $key => $rule) {
+            $addon = Arr::get($addons, $key);
+            if (!$rule['match'] || !$addon) {
+                continue;
+            }
+
+            // Cheap status for the matches only: the active_plugins option and one file check.
+            $pluginFile = Arr::get($addon, 'plugin_file', '');
+            if (!isset($addon['is_active'])) {
+                $addon['is_active'] = $pluginFile && is_plugin_active($pluginFile);
+                $addon['is_installed'] = $pluginFile && file_exists(WP_PLUGIN_DIR . '/' . $pluginFile);
+            }
+            if ($addon['is_active']) {
+                continue;
+            }
+
+            // The whole list entry travels along: the card installs, activates and redirects with it.
+            $items[] = array_merge($addon, [
+                'key'          => $key,
+                'is_installed' => !empty($addon['is_installed']),
+                'reason'       => $rule['reason'],
+                'badge'        => $rule['badge'],
+            ]);
+        }
+
+        return $items;
     }
 
     /**

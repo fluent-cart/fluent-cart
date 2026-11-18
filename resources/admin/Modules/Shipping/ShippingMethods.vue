@@ -227,6 +227,12 @@ const getConfigureTitle = (rate) => {
   }
 };
 
+// Add and Edit share one form, so drop errors left from the last attempt.
+const onMethodDrawerOpen = () => {
+  methodFormRef.value?.clearValidate();
+  fetchStateZones();
+};
+
 const fetchStateZones = () => {
   if (!props.country || props.country === 'all' || props.country === 'selection') {
     return;
@@ -259,17 +265,17 @@ const fetchStateZones = () => {
     <CardContainer v-if="zone_id" class="mb-4 overflow-hidden">
       <CardHeader :title="translate('Shipping Methods')">
         <template #action>
-          <el-button type="primary" @click="addShippingMethod">
+          <fct-button type="primary" @click="addShippingMethod">
             {{ translate('Add Shipping Method') }}
-          </el-button>
+          </fct-button>
         </template>
       </CardHeader>
       <CardBody>
         <div class="shipping-methods-list">
           <!-- Shipping Methods -->
-          <el-table :data="methods" class="w-full">
-            <el-table-column prop="title" :label="translate('Method Title')"/>
-            <el-table-column :label="translate('States')">
+          <fct-table :data="methods" class="w-full">
+            <fct-table-column prop="title" :label="translate('Method Title')"/>
+            <fct-table-column :label="translate('States')">
               <template #default="scope">
                 <div v-if="scope.row.formatted_states && scope.row.formatted_states.length > 0" class="flex flex-wrap gap-1">
                   <el-tag
@@ -290,13 +296,13 @@ const fetchStateZones = () => {
                   {{ translate('Applied To All States') }}
                 </div>
               </template>
-            </el-table-column>
-            <el-table-column prop="type" :label="translate('Method Type')">
+            </fct-table-column>
+            <fct-table-column prop="type" :label="translate('Method Type')">
               <template #default="scope">
                 {{ methodTypes.find(type => type.value === scope.row.type)?.label ?? scope.row.type }}
               </template>
-            </el-table-column>
-            <el-table-column prop="amount" :label="translate('Amount')" width="100px">
+            </fct-table-column>
+            <fct-table-column prop="amount" :label="translate('Amount')" width="100px">
               <template #default="scope">
                 <span v-if="scope.row.type === 'free_shipping'">
                   {{ translate('Free') }}
@@ -311,8 +317,8 @@ const fetchStateZones = () => {
                   {{ scope.row.amount }}
                 </span>
               </template>
-            </el-table-column>
-            <el-table-column prop="configure_rate" :label="translate('Configure Rate')">
+            </fct-table-column>
+            <fct-table-column prop="configure_rate" :label="translate('Configure Rate')">
               <template #default="scope">
                 <span v-if="scope.row.type === 'free_shipping'">
                   --
@@ -321,8 +327,8 @@ const fetchStateZones = () => {
                   {{ getConfigureTitle(scope.row.settings.configure_rate) }}
                 </span>
               </template>
-            </el-table-column>
-            <el-table-column prop="class_aggregation" :label="translate('Class Aggregation')" width="200px">
+            </fct-table-column>
+            <fct-table-column prop="class_aggregation" :label="translate('Class Aggregation')" width="200px">
               <template #default="scope">
                  <span v-if="scope.row.type === 'free_shipping'">
                   --
@@ -333,15 +339,15 @@ const fetchStateZones = () => {
                   }}
                   </span>
               </template>
-            </el-table-column>
-            <el-table-column prop="is_enabled" :label="translate('Enabled')">
+            </fct-table-column>
+            <fct-table-column prop="is_enabled" :label="translate('Enabled')">
               <template #default="scope">
                 <Badge :type="scope.row.is_enabled ? 'success' : 'info'">
                   {{ scope.row.is_enabled ? translate('Enabled') : translate('Disabled') }}
                 </Badge>
               </template>
-            </el-table-column>
-            <el-table-column :label="translate('Actions')" width="100">
+            </fct-table-column>
+            <fct-table-column :label="translate('Actions')" width="100">
               <template #default="scope">
                 <div class="flex items-center gap-1">
                   <IconButton size="small" class="cursor-pointer" hover="primary" bg="transparent"
@@ -349,7 +355,7 @@ const fetchStateZones = () => {
                                @click="editShippingMethod(scope.row)">
                     <DynamicIcon name="Edit"/>
                   </IconButton>
-                  <el-popconfirm
+                  <fct-popover confirm
                       :title="translate('Are you sure to delete this shipping method?')"
                       @confirm="deleteShippingMethod(scope.row.id)"
                   >
@@ -359,10 +365,10 @@ const fetchStateZones = () => {
                         <DynamicIcon name="Delete"/>
                       </IconButton>
                     </template>
-                  </el-popconfirm>
+                  </fct-popover>
                 </div>
               </template>
-            </el-table-column>
+            </fct-table-column>
             <template #empty>
               <div class="no-methods">
                 <p>{{
@@ -370,7 +376,7 @@ const fetchStateZones = () => {
                   }}</p>
               </div>
             </template>
-          </el-table>
+          </fct-table>
         </div>
       </CardBody>
     </CardContainer>
@@ -382,15 +388,15 @@ const fetchStateZones = () => {
 
 
     <!-- Add this before the closing </div> tag in the template -->
-    <el-drawer
+    <fct-dialog
+        drawer
         v-model="showMethodModal"
         :title="methodForm.method_id ? translate('Edit Shipping Method') : translate('Add Shipping Method')"
-        :aria-label="methodForm.method_id ? translate('Edit Shipping Method') : translate('Add Shipping Method')"
-        width="500px"
         append-to-body
+        width="500px"
         :close-on-click-modal="true"
         class="fct-shipping-method-drawer"
-        @open="fetchStateZones"
+        @open="onMethodDrawerOpen"
     >
       <el-form :model="methodForm" :rules="methodRules" ref="methodFormRef" label-position="top"
                require-asterisk-position="right">
@@ -398,7 +404,7 @@ const fetchStateZones = () => {
         <el-form-item prop="is_enabled">
           <template #label>
             <span class="el-form-item__label">
-              <el-switch
+              <fct-switch
                   v-model="methodForm.is_enabled"
                   :active-value="1"
                   :inactive-value="0"/>
@@ -408,12 +414,13 @@ const fetchStateZones = () => {
         </el-form-item>
 
         <el-form-item :label="translate('Method Title')" prop="title">
-          <el-input v-model="methodForm.title" :placeholder="translate('Enter method title')"></el-input>
+          <fct-input v-model="methodForm.title" :placeholder="translate('Enter method title')"/>
         </el-form-item>
 
         <el-form-item v-if="!isWorldZone && stateZones.length > 0" :label="stateLabel" v-loading="fetchingStateZones">
-          <el-select
+          <fct-select
               v-model="methodForm.states"
+              :options="stateZones.map(zone => ({label: zone.name, value: zone.value}))"
               multiple
               filterable
               clearable
@@ -421,115 +428,113 @@ const fetchStateZones = () => {
                 /* translators: %s is the state label */
                 translate('Select %s', stateLabel || 'States')
               "
-          >
-            <el-option
-                v-for="(zone, i) in stateZones"
-                :key="i"
-                :label="zone.name"
-                :value="zone.value"
-            />
-          </el-select>
+          />
         </el-form-item>
 
-        <el-row :gutter="12">
-            
-          <el-col :lg="methodForm.settings.configure_rate == 'per_weight' ? 24 : 12">
+        <div class="fct-shipping-method-grid">
+          <div class="fct-shipping-method-col" :class="{'is-half': methodForm.settings.configure_rate != 'per_weight'}">
             <el-form-item :label="translate('Method Type')" prop="type">
-            <el-select
+            <fct-select
                 v-model="methodForm.type"
+                :options="methodTypes"
                 @change="(value) => {
                   if (value === 'free_shipping') {
                     methodForm.amount = 0;
                     methodForm.settings.configure_rate = '';
                     methodForm.settings.class_aggregation = '';
                   }
-                }">
-              <el-option v-for="type in methodTypes" :key="type.value" :label="type.label" :value="type.value"/>
-            </el-select>
+                }"/>
           </el-form-item>
-          </el-col>
+          </div>
 
           <template v-if="methodForm.type !== 'free_shipping'">
 
-            <el-col v-if="methodForm.settings.configure_rate !== 'per_weight'" :lg="12">
+            <div v-if="methodForm.settings.configure_rate !== 'per_weight'" class="fct-shipping-method-col is-half">
               <el-form-item :label="translate('Amount')" prop="amount">
-                <el-input type="number" min="0" v-model="methodForm.amount"
-                          :placeholder="translate('Enter amount')"></el-input>
+                <fct-input type="number" :controls="false" min="0" v-model="methodForm.amount"
+                          :placeholder="translate('Enter amount')"/>
               </el-form-item>
-            </el-col>
-            <el-col :lg="24">
+            </div>
+            <div class="fct-shipping-method-col">
               <el-form-item :label="translate('Configure Rate')">
-                <el-select v-model="methodForm.settings.configure_rate" @change="(value) => {
+                <fct-select
+                    v-model="methodForm.settings.configure_rate"
+                    :options="[
+                      {label: translate('Per Order'), value: 'per_order'},
+                      {label: translate('Per Item'), value: 'per_item'},
+                      {label: translate('Percentage'), value: 'per_price'},
+                      {label: translate('Per Weight'), value: 'per_weight'},
+                    ]"
+                    @change="(value) => {
                   if (value === 'per_weight') {
                     methodForm.amount = 0;
                   }
-                }">
-                  <el-option :label="translate('Per Order')" value="per_order"></el-option>
-                  <el-option :label="translate('Per Item')" value="per_item"></el-option>
-                  <el-option :label="translate('Percentage')" value="per_price"></el-option>
-                  <el-option :label="translate('Per Weight')" value="per_weight"></el-option>
-                </el-select>
+                }"/>
                 <div v-if="methodForm.settings.configure_rate" class="form-help-text mt-1">
                   {{ configureRateHelpText }}
                 </div>
               </el-form-item>
-            </el-col>
+            </div>
 
-            <el-col v-if="methodForm.settings.configure_rate === 'per_weight'" :lg="24">
+            <div v-if="methodForm.settings.configure_rate === 'per_weight'" class="fct-shipping-method-col">
               <el-form-item :label="translate('Weight Tiers')">
                 <WeightTiersEditor v-model="methodForm.settings.weight_tiers" :weight-unit="storeWeightUnit" />
               </el-form-item>
-            </el-col>
+            </div>
 
-            <el-col :lg="24">
+            <div class="fct-shipping-method-col">
               <el-form-item :label="translate('Class Aggregation')">
-                <el-select v-model="methodForm.settings.class_aggregation">
-                  <el-option :label="translate('Combined Cost')" value="sum_all"></el-option>
-                  <el-option :label="translate('Highest Cost')" value="highest_class"></el-option>
-                </el-select>
+                <fct-select
+                    v-model="methodForm.settings.class_aggregation"
+                    :options="[
+                      {label: translate('Combined Cost'), value: 'sum_all'},
+                      {label: translate('Highest Cost'), value: 'highest_class'},
+                    ]"
+                />
                 <div v-if="methodForm.settings.class_aggregation" class="form-help-text mt-1">
                   {{ classAggregationHelpText }}
                 </div>
               </el-form-item>
-            </el-col>
+            </div>
           </template>
-          <el-col :lg="24">
-<!--            add description input-->
+          <div class="fct-shipping-method-col">
             <el-form-item :label="translate('Description')">
-              <el-input
+              <fct-input
                   v-model="methodForm.meta.description" type="textarea" :rows="2"
-                        :placeholder="translate('Enter description')"></el-input>
+                        :placeholder="translate('Enter description')"/>
             </el-form-item>
-          </el-col>
-          <el-col :lg="24">
+          </div>
+          <div class="fct-shipping-method-col">
             <el-form-item :label="translate('Tracking URL Pattern')">
-              <el-input v-model="methodForm.meta.tracking_url_pattern" placeholder="https://"></el-input>
+              <fct-input v-model="methodForm.meta.tracking_url_pattern" placeholder="https://"/>
               <div class="form-help-text mt-1">
                 {{ translate('Ship_Tracking_Number') }}
               </div>
             </el-form-item>
-          </el-col>
-        </el-row>
+          </div>
+        </div>
 
       </el-form>
 
       <!-- Form content remains the same -->
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="showMethodModal = false">{{ translate('Cancel') }}</el-button>
-          <el-button v-if="methodForm.method_id" type="primary" @click="updateShippingMethod" :loading="savingMethod">
+          <fct-button @click="showMethodModal = false">{{ translate('Cancel') }}</fct-button>
+          <fct-button v-if="methodForm.method_id" type="primary" @click="updateShippingMethod" :loading="savingMethod">
             {{ translate('Update') }}
-          </el-button>
-          <el-button v-else type="primary" @click="saveShippingMethod" :loading="savingMethod">
+          </fct-button>
+          <fct-button v-else type="primary" @click="saveShippingMethod" :loading="savingMethod">
             {{ translate('Save') }}
-          </el-button>
+          </fct-button>
         </span>
       </template>
-    </el-drawer>
+    </fct-dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../tailwind.config.mjs";
 .fct-shipping-methods-wrap {
   .fct-card {
     &-header {

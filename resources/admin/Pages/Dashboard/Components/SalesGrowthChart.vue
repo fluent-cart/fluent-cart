@@ -360,7 +360,7 @@ onMounted(() => {
         </template>
       </Card.Header>
       <Card.Body class="p-0" >
-        <el-skeleton v-if="loading" animated :rows="5" class="p-4" />
+        <fct-skeleton v-if="loading" animated :rows="5" class="p-4" />
 
         <template v-else>
           <div

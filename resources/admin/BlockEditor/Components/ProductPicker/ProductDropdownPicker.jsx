@@ -115,6 +115,8 @@ const ProductDropdownPicker = ({
     onSelect,
     buttonLabel = null,
     changeLabel = null,
+    // One line for the canvas: thumbnail, this label, the product's name and a Change link.
+    compactLabel = null,
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -140,6 +142,28 @@ const ProductDropdownPicker = ({
     const productImage = selectedProduct?.detail?.featured_media?.url
         || selectedProduct?.thumbnail
         || placeholderImage;
+
+    if (compactLabel && selectedProduct?.post_title) {
+        return (
+            <div className="fct-product-picker-compact" ref={dropdownRef}>
+                <img className="fct-product-picker-compact-img" src={productImage} alt="" width={28} height={28}/>
+                <span className="fct-product-picker-compact-text">
+                    {compactLabel} <strong>{selectedProduct.post_title}</strong>
+                </span>
+                <Button
+                    variant="link"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    aria-expanded={isDropdownOpen}
+                    className="fct-product-picker-compact-change"
+                >
+                    {blocktranslate("Change")}
+                </Button>
+                {isDropdownOpen && (
+                    <ProductDropdownList onSelect={handleProductSelect} />
+                )}
+            </div>
+        );
+    }
 
     return (
         <div>

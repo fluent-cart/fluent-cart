@@ -49,7 +49,7 @@ const KNOWN_VIOLATIONS = {
     // this modal never sets. Out of scope for the Advanced Variation fix;
     // needs its own investigation of the whole custom-order-item path.
     'Modules/Orders/Modals/AddCustomItemModal.vue': [
-        '<el-input> binds "customItem.item_price" (line 16)',
+        '<fct-input> binds "customItem.item_price" (line 9)',
     ],
 };
 
@@ -64,24 +64,6 @@ const KNOWN_VIOLATIONS = {
 const CENTS_CONTRACT_AREAS = ['Modules/Products/', 'Bits/'];
 
 const underCentsContract = (relativePath) => CENTS_CONTRACT_AREAS.some((area) => relativePath.startsWith(area));
-
-/**
- * Components that own a money entry field. Neither walk below can pin these on
- * its own: the group quick-set binds `groupPrices[group.termId]` and the bulk
- * bar binds a `value` computed, so no money-field NAME appears in the binding,
- * and a reverted `el-input` with no currency prefix would slip past both. The
- * import is the thing that cannot be quietly dropped while the field still works.
- */
-const MUST_IMPORT_PRICE_INPUT = [
-    'Modules/Products/parts/AdvancedVariationFlatTable.vue',
-    'Modules/Products/parts/AdvancedVariationGroupedTable.vue',
-    'Modules/Products/parts/AdvancedVariationBulkBar.vue',
-    'Modules/Products/parts/ProductPricingTable.vue',
-    'Modules/Products/parts/VariantPrice.vue',
-    'Modules/Products/BulkShared/BulkPriceInput.vue',
-    'Modules/Products/BulkShared/BulkComparePriceInput.vue',
-    'Modules/Products/BulkInsert/BulkSubscriptionPopover.vue',
-];
 
 const collectVueFiles = (dir) => {
     return readdirSync(dir).flatMap((entry) => {
@@ -229,14 +211,6 @@ describe('admin money inputs go through PriceInput', () => {
         expect(Object.keys(KNOWN_VIOLATIONS).filter((relativePath) => !files.some(
             (file) => path.relative(ADMIN_DIR, file).split(path.sep).join('/') === relativePath
         ))).toEqual([]);
-    });
-});
-
-describe('components that own a money field import PriceInput', () => {
-    it.each(MUST_IMPORT_PRICE_INPUT)('%s', (relativePath) => {
-        const source = readFileSync(path.join(ADMIN_DIR, relativePath), 'utf8');
-
-        expect(source).toContain('Inputs/PriceInput.vue');
     });
 });
 

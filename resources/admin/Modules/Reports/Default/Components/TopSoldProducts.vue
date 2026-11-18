@@ -48,7 +48,7 @@ const formatDate = (date) => {
         linkButtonUrl: 'products',
       }"
     >
-    <el-skeleton v-if="loading" animated :rows="7" />
+    <fct-skeleton v-if="loading" animated :rows="7" />
 
     <template v-else>
 

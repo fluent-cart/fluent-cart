@@ -1,30 +1,32 @@
 .wp-fluent-media-modal{
     .upload-ui{
         .button{
-            @apply border-gray-outline border-[1.5px] border-dashed bg-white text-system-mid rounded-md hover:bg-gray-50 hover:text-system-dark transition-all duration-150 dark:bg-transparent dark:border-dark-400 dark:text-gray-50 dark:hover:border-dark-300 !important;
+            @apply border-gray-outline! border-[1.5px]! border-dashed! bg-white! text-system-mid! rounded-md! hover:bg-gray-50! hover:text-system-dark! transition-all! duration-150! dark:bg-transparent! dark:border-dark-400! dark:text-gray-50! dark:hover:border-dark-300!;
         }
     }
     .button,
     .button-primary{
-        @apply rounded-md bg-primary-500 border-primary-500 text-white hover:bg-primary-600 hover:border-primary-600 hover:text-white dark:bg-primary-50 dark:border-primary-50 dark:text-system-dark dark:hover:bg-primary-100 dark:hover:border-primary-100 dark:hover:text-system-dark !important;
+        @apply rounded-md! bg-primary-500! border-primary-500! text-white! hover:bg-primary-600! hover:border-primary-600! hover:text-white! dark:bg-primary-50! dark:border-primary-50! dark:text-system-dark! dark:hover:bg-primary-100! dark:hover:border-primary-100! dark:hover:text-system-dark!;
         &:focus {
-            @apply dark:outline-none dark:shadow-none dark:bg-primary-500 border-primary-500 text-white !important;
+            @apply dark:outline-hidden! dark:shadow-none! dark:bg-primary-500! border-primary-500! text-white!;
         }
     }
     .media-modal{
         &-close{
-            @apply w-8 h-8 rounded-full bg-gray-100 text-system-mid top-3.5 right-5 focus:shadow-none focus:border-transparent dark:bg-dark-500 dark:text-gray-300 !important;
+            @apply w-8! h-8! rounded-full! bg-gray-100! text-system-mid! top-3.5! right-5! focus:shadow-none! focus:border-transparent! dark:bg-dark-500! dark:text-gray-300!;
         }
         &-content{
-            @apply rounded dark:bg-dark-600 !important;
+            @apply rounded! dark:bg-dark-600!;
         }
         * {
             &::-webkit-scrollbar {
                 @apply w-2;
             }
             &::-webkit-scrollbar-thumb {
-                @apply rounded-full bg-gray-500 dark:bg-gray-300;
-
+                @apply rounded-full bg-gray-500;
+            }
+            .fluent_theme_dark &::-webkit-scrollbar-thumb {
+              @apply bg-gray-300;
             }
             &::-webkit-scrollbar-track {
                 @apply bg-transparent;
@@ -33,14 +35,14 @@
     }
     .media-frame-title {
         h1 {
-            @apply py-3 px-6 text-lg dark:text-gray-50 !important;
+            @apply py-3! px-6! text-lg! dark:text-gray-50!;
         }
     }
     .media-toolbar{
         @apply px-6;
     }
     .media-attachments-filter-heading {
-        @apply left-6 top-5 dark:text-gray-50 !important;
+        @apply left-6! top-5! dark:text-gray-50!;
     }
     .media-toolbar-secondary label {
         @apply dark:text-gray-50;
@@ -49,29 +51,32 @@
         @apply h-[40px];
     }
     .media-frame-content{
-        @apply top-[96px] border-gray-outline dark:bg-dark-600 dark:border-dark-500 !important;
+        @apply top-[96px]! border-gray-outline! dark:bg-dark-600! dark:border-dark-500!;
     }
     .media-router {
         @apply px-6;
         .media-menu-item{
-            @apply px-0 mr-5 pt-3 pb-4 text-[15px] text-system-mid focus:shadow-none focus:outline-none last:mr-0 dark:text-gray-300 !important;
+            @apply px-0! mr-5! pt-3! pb-4! text-[15px]! text-system-mid! focus:shadow-none! focus:outline-hidden! last:mr-0! dark:text-gray-300!;
             &::before{
-                @apply absolute rounded-tl-sm rounded-tr-sm -bottom-[0.5px] left-0 w-full h-[2.5px] scale-50 opacity-0 bg-primary-500 transition-all duration-200 !important;
+                @apply absolute! rounded-tl-sm! rounded-tr-sm! -bottom-[0.5px]! left-0! w-full! h-[2.5px]! scale-50! opacity-0! bg-primary-500! transition-all! duration-200!;
                 content: "";
             }
             &.active{
-                @apply ml-0 mt-0 mb-0 bg-transparent border-0 text-primary-500 dark:text-gray-300 !important;
+                @apply ml-0! mt-0! mb-0! bg-transparent! border-0! text-primary-500! dark:text-gray-300!;
                 &::before{
-                    @apply scale-100 opacity-100 dark:bg-gray-300 !important;
+                    @apply scale-100! opacity-100!;
+                }
+                .fluent_theme_dark &::before {
+                    @apply bg-gray-300!;
                 }
             }
         }
         .active{
-            @apply ml-0 mt-0 mb-0 bg-transparent border-0 text-white !important;
+            @apply ml-0! mt-0! mb-0! bg-transparent! border-0! text-white!;
         }
     }
     .media-frame select.attachment-filters{
-        @apply max-w-[100%] w-full min-h-[38px] py-2 pl-3 rounded bg-blend-difference mt-11 hover:text-dark-500 focus:border-primary-500 focus:text-system-mid dark:hover:text-gray-50 dark:focus:text-gray-50 !important;
+        @apply max-w-[100%]! w-full! min-h-[38px]! py-2! pl-3! rounded! bg-blend-difference! mt-11! hover:text-dark-500! focus:border-primary-500! focus:text-system-mid! dark:hover:text-gray-50! dark:focus:text-gray-50!;
         background-position: top 50% right 10px !important;
     }
     .media-frame {
@@ -89,7 +94,7 @@
         .attachments{
             @apply px-4.5;
             .attachment {
-                @apply bg-transparent outline-none;
+                @apply bg-transparent outline-hidden;
             }
         }
         &.has-load-more .attachments-wrapper{
@@ -100,23 +105,26 @@
         }
     }
     .attachment-preview{
-        @apply shadow-none bg-gray-50 rounded dark:bg-dark-600 !important;
+        @apply shadow-none! bg-gray-50! rounded! dark:bg-dark-600!;
     }
     .attachment {
         .thumbnail{
             @apply rounded;
             &:after{
-                @apply shadow-none border border-solid border-gray-outline rounded dark:border-dark-500 !important;
+                @apply shadow-none! border! border-solid! border-gray-outline! rounded!;
+            }
+            .fluent_theme_dark &:after {
+                @apply border-dark-500!;
             }
         }
         &.details {
             @apply shadow-none;
             .check{
-                @apply bg-dark-500 border-[1.5px] border-solid border-white shadow-none focus:shadow-none dark:border-dark-500 !important;
+                @apply bg-dark-500! border-[1.5px]! border-solid! border-white! shadow-none! focus:shadow-none! dark:border-dark-500!;
             }
         }
         .check{
-            @apply rounded-full shadow-none focus:shadow-none focus:bg-dark-600 !important;
+            @apply rounded-full! shadow-none! focus:shadow-none! focus:bg-dark-600!;
             .media-modal-icon{
                 @apply transition-all duration-300;
             }
@@ -125,14 +133,14 @@
     .attachment.details:focus, 
     .attachment:focus, 
     .selected.attachment:focus{
-        @apply focus:shadow-none focus:outline-none !important;
+        @apply focus:shadow-none! focus:outline-hidden!;
     }
     .selected{
         &.attachment {
-            @apply shadow-none !important;
+            @apply shadow-none!;
         }
         .thumbnail::after{
-            @apply border-[2px] border-dark-500 !important;
+            @apply [border-width:2px]! border-dark-500!;
         }
     }
     .media-frame-toolbar {
@@ -186,7 +194,10 @@
             @apply max-w-[100px] max-h-[100px];
         }
         .thumbnail-image:after{
-            @apply shadow-none border border-solid border-gray-outline rounded dark:border-dark-500;
+            @apply shadow-none border border-solid border-gray-outline rounded;
+        }
+        .fluent_theme_dark & .thumbnail-image:after {
+            @apply border-dark-500;
         }
     }
     .media-frame.hide-router .media-frame-content {
@@ -205,13 +216,13 @@
         @apply mt-1;
     }
     .copy-attachment-url{
-        @apply border-gray-outline text-system-mid bg-white focus:shadow-none focus:outline-none hover:bg-white hover:text-dark-500 focus:border-gray-outline focus:bg-white hover:border-gray-outline dark:bg-dark-500 dark:border-dark-400 dark:text-gray-50 dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:focus:bg-dark-500 dark:focus:border-dark-400 dark:hover:text-gray-50 dark:focus:text-gray-50 !important;
+        @apply border-gray-outline! text-system-mid! bg-white! focus:shadow-none! focus:outline-hidden! hover:bg-white! hover:text-dark-500! focus:border-gray-outline! focus:bg-white! hover:border-gray-outline! dark:bg-dark-500! dark:border-dark-400! dark:text-gray-50! dark:hover:bg-dark-500! dark:hover:border-dark-400! dark:focus:bg-dark-500! dark:focus:border-dark-400! dark:hover:text-gray-50! dark:focus:text-gray-50!;
     }
     .description a{
         @apply text-dark-500 dark:text-gray-200;
     }
     .image-editor .imgedit-menu .button{
-        @apply border-dark-100 text-dark-500 bg-white hover:bg-dark-50 hover:border-dark-200 focus:shadow-none focus:outline-none dark:bg-transparent dark:border-dark-400 dark:text-gray-50;
+        @apply border-dark-100 text-dark-500 bg-white hover:bg-dark-50 hover:border-dark-200 focus:shadow-none focus:outline-hidden dark:bg-transparent dark:border-dark-400 dark:text-gray-50;
     }
     .image-editor legend {
         @apply dark:text-gray-300;
@@ -248,9 +259,9 @@
     input[type=week], 
     select, 
     textarea {
-        @apply border-gray-outline focus:border-primary-500 focus:outline-none focus:shadow-none dark:text-gray-50 dark:bg-dark-500 dark:border-dark-400 dark:focus:border-dark-400 !important;
-        &::placeholder{
-            @apply dark:text-gray-200;
+        @apply border-gray-outline! focus:border-primary-500! focus:outline-hidden! focus:shadow-none! dark:text-gray-50! dark:bg-dark-500! dark:border-dark-400! dark:focus:border-dark-400!;
+        .fluent_theme_dark &::placeholder {
+            @apply text-gray-200;
         }
     }
     .media-menu{
@@ -273,7 +284,7 @@
         @apply min-h-[30px];
     }
     &.wp-core-ui.media-modal .image-editor .imgedit-help-toggle{
-        @apply text-dark-500 focus:shadow-none focus:border-transparent focus:outline-none text-base mt-0.5;
+        @apply text-dark-500 focus:shadow-none focus:border-transparent focus:outline-hidden text-base mt-0.5;
     }
     .button.disabled,
     .button-primary:focus,
@@ -281,7 +292,7 @@
     .button-primary[disabled],
     .button:disabled, 
     .button[disabled]{
-        @apply dark:bg-dark-400 dark:border-dark-500 dark:hover:text-gray-600 #{!important};
+        @apply dark:bg-dark-400! dark:border-dark-500! dark:hover:text-gray-600!;
         text-shadow: none;
     }
     .button{
@@ -299,8 +310,8 @@
                         @apply bg-transparent;
                         input {
                             @apply dark:bg-primary-500 rounded dark:text-gray-50;
-                            &::placeholder {
-                                @apply dark:text-gray-50;
+                            .fluent_theme_dark &::placeholder {
+                                @apply text-gray-50;
                             }
                         }
                         .components-input-control__backdrop {
@@ -308,7 +319,7 @@
                         }
                     }
                     .kb-pexels-search-send {
-                        @apply outline-none flex items-center gap-1 border-0 p-0 pl-3 pr-0.5 rounded cursor-pointer;
+                        @apply outline-hidden flex items-center gap-1 border-0 p-0 pl-3 pr-0.5 rounded cursor-pointer;
                     }
                 }
             }
@@ -321,8 +332,8 @@
                     @apply bg-transparent;
                     input {
                         @apply dark:bg-primary-500 dark:text-gray-50 rounded;
-                        &::placeholder {
-                            @apply dark:text-gray-50;
+                        .fluent_theme_dark &::placeholder {
+                            @apply text-gray-50;
                         }
                     }
                     .components-input-control__backdrop {
@@ -350,19 +361,22 @@
     .media-menu .active:hover {
         @apply dark:text-gray-50;
     }
-    .media-selection::after {
-        @apply dark:hidden;
+    .fluent_theme_dark & .media-selection::after {
+        @apply hidden;
     }
 }
 .media-sidebar:not(:has(.attachment-details))::before{
-    @apply absolute top-1/2 left-3 w-[90%] mx-auto leading-[22px] text-center text-sm text-system-mid dark:text-gray-300;
+    @apply absolute top-1/2 left-3 w-[90%] mx-auto leading-[22px] text-center text-sm text-system-mid;
     content: 'No media information available. Please select image.';
+}
+.fluent_theme_dark .media-sidebar:not(:has(.attachment-details))::before {
+	@apply text-gray-300;
 }
 
 body.version-7-0 .wp-fluent-media-modal,
 body.version-7-1 .wp-fluent-media-modal {
      select.attachment-filters {
-        @apply mt-1 py-0 min-h-[auto] border-gray-outline focus:shadow-none dark:bg-dark-400 dark:text-gray-50 dark:border-dark-400 !important
+        @apply mt-1! py-0! min-h-[auto]! border-gray-outline! focus:shadow-none! dark:bg-dark-400! dark:text-gray-50! dark:border-dark-400!
     }
     .attachments-browser .media-toolbar {
         @apply h-[56px];
@@ -374,6 +388,9 @@ body.version-7-1 .wp-fluent-media-modal {
         @apply mt-1 min-h-[auto] rounded border-gray-outline focus:shadow-none dark:border-dark-400 dark:bg-dark-400 dark:text-gray-50;
     }
     .wp-core-ui .attachment:not(:has(.filename))::after {
-        @apply shadow-none border border-solid border-gray-outline rounded-bl rounded-br dark:border-dark-400 !important;
+        @apply shadow-none! border! border-solid! border-gray-outline! rounded-bl! rounded-br!;
+    }
+    .fluent_theme_dark & .wp-core-ui .attachment:not(:has(.filename))::after {
+        @apply border-dark-400!;
     }
 }

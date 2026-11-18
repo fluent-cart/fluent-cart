@@ -2,9 +2,9 @@
 <div class="input-popover" :class="fieldType == 'textarea' ? 'input-popover-textarea' : ''">
     <div class="flex-1">
         <div v-if="fieldType == 'textarea'" class="input-textarea-value">
-            <el-input :placeholder="placeholder" type="textarea" v-model="model" />
+            <fct-input :placeholder="placeholder" type="textarea" v-model="model" />
         </div>
-        <el-input v-else :placeholder="placeholder" v-model="model" :type="fieldType"/>
+        <fct-input v-else :placeholder="placeholder" v-model="model" :type="fieldType"/>
     </div>
     <Popover class="popover-wrapper" :class="{'popover-wrapper-plaintext': false}"
         :data="data[0]" @command="insertShortcode" btnType="info" :plain="true">

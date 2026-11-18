@@ -7,6 +7,11 @@ const formatHeader = (header) => {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+const csvCell = (value) => {
+    const text = String(value);
+    return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+}
+
 const convertToCSV = (data) => {
     const keys = Object.keys(data[0]);
     const headers = keys.map(formatHeader);
@@ -92,7 +97,7 @@ export const exportCSVWithColumns = (data, columns, filename = "export.csv") => 
                 throw new Error("No data to export");
             }
 
-            const headers = columns.map(col => col.header);
+            const headers = columns.map(col => csvCell(col.header));
             const csvRows = [headers.join(",")];
 
             data.forEach((row) => {
@@ -112,13 +117,7 @@ export const exportCSVWithColumns = (data, columns, filename = "export.csv") => 
                         val = JSON.stringify(val);
                     }
 
-                    val = String(val);
-
-                    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-                        val = '"' + val.replace(/"/g, '""') + '"';
-                    }
-
-                    return val;
+                    return csvCell(val);
                 });
 
                 csvRows.push(values.join(","));

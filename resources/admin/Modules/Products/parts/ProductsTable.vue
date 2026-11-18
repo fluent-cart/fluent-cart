@@ -14,6 +14,7 @@ import {formatNumber} from "@/Bits/productService";
 import CustomColumnRenderer from "@/Bits/Components/CustomColumnRenderer.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import {ref} from "vue";
+import {useRouter} from "vue-router";
 import StarRating from "@/Bits/Components/StarRating.vue";
 
 // A stored column preference may still name 'reviews'; the column is not
@@ -29,23 +30,30 @@ const props = defineProps({
 
 const emit = defineEmits(['delete', 'duplicate', 'selectionChange']);
 
+const router = useRouter();
 const elTableRef = ref(null);
 
-const handleProductCommand = (command) => {
-  if (command.action === 'delete') {
+const productActions = (product) => [
+  ...(product.ID ? [{command: 'edit', label: translate('Edit'), icon: 'Edit', href: router.resolve({name: 'product_edit', params: {product_id: product.ID}}).href}] : []),
+  {command: 'duplicate', label: translate('Duplicate'), icon: 'Duplicate'},
+  {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+];
+
+const handleProductCommand = (command, product) => {
+  if (command === 'delete') {
     /* translators: %s - product title */
-    $confirm(translate("Are you sure you want to delete this product : %s ?", command.product.post_title), translate("Confirm Delete!"),
+    $confirm(translate("Are you sure you want to delete this product : %s ?", product.post_title), translate("Confirm Delete!"),
         {
           confirmButtonText: translate("Yes, Delete!"),
           cancelButtonText: translate("Cancel"),
           type: 'warning'
         }
     ).then(() => {
-      emit('delete', command.product.ID);
+      emit('delete', product.ID);
     }).catch((errors) => {
     });
-  } else if (command.action === 'duplicate') {
-    emit('duplicate', command.product);
+  } else if (command === 'duplicate') {
+    emit('duplicate', product);
   }
 }
 
@@ -98,77 +106,38 @@ defineExpose({
 </script>
 
 <template>
-  <el-table
+  <fct-table
       ref="elTableRef"
       :data="productTable.getTableData()"
       class="w-full compact-table"
       @selection-change="handleSelectionChange"
   >
-    <el-table-column type="selection" width="45"/>
+    <fct-table-column type="selection" width="45"/>
 
-    <el-table-column :label="translate('Products')" width="380">
+    <fct-table-column :label="translate('Products')" width="380">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
                    :to="{ name: 'product_edit', params: { product_id: scope.row.ID } }">
           <ProductInfo :product="scope.row" class="fct-product-table-product-info"/>
         </RouteCell>
         <div class="fct-product-action show-on-mobile absolute right-0 top-1">
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
               class="fct-more-option-wrap"
-              popper-class="fct-dropdown"
-              @command="handleProductCommand"
+              :items="productActions(scope.row)"
+              @command="(command) => handleProductCommand(command, scope.row)"
               placement="bottom-end"
           >
                   <span class="more-btn pr-3">
                     <DynamicIcon name="More"/>
                   </span>
-
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item class="item-link" v-if="scope.row.ID">
-                  <router-link
-                      :to="{
-                        name: 'product_edit',
-                        params: {
-                          product_id: scope.row.ID
-                        }
-                      }"
-                  >
-                    <DynamicIcon name="Edit"/>
-                    {{ translate('Edit') }}
-                  </router-link>
-                </el-dropdown-item>
-
-                <el-dropdown-item
-                    :command="{
-                      action: 'duplicate',
-                      product: scope.row
-                    }"
-                >
-                  <DynamicIcon name="Duplicate"/>
-                  {{ translate('Duplicate') }}
-                </el-dropdown-item>
-
-                <el-dropdown-item
-                    :command="{
-                      action: 'delete',
-                      product: scope.row
-                    }"
-                    class="item-destructive"
-                >
-                  <DynamicIcon name="Delete"/>
-                  {{ translate('Delete') }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </fct-dropdown>
         </div>
 
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('product_type')" :label="translate('Type')"
+    <fct-table-column v-if="productTable.isColumnVisible('product_type')" :label="translate('Type')"
                      width="170">
       <template #default="scope">
 
@@ -186,9 +155,9 @@ defineExpose({
         </RouteCell>
 
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('variation_type')" :label="translate('Variation')"
+    <fct-table-column v-if="productTable.isColumnVisible('variation_type')" :label="translate('Variation')"
                      width="150">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
@@ -202,9 +171,9 @@ defineExpose({
           </span>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('item_price')" :label="translate('Price')"
+    <fct-table-column v-if="productTable.isColumnVisible('item_price')" :label="translate('Price')"
                      width="130">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
@@ -215,9 +184,9 @@ defineExpose({
           <span v-else>{{ translate('Set Price') }}</span>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if=" productTable.isColumnVisible('stock_availability')" :label="translate('Stock')"
+    <fct-table-column v-if=" productTable.isColumnVisible('stock_availability')" :label="translate('Stock')"
                      width="100">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
@@ -233,9 +202,9 @@ defineExpose({
           <span v-else>{{ '' }}</span>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('post_status')" :label="translate('Status')"
+    <fct-table-column v-if="productTable.isColumnVisible('post_status')" :label="translate('Status')"
                      width="130">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
@@ -244,11 +213,9 @@ defineExpose({
 
             <Badge :key="scope.row.ID"
                    :status="scope.row.post_status === 'future' ? 'scheduled' : scope.row.post_status"/>
-            <el-tooltip
+            <fct-tooltip
                 v-if="scope.row.post_status === 'future'"
-                effect="dark"
-                placement="top"
-                popper-class="fct-label-hint-popover fct-tooltip"
+                popper-class="fct-label-hint-popover"
                 :show-after="400"
                 :hide-after="0"
             >
@@ -259,13 +226,13 @@ defineExpose({
                 }}
               </template>
               <DynamicIcon name="InformationFill" class="w-4 h-4 flex-none"/>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="productTable.isColumnVisible('post_date')" :label="translate('Date')" width="100">
+    <fct-table-column v-if="productTable.isColumnVisible('post_date')" :label="translate('Date')" width="100">
       <template #default="scope">
         <RouteCell class="hover:no-underline"
                    :to="{ name: 'product_edit', params: { product_id: scope.row.ID } }">
@@ -273,9 +240,9 @@ defineExpose({
         </RouteCell>
       </template>
 
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-if="reviewsModuleActive && productTable.isColumnVisible('reviews')" :label="translate('Reviews')"
+    <fct-table-column v-if="reviewsModuleActive && productTable.isColumnVisible('reviews')" :label="translate('Reviews')"
                      width="130">
       <template #default="scope">
         <RouteCell
@@ -289,9 +256,9 @@ defineExpose({
           </span>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column v-for="column of productTable.getCustomColumns()" :label="column.label">
+    <fct-table-column v-for="column of productTable.getCustomColumns()" :label="column.label">
       <template #default="scope">
         <div v-if="column.render_template">
           <component
@@ -300,7 +267,7 @@ defineExpose({
               :data="{
                 column,
                 product: scope.row,
-                index: scope.$index,
+                index: scope.index,
               }"
           />
         </div>
@@ -314,69 +281,30 @@ defineExpose({
         </div>
       </template>
 
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column :label="translate('Actions')" width="90" align="right">
+    <fct-table-column :label="translate('Actions')" width="90" align="right">
       <template #default="scope">
         <span class="fct-product-id hidden" title="Product ID">ID: {{ scope.row.ID }}</span>
-        <el-dropdown
-            trigger="click"
-            class="fct-more-option-wrap"
-            popper-class="fct-dropdown"
-            @command="handleProductCommand"
-            placement="bottom-end"
-        >
+        <fct-dropdown
+              trigger="click"
+              class="fct-more-option-wrap"
+              :items="productActions(scope.row)"
+              @command="(command) => handleProductCommand(command, scope.row)"
+              placement="bottom-end"
+          >
         <span class="more-btn pr-3">
           <DynamicIcon name="More"/>
         </span>
-
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item class="item-link" v-if="scope.row.ID">
-                <router-link
-                    :to="{
-                      name: 'product_edit',
-                      params: {
-                        product_id: scope.row.ID
-                      }
-                    }"
-                >
-                  <DynamicIcon name="Edit"/>
-                  {{ translate('Edit') }}
-                </router-link>
-              </el-dropdown-item>
-
-              <el-dropdown-item
-                  :command="{
-                    action: 'duplicate',
-                    product: scope.row
-                  }"
-              >
-                <DynamicIcon name="Duplicate"/>
-                {{ translate('Duplicate') }}
-              </el-dropdown-item>
-
-              <el-dropdown-item
-                  :command="{
-                    action: 'delete',
-                    product: scope.row
-                  }"
-                  class="item-destructive"
-              >
-                <DynamicIcon name="Delete"/>
-                {{ translate('Delete') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+          </fct-dropdown>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
     <template #empty>
       <Empty icon="Empty/ListView" :has-dark="true"
              :text="productTable.emptyMessage"/>
     </template>
-  </el-table>
+  </fct-table>
 </template>
 
 <style scoped>

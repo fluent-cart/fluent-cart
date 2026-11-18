@@ -1,3 +1,5 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
 .fct-write-a-review-button-block-editor {
     // Shrink to the button. Without this the block's div fills the column and
     // the selection outline claims width the button does not occupy.

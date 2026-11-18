@@ -125,17 +125,18 @@ onMounted(() => {
       <div class="fct-inline-select-wrap">
         <label>{{ translate('Tax Exemption') }}:</label>
 
-        <el-select
+        <fct-select
             v-model="variant.other_info.tax_exempt"
             size="small"
             class="fct-inline-select"
             placement="bottom"
             popper-class="fct-group-select-popper"
-        >
-          <el-option value="__unchanged__" :label="translate('Unchanged')" />
-          <el-option value="no" :label="translate('Charge tax')" />
-          <el-option value="yes" :label="translate('Tax exempt')" />
-        </el-select>
+            :options="[
+              {value: '__unchanged__', label: translate('Unchanged')},
+              {value: 'no', label: translate('Charge tax')},
+              {value: 'yes', label: translate('Tax exempt')},
+            ]"
+        />
       </div>
 
       <div
@@ -178,13 +179,13 @@ onMounted(() => {
 
     <!-- Normal single-variant mode: checkbox -->
     <div v-else class="fct-tax-class-control">
-      <el-checkbox
+      <fct-choice
           class="fct-tax-class-control__checkbox"
           v-model="chargeTax"
           @change="toggleTaxExempt"
       >
         {{ translate('Charge tax on this variation') }}
-      </el-checkbox>
+      </fct-choice>
       <template v-if="chargeTax && taxClasses.length >= 1">
         <div class="fct-tax-class-control__class-row text-sm text-system-mid dark:text-gray-300">
           <span>

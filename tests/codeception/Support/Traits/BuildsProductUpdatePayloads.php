@@ -82,6 +82,18 @@ trait BuildsProductUpdatePayloads
         ], $overrides);
     }
 
+    protected function buildBulkSkuTransferPayload(Product $product, string $sku): array
+    {
+        $payload = $this->buildUpdatePayload($product, [], [['sku' => '', 'item_price' => 1500]]);
+        $copy = $payload['variants'][0];
+        unset($copy['id'], $copy['rowId']);
+        $copy['sku'] = $sku;
+        $copy['variation_title'] = 'New recipient';
+        $payload['variants'][] = $copy;
+
+        return $payload;
+    }
+
     private function centsToDecimal(int $cents): float
     {
         return round($cents / 100, 2);

@@ -1,6 +1,8 @@
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin, popoverStub} from './support/fct-stubs.js';
+import {fctComponents} from '@/Bits/Components/Fct';
 
 /**
  * How the Create shipment drawer reads: the order and its destination on lines of
@@ -92,6 +94,7 @@ const mountForm = async () => {
         .component('ElOption', stub)
         .component('ElPopconfirm', stub)
         .component('ElDrawer', DrawerStub)
+        .use(fctPlugin({FctDatePicker: DatePickerStub, FctSelect: stub, FctDialog: DrawerStub, FctPopover: popoverStub({confirm: stub, popover: fctComponents.FctPopover})}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await flush();

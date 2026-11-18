@@ -18,9 +18,9 @@ use Tests\Support\Factory\SubscriptionFactory;
 use FluentCart\Framework\Http\Request\Request as FluentRequest;
 
 /**
- * Tier B: every order converted to the base currency at its own frozen rate;
- * orders without a trustworthy rate are left out and counted.
- * dev-docs/multi-currency/plan.md §2.4, §2.5.5, §13. Base USD.
+ * "All currencies" mode: every order converted to the base currency at its own
+ * frozen rate; orders without a trustworthy rate are left out and counted.
+ * dev-docs/multi-currency/07-reports.md. Base USD.
  */
 class ConvertedReportsTest extends DatabaseTestCase
 {
@@ -115,8 +115,9 @@ class ConvertedReportsTest extends DatabaseTestCase
 
     /**
      * The Subscriptions overview converts every subscription at its own frozen
-     * rate (plan §13, mc-12): "All currencies" counts each new subscription
-     * with a trustworthy rate and leaves the rateless one out.
+     * rate (dev-docs/multi-currency/07-reports.md, mc-12): "All currencies"
+     * counts each new subscription with a trustworthy rate and leaves the
+     * rateless one out.
      */
     public function test_subscription_signups_convert_in_the_all_mode(): void
     {

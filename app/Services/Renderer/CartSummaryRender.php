@@ -155,7 +155,8 @@ class CartSummaryRender
             'cart' => $this->cart,
         ]);
         ?>
-        <div class="fct_line_items">
+        <?php // A long list scrolls; checkout JS adds tabindex only while it does. ?>
+        <div class="fct_line_items" role="group" aria-label="<?php esc_attr_e('Cart items', 'fluent-cart'); ?>">
             <?php foreach ($items as $item) {
                 (new CartItemRenderer($item, $this->cart))->render();
             }

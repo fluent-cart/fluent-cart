@@ -1,5 +1,5 @@
 <script setup>
-import {defineModel, ref} from "vue";
+import {ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import CreatePageButton from "@/Bits/Components/Buttons/CreatePageButton.vue";
 
@@ -43,11 +43,9 @@ const handleFocus = (val) => {
     <div class="fct-form-group-inner">
       <div class="fct-input-group w-full" :class="{'focused': inputFocus}">
         <div class="input-prepend">
-          <el-select filterable v-model="model" @focus="_=>handleFocus(true)" @blur="_=>handleFocus(false)"
-                     :placeholder="translate('Select')" clearable>
-            <el-option v-for="(page, index) of pages" :key="index" :label="page.label"
-                       :value="Number(page.value)"/>
-          </el-select>
+          <fct-select filterable v-model="model" @focus="_=>handleFocus(true)" @blur="_=>handleFocus(false)"
+                      :placeholder="translate('Select')" clearable
+                      :options="pages.map(page => ({label: page.label, value: Number(page.value)}))"/>
         </div>
         <div class="input-append">
           <CreatePageButton :title="title"

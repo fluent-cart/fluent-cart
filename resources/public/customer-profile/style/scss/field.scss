@@ -1,0 +1,25 @@
+// fct-* inputs with a label (resources/admin/Bits/Components/Fct/Field.vue) in the portal, in the portal's palette.
+.fct-form-field {
+  @apply block mb-[18px];
+
+  &__label {
+    @apply flex items-center min-h-[22px] mb-2 text-sm font-medium leading-[22px] text-[var(--fct-customer-dashboard-title-color,#2F3448)];
+  }
+
+  .form-note p {
+    @apply my-1 text-xs leading-[18px] text-[var(--fct-customer-dashboard-text-color,#565865)];
+  }
+}
+
+.fct-label-hint {
+  @apply inline-flex items-center gap-0.5;
+
+  .icon svg {
+    @apply w-4.5 h-4.5 text-[var(--fct-customer-dashboard-text-color,#565865)];
+  }
+
+  &.is-required .label:after {
+    @apply text-red-400 ml-1;
+    content: "*";
+  }
+}

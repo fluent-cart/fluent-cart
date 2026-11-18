@@ -249,7 +249,7 @@ class ModalCheckoutRenderer
                     // add-on positioned itself around the previous spot. Mutually
                     // exclusive with the call site in renderCheckoutBilling().
                     if ($this->beforePaymentMethodsPlacement() === 'details') {
-                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart]);
+                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart, 'context' => 'modal']);
                     }
                 ?>
 
@@ -633,7 +633,7 @@ class ModalCheckoutRenderer
                      * payment methods.
                      */
                     if ($this->beforePaymentMethodsPlacement() === 'payment') {
-                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart]);
+                        do_action('fluent_cart/before_payment_methods', ['cart' => $this->cart, 'context' => 'modal']);
                     }
                 ?>
 
@@ -645,7 +645,7 @@ class ModalCheckoutRenderer
                     // The modal never fired this at all, so add-ons rendering
                     // below the methods (the save-my-card consent box) were
                     // simply absent from quick checkout.
-                    do_action('fluent_cart/after_payment_methods', ['cart' => $this->cart]);
+                    do_action('fluent_cart/after_payment_methods', ['cart' => $this->cart, 'context' => 'modal']);
                 ?>
 
                 <div class="fct-modal-checkout-btn-wrap">
@@ -739,7 +739,8 @@ class ModalCheckoutRenderer
             <div class="fct_payment_method_contents">
                 <?php foreach ($activePaymentMethods as $method) {
                     $this->renderPaymentMethodContent($method, [
-                            'style' => $checkoutMethodStyle
+                            'style' => $checkoutMethodStyle,
+                            'selected_id' => $selectedPaymentMethod
                     ]);
                 } ?>
             </div>
@@ -818,8 +819,11 @@ class ModalCheckoutRenderer
         $paymentMethodClass = '';
         $paymentMethodClass = apply_filters('fluent_cart/payment_method_list_class', $paymentMethodClass, $pmContext);
 
+        $skeleton = $method->getCheckoutSkeleton();
+        // Rendered open, so a fragment refresh does not collapse it until JS runs.
+        $activeClass = $route === Arr::get($config, 'selected_id', '') ? ' active' : '';
         ?>
-        <div class="fluent-cart-checkout_embed_payment_wrapper">
+        <div class="fluent-cart-checkout_embed_payment_wrapper<?php echo esc_attr(($skeleton ? ' fct-has-skeleton' : '') . $activeClass); ?>">
             <?php if ($method->getMeta('instructions')): ?>
                 <div class="fct-modal-payment-method-instructions">
                     <?php echo wp_kses_post($method->getMeta('instructions')); ?>
@@ -837,6 +841,9 @@ class ModalCheckoutRenderer
                         ]
                 ); ?>
             </div>
+            <?php if ($skeleton): ?>
+                <div class="fct-payment-skeleton" aria-hidden="true"><?php echo wp_kses_post($skeleton); ?></div>
+            <?php endif; ?>
         </div>
 
         <?php

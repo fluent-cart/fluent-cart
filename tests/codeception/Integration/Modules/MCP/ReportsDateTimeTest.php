@@ -100,6 +100,17 @@ class ReportsDateTimeTest extends DatabaseTestCase
         $this->assertSame(2, (int) $res['data']['rows'][0]['order_count']);
     }
 
+    public function test_a_reversed_range_is_an_error_not_a_report_of_zeros(): void
+    {
+        $res = ReportTools::getSalesReport(['start_date' => '2026-05-10', 'end_date' => '2026-05-01']);
+        $this->assertInstanceOf(\WP_Error::class, $res);
+        $this->assertSame('invalid_param', $res->get_error_code());
+
+        $res = ReportTools::queryOrders(['date_from' => '2026-05-10T00:00:00', 'date_to' => '2026-05-01T00:00:00']);
+        $this->assertInstanceOf(\WP_Error::class, $res);
+        $this->assertSame(['date_from', 'date_to'], $res->get_error_data()['fields']);
+    }
+
     public function test_since_launch_anchors_to_first_paid_order(): void
     {
         $this->seedDatedPaidOrders($this->cid);

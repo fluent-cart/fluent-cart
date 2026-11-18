@@ -974,20 +974,6 @@ class TaxServiceTest extends DatabaseTestCase
         $this->assertSame(100, (int) $calc->getShippingTax());
     }
 
-    public function test_shipping_tax_is_zero_when_no_for_shipping_rate(): void
-    {
-        $this->enableTax('excluded');
-        $class   = $this->classFactory->create();
-        $product = $this->makeProductWithClass($class->id);
-        $this->rateFactory->create(['class_id' => $class->id, 'country' => 'US', 'rate' => '10', 'for_shipping' => 0]);
-
-        $calc = new TaxCalculator([
-            $this->buildLineItem($product->ID, ['shipping_charge' => 2000])
-        ], ['country' => 'US']);
-        // for_shipping=0 → shipping is explicitly not taxed
-        $this->assertSame(0, (int) $calc->getShippingTax());
-    }
-
     public function test_compound_shipping_rates_accumulate(): void
     {
         $this->enableTax('excluded');

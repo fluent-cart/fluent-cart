@@ -33,7 +33,7 @@
               <template v-if="orderCurrencies.length" #action>
                 <div class="fct-order-currency-picker">
                   <span class="fct-order-currency-picker-label">{{ translate('Currency') }}</span>
-                  <el-select
+                  <fct-select
                       :model-value="pickedCurrency"
                       @update:model-value="requestCurrency"
                       :aria-label="translate('Order currency')"
@@ -43,13 +43,9 @@
                       @visible-change="(open) => open || (currencyQuery = '')"
                       class="fct-order-currency-select"
                       popper-class="fct-order-currency-dropdown"
+                      :options="filteredOrderCurrencies.map((currency) => ({label: currency.sign + ' ' + currency.code, value: currency.code, currency}))"
                   >
-                    <el-option
-                        v-for="currency in filteredOrderCurrencies"
-                        :key="currency.code"
-                        :label="currency.sign + ' ' + currency.code"
-                        :value="currency.code"
-                    >
+                    <template #option="{option: {currency}}">
                       <span class="fct-order-currency-option">
                         <span class="fct-order-currency-option-sign">{{ currency.sign }}</span>
                         <span class="fct-order-currency-option-code">{{ currency.code }}</span>
@@ -58,8 +54,8 @@
                           {{ currency.is_base ? translate('Store currency') : translate('1 %1$s = %2$s %3$s', baseOrderCurrency, trimRate(currency.rate), currency.code) }}
                         </span>
                       </span>
-                    </el-option>
-                  </el-select>
+                    </template>
+                  </fct-select>
                 </div>
               </template>
               <!--                  <template v-slot:action>-->
@@ -80,7 +76,7 @@
             </Card.Header>
             <Card.Body class="px-0 pb-0">
               <div class="fct-browse-product-form-group pb-5 mx-5">
-                <el-input
+                <fct-input
                     :placeholder="$t('Search products...')"
                     @keyup="fetchBySearch()"
                     v-model="searchQuery"
@@ -88,16 +84,16 @@
                   <template #prefix>
                     <DynamicIcon name="Search"/>
                   </template>
-                </el-input>
+                </fct-input>
 
-                <el-button
+                <fct-button
                     @click="handleBrowseProduct"
                     type="info"
                     soft
-                    class="el-button--x-small"
+                    size="x-small"
                 >
                   {{ $t("Browse") }}
-                </el-button>
+                </fct-button>
               </div>
               <!-- .fct-browse-product-form-group -->
 
@@ -105,17 +101,17 @@
                   class="fct-table-wrap fct-table-transparent-header"
                   v-if="order.order_items.length > 0"
               >
-                <el-table
+                <fct-table
                     :data="order.order_items"
                     class="fct-table w-full"
                     row-key="id"
                     default-expand-all
-                    v-loading="calculating"
-                    :element-loading-text="
+                    :loading="calculating"
+                    :loading-text="
                     $t('Recalculating with product latest info...')
                   "
                 >
-                  <el-table-column
+                  <fct-table-column
                       #default="scope"
                       min-width="450"
                       :label="$t('Product')"
@@ -193,9 +189,9 @@
                         </div>
                       </div>
                     </div>
-                  </el-table-column>
+                  </fct-table-column>
 
-                  <el-table-column width="120" :label="$t('Quantity')">
+                  <fct-table-column width="120" :label="$t('Quantity')">
                     <template #default="scope">
                       <div class="fct-input-number-wrap">
                         <NumberInput
@@ -207,9 +203,9 @@
                         <!--                            <span>{{ $t('Max Stock')}} : {{ ((scope?.row?.manage_stock || scope?.row?.variants?.product_detail?.manage_stock) == 1) ? scope?.row?.available || scope.row?.variants?.available : 'Unlimited'}}</span>-->
                       </div>
                     </template>
-                  </el-table-column>
+                  </fct-table-column>
 
-                  <el-table-column
+                  <fct-table-column
                       :width="120"
                       :label="$t('Total')"
                   >
@@ -244,16 +240,17 @@
                           }}</span>
                       </div>
                     </template>
-                  </el-table-column>
+                  </fct-table-column>
 
-                  <el-table-column
+                  <fct-table-column
                       v-if="hasSubscriptionItem"
                       width="160"
                       :label="$t('Custom Price')"
                   >
                     <template #default="scope">
                       <div v-if="scope.row.payment_type === 'subscription'">
-                        <el-input-number
+                        <fct-input
+                            type="number"
                             v-model="scope.row.custom_price"
                             :min="0"
                             :precision="2"
@@ -268,29 +265,29 @@
                           <template v-if="activeOrderCurrency" #prefix>
                             <span class="fct-custom-price-sign">{{ activeOrderCurrency.sign }}</span>
                           </template>
-                        </el-input-number>
+                        </fct-input>
                       </div>
                     </template>
-                  </el-table-column>
+                  </fct-table-column>
 
-                  <el-table-column :width="50">
+                  <fct-table-column :width="50">
                     <template #default="scope">
                       <IconButton
                           bg="transparent"
                           border="transparent"
                           tag="a"
                           size="x-small"
-                          @click.prevent="deleteProduct(scope.$index, scope.row)"
+                          @click.prevent="deleteProduct(scope.index, scope.row)"
                       >
                         <DynamicIcon name="Delete"/>
                       </IconButton>
                     </template>
-                  </el-table-column>
+                  </fct-table-column>
 
                   <!--                      <template #empty>-->
                   <!--                        <Empty icon="OrderIcon" :text="$t('Add a Item to Calculate Total and View Payment Options.')"/>-->
                   <!--                      </template>-->
-                </el-table>
+                </fct-table>
               </div>
             </Card.Body>
           </Card.Container>
@@ -338,17 +335,45 @@
                     :hasCoupon="hasCoupon"
                     @update:custom-discount="updateCustomDiscount"
                 />
-                <template v-if="false">
-                  <Shipping
-                      v-if="order.order_items.length && (order.order_items[0].payment_type !== 'subscription' || order.order_items[0].other_info?.payment_type !== 'subscription')"
-                      :order="order"
-                      :shouldEnableEditing="isEditingItem"
-                      @update:shipping="updateShipping"
-                      :shippingMethodsProps="shippingMethods"
-                      :otherShippingMethodsProps="otherShippingMethods"
-                      @getShippingMethods="fetchShippingMethods"
-                  />
-                </template>
+                <tr v-if="hasPhysicalItems">
+                  <td><label for="manual-order-shipping-method">{{ translate('Shipping method') }}</label></td>
+                  <td colspan="2">
+                    <fct-select
+                        id="manual-order-shipping-method"
+                        :model-value="shippingSettings.id || 0"
+                        @update:model-value="updateShippingMethod"
+                        :aria-label="translate('Shipping method')"
+                        :disabled="loading"
+                        :loading="loadingShippingMethods"
+                        :options="[
+                          {label: translate('Custom shipping'), value: 0},
+                          ...(shippingMethods.length ? [{label: translate('Shipping Methods'), options: shippingMethods.map(method => ({label: method.title, value: Number(method.id)}))}] : []),
+                          ...(otherShippingMethods.length ? [{label: translate('Other Shipping Methods'), options: otherShippingMethods.map(method => ({label: method.title, value: Number(method.id)}))}] : [])
+                        ]"
+                    />
+                  </td>
+                </tr>
+                <tr v-if="hasPhysicalItems">
+                  <td><label for="manual-order-shipping">{{ translate('Shipping charge') }}</label></td>
+                  <td>{{ order.currency }}</td>
+                  <td>
+                    <fct-input
+                        id="manual-order-shipping"
+                        :model-value="shippingAmount"
+                        @update:model-value="updateShippingCharge"
+                        :aria-label="translate('Shipping charge')"
+                        :aria-invalid="shippingInvalid"
+                        :disabled="loading || !!shippingSettings.id"
+                        type="number"
+                        :controls="false"
+                        min="0"
+                        step="0.01"
+                    />
+                    <span v-if="shippingInvalid" role="alert">
+                      {{ translate('Enter a valid shipping charge of zero or more.') }}
+                    </span>
+                  </td>
+                </tr>
                 <tr v-if="selectedCustomerCountry && order.order_items.length > 0">
                   <td colspan="3" style="text-align:end; font-style:italic; opacity:0.65; font-size:0.85em;">
                     {{ $t('Tax will be calculated on save') }}
@@ -387,10 +412,10 @@
             <OrderCustomerInformation
                 :order="order"
                 @onAddressSelected="(address)=>{
-                  fetchShippingMethods();
                   if(address === null){
                     selectedCustomerCountry = '';
                     selectedCustomerAddress = null;
+                    fetchShippingMethods();
                     return;
                   }
                   selectedCustomerCountry = address.country;
@@ -400,6 +425,7 @@
                   } else {
                     order.billing_address_id = address.id;
                   }
+                  fetchShippingMethods();
                 }"
                 @onAddressRemove="() => {
                     selectedCustomerCountry = '';
@@ -428,7 +454,7 @@
           @update:searchQuery="updateSearchQuery"
       />
 
-      <el-dialog
+      <fct-dialog
           :append-to-body="true"
           v-model="createProductModal"
           :title="$t('Add New Product')"
@@ -440,7 +466,7 @@
               @process_custom="processCustom"
           />
         </div>
-      </el-dialog>
+      </fct-dialog>
 
     </div>
     <!-- .single-page-body -->
@@ -494,9 +520,7 @@ import Coupon from "./Coupon.vue";
 import CustomDiscount from "./CustomDiscount.vue";
 import OrderCustomerInformation from "./OrderCustomerInformation.vue";
 import OrderCurrencySummary from "./OrderCurrencySummary.vue";
-import Shipping from "./Shipping.vue";
 import Confirmation from "@/utils/Confirmation";
-import Arr from "@/utils/support/Arr";
 import Asset from "@/utils/support/Asset";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
@@ -514,8 +538,7 @@ export default {
     Coupon,
     CustomDiscount,
     OrderCustomerInformation,
-    OrderCurrencySummary,
-    Shipping
+    OrderCurrencySummary
   },
   data() {
     return {
@@ -532,6 +555,10 @@ export default {
       cartItems: {},
       discount: {},
       shippingSettings: {},
+      shippingAmount: 0,
+      shippingInvalid: false,
+      loadingShippingMethods: false,
+      shippingMethodsRequest: 0,
       customItem: {
         title: "",
         price: 0,
@@ -541,6 +568,7 @@ export default {
       timeout: "",
       widgets: [],
       order: {
+        config: {shipping_source: 'manual'},
         currency: '',
         quote_revision: '',
         applied_coupon: [],
@@ -584,7 +612,17 @@ export default {
       otherShippingMethods: []
     };
   },
+  beforeUnmount() {
+    clearTimeout(this.repriceTimer);
+    this.repriceRequest++;
+    this.shippingMethodsRequest++;
+  },
   watch: {
+    hasPhysicalItems(hasPhysical) {
+      if (!hasPhysical) {
+        this.updateShippingMethod(0);
+      }
+    },
     // "order.order_items"
     order: {
       handler() {
@@ -598,9 +636,13 @@ export default {
     },
     orderLineQuantities() {
       this.scheduleReprice();
+      this.fetchShippingMethods();
     },
   },
   computed: {
+    hasPhysicalItems() {
+      return this.order.order_items.some(item => item.fulfillment_type === 'physical');
+    },
     baseOrderCurrency() {
       const base = this.orderCurrencies.find(currency => currency.is_base);
       return base ? base.code : '';
@@ -722,6 +764,7 @@ export default {
         applied_coupon: appliedCoupon,
         discount: this.discount,
         shipping_total: this.order.shipping_total,
+        shipping_method_id: this.shippingSettings.id || 0,
       })
           .then((response) => {
             if (request !== this.repriceRequest) {
@@ -740,6 +783,8 @@ export default {
               item.manual_discount = priced.manual_discount;
               item.line_total = priced.subtotal - priced.discount_total;
               item.other_info = priced.other_info;
+              item.fulfillment_type = priced.fulfillment_type;
+              item.shipping_charge = priced.shipping_charge;
             });
             this.order.currency = response.currency;
             const couponRef = this.$refs.reApplyCouponRef;
@@ -754,6 +799,10 @@ export default {
             this.order.applied_coupon = response.applied_coupons;
             this.pendingCoupons = null;
             this.order.shipping_total = response.shipping_total;
+            this.shippingSettings = response.shipping || {};
+            if (!this.shippingInvalid) {
+              this.shippingAmount = response.shipping_total / 100;
+            }
             this.order.subtotal = response.subtotal;
             this.order.coupon_discount_total = response.coupon_discount_total;
             this.order.manual_discount_total = response.manual_discount_total;
@@ -797,7 +846,7 @@ export default {
       this.calculateLine();
     },
     async update() {
-      if (this.calculating) {
+      if (this.loading || this.calculating || this.shippingInvalid) {
         return;
       }
       if (this.priceFailed) {
@@ -822,7 +871,7 @@ export default {
       Rest.post("orders", {
         ...orderData,
         discount: this.discount,
-        shipping: this.shippingSettings,
+        shipping_method_id: this.shippingSettings.id || 0,
         labels: this.selectedLabels,
         currency: this.orderCurrency || undefined,
         user_tz: dayjs.tz.guess(),
@@ -901,14 +950,24 @@ export default {
       this.changes_made++;
       this.scheduleReprice();
     },
-    updateShipping(order_items, shipping_total) {
-      // this.shippingSettings = shipping;
-
-      this.order?.order_items.forEach((item, index) => {
-        item['shipping_charge'] = Arr.get(order_items, `${item.id}.shipping_charge`);
-      });
-      this.order.shipping_total = shipping_total;
-      this.changes_made++;
+    updateShippingCharge(value) {
+      this.shippingAmount = value;
+      const amount = Number(value);
+      this.shippingInvalid = value === '' || !Number.isFinite(amount) || amount < 0 || amount > 90000000000000;
+      this.repriceRequest++;
+      clearTimeout(this.repriceTimer);
+      if (this.shippingInvalid) {
+        this.calculating = false;
+        return;
+      }
+      this.order.shipping_total = Math.round(amount * 100);
+      this.order.order_items.forEach(item => { item.shipping_charge = 0; });
+      this.scheduleReprice();
+    },
+    updateShippingMethod(methodId) {
+      this.shippingSettings = methodId ? {id: Number(methodId)} : {};
+      this.order.config.shipping_source = methodId ? 'zone' : 'manual';
+      this.updateShippingCharge('0');
     },
     isDisabled(item) {
       return item?.payment_type === 'subscription';
@@ -936,6 +995,8 @@ export default {
       this.calculateLine();
     },
     fetchShippingMethods() {
+      const request = ++this.shippingMethodsRequest;
+      this.loadingShippingMethods = true;
       const filteredOrderItems = [];
       if (this.order.order_items.length > 0) {
         this.order.order_items.forEach((item) => {
@@ -950,12 +1011,22 @@ export default {
 
       Rest.get('orders/shipping_methods', {
         country_code: this.selectedCustomerCountry,
+        state: this.selectedCustomerAddress?.state || '',
         order_items: filteredOrderItems
       }).then(response => {
+        if (request !== this.shippingMethodsRequest) {
+          return;
+        }
         this.shippingMethods = response.shipping_methods;
         this.otherShippingMethods = response.other_shipping_methods;
+      }).catch(errors => {
+        if (request === this.shippingMethodsRequest) {
+          Notify.error(errors.data?.message);
+        }
       }).finally(() => {
-
+        if (request === this.shippingMethodsRequest) {
+          this.loadingShippingMethods = false;
+        }
       });
     },
   },

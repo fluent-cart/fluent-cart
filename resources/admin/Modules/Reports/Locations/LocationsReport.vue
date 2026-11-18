@@ -336,7 +336,7 @@ onUnmounted(() => {
 <template>
     <UserCan :permission="'reports/view'">
         <div class="fct-revenue-report-page">
-            <PageHeading :title="translate('Locations')"></PageHeading>
+            <PageHeading><template #title><h2 class="page-title">{{ translate('Locations') }}</h2></template></PageHeading>
 
             <SummaryLoader v-if="loading && !summary.orders && summary.orders !== 0" :loading="true" :count="5"/>
             <div v-else class="fct-report-order-summary" :class="'summary-col-' + cards.length">
@@ -357,11 +357,11 @@ onUnmounted(() => {
                         </div>
                         <div class="title">
                             {{ item.title }}
-                            <el-tooltip :content="item.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+                            <fct-tooltip :content="item.info" placement="top" :trigger="['hover', 'focus']">
                                 <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
                                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true"/>
                                 </button>
-                            </el-tooltip>
+                            </fct-tooltip>
                         </div>
                     </div>
                 </div>
@@ -372,9 +372,9 @@ onUnmounted(() => {
                 <Card.Body>
                     <div class="grid gap-6 md:grid-cols-2">
                         <div v-for="side in [{key: 'up', title: translate('Growing')}, {key: 'down', title: translate('Declining')}]" :key="side.key">
-                            <h4 class="text-sm font-medium m-0 mb-2 text-system-dark dark:text-gray-200">{{ side.title }}</h4>
+                            <h3 class="text-sm font-medium m-0 mb-2 text-system-dark dark:text-gray-200">{{ side.title }}</h3>
                             <p v-if="!(movers[side.key] || []).length" class="text-sm text-gray-500 m-0">{{ translate('None') }}</p>
-                            <div v-for="move in movers[side.key]" :key="move.key" class="flex justify-between text-sm py-1.5 border-b border-gray-100 dark:border-dark-400">
+                            <div v-for="move in movers[side.key]" :key="move.key" class="flex justify-between text-sm py-1.5 [border-bottom-width:1px] border-gray-100 dark:border-dark-400">
                                 <span class="text-system-mid dark:text-gray-300">{{ moverLabel(move.key) }}</span>
                                 <span :class="move.change > 0 ? 'text-green-600' : 'text-red-600'">{{ signedMoney(move.change) }}</span>
                             </div>
@@ -416,53 +416,52 @@ onUnmounted(() => {
                                 </el-breadcrumb>
                             </div>
 
-                            <div class="fct-card-header-actions">
-                                <el-select v-model="addressType" size="small" style="width: 190px" :aria-label="translate('Address')" @change="reload">
+                            <div class="fct-card-header-actions gap-2">
+                                <fct-select v-model="addressType" style="width: 190px" :aria-label="translate('Address')" @change="reload"
+                                    :options="[{label: translate('Billing'), value: 'billing'}, {label: translate('Shipping'), value: 'shipping'}]">
                                     <template #prefix>{{ translate('Address') }}</template>
-                                    <el-option value="billing" :label="translate('Billing')" />
-                                    <el-option value="shipping" :label="translate('Shipping')" />
-                                </el-select>
+                                </fct-select>
                                 <div class="fct-btn-group sm">
-                                    <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+                                    <fct-tooltip :content="translate('Export CSV')" placement="top">
                                         <IconButton tag="button" :disabled="loading || !report.rows.length" :aria-label="translate('Export CSV')" @click="exportCsv">
                                             <DynamicIcon name="Download" />
                                         </IconButton>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="fct-card-body">
-                        <el-skeleton class="px-5 pb-5" v-if="loading" :rows="6" animated></el-skeleton>
+                        <fct-skeleton class="px-5 pb-5" v-if="loading" :rows="6" animated></fct-skeleton>
 
                         <template v-else>
                             <div v-if="level === 'country' && report.rows.length" ref="mapRef" class="px-4 pt-4" style="height: 380px"></div>
 
                             <el-alert v-if="outsizedNote" class="mx-4 mt-4" style="width: auto" type="warning" :closable="false" show-icon :title="outsizedNote" />
 
-                            <el-table :data="report.rows" class="w-full" show-summary :summary-method="summaryRow"
+                            <fct-table :data="report.rows" class="w-full" show-summary :summary-method="summaryRow"
                                 :row-class-name="({row}) => (!isFull || level === 'city' || (row.unknown && level === 'country') ? '' : 'cursor-pointer')" @row-click="drillDown">
-                                <el-table-column :label="level === 'country' ? translate('Country') : (level === 'state' ? translate('State') : translate('City'))" min-width="180" fixed>
+                                <fct-table-column :label="level === 'country' ? translate('Country') : (level === 'state' ? translate('State') : translate('City'))" min-width="180" fixed>
                                     <template #default="scope">
                                         <span class="font-medium">{{ label(scope.row) }}</span>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column v-for="column in visibleColumns" :key="column.prop" :prop="column.prop"
+                                <fct-table-column v-for="column in visibleColumns" :key="column.prop" :prop="column.prop"
                                     :min-width="column.info ? 160 : 130" sortable :sort-method="byNumber(column.prop)">
                                     <template #header>
                                         {{ column.label }}
-                                        <el-tooltip v-if="column.info" :content="column.info" placement="top" popper-class="fct-tooltip" effect="dark">
+                                        <fct-tooltip v-if="column.info" :content="column.info" placement="top">
                                             <DynamicIcon class="text-gray-500 w-4 h-4 cursor-help inline-block align-middle" name="InformationFill" />
-                                        </el-tooltip>
+                                        </fct-tooltip>
                                     </template>
                                     <template #default="scope">{{ cell(column, scope.row) }}</template>
-                                </el-table-column>
+                                </fct-table-column>
 
                                 <template #empty>
                                     <Empty icon="Empty/Order" has-dark :text="translate('No orders in this period')" />
                                 </template>
-                            </el-table>
+                            </fct-table>
 
                             <p class="px-4 py-3 text-xs text-gray-500 m-0">
                                 {{ translate('LocationRpt_Order_Placed') }}

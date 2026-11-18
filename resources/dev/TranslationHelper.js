@@ -192,7 +192,9 @@ function extractTranslations(dir, translationRegex, excludeDirs, excludeFiles, c
     const contexts = {};
 
     function scanDirectory(directory) {
-        fs.readdirSync(directory).forEach(file => {
+        // A file path scans just that file
+        const files = fs.statSync(directory).isDirectory() ? fs.readdirSync(directory) : [''];
+        files.forEach(file => {
             const fullPath = path.join(directory, file);
 
 

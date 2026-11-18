@@ -126,10 +126,92 @@ class ShopAppRendererPaginationTotalTest extends WPTestCase
         $html = $this->renderPager($renderer);
 
         $this->assertStringContainsString('fct-shop-paginator-pager', $html);
+        preg_match_all('/data-page="(\d+)"/', $html, $pages);
         $this->assertSame(
             42,
-            substr_count($html, 'pager-number'),
-            '412 items at 10 per page must render ceil(412/10) = 42 numbered pages'
+            max(array_map('intval', $pages[1])),
+            '412 items at 10 per page must link the last page as ceil(412/10) = 42'
+        );
+    }
+
+    /**
+     * @dataProvider shortPageRanges
+     */
+    public function test_a_long_catalogue_lists_a_short_range_of_pages(int $currentPage, int $total, array $expectedPages): void
+    {
+        $paginator = $this->makeLengthAwarePaginator($total, 16, $currentPage);
+
+        $renderer = new ShopAppRenderer([
+            'products' => $paginator,
+            'total'    => $paginator->total(),
+        ], ['per_page' => 16]);
+
+        preg_match_all('/data-page="(\d+)"/', $this->renderPager($renderer), $pages);
+
+        $this->assertSame(
+            $expectedPages,
+            array_map('intval', $pages[1]),
+            'the pager lists prev, first, a jump, two pages each side, a jump, last and next, like the JS pager'
+        );
+    }
+
+    public function shortPageRanges(): array
+    {
+        return [
+            'first of 118 pages'  => [1, 1878, [1, 2, 3, 6, 118, 2]],
+            'middle of 118 pages' => [60, 1878, [59, 1, 55, 58, 59, 60, 61, 62, 65, 118, 61]],
+            'last of 118 pages'   => [118, 1878, [117, 1, 113, 116, 117, 118]],
+            'middle of 5 pages'   => [3, 80, [2, 1, 2, 3, 4, 5, 4]],
+        ];
+    }
+
+    public function test_the_pager_and_summary_follow_the_page_size_the_products_used(): void
+    {
+        // A ?per_page=20 link on a block set to 10: the products come 20 to a page.
+        $paginator = $this->makeLengthAwarePaginator(412, 20, 1);
+
+        $renderer = new ShopAppRenderer([
+            'products' => $paginator,
+            'total'    => $paginator->total(),
+        ], ['per_page' => 10]);
+
+        preg_match_all('/data-page="(\d+)"/', $this->renderPager($renderer), $pages);
+
+        $this->assertSame(21, max(array_map('intval', $pages[1])), 'the last page is ceil(412/20) = 21, not ceil(412/10) = 42');
+        $this->assertStringContainsString(
+            'Showing 1 to 20 of 412 Items',
+            $this->visibleSummarySentence($this->renderResultWrapper($renderer)),
+            'the summary counts the 20 products shown'
+        );
+    }
+
+    public function test_only_the_current_page_is_marked_current_and_arrows_are_labelled(): void
+    {
+        $paginator = $this->makeLengthAwarePaginator(1878, 16, 60);
+
+        $renderer = new ShopAppRenderer([
+            'products' => $paginator,
+            'total'    => $paginator->total(),
+        ], ['per_page' => 16]);
+
+        $html = $this->renderPager($renderer);
+        preg_match_all('/<button\b[^>]*>/', $html, $buttons);
+        $current = array_values(preg_grep('/aria-current="page"/', $buttons[0]));
+        $arrowLabels = array_map(function ($tag) {
+            return preg_match('/aria-label="([^"]*)"/', $tag, $m) ? $m[1] : '';
+        }, array_values(preg_grep('/class="[^"]*\barrow\b/', $buttons[0])));
+
+        $this->assertCount(1, $current, 'exactly one button is the current page');
+        $this->assertStringContainsString('data-page="60"', $current[0], 'the current page is page 60');
+        $this->assertSame(
+            ['Previous page', 'Go to page 55', 'Go to page 65', 'Next page'],
+            $arrowLabels,
+            'every arrow button has an accessible name'
+        );
+        $this->assertMatchesRegularExpression(
+            '/<ul[^>]*data-label-previous="Previous page"[^>]*data-label-next="Next page"[^>]*data-label-go-to="Go to page %d"/',
+            $html,
+            'the JS pager reads the same labels from the list'
         );
     }
 

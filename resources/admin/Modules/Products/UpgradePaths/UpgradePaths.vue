@@ -6,8 +6,8 @@
         <CardBody class="px-0 pb-0">
 
           <UpgradePathsLoader v-if="loading" />
-          <el-table class="hide-on-mobile" v-if="!loading" :data="upgradePaths">
-            <el-table-column :label="translate('From Plan')" prop="object_id" :width="300">
+          <fct-table class="hide-on-mobile" v-if="!loading" :data="upgradePaths">
+            <fct-table-column :label="translate('From Plan')" prop="object_id" :width="300">
               <template #default="scope">
                 <div class="grid gap-1">
                   <div class="text-system-dark dark:text-gray-50">
@@ -19,9 +19,9 @@
                   </div>
                 </div>
               </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('To Plan')" :width="200">
+            <fct-table-column :label="translate('To Plan')" :width="200">
               <template #default="scope">
                 <div class="flex gap-1 flex-wrap">
                   <template v-for="id in Arr.get(scope.row, 'meta_value.to_variants',[])" :key="id">
@@ -29,26 +29,26 @@
                   </template>
                 </div>
               </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('Discount Amount')" :width="110">
+            <fct-table-column :label="translate('Discount Amount')" :width="110">
               <template #default="scope">
               <span v-if="scope.row.meta_value.discount_amount > 0">
                 {{ Arr.get(scope.row, 'meta_value.discount_amount', '0') }}
               </span>
                 <span v-else>--</span>
               </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('Is Prorate')" :width="100">
+            <fct-table-column :label="translate('Is Prorate')" :width="100">
               <template #default="scope">
                 {{
                   Arr.get(scope.row, 'meta_value.is_prorate', '0') === '1' ? 'Yes' : 'No'
                 }}
               </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :width="100">
+            <fct-table-column :width="100">
               <template #default="scope">
                 <div class="fct-btn-group sm">
                   <EditModal
@@ -69,13 +69,13 @@
                   </IconButton>
                 </div>
               </template>
-            </el-table-column>
+            </fct-table-column>
 
             <template #empty>
               {{ translate('Product_Control_Available') }}
             </template>
 
-          </el-table>
+          </fct-table>
 
           <!-- mobile view -->
           <div v-if="!loading" class="fct-upgrade-paths-mobile">
@@ -161,14 +161,14 @@
         </CardBody>
 
         <CardFooter v-if="!loading">
-          <el-button
+          <fct-button
               text
               v-if="upgradePathOptions.length"
               @click="() => addModalRef?.openModal()"
           >
             <DynamicIcon name="Plus"/>
             {{ translate('Add Path') }}
-          </el-button>
+          </fct-button>
 
           <span v-else>
           {{ translate('No more upgrade paths available') }}
@@ -229,6 +229,9 @@ import UpgradePathsLoader from "@/Modules/Products/UpgradePaths/UpgradePathsLoad
 import ProFeatureNotice from "@/Bits/Components/ProFeatureNotice.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Empty from "@/Bits/Components/Table/Empty.vue";
+
+// Two roots (page + modal): ProductRoute's :taxonomies has nowhere to fall through
+defineOptions({ inheritAttrs: false });
 
 // Props
 const props = defineProps({

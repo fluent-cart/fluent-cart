@@ -10,7 +10,7 @@
             @apply mt-0 mb-5 text-sm text-system-mid dark:text-gray-300;
         }
         &-link{
-            @apply text-dark-500 no-underline block focus:shadow-none focus:outline-none focus:text-dark-500 dark:text-gray-50;
+            @apply text-dark-500 no-underline block focus:shadow-none focus:outline-hidden focus:text-dark-500 dark:text-gray-50;
             .icon{
                 @apply inline-flex ml-1;
             }
@@ -40,7 +40,7 @@
             @apply mt-1;
         }
         .el-select .el-select-tags-wrapper.has-prefix{
-            @apply ml-[6px] #{!important};
+            @apply ml-[6px]!;
         }
         &-input-group{
             @apply mt-4;
@@ -61,9 +61,11 @@
 /*==== dark popover =====*/
 .el-popover.el-popper,
 .el-popper.is-light,
-.el-popper.is-light .el-popper__arrow::before,
 .el-dropdown-menu {
     @apply dark:bg-dark-600 dark:border-dark-500 dark:text-gray-300;
+}
+.fluent_theme_dark .el-popper.is-light .el-popper__arrow::before {
+    @apply bg-dark-600 border-dark-500 text-gray-300;
 }
 .el-popover.el-popper{
     @apply rounded;
@@ -198,7 +200,7 @@
     &-textarea{
         @apply flex-col-reverse text-right gap-0;
         .el-button{
-            @apply relative min-h-[32px] top-auto border border-b-0 right-auto rounded-tl rounded-bl-none rounded-br-none;
+            @apply relative min-h-[32px] top-auto [border-width:1px] border-b-0 right-auto rounded-tl rounded-bl-none rounded-br-none;
         }
         .el-textarea__inner{
             @apply rounded-tr-none;
@@ -233,17 +235,23 @@
             @apply visible;
         }
         &::-webkit-scrollbar-thumb {
-            @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+            @apply bg-gray-200 rounded-[6px] invisible;
+        }
+        .fluent_theme_dark &::-webkit-scrollbar-thumb {
+            @apply bg-dark-400;
         }
         &::-webkit-scrollbar-thumb:hover {
-            @apply bg-gray-200 dark:bg-dark-500;
+            @apply bg-gray-200;
+        }
+        .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+            @apply bg-dark-500;
         }
         &::-webkit-scrollbar {
             @apply h-1 w-1;
         }
     }
     &.is-empty-customer{
-        @apply block #{!important};
+        @apply block!;
         .fct-create-customer-button-wrap{
             @apply mb-2.5;
         }
@@ -255,10 +263,10 @@
 
 .el-popper {
     &.fct-tooltip{
-        @apply max-w-[240px] w-auto h-auto bg-gray-25 border-gray-100 text-system-dark dark:bg-primary-500 dark:border-primary-400 dark:text-gray-50 #{!important};
+        @apply max-w-[240px]! w-auto! h-auto! bg-gray-25! border-gray-100! text-system-dark! dark:bg-primary-500! dark:border-primary-400! dark:text-gray-50!;
         &.fct-label-hint-popover a,
         a {
-            @apply text-primary-500 dark:text-gray-50 #{!important};
+            @apply text-primary-500! dark:text-gray-50!;
         }
         &,
         * {
@@ -267,7 +275,10 @@
         }
         .el-popper__arrow {
             &:before {
-                @apply bg-gray-25 border-gray-100 dark:bg-primary-500 border-l-0 border-t-0 dark:border-primary-400 #{!important};
+                @apply bg-gray-25! border-gray-100! border-l-0! border-t-0!;
+            }
+            .fluent_theme_dark &:before {
+                @apply bg-primary-500! border-primary-400!;
             }
         }
     }
@@ -279,7 +290,7 @@
         }
     }
     &.fct-delete-confirm-popover {
-        @apply z-[99999] #{!important};
+        @apply z-[99999]!;
     }
 }
 .el-popper.fct-tooltip-long{
@@ -287,7 +298,7 @@
 }
 
 .el-popper.fct-schedule-tooltip {
-    @apply max-w-[320px] #{!important};
+    @apply max-w-[320px]!;
 
     .fct-schedule-tooltip__title {
         @apply text-xs font-medium mb-1.5;
@@ -332,6 +343,6 @@
 }
 .el-select__popper.fct-multi-select-filter {
     .el-select-dropdown {
-        @apply min-w-[170px] max-w-[170px] !important;
+        @apply min-w-[170px]! max-w-[170px]!;
     }
 }

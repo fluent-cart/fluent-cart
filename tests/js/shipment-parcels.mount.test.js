@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin} from './support/fct-stubs.js';
 
 /**
  * A multi-parcel label purchase stores every parcel in meta.parcels. The
@@ -43,6 +44,7 @@ const mountRow = async (shipment) => {
         .use(ElementPlus)
         .component('ElDropdown', stub)
         .component('ElPopover', stub)
+        .use(fctPlugin({FctDropdown: stub, FctPopover: stub}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await nextTick();

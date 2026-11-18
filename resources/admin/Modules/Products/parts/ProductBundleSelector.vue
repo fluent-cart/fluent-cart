@@ -65,8 +65,8 @@ const getBundleInfo = () => {
 
         <Card.Body class="px-0 pb-0">
           <div class="fct-product-inventory-inner-wrap hide-on-mobile">
-            <el-table :data="editableProductVariations" v-if="!loading">
-              <el-table-column :label="translate('Title')" v-if="product.detail.variation_type !== 'simple'"
+            <fct-table :data="editableProductVariations" v-if="!loading">
+              <fct-table-column :label="translate('Title')" v-if="product.detail.variation_type !== 'simple'"
                                width="140">
                 <template #default="scope">
                   <div class="space-x-5 rtl:space-x-reverse">
@@ -78,9 +78,9 @@ const getBundleInfo = () => {
                   </span>
                   </div>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column :label="translate('Bundle Items')" width="140">
+              <fct-table-column :label="translate('Bundle Items')" width="140">
                 <template #default="scope">
 
 
@@ -97,9 +97,9 @@ const getBundleInfo = () => {
                   />
                 </template>
 
-              </el-table-column>
+              </fct-table-column>
 
-            </el-table>
+            </fct-table>
           </div>
 
 

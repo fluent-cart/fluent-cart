@@ -1,9 +1,8 @@
 <template>
-  <el-drawer
+  <fct-dialog
+    drawer
     v-model="drawerVisible"
     :title="isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class')"
-    :aria-label="isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class')"
-    width="500px"
     append-to-body
     :close-on-click-modal="true"
     class="fct-shipping-class-drawer"
@@ -14,21 +13,21 @@
         <template #label>
           <LabelHint :title="translate('Class Name')" :content="translate('Ship_Give_Shipping')" placement="bottom"/>
         </template>
-        <el-input v-model="form.name" :placeholder="translate('Enter class name')"></el-input>
+        <fct-input v-model="form.name" :placeholder="translate('Enter class name')"/>
       </el-form-item>
 
       <el-form-item prop="description">
         <template #label>
           <LabelHint :title="translate('Description')" :content="translate('Optional description of this shipping class for internal reference.')" placement="bottom"/>
         </template>
-        <el-input v-model="form.description" type="textarea" :rows="2" :placeholder="translate('Enter description (optional)')"></el-input>
+        <fct-input v-model="form.description" type="textarea" :rows="2" :placeholder="translate('Enter description (optional)')"/>
       </el-form-item>
 
       <el-form-item prop="cost">
         <template #label>
           <LabelHint :title="translate('Cost')" :content="translate('Ship_Enter_Shipping')"/>
         </template>
-        <el-input-number v-model="form.cost" :precision="2" :min="0" :step="1"></el-input-number>
+        <fct-input type="number" v-model="form.cost" :precision="2" :min="0" :step="1"/>
       </el-form-item>
 
       <el-form-item prop="type">
@@ -36,28 +35,32 @@
           <LabelHint :title="translate('Cost Type')" :content="translate('How this cost should be applied to the shipping rate')"/>
         </template>
 
-        <el-select v-model="form.type" style="width: 100%">
-          <el-option :label="translate('Fixed Amount')" value="fixed"></el-option>
-          <el-option :label="translate('Percentage')" value="percentage"></el-option>
-        </el-select>
+        <fct-select
+            v-model="form.type"
+            style="width: 100%"
+            :options="[
+              {label: translate('Fixed Amount'), value: 'fixed'},
+              {label: translate('Percentage'), value: 'percentage'},
+            ]"
+        />
       </el-form-item>
 
       <el-form-item prop="per_item">
-        <el-checkbox v-model="form.per_item" true-label="1" false-label="0">
+        <fct-choice v-model="form.per_item" true-value="1" false-value="0">
           <LabelHint :title="translate('Apply to quantity')" :content="translate('Ship_Check_Box')"/>
-        </el-checkbox>
+        </fct-choice>
       </el-form-item>
     </el-form>
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="closeDrawer">{{ translate('Cancel') }}</el-button>
-        <el-button type="primary" @click="saveClass" :loading="saving">
+        <fct-button @click="closeDrawer">{{ translate('Cancel') }}</fct-button>
+        <fct-button type="primary" @click="saveClass" :loading="saving">
           {{ isEdit ? translate('Update') : translate('Save') }}
-        </el-button>
+        </fct-button>
       </span>
     </template>
-  </el-drawer>
+  </fct-dialog>
 </template>
 
 <script setup>

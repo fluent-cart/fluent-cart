@@ -5,7 +5,7 @@
     }
     &.el-alert--info {
         a:not(.fct-text-link) {
-            @apply text-blue-500 underline focus:underline focus:outline-none focus:shadow-none dark:text-white !important;
+            @apply text-blue-500! underline! focus:underline! focus:outline-hidden! focus:shadow-none! dark:text-white!;
         }
         &.is-light {
             @apply dark:bg-dark-500;

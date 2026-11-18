@@ -2,31 +2,27 @@
   <div class="fct-compare-to-filter">
     <div class="fct-applied-filter-label">
       {{translate('Compare to')}}
-      <el-tooltip :content="translate('Applies to the main chart and summary of each report.')" placement="top" popper-class="fct-tooltip" effect="dark">
+      <fct-tooltip :content="translate('Applies to the main chart and summary of each report.')" placement="top">
         <DynamicIcon class="w-3.5 h-3.5 cursor-help" name="InformationFill"/>
-      </el-tooltip>
+      </fct-tooltip>
     </div>
     <div class="fct-applied-filter-actions">
       <div class="fct-compare-to-select">
-        <el-select
+        <fct-select
             v-model="compareType"
             popper-class="fct-dropdown-compact fct-compare-to-dropdown"
             :disabled="!hasPro"
+            :options="compareOptions"
         >
-          <el-option
-              v-for="option in compareOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-          >
+          <template #option="{option}">
             <span class="fct-compare-to-option-label">{{ option.label }}</span>
             <span v-if="optionRangeText[option.value]" class="fct-compare-to-option-range">{{ optionRangeText[option.value] }}</span>
-          </el-option>
-        </el-select>
+          </template>
+        </fct-select>
       </div>
 
       <div v-if="compareType === 'custom'" class="fct-compare-to-date">
-        <el-date-picker
+        <fct-date-picker
             v-model="compareDate"
             type="date"
             size="small"

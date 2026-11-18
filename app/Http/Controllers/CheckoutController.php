@@ -71,7 +71,22 @@ class CheckoutController extends Controller
 
     public function getOrderInfo(Request $request)
     {
-        $paymentManager = GatewayManager::getInstance()->get($request->getSafe('method', 'sanitize_text_field'));
+        $method = (string) $request->getSafe('method', 'sanitize_text_field');
+
+        if ($method === '') {
+            return $this->sendError([
+                'message' => __('The payment method is required.', 'fluent-cart')
+            ], 422);
+        }
+
+        $paymentManager = GatewayManager::getInstance()->get($method);
+
+        if (!$paymentManager) {
+            return $this->sendError([
+                'message' => __('The selected payment method is not available.', 'fluent-cart')
+            ], 422);
+        }
+
         return $paymentManager->getOrderInfo($request->all());
     }
 }

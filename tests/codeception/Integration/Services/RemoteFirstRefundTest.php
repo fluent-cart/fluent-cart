@@ -11,6 +11,7 @@ use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Modules\StockManagement\StockManagement;
 use FluentCart\App\Services\Payments\Refund;
 use Tests\Support\DatabaseTestCase;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Doubles\FakeRefundGateway;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -409,21 +410,25 @@ class RemoteFirstRefundTest extends DatabaseTestCase
         $txn = $this->paidCharge();
         list($item, $intent) = $this->oneUnitRefundIntent($txn);
         $calls = 0;
-        $filter = $this->failOrderItemUpdates(function () use (&$calls) {
-            if (++$calls === 1) {
-                return 'SELECT * FROM fct_missing_table_for_test';
+        $countCalls = function ($query) use (&$calls) {
+            if (preg_match('/^update `[^`]*fct_order_items`/i', $query)) {
+                $calls++;
             }
-            return null;
-        });
+            return $query;
+        };
+        add_filter('query', $countCalls, 9);
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_items`/i', 1);
 
         try {
             $result = (new Refund())->processRefund($txn, 3000, [], $intent);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
+            remove_filter('query', $countCalls, 9);
         }
 
         $this->assertIsArray($result);
         $this->assertFalse($result['needs_resync']);
+        $this->assertSame(1, $filter->hits());
         $this->assertGreaterThanOrEqual(2, $calls);
         $this->assertSame(1, (int) ($item->fresh()->line_meta['refunded_quantity'] ?? 0));
         $this->assertCount(1, $this->refundRows($txn->order_id));
@@ -434,14 +439,12 @@ class RemoteFirstRefundTest extends DatabaseTestCase
     {
         $txn = $this->paidCharge();
         list(, $intent) = $this->oneUnitRefundIntent($txn);
-        $filter = $this->failOrderItemUpdates(function () {
-            return 'SELECT * FROM fct_missing_table_for_test';
-        });
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_items`/i');
 
         try {
             $result = (new Refund())->processRefund($txn, 3000, [], $intent);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertIsArray($result);
@@ -455,9 +458,13 @@ class RemoteFirstRefundTest extends DatabaseTestCase
     {
         $txn = $this->paidCharge();
         list(, $intent) = $this->oneUnitRefundIntent($txn);
-        $filter = $this->failOrderItemUpdates(function () {
-            throw new \TypeError('Argument must be of type array');
-        });
+        $filter = function ($query) {
+            if (preg_match('/^update `[^`]*fct_order_items`/i', $query)) {
+                throw new \TypeError('Argument must be of type array');
+            }
+            return $query;
+        };
+        add_filter('query', $filter);
 
         try {
             $result = (new Refund())->processRefund($txn, 3000, [], $intent);
@@ -495,32 +502,15 @@ class RemoteFirstRefundTest extends DatabaseTestCase
         ]];
     }
 
-    /**
-     * @param callable $replace Returns the query to run instead, or null to run the update.
-     */
-    private function failOrderItemUpdates(callable $replace): callable
-    {
-        $filter = function ($query) use ($replace) {
-            if (preg_match('/^update `[^`]*fct_order_items`/i', $query)) {
-                $replacement = $replace();
-                return $replacement === null ? $query : $replacement;
-            }
-            return $query;
-        };
-        add_filter('query', $filter);
-
-        return $filter;
-    }
-
     public function test_unrecordable_gateway_refund_is_an_error_not_a_success(): void
     {
         $txn = $this->paidCharge();
-        $filter = $this->failRefundInserts();
+        $filter = FailingQueries::matching('/^insert into `[^`]*fct_order_transactions`/i');
 
         try {
             $result = (new Refund())->processRefund($txn, 3000);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertInstanceOf(\WP_Error::class, $result);
@@ -540,12 +530,12 @@ class RemoteFirstRefundTest extends DatabaseTestCase
     public function test_unrecordable_forced_local_refund_logs_no_local_refund(): void
     {
         $txn = $this->paidCharge();
-        $filter = $this->failRefundInserts();
+        $filter = FailingQueries::matching('/^insert into `[^`]*fct_order_transactions`/i');
 
         try {
             $result = (new Refund())->processRefund($txn, 3000, ['force_local' => 'true']);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertInstanceOf(\WP_Error::class, $result);
@@ -559,18 +549,12 @@ class RemoteFirstRefundTest extends DatabaseTestCase
     public function test_failed_parent_update_leaves_no_orphan_refund_row(): void
     {
         $txn = $this->paidCharge();
-        $filter = function ($query) {
-            if (preg_match('/^update `[^`]*fct_order_transactions`/i', $query)) {
-                return 'SELECT * FROM fct_missing_table_for_test';
-            }
-            return $query;
-        };
-        add_filter('query', $filter);
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_transactions`/i');
 
         try {
             $result = (new Refund())->processRefund($txn, 3000);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertInstanceOf(\WP_Error::class, $result);

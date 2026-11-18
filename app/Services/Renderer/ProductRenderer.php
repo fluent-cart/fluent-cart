@@ -1326,8 +1326,10 @@ class ProductRenderer
             <div class="fct-bundle-products-list">
                 <?php foreach (array_slice($bundleProducts, 0, 2) as $product): ?>
                     <p>
-                        <?php echo esc_html(Arr::get($product, 'product.post_title')); ?> -
-                        <?php echo esc_html($product['variation_title']); ?>
+                        <?php echo esc_html(Helper::formatBundleChildTitle(
+                            Arr::get($product, 'product.post_title', ''),
+                            Arr::get($product, 'variation_title', '')
+                        )); ?>
                     </p>
                 <?php endforeach; ?>
 
@@ -1336,8 +1338,10 @@ class ProductRenderer
                         <div class="fct-bundle-products-more-list">
                             <?php foreach (array_slice($bundleProducts, 2) as $product): ?>
                                 <p>
-                                    <?php echo esc_html(Arr::get($product, 'product.post_title')); ?> -
-                                    <?php echo esc_html($product['variation_title']); ?>
+                                    <?php echo esc_html(Helper::formatBundleChildTitle(
+                                        Arr::get($product, 'product.post_title', ''),
+                                        Arr::get($product, 'variation_title', '')
+                                    )); ?>
                                 </p>
                             <?php endforeach; ?>
                         </div>

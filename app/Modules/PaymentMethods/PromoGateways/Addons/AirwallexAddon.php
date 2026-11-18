@@ -43,6 +43,7 @@ class AirwallexAddon extends AbstractPaymentGateway
             'slug'         => 'airwallex',
             'description'  => __('Pay securely with Airwallex - Global payment processing with Drop-in Element for onsite checkout', 'fluent-cart'),
             'logo'         => Vite::getAssetUrl('images/payment-methods/airwallex-logo.svg'),
+            'logo_light'   => Vite::getAssetUrl('images/payment-methods/airwallex-logo-light.svg'),
             'icon'         => Vite::getAssetUrl('images/payment-methods/airwallex-icon.svg'),
             'brand_color'  => '#6c5ce7',
             'status'       => false,

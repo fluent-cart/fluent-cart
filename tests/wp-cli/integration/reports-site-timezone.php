@@ -46,7 +46,7 @@ return [
                     ]);
                 }
 
-                FcReportFixture::inSiteTimezone('America/New_York', 0, function () use ($fcSiteTzCurrency) {
+                FcReportFixture::inSiteTimezone('America/New_York', function () use ($fcSiteTzCurrency) {
                     $utc = function ($date) {
                         return gmdate('Y-m-d H:i:s', $date->getTimestamp());
                     };
@@ -124,7 +124,7 @@ return [
                 });
 
                 // One store month is one month for the Orders report's monthly averages, also east of UTC
-                FcReportFixture::inSiteTimezone('Asia/Dhaka', 0, function () use ($fcSiteTzCurrency) {
+                FcReportFixture::inSiteTimezone('Asia/Dhaka', function () use ($fcSiteTzCurrency) {
                     FcFixture::reportOrder([
                         'status' => Status::ORDER_COMPLETED, 'payment_status' => Status::PAYMENT_PAID, 'currency' => $fcSiteTzCurrency,
                         'type' => Status::ORDER_TYPE_PAYMENT, 'subtotal' => 800, 'total_amount' => 800, 'total_paid' => 800,
@@ -150,7 +150,7 @@ return [
         'run'           => function () {
             try {
                 FcFixture::customer();
-                FcReportFixture::inSiteTimezone('America/New_York', 0, function () {
+                FcReportFixture::inSiteTimezone('America/New_York', function () {
                     $count = function () {
                         return (int) \FluentCart\App\Services\Email\StoreDigestService::buildPayload('daily')['metrics']['order_count'];
                     };

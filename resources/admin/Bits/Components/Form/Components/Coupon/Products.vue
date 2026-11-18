@@ -47,7 +47,7 @@ const searchVariantByName = (name) => {
 
 <template>
     <div class="input-append">
-        <el-select
+        <fct-select
             v-model="value[fieldKey]"
             multiple
             :placeholder="field.placeholder"
@@ -56,19 +56,14 @@ const searchVariantByName = (name) => {
             :reserve-keyword="false"
             :remote-method="searchVariantByName"
             :loading="loading"
+            :options="products.map(product => ({label: product.variation_title, value: product.id}))"
         >
-            <el-option
-                v-for="product in products"
-                :key="product.id"
-                :label="product.variation_title"
-                :value="product.id"
-            ></el-option>
             <template #loading>
                 <svg class="circular" viewBox="0 0 50 50">
                 <circle class="path" cx="25" cy="25" r="20" fill="none" />
                 </svg>
             </template>
-        </el-select>
+        </fct-select>
     </div>
 </template>
 

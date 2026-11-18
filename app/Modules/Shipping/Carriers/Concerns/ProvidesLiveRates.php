@@ -46,10 +46,47 @@ trait ProvidesLiveRates
 
     /**
      * Cache-key fragment for a carrier that prices the cart; '' when it does not.
+     * Not read once liveRatesRequest() returns a request.
      */
     protected function liveRatesCacheItemsKey(array $items): string
     {
         return '';
+    }
+
+    /**
+     * The API request one quote sends: everything that changes the price, the
+     * account or mode included, and nothing that changes on every call (a date,
+     * a request id). The cache is keyed on it, so the carrier may read any of
+     * $args (e.g. 'form_data') without a stale or shared quote. Null keeps the
+     * fetchLiveRates() path and its key.
+     *
+     * @since 2.4.0
+     */
+    protected function liveRatesRequest(array $destination, array $items, string $currency, array $args, string $source): ?array
+    {
+        return null;
+    }
+
+    /**
+     * Whether this carrier builds its own request, so any checkout field may
+     * change its quote. True once liveRatesRequest() is declared outside this trait.
+     *
+     * @since 2.4.0
+     */
+    public function buildsLiveRatesRequests(): bool
+    {
+        return (new \ReflectionMethod($this, 'liveRatesRequest'))->getFileName() !== __FILE__;
+    }
+
+    /**
+     * Sends the request liveRatesRequest() built. Implement both or neither.
+     *
+     * @since 2.4.0
+     * @return array[]|\WP_Error Same as fetchLiveRates().
+     */
+    protected function sendLiveRatesRequest(array $request, string $currency, string $source)
+    {
+        return [];
     }
 
     /**
@@ -152,7 +189,10 @@ trait ProvidesLiveRates
     protected function quoteLiveRates(string $source, string $hashBase, array $destination, array $items, string $currency, array $args, bool $live): ?array
     {
         $slug     = $this->meta()['slug'];
-        $hash     = md5($hashBase . ($source !== '' ? '|' . $source : ''));
+        $request  = $this->liveRatesRequest($destination, $items, $currency, $args, $source);
+        $hash     = $request === null
+            ? md5($hashBase . ($source !== '' ? '|' . $source : ''))
+            : md5('request|' . $currency . '|' . $source . '|' . wp_json_encode($request));
         $cacheKey = 'fluent_cart_live_rates_' . $slug . '_' . $hash;
         $quoteKey = 'fluent_cart_live_rates_quote_' . $slug . '_' . $hash;
 
@@ -188,9 +228,13 @@ trait ProvidesLiveRates
         }
 
         $this->liveRatesPartial = false;
-        $rates = $source === ''
-            ? $this->fetchLiveRates($destination, $items, $currency)
-            : $this->fetchLiveRatesForSource($source, $destination, $items, $currency);
+        if ($request !== null) {
+            $rates = $this->sendLiveRatesRequest($request, $currency, $source);
+        } else {
+            $rates = $source === ''
+                ? $this->fetchLiveRates($destination, $items, $currency)
+                : $this->fetchLiveRatesForSource($source, $destination, $items, $currency);
+        }
 
         if (is_wp_error($rates)) {
             if ($this->isLiveRatesOutage($rates)) {

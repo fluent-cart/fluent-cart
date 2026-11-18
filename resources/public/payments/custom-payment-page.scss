@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./custom-payment-page.config.js";
+@config "./custom-payment-page.config.mjs";
 
 .fct-loader{
   position: fixed;
@@ -59,7 +60,7 @@ h1,h2,h3,h4,h5,h6{
 }
 
 ul{
-  @apply p-0 m-0 list-none #{!important};
+  @apply p-0! m-0! list-none!;
 }
 .fluent-cart-custom-payment{
   &-page{
@@ -113,16 +114,16 @@ ul{
     }
     &-table{
       table{
-        @apply w-full border-collapse border-0 text-start text-sm font-normal m-0 !important;
+        @apply w-full! border-collapse! border-0! text-start! text-sm! font-normal! m-0!;
       }
       td,
       th{
-        @apply px-5 py-2.5 border border-solid border-gray-divider border-x-0 border-t-0 text-end bg-transparent !important;
+        @apply px-5! py-2.5! border! border-solid! border-gray-divider! border-x-0! border-t-0! text-end! bg-transparent!;
       }
       tr{
         th:first-child,
         td:first-child{
-          @apply ps-0 text-start !important;
+          @apply ps-0! text-start!;
         }
         th:last-child,
         td:last-child {
@@ -203,7 +204,7 @@ ul{
 
 .fluent-cart-checkout_embed_payment_container {
   #fct-extra-checkout-text-for-paypal{
-    @apply mb-0 !important;
+    @apply mb-0!;
   }
 }
 
@@ -260,7 +261,7 @@ ul{
   }
 
   label {
-    @apply mb-0 block relative leading-[24px] cursor-pointer text-base text-system-mid select-none ps-10 font-medium py-3 pe-4 max-w-full #{!important};
+    @apply mb-0! block! relative! leading-[24px]! cursor-pointer! text-base! text-system-mid! select-none! ps-10! font-medium! py-3! pe-4! max-w-full!;
   }
 
   &:last-child {
@@ -289,7 +290,7 @@ ul{
   input {
     @apply absolute opacity-0 cursor-pointer;
     &:checked ~ label {
-      @apply text-system-dark !important;
+      @apply text-system-dark!;
       .checkmark {
         @apply bg-white border-primary-500;
         &:after {
@@ -319,7 +320,7 @@ ul{
 .is-empty-payment-method{
   @apply p-5 text-[13px] leading-[22px] text-system-mid grid;
   a{
-    @apply font-medium underline text-system-dark #{!important};
+    @apply font-medium! underline! text-system-dark!;
   }
 }
 

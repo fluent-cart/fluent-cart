@@ -2,7 +2,6 @@
 import Table from "@/utils/table-new/Table";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import IconButton from "@/Bits/Components/Buttons/IconButton.vue";
-import {defineProps} from "vue";
 
 const props = defineProps({
   table: Object
@@ -10,7 +9,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <el-popover
+  <fct-popover
       trigger="click"
       placement="bottom-start"
       width="240"
@@ -18,30 +17,24 @@ const props = defineProps({
   >
     <div class="filter-popover-item">
       <h3 class="filter-popover-title">{{ $t('Columns') }}</h3>
-      <el-checkbox-group @change="()=>{
+      <fct-choice @change="()=>{
                 table.handleColumnVisibilityChange()
-              }" class="fct-checkbox-blocks" v-model="table.data.columns">
-        <el-checkbox v-for="column in table.getToggleableColumns()"
-                     :key="column.value"
-                     :value="column.value"
-                     :label="column.label"/>
-      </el-checkbox-group>
+              }" class="fct-checkbox-blocks" v-model="table.data.columns"
+                  :options="table.getToggleableColumns()"/>
     </div>
     <template #reference>
                   <span>
-                    <el-tooltip
-                        effect="light"
+                    <fct-tooltip
                         :content="$t('Toggle columns')"
                         placement="top"
-                        popper-class="fct-tooltip"
                     >
                       <IconButton tag="button">
                         <DynamicIcon name="ColumnIcon"/>
                       </IconButton>
-                    </el-tooltip>
+                    </fct-tooltip>
                   </span>
     </template>
-  </el-popover>
+  </fct-popover>
 </template>
 
 <style scoped>

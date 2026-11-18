@@ -1,7 +1,7 @@
 <template>
   <div class="fct_edit_customer_popup">
 
-    <el-form label-position="top" class="fct-compact-form" require-asterisk-position="right">
+    <div class="fct-compact-form">
       <MaterialInput
           :label="translate('Address Label')"
           :class="validationErrors.hasOwnProperty('label') ? 'is-error' : ''"
@@ -66,15 +66,14 @@
         />
       </div>
 
-    </el-form>
+    </div>
 
     <div class="form-error-wrap">
       <p class="form-error-text" v-html="hasError(validationErrors)"></p>
     </div>
 
     <div class="dialog-footer" >
-      <el-checkbox
-
+      <fct-choice
           v-model="shouldSetAsAlso"
           v-if="showSetAsAlsoCheckbox && false"
           style="margin-right: 16px"
@@ -85,8 +84,8 @@
               ? translate("shipping address also")
               : translate("billing address also")
         }}
-      </el-checkbox>
-      <el-button
+      </fct-choice>
+      <fct-button
           v-if="address.id"
           type="primary"
           @click="updateAddress()"
@@ -94,8 +93,8 @@
           :disabled="updatingAddress"
       >
         {{ translate("Update Address") }}
-      </el-button>
-      <el-button
+      </fct-button>
+      <fct-button
           v-else
           type="primary"
           @click="addAddress()"
@@ -103,7 +102,7 @@
           :disabled="addingAddress"
       >
         {{ translate("Add Address") }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>
@@ -273,7 +272,7 @@ const updateAddress = () => {
         if (shouldSetAsAlso.value) {
           //setAsAlso();
         }
-        emit("update:refresh-address", false, response.data);
+        emit("update:refresh-address", false, response.data, response.order_address ?? null);
         Notify.success(response.message);
         validationErrors.value = {};
       })

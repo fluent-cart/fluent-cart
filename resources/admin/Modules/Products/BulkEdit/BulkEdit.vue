@@ -22,7 +22,6 @@ import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import {Loading, WarningFilled} from "@element-plus/icons-vue";
 import {ElMessageBox} from "element-plus";
 import {useBulkSelection} from "@/Modules/Products/BulkShared/useBulkSelection";
-import {vIndeterminate} from "@/Modules/Products/BulkShared/vIndeterminate";
 import {syncLinkedField, LINK_COLUMNS_EDIT} from "@/Modules/Products/BulkShared/bulkLinkColumns";
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import * as Card from "@/Bits/Components/Card/Card.js";
@@ -598,7 +597,7 @@ onBeforeUnmount(() => {
   <div class="fct-bulk-edit-page fct-layout-width">
     <PageHeading :title="$t('Bulk Edit')">
       <template #action>
-        <el-button
+        <fct-button
           type="primary"
           @click="saveProducts"
           :loading="saving"
@@ -610,11 +609,11 @@ onBeforeUnmount(() => {
               ? $t('Save Changes') + ` (${dirtyCount})`
               : $t('Save Changes')
           }}
-        </el-button>
+        </fct-button>
       </template>
     </PageHeading>
 
-    <el-progress v-if="saving" :percentage="progressPercentage" :stroke-width="6" class="mb-4" />
+    <fct-progress v-if="saving" :percentage="progressPercentage" :stroke-width="6" class="mb-4" />
 
     <div class="fct-table-wrapper">
         <Card.Container>
@@ -632,7 +631,7 @@ onBeforeUnmount(() => {
                             v-if="bulkEditModel.isAdvanceFilterEnabled()"
                             class="fct-advanced-filter-toggle-wrapper"
                         >
-                        <el-switch
+                        <fct-switch
                             class="fct-advanced-filter-toggle"
                             @change="(filterType) => { bulkEditModel.onFilterTypeChanged(filterType) }"
                             active-value="advanced"
@@ -644,12 +643,9 @@ onBeforeUnmount(() => {
                         </div>
 
                         <div class="fct-btn-group sm hidden md:flex" v-if="!bulkEditModel.isUsingAdvanceFilter()">
-                            <el-tooltip
-                                effect="light"
+                            <fct-tooltip
                                 :content="$t('Search')"
-                                placement="top"
                                 v-if="!bulkEditModel.isSearching()"
-                                popper-class="fct-tooltip"
                             >
                                 <IconButton
                                 tag="button"
@@ -657,7 +653,7 @@ onBeforeUnmount(() => {
                                 >
                                 <DynamicIcon name="Search" />
                                 </IconButton>
-                            </el-tooltip>
+                            </fct-tooltip>
                         </div>
                     </div>
                 </div>
@@ -666,7 +662,7 @@ onBeforeUnmount(() => {
 
                 <div class="filter-search-wrap" v-if="bulkEditModel.isSearching() && !bulkEditModel.isUsingAdvanceFilter()">
                     <div class="search-bar">
-                        <el-input
+                        <fct-input
                         ref="search-input"
                         @clear="() => { bulkEditModel.search() }"
                         @keyup.enter="() => { bulkEditModel.search() }"
@@ -678,15 +674,15 @@ onBeforeUnmount(() => {
                         <template #prefix>
                             <DynamicIcon name="Search" />
                         </template>
-                        </el-input>
+                        </fct-input>
                         <div class="text-xs text-system-light pt-2 dark:text-gray-300">
                         {{ bulkEditModel.getSearchHint() }}
                         </div>
                     </div>
 
-                    <el-button text @click="() => { bulkEditModel.closeSearch() }">
+                    <fct-button text @click="() => { bulkEditModel.closeSearch() }">
                         {{ $t('Cancel') }}
-                    </el-button>
+                    </fct-button>
                 </div>
             </Card.Header>
 
@@ -701,16 +697,16 @@ onBeforeUnmount(() => {
                       </h5>
 
                       <div class="fct-btn-group sm justify-end">
-                        <el-button
+                        <fct-button
                             :disabled="selectedCount === 0"
                             @click="bulkDuplicate"
                             size="small"
                         >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                             {{ $t('Duplicate') }}
-                        </el-button>
+                        </fct-button>
 
-                        <el-button
+                        <fct-button
                             :disabled="selectedCount === 0"
                             @click="bulkDelete"
                             size="small"
@@ -719,9 +715,9 @@ onBeforeUnmount(() => {
                         >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             {{ $t('Delete') }}
-                        </el-button>
+                        </fct-button>
 
-                        <el-button
+                        <fct-button
                             :class="{ 'is-active': isLinkMode }"
                             :disabled="selectedCount < 2 && !isLinkMode"
                             @click="toggleLinkMode"
@@ -729,36 +725,30 @@ onBeforeUnmount(() => {
                         >
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                             {{ isLinkMode ? $t('Unlink') : $t('Link') }}
-                        </el-button>
+                        </fct-button>
 
-                        <el-checkbox v-model="stickyActions" :label="$t('Pin Actions')" />
+                        <fct-choice v-model="stickyActions">{{ $t('Pin Actions') }}</fct-choice>
 
-                        <el-popover trigger="click" placement="bottom-end" width="240" popper-class="filter-popover">
+                        <fct-popover trigger="click" placement="bottom-end" width="240" popper-class="filter-popover">
                             <div class="filter-popover-item">
                             <h3 class="filter-popover-title">{{ $t('Columns') }}</h3>
-                            <el-checkbox-group
+                            <fct-choice
                                 v-model="bulkEditModel.data.visibleColumns"
+                                :options="bulkEditModel.getToggleableColumns().map(col => ({label: $t(col.label), value: col.value}))"
                                 class="fct-checkbox-blocks"
                                 @change="bulkEditModel.handleColumnVisibilityChange()"
-                            >
-                                <el-checkbox
-                                v-for="col in bulkEditModel.getToggleableColumns()"
-                                :key="col.value"
-                                :value="col.value"
-                                :label="$t(col.label)"
-                                />
-                            </el-checkbox-group>
+                            />
                             </div>
                             <template #reference>
                             <span>
-                                <el-tooltip effect="light" :content="$t('Toggle columns')" placement="top" popper-class="fct-tooltip">
+                                <fct-tooltip :content="$t('Toggle columns')">
                                 <IconButton tag="button" size="small">
                                     <DynamicIcon name="ColumnIcon"/>
                                 </IconButton>
-                                </el-tooltip>
+                                </fct-tooltip>
                             </span>
                             </template>
-                        </el-popover>
+                        </fct-popover>
                       </div>
                   </div>
 
@@ -767,12 +757,11 @@ onBeforeUnmount(() => {
                       <div class="relative" :class="{ 'is-link-mode': isLinkMode, 'is-shift-held': isShiftHeld }" v-if="products.length > 0">
                       <ResizeableColumns :columns="filteredColumns" :sticky-last="stickyActions" @scroll="onScroll" @resize-end="onColumnResizeEnd">
                           <template #header-first>
-                            <el-checkbox
-                                :checked="selectedCount > 0 && selectedCount === flatVisibleKeys.length"
-                                v-indeterminate="selectedCount > 0 && selectedCount < flatVisibleKeys.length"
+                            <fct-choice
+                                :model-value="selectedCount > 0 && selectedCount === flatVisibleKeys.length"
+                                :indeterminate="selectedCount > 0 && selectedCount < flatVisibleKeys.length"
                                 @change="toggleSelectAll(flatVisibleKeys)"
-                            >
-                            </el-checkbox>
+                            />
                           </template>
                           <template #header-last>
                             {{ $t('Actions') }}
@@ -789,7 +778,7 @@ onBeforeUnmount(() => {
                           <tr class="bulk-product-row" :class="{ 'is-dirty': isDirty(group.product), 'is-saving': isSaving(group.product), 'is-saved': isSaved(group.product), 'has-product-error': hasError(group.product), 'is-selected': isSelected(`p:${group.productId}`) }" @click="onRowShiftClick(`p:${group.productId}`, $event)">
 
                               <td class="bulk-checkbox-cell" @click="handleRowClick(`p:${group.productId}`, $event, flatVisibleKeys)">
-                                <el-checkbox
+                                <fct-choice
                                     :model-value="isSelected(`p:${group.productId}`)"
                                     tabindex="-1"
                                 />
@@ -813,7 +802,7 @@ onBeforeUnmount(() => {
                                   </button>
 
                                 <!-- input -->
-                                <el-input
+                                <fct-input
                                     class="fct-bulk-input"
                                     v-model="group.product.post_title"
                                     :placeholder="$t('Product title')"
@@ -833,11 +822,11 @@ onBeforeUnmount(() => {
                                   </span>
 
                                   <!-- Error icon — product-level errors, or any error for simple products (no variant rows) -->
-                                  <el-tooltip v-else-if="hasProductLevelError(group.product) || (isSimple(group.product) && hasError(group.product))" :content="getError(group.product)" placement="top">
+                                  <fct-tooltip v-else-if="hasProductLevelError(group.product) || (isSimple(group.product) && hasError(group.product))" :content="getError(group.product)">
                                   <span class="bulk-status-icon is-error">
                                       <el-icon :size="16"><WarningFilled /></el-icon>
                                   </span>
-                                  </el-tooltip>
+                                  </fct-tooltip>
 
                                   <!-- Inline save button when dirty -->
                                   <button
@@ -860,7 +849,7 @@ onBeforeUnmount(() => {
                               </td>
 
                               <td class="fct-bulk-sku-cell" v-if="isColVisible('sku')">
-                                <el-input
+                                <fct-input
                                     class="fct-bulk-input"
                                     v-if="group.product?.detail?.variation_type === 'simple' && group.product.variants?.[0]"
                                     v-model="group.product.variants[0].sku"
@@ -899,10 +888,7 @@ onBeforeUnmount(() => {
 
                              <!-- status -->
                               <td class="fct-bulk-status-cell" v-if="isColVisible('status')">
-                                <el-select v-model="group.product.post_status" size="small" :class="{ 'is-field-error': hasFieldError(group.product, 'post_status') }" :disabled="isRowDisabled(group.product)" @change="markDirty(group.product); onSync('status', group.product.post_status, `p:${group.productId}`)">
-                                    <el-option :label="$t('Published')" value="publish" />
-                                    <el-option :label="$t('Draft')" value="draft" />
-                                </el-select>
+                                <fct-select v-model="group.product.post_status" size="small" :options="[{label: $t('Published'), value: 'publish'}, {label: $t('Draft'), value: 'draft'}]" :class="{ 'is-field-error': hasFieldError(group.product, 'post_status') }" :disabled="isRowDisabled(group.product)" @change="markDirty(group.product); onSync('status', group.product.post_status, `p:${group.productId}`)"/>
                               </td>
 
                             <!-- product type -->
@@ -968,7 +954,7 @@ onBeforeUnmount(() => {
 
                             <!-- quantity -->
                               <td v-if="isColVisible('track_quantity')" class="fct-bulk-qty-cell !ps-5">
-                                <el-switch
+                                <fct-switch
                                     v-if="group.product?.detail"
                                     v-model="group.product.detail.manage_stock"
                                     :active-value="1"
@@ -980,7 +966,7 @@ onBeforeUnmount(() => {
 
                             <!-- stock -->
                               <td class="fct-bulk-stock-cell" v-if="isColVisible('stock')">
-                                <el-input
+                                <fct-input
                                     class="fct-bulk-input"
                                     :placeholder="$t('e.g 10')"
                                     v-if="group.product?.detail?.manage_stock && group.product?.detail?.variation_type === 'simple' && group.product.variants?.[0]"
@@ -1054,7 +1040,7 @@ onBeforeUnmount(() => {
                                       <tr v-for="(variant, vi) in group.product.variants" :key="variant.id || vi" class="bulk-variation-row" :class="{ 'is-selected': isSelected(`v:${variant.id}`) }" @click="onRowShiftClick(`v:${variant.id}`, $event)">
 
                                       <td class="bulk-checkbox-cell">
-                                        <el-checkbox
+                                        <fct-choice
                                             :model-value="isSelected(`v:${variant.id}`)"
                                             tabindex="-1"
                                             @change="(checked) => handleRowClick(
@@ -1069,7 +1055,7 @@ onBeforeUnmount(() => {
                                           <div class="flex items-center gap-1 ps-4">
                                             <span class="text-gray-300 text-xs">└</span>
 
-                                            <el-input
+                                            <fct-input
                                                 size="small"
                                                 v-model="variant.variation_title"
                                                 :placeholder="$t('Variation title')"
@@ -1081,11 +1067,11 @@ onBeforeUnmount(() => {
                                                 }"
                                             />
 
-                                            <el-tooltip v-if="hasVariantError(group.product, vi)" :content="getVariantError(group.product, vi)" placement="top">
+                                            <fct-tooltip v-if="hasVariantError(group.product, vi)" :content="getVariantError(group.product, vi)">
                                                 <span class="bulk-status-icon is-error">
                                                 <el-icon :size="14"><WarningFilled /></el-icon>
                                                 </span>
-                                            </el-tooltip>
+                                            </fct-tooltip>
                                           </div>
                                       </td>
 
@@ -1094,7 +1080,7 @@ onBeforeUnmount(() => {
                                       </td>
 
                                       <td v-if="isColVisible('sku')">
-                                        <el-input
+                                        <fct-input
                                             class="fct-bulk-input"
                                             size="small"
                                             v-model="variant.sku"
@@ -1171,7 +1157,7 @@ onBeforeUnmount(() => {
                                       </td>
 
                                       <td v-if="isColVisible('stock')">
-                                        <el-input
+                                        <fct-input
                                             class="fct-bulk-input"
                                             :placeholder="$t('e.g 10')"
                                             v-if="group.product?.detail?.manage_stock"
@@ -1257,7 +1243,7 @@ onBeforeUnmount(() => {
     
 
     <!-- WpEditor Modal -->
-    <el-dialog
+    <fct-dialog
       v-model="editorModal.visible"
       :title="editorTitle"
       width="700px"
@@ -1270,7 +1256,7 @@ onBeforeUnmount(() => {
         :height="300"
         @update="onEditorUpdate"
       />
-      <el-input
+      <fct-input
         v-if="editorModal.visible && editorModal.field === 'post_excerpt'"
         v-model="editorModal.value"
         type="textarea"
@@ -1278,9 +1264,9 @@ onBeforeUnmount(() => {
         :placeholder="$t('Short description')"
       />
       <template #footer>
-        <el-button @click="editorModal.visible = false">{{ $t('Cancel') }}</el-button>
-        <el-button type="primary" @click="saveEditor">{{ $t('Save') }}</el-button>
+        <fct-button @click="editorModal.visible = false">{{ $t('Cancel') }}</fct-button>
+        <fct-button type="primary" @click="saveEditor">{{ $t('Save') }}</fct-button>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

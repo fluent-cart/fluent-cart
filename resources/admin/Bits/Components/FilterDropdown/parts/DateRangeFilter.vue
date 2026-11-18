@@ -1,6 +1,6 @@
 <template>
   <div :class="`fct-date-range-filter ${clearable ? 'is-clearable' : ''}`">
-    <el-date-picker
+    <fct-date-picker
         ref="datePickerRef"
         v-model="modelValue"
         :type="type"

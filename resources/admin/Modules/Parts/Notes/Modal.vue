@@ -1,23 +1,20 @@
 <template>
 	<div class="fct-note-modal">
-		<el-form label-position="top">
-      <el-form-item>
-        <el-input
-            v-model="notes"
-            :autosize="{ minRows: 4 }"
-            type="textarea"
-            minlength="1" maxlength="5000" show-word-limit
-        />
-      </el-form-item>
-		</el-form>
+		<fct-input
+        v-model="notes"
+        class="mb-[18px]"
+        :autosize="{ minRows: 4 }"
+        type="textarea"
+        minlength="1" maxlength="5000" show-word-limit
+    />
 
 		<div class="dialog-footer">
-        <el-button type="info" soft @click="closeModal">
+        <fct-button type="info" soft @click="closeModal">
           {{ $t('Cancel')}}
-        </el-button>
-      <el-button type="primary" @click="saveNote">
+        </fct-button>
+      <fct-button type="primary" @click="saveNote">
           {{ $t('Save')}}
-        </el-button>
+        </fct-button>
 		</div>
 	</div>
 </template>

@@ -51,13 +51,13 @@
   }
   input,
   select {
-    @apply text-[var(--fct-customer-dashboard-input-text,#2F3448)] h-12.5 bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] pt-[22px] pb-2 leading-[1] text-[15px] w-full outline-none focus:border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)] #{!important};
+    @apply text-[var(--fct-customer-dashboard-input-text,#2F3448)]! h-12.5! bg-[var(--fct-customer-dashboard-input-bg,#ffffff)]! border! border-solid! border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)]! pt-[22px]! pb-2! leading-[1]! text-[15px]! w-full! outline-hidden! focus:border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)]!;
     border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
     padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
     padding-right: var(--fct-input-padding-x, theme('spacing.4')) !important;
   }
   select{
-    @apply py-4 appearance-none #{!important};
+    @apply py-4! appearance-none!;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L5.29289 5.79289C5.62623 6.12623 5.79289 6.29289 6 6.29289C6.20711 6.29289 6.37377 6.12623 6.70711 5.79289L11 1.5" stroke="%23565865" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
     background-position: right 16px center;
     background-repeat: no-repeat;
@@ -95,5 +95,5 @@
   }
 }
 .el-input.is-disabled .el-input__wrapper {
-  @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] !important;
+  @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)]!;
 }

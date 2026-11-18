@@ -8,7 +8,7 @@ use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\WPUserFactory;
 
 /**
- * Case 2 of the customer identity binding fix (dev/CUSTOMER_IDENTITY_BINDING_AUDIT.md §3.4).
+ * Case 2 of the customer identity binding fix (dev-docs/CUSTOMER_IDENTITY_BINDING_AUDIT.md §3.4).
  *
  * Customer::getWpUser() and getWpUserId($recheck) used to look the WordPress
  * user up by the customer's email and, on a mismatch, write that user's ID

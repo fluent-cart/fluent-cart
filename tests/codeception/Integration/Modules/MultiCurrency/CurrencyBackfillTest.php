@@ -13,7 +13,7 @@ use Tests\Support\Factory\SubscriptionFactory;
 
 /**
  * Old orders and subscriptions get a currency snapshot — and a non-base order
- * is never given a guessed rate. dev-docs/multi-currency/plan.md §10.
+ * is never given a guessed rate. dev-docs/multi-currency/02-database-schema.md, "Data backfills".
  */
 class CurrencyBackfillTest extends DatabaseTestCase
 {

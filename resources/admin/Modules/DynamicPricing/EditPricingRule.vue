@@ -333,7 +333,7 @@ onMounted(() => {
                 </p>
 
                 <div v-if="canManage" class="fct-pricing-rule-summary-status">
-                    <el-switch
+                    <fct-switch
                         :model-value="rule.status === 'active'"
                         :disabled="isBusy"
                         :loading="isTogglingStatus"
@@ -345,8 +345,9 @@ onMounted(() => {
             </div>
 
             <div class="single-page-body">
-                <el-row :gutter="30">
-                    <el-col :lg="16">
+                <!-- Was el-row :gutter="30" with el-col :lg spans (Element Plus lg = 1200px). -->
+                <div class="flex flex-wrap box-border -mx-[15px]">
+                    <div class="box-border px-[15px] w-full min-[1200px]:w-2/3">
                         <Card.Container>
                             <Card.Header :title="translate('Details')"/>
                             <Card.Body>
@@ -356,7 +357,7 @@ onMounted(() => {
                                             {{ translate('Name') }}
                                         </label>
 
-                                        <el-input
+                                        <fct-input
                                             v-model="rule.name"
                                         />
                                     </div><!-- fct-form-group -->
@@ -366,7 +367,7 @@ onMounted(() => {
                                             {{ translate('Display Name') }}
                                         </label>
 
-                                        <el-input
+                                        <fct-input
                                             v-model="rule.display_name"
                                         />
                                     </div><!-- fct-form-group -->
@@ -377,38 +378,28 @@ onMounted(() => {
                                                 <label>
                                                     {{ translate('Price Type') }}
                                                 </label>
-                                                <el-select v-model="rule.price_type" class="w-full">
-                                                    <el-option
-                                                        v-for="option in priceTypeOptions"
-                                                        :key="option.value"
-                                                        :value="option.value"
-                                                        :label="option.label"
-                                                        :disabled="isPriceTypeDisabled(option.value)"
-                                                    />
-                                                </el-select>
+                                                <fct-select
+                                                    v-model="rule.price_type"
+                                                    class="w-full"
+                                                    :options="priceTypeOptions.map((option) => ({...option, disabled: isPriceTypeDisabled(option.value)}))"
+                                                />
                                             </div>
 
                                             <div class="fct-pricing-rule-apply-as">
                                                 <label>
                                                     {{ translate('Apply as') }}
                                                 </label>
-                                                <el-select v-model="rule.config.apply_as" class="w-full">
-                                                    <el-option
-                                                        v-for="option in applyAsOptions"
-                                                        :key="option.value"
-                                                        :value="option.value"
-                                                        :label="option.label"
-                                                    />
-                                                </el-select>
+                                                <fct-select v-model="rule.config.apply_as" class="w-full" :options="applyAsOptions"/>
                                             </div>
 
                                             <div class="fct-pricing-rule-amount">
                                                 <label class="required">
                                                     {{ rule.config.apply_as === 'fixed' ? translate('Amount') : translate('Percent') }}
                                                 </label>
-                                                <el-input
+                                                <fct-input
                                                     v-model="rule.config.amount"
                                                     type="number"
+                                                    :controls="false"
                                                 >
                                                     <template v-if="rule.config.apply_as === 'fixed'" #prepend>
                                                         {{ currencySign }}
@@ -417,7 +408,7 @@ onMounted(() => {
                                                     <template v-else #append>
                                                         %
                                                     </template>
-                                                </el-input>
+                                                </fct-input>
                                             </div>
                                         </div>
 
@@ -440,8 +431,8 @@ onMounted(() => {
                                 />
                             </Card.Body>
                         </Card.Container>
-                    </el-col>
-                    <el-col :lg="8">
+                    </div>
+                    <div class="box-border px-[15px] w-full min-[1200px]:w-1/3">
                         <Card.Container>
                             <Card.Header :title="translate('Applies To')" border_bottom/>
                             <Card.Body>
@@ -467,8 +458,8 @@ onMounted(() => {
                             v-model:end-date="rule.end_date"
                             :disabled="isBusy"
                         />
-                    </el-col>
-                </el-row>
+                    </div>
+                </div>
             </div>
         </template>
     </div>

@@ -15,7 +15,7 @@ use Tests\Support\Factory\OrderTaxRateFactory;
 /**
  * An order's emails, receipt and invoice show its own currency — a GBP
  * order's email sent from a background job (store currency USD) must not
- * print "$" (dev-docs/multi-currency/plan.md §1.5 B1). Base USD.
+ * print "$" (dev-docs/multi-currency/06-orders-subscriptions.md). Base USD.
  */
 class OrderDisplayCurrencyTest extends DatabaseTestCase
 {

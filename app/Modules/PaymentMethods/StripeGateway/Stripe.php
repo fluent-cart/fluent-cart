@@ -8,7 +8,10 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\Helpers\CartCheckoutHelper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\Status;
 use FluentCart\App\Hooks\Cart\WebCheckoutHandler;
+use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
 use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Modules\PaymentMethods\Core\BaseGatewaySettings;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
@@ -27,9 +30,7 @@ class Stripe extends AbstractPaymentGateway
 
     private $methodSlug = 'stripe';
 
-    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'multi_currency', 'switch_payment_method' => [
-        'supported_gateways' => ['stripe', 'paypal'],
-    ], 'dispute_handler', 'subscriptions', 'zero_recurring', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
+    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'multi_currency', 'dispute_handler', 'subscriptions', 'zero_recurring', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
 
     public BaseGatewaySettings $settings;
 
@@ -130,6 +131,8 @@ class Stripe extends AbstractPaymentGateway
                     }
 
                     $paymentArgs['setup_future_usage'] = 'off_session';
+                } else if (SubscriptionManagementMode::flagSystemConversion($paymentInstance, $this)) {
+                    $paymentArgs['setup_future_usage'] = 'off_session';
                 }
 
                 return (new Processor())->handleSinglePayment($paymentInstance, $paymentArgs);
@@ -196,6 +199,22 @@ class Stripe extends AbstractPaymentGateway
     public function supportsSetupWithoutCharge(): bool
     {
         return true;
+    }
+
+    public function canUpdateSubscriptionPaymentMethod(Subscription $subscription): bool
+    {
+        return !in_array($subscription->status, [Status::SUBSCRIPTION_CANCELED, Status::SUBSCRIPTION_EXPIRED, Status::SUBSCRIPTION_COMPLETED], true);
+    }
+
+    public function canSwitchSubscriptionPaymentMethod(Subscription $subscription, bool $requirePaidDays = true): bool
+    {
+        return $this->canUpdateSubscriptionPaymentMethod($subscription)
+            && (!$requirePaidDays || $subscription->hasPaidDaysLeft());
+    }
+
+    public function getSwitchableSubscriptionPaymentMethods(Subscription $subscription): array
+    {
+        return ['paypal'];
     }
 
     /**
@@ -465,6 +484,19 @@ class Stripe extends AbstractPaymentGateway
         ];
     }
 
+    public function getCheckoutSkeleton(): string
+    {
+        // Payment Element shape: tabs, card number, expiry + CVC, country, a short line.
+        return '<span class="fct-payment-skeleton__bar"></span>'
+            . '<span class="fct-payment-skeleton__bar"></span>'
+            . '<span class="fct-payment-skeleton__row">'
+            . '<span class="fct-payment-skeleton__bar"></span>'
+            . '<span class="fct-payment-skeleton__bar"></span>'
+            . '</span>'
+            . '<span class="fct-payment-skeleton__bar"></span>'
+            . '<span class="fct-payment-skeleton__bar fct-payment-skeleton__bar--short"></span>';
+    }
+
     private function getStripeLocale(): string
     {
         $parts = explode('_', get_locale());
@@ -530,6 +562,41 @@ class Stripe extends AbstractPaymentGateway
         }
 
         return $data;
+    }
+
+    public function testConnection(string $mode)
+    {
+        /** @var StripeSettingsBase $settings */
+        $settings = $this->settings;
+        $secretKey = $settings->getApiKey($mode);
+
+        if (!$secretKey) {
+            return new \WP_Error('missing_credentials', $mode === 'live'
+                ? __('No live secret key is saved.', 'fluent-cart')
+                : __('No test secret key is saved.', 'fluent-cart'));
+        }
+
+        $balance = (new API())->remoteRequest('balance', [], $secretKey, 'GET');
+
+        if (is_wp_error($balance)) {
+            return $balance;
+        }
+
+        if (!is_bool(Arr::get($balance, 'livemode'))) {
+            return new \WP_Error('api_error', __('Stripe returned a response that could not be read.', 'fluent-cart'));
+        }
+
+        if ((bool) Arr::get($balance, 'livemode') !== ($mode === 'live')) {
+            return new \WP_Error('mode_mismatch', $mode === 'live'
+                ? __('The live key field holds a test key. Paste a key that starts with sk_live_.', 'fluent-cart')
+                : __('The test key field holds a live key. Paste a key that starts with sk_test_.', 'fluent-cart'));
+        }
+
+        return [
+            'message' => $mode === 'live'
+                ? __('Stripe accepted the live key.', 'fluent-cart')
+                : __('Stripe accepted the test key.', 'fluent-cart')
+        ];
     }
 
     public static function validateSettings($data): array
@@ -766,6 +833,10 @@ class Stripe extends AbstractPaymentGateway
                 if ($payableNow <= 0) {
                     $consentRequired = true;
                 }
+            } elseif (!$this->shouldRenderAsSubscriptionMode($hasSubscription)
+                && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutCanConvertToSystem($this)
+            ) {
+                $systemConsent = __('Your payment method will be saved securely and charged automatically on each renewal date. You can update or replace it any time from your account.', 'fluent-cart');
             }
 
             wp_send_json(
@@ -882,6 +953,14 @@ class Stripe extends AbstractPaymentGateway
                 ];
                 $consentRequired = true;
             }
+        } elseif (!$renderAsSubscription
+            && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutCanConvertToSystem($this)
+            && \FluentCart\App\Services\OrderService::getItemsAmountTotal($cart->cart_data ?? [], false, false) > 0
+        ) {
+            // Manual sub paying its renewal invoice converts to auto-charge, same
+            // notice as a new system sub. Must match makePaymentFromPaymentInstance's flag.
+            $intentData['setup_future_usage'] = 'off_session';
+            $systemConsent = __('Your payment method will be saved securely and charged automatically on each renewal date. You can update or replace it any time from your account.', 'fluent-cart');
         }
 
         if ($renderAsSubscription) {

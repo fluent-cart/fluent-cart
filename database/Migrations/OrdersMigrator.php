@@ -70,7 +70,7 @@ class OrdersMigrator extends Migrator
 
     /**
      * Currency-scoped reports filter on currency + a created_at range
-     * (multi-currency plan §3 Phase 2).
+     * (dev-docs/multi-currency/02-database-schema.md).
      */
     public static function addCurrencyCreatedIndex()
     {

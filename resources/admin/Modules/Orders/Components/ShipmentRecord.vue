@@ -6,10 +6,10 @@
         still shown (the `denied` slot), just not changeable.
       -->
       <UserCan permission="orders/manage_statuses">
-        <el-dropdown
+        <fct-dropdown
             trigger="click"
-            popper-class="fct-dropdown"
             :disabled="updating"
+            :items="Object.entries(statusOptions).map(([slug, label]) => ({command: slug, label, disabled: slug === currentStatus}))"
             @command="updateStatus"
         >
           <button
@@ -24,19 +24,7 @@
               <DynamicIcon v-else name="ChevronDown" class="fct-shipment-status-trigger__icon"/>
             </Badge>
           </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item
-                  v-for="(label, slug) in statusOptions"
-                  :key="slug"
-                  :command="slug"
-                  :disabled="slug === currentStatus"
-              >
-                {{ label }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        </fct-dropdown>
 
         <template #denied>
           <Badge :type="currentStatus" size="small" :text="statusLabel"/>
@@ -87,7 +75,7 @@
 
     <td>
       <div class="flex items-center justify-end gap-1">
-        <el-popover
+        <fct-popover
             v-if="hasMoreActions"
             v-model:visible="moreOpen"
             trigger="click"
@@ -114,8 +102,8 @@
           <div v-if="confirmingDelete" class="fct-shipment-menu" role="alertdialog" :aria-label="translate('Delete shipment')">
             <p class="fct-shipment-menu__confirm">{{ deleteConfirmText }}</p>
             <div class="flex justify-end gap-2 px-1.5 pb-1.5">
-              <el-button size="small" @click="confirmingDelete = false">{{ translate('Cancel') }}</el-button>
-              <el-button size="small" type="danger" :loading="deleting" @click="confirmDelete">{{ translate('Yes, Delete') }}</el-button>
+              <fct-button size="small" @click="confirmingDelete = false">{{ translate('Cancel') }}</fct-button>
+              <fct-button size="small" type="danger" :loading="deleting" @click="confirmDelete">{{ translate('Yes, Delete') }}</fct-button>
             </div>
           </div>
 
@@ -155,7 +143,7 @@
               </button>
             </UserCan>
           </div>
-        </el-popover>
+        </fct-popover>
 
         <button
             type="button"
@@ -224,7 +212,7 @@
               </a>
             </span>
             <span v-else class="fct-shipments-table__muted">{{ translate('No tracking number') }}</span>
-            <el-button
+            <fct-button
                 v-if="parcel.labelHref"
                 tag="a"
                 size="small"
@@ -236,13 +224,13 @@
             >
               <DynamicIcon name="Download" class="w-4 h-4 me-1.5"/>
               {{ translate('Download label') }}
-            </el-button>
+            </fct-button>
           </li>
         </ul>
       </div>
 
       <div v-if="hasLabelLink || shipment.can_refresh_tracking" class="flex flex-wrap gap-2 mt-3">
-        <el-button
+        <fct-button
             v-if="hasLabelLink"
             tag="a"
             size="small"
@@ -252,12 +240,12 @@
         >
           <DynamicIcon name="Download" class="w-4 h-4 me-1.5"/>
           {{ translate('Download label') }}
-        </el-button>
+        </fct-button>
         <UserCan v-if="shipment.can_refresh_tracking" permission="orders/manage_statuses">
-          <el-button size="small" :disabled="refreshing" @click="refreshTracking">
+          <fct-button size="small" :disabled="refreshing" @click="refreshTracking">
             <DynamicIcon name="Refresh" class="w-4 h-4 me-1.5" :class="{ 'animate-spin': refreshing }"/>
             {{ translate('Refresh tracking') }}
-          </el-button>
+          </fct-button>
         </UserCan>
       </div>
     </td>

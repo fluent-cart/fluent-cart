@@ -28,7 +28,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-form-item>
+  <div class="mb-[18px]">
     <div class="flex gap-2 items-center justify-between w-full mb-2.5 -mt-2">
       <label class="setting-label !mb-0">{{$t('Code')}}</label>
         <span
@@ -38,12 +38,12 @@ onMounted(() => {
             {{ $t("Generate Random Code") }}
         </span>
     </div>
-    <el-input
+    <fct-input
         v-model="value[fieldKey]"
         :placeholder="field.placeholder"
         maxlength="20"
         @input="value[fieldKey] = value[fieldKey].toUpperCase()"
-    ></el-input>
+    />
     <div class="form-note">
       <p>
         {{
@@ -51,7 +51,7 @@ onMounted(() => {
         }}
       </p>
     </div>
-  </el-form-item>
+  </div>
 </template>
 
 <style scoped>

@@ -90,16 +90,14 @@ const closePopover = () => {
 </script>
 
 <template>
-  <el-tooltip
+  <fct-tooltip
     :content="tooltipContent"
-    placement="top"
     :disabled="!isSubscription || popoverVisible"
-    popper-class="fct-tooltip"
     :show-after="400"
   >
-    <!-- The tooltip trigger needs an element; el-popover has a fragment root. -->
+    <!-- The tooltip trigger needs an element; fct-popover has a fragment root. -->
     <span class="inline-flex">
-    <el-popover
+    <fct-popover
       v-model:visible="popoverVisible"
       placement="bottom"
       :width="320"
@@ -132,25 +130,25 @@ const closePopover = () => {
       <!-- Installment Payment -->
       <div class="fct-bulk-sub-section">
         <div class="fct-bulk-sub-row">
-          <el-checkbox
+          <fct-choice
             true-value="yes"
             false-value="no"
-            :label="$t('Enable installment payment')"
             v-model="variant.other_info.installment"
             :disabled="!hasPro || disabled"
             @change="onInstallmentChange"
-          />
-          <el-tooltip v-if="!hasPro" popper-class="fct-tooltip">
+          >{{ $t('Enable installment payment') }}</fct-choice>
+          <fct-tooltip v-if="!hasPro">
             <template #content>{{ $t('This feature is available in pro version only.') }}</template>
             <DynamicIcon name="Crown" class="fct-pro-icon" />
-          </el-tooltip>
+          </fct-tooltip>
         </div>
 
         <template v-if="otherInfo.installment === 'yes'">
           <div class="fct-bulk-sub-row">
             <label class="fct-bulk-sub-label">{{ $t('Installment Count') }}</label>
-            <el-input
+            <fct-input
               type="number"
+              :controls="false"
               :min="MIN_INSTALLMENT_TIMES"
               size="small"
               v-model.number="variant.other_info.times"
@@ -170,7 +168,7 @@ const closePopover = () => {
       <!-- Setup Fee -->
       <div class="fct-bulk-sub-section">
         <div class="fct-bulk-sub-row">
-          <el-switch
+          <fct-switch
             :active-text="$t('Setup fee')"
             :model-value="variant.other_info.manage_setup_fee || 'no'"
             @update:model-value="value => variant.other_info.manage_setup_fee = value"
@@ -180,16 +178,16 @@ const closePopover = () => {
             size="small"
             @change="onSetupFeeChange"
           />
-          <el-tooltip v-if="!hasPro" popper-class="fct-tooltip">
+          <fct-tooltip v-if="!hasPro">
             <template #content>{{ $t('This feature is available in pro version only.') }}</template>
             <DynamicIcon name="Crown" class="fct-pro-icon"/>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
 
         <template v-if="otherInfo.manage_setup_fee === 'yes'">
           <div class="fct-bulk-sub-row">
             <label class="fct-bulk-sub-label">{{ $t('Label') }}</label>
-            <el-input
+            <fct-input
               size="small"
               v-model="variant.other_info.signup_fee_name"
               :placeholder="$t('e.g. Initial Setup')"
@@ -209,12 +207,12 @@ const closePopover = () => {
       </div>
 
       <div class="fct-bulk-sub-footer">
-        <el-button size="small" type="primary" @click="closePopover">{{ $t('Done') }}</el-button>
+        <fct-button size="small" type="primary" @click="closePopover">{{ $t('Done') }}</fct-button>
       </div>
     </div>
-    </el-popover>
+    </fct-popover>
     </span>
-  </el-tooltip>
+  </fct-tooltip>
 </template>
 
 

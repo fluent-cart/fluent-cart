@@ -93,7 +93,7 @@ onUnmounted(() => {
   <Card.Container>
     <Card.Header :title="title" :text="text" title_size="small" border_bottom/>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="6"/>
+      <fct-skeleton v-if="loading" animated :rows="6"/>
       <ReportLoadError v-else-if="failed" @retry="$emit('retry')"/>
       <el-empty v-else-if="!current.some(value => value) && !(previous || []).some(value => value)" :description="translate('No sales in this period')"/>
       <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 300px"></div>

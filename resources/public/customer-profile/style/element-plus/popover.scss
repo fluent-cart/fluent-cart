@@ -3,7 +3,7 @@
     @apply mt-3.5;
   }
   .el-button--small{
-    @apply min-h-7 px-2.5 text-xs #{!important};
+    @apply min-h-7! px-2.5! text-xs!;
   }
   .el-button+.el-button {
     margin-left: 6px;

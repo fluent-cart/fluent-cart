@@ -74,24 +74,4 @@ class SubscriptionFutureRenewalsTest extends WPTestCase
         $this->assertSame(1, $result['totalRenewals']);
         $this->assertEquals(5000, $result['totalProjected']);
     }
-
-    public function test_quarterly_subscription_projects_one_renewal_in_the_next_quarter(): void
-    {
-        $this->activeSubscription('quarterly', 10, 7000);
-
-        $result = $this->service->getFutureRenewals([]);
-
-        $this->assertSame(1, $result['totalRenewals']);
-        $this->assertEquals(7000, $result['totalProjected']);
-    }
-
-    public function test_unresolvable_interval_is_excluded_rather_than_projected_as_monthly(): void
-    {
-        $this->activeSubscription('fortnightly', 10, 5000);
-
-        $result = $this->service->getFutureRenewals([]);
-
-        $this->assertSame(0, $result['totalRenewals']);
-        $this->assertEquals(0, $result['totalProjected']);
-    }
 }

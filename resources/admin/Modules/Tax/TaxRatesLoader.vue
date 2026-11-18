@@ -9,20 +9,12 @@ const widths = ref(
 <template>
   <div class="fct-tax-rates-wrap-loader px-5">
     <div v-for="(width, index) in widths" :key="index" class="flex items-center justify-between border-[1px] border-solid border-gray-divider dark:border-dark-400 rounded h-12 pe-4 ps-6 mb-4">
-      <el-skeleton animated :style="{ width }" class="h-4">
-        <template #template>
-          <el-skeleton-item variant="p" class="h-4" />
-        </template>
-      </el-skeleton>
-      <el-skeleton animated class="w-[100px] h-4">
-        <template #template>
-          <el-skeleton-item variant="p" class="h-4" />
-        </template>
-      </el-skeleton>
+      <fct-skeleton animated :style="{ width }" class="h-4">
+        <fct-skeleton variant="p" class="h-4" />
+      </fct-skeleton>
+      <fct-skeleton animated class="w-[100px] h-4">
+        <fct-skeleton variant="p" class="h-4" />
+      </fct-skeleton>
     </div>
   </div>
 </template>
-
-<style scoped>
-
-</style>

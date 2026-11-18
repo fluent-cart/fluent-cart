@@ -110,7 +110,6 @@ $directivePattern = '/\bv-(?:if|else-if|show)\s*=\s*"([^"]*)"/';
 $declarationPattern = '/(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s*((?:[^;])*);/s';
 
 $violations = [];
-$scanned = 0;
 
 $iterate = function ($dir) use (&$iterate) {
     $out = [];
@@ -137,7 +136,6 @@ foreach ($scanDirs as $dir) {
     // Accept absolute paths as well as paths relative to the plugin root.
     $target = ($dir !== '' && $dir[0] === '/') ? $dir : $root . '/' . $dir;
     foreach ($iterate($target) as $path) {
-        $scanned++;
         $contents = file_get_contents($path);
         if ($contents === false) {
             fwrite(STDERR, "name-mode-forms: could not read {$path}\n");
@@ -213,11 +211,8 @@ foreach ($scanDirs as $dir) {
     }
 }
 
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
 if (!$violations) {
-    printf(
-        "name-mode-forms: clean (%d .vue file(s) scanned)\n",
-        $scanned
-    );
     exit(0);
 }
 

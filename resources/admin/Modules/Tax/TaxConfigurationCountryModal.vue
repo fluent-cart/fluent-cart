@@ -124,12 +124,12 @@ const filteredTaxRates = computed(() => {
 
 <template>
   <div class="fct-tax-configuration-country-wrap">
-    <el-button type="primary" size="small" @click="showConfig">
+    <fct-button type="primary" size="small" @click="showConfig">
       {{ translate('Configure Countries') }}
-    </el-button>
+    </fct-button>
 
 
-    <el-dialog
+    <fct-dialog
         v-model="showModal"
         width="800px"
         append-to-body
@@ -147,7 +147,7 @@ const filteredTaxRates = computed(() => {
       <div class="fct-tax-rates-configuration-country-view">
         <TaxRatesLoader v-if="loading" />
         <div v-else class="fct-tax-rates-wrap">
-          <el-input
+          <fct-input
               v-model="searchTerm"
               :placeholder="translate('Search country...')"
               clearable
@@ -182,11 +182,11 @@ const filteredTaxRates = computed(() => {
                         translate('%s rates', taxCountry.total_rates)
                       }}
                     </div>
-                    <el-checkbox
+                    <fct-choice
                         :model-value="selectedCountries.includes(taxCountry.country_code)"
                         @change="toggleCountry(taxCountry.country_code)">
                       {{ translate('Select') }}
-                    </el-checkbox>
+                    </fct-choice>
                   </div>
                 </div>
               </div>
@@ -208,14 +208,10 @@ const filteredTaxRates = computed(() => {
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="showModal = false" type="info" soft>{{ translate('Cancel') }}</el-button>
-          <el-button type="primary" @click="beforeSave" :loading="savingCountryConfig" :disabled="savingCountryConfig">{{ savingCountryConfig ? translate('Saving') : translate('Save') }}</el-button>
+          <fct-button @click="showModal = false" type="info" soft>{{ translate('Cancel') }}</fct-button>
+          <fct-button type="primary" @click="beforeSave" :loading="savingCountryConfig" :disabled="savingCountryConfig">{{ savingCountryConfig ? translate('Saving') : translate('Save') }}</fct-button>
         </div>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
-
-<style scoped>
-
-</style>

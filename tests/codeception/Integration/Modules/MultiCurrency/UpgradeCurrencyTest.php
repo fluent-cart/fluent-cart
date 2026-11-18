@@ -23,7 +23,7 @@ use Tests\Support\RateFixture;
 /**
  * A plan upgrade is a new order and a new subscription, so it is priced in
  * the shopper's chosen currency — else the subscription's — at today's rate
- * (dev-docs/multi-currency/plan.md §15.6). Base USD, GBP 0.79, EUR 0.92.
+ * (dev-docs/multi-currency/06-orders-subscriptions.md). Base USD, GBP 0.79, EUR 0.92.
  */
 class UpgradeCurrencyTest extends DatabaseTestCase
 {

@@ -122,6 +122,23 @@ const searchScopeLabel = computed(() => {
     );
 });
 
+const scopeOptions = computed(() => [
+    {
+        value: 'current_page',
+        disabled: !props.currentPageCount,
+        label: props.currentPageCount
+            ? `${translate('Current page')} (${props.currentPageCount} ${getCountLabel(props.currentPageCount)})`
+            : translate('Current page')
+    },
+    {value: 'all', label: allScopeLabel.value},
+    {
+        value: 'selected',
+        disabled: !props.selectedCount,
+        label: `${translate('Selected')} (${props.selectedCount} ${getCountLabel(props.selectedCount)})`
+    },
+    {value: 'search_results', disabled: !searchResultsCount.value, label: searchScopeLabel.value}
+]);
+
 const getFormatDescription = (format) => {
     return format.value === 'json'
         ? translate('JSON preserves selected database modules and their related rows.')
@@ -216,7 +233,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-    <el-dialog
+    <fct-dialog
         v-model="dialogVisible"
         :title="title || translate('Export')"
         :append-to-body="true"
@@ -259,26 +276,7 @@ const handleCancel = () => {
                     </span>
                 </div>
 
-                <el-select v-model="exportScope" class="fct-export-options">
-                    <el-option
-                        value="current_page"
-                        :disabled="!currentPageCount"
-                        :label="currentPageCount
-                            ? `${translate('Current page')} (${currentPageCount} ${getCountLabel(currentPageCount)})`
-                            : translate('Current page')"
-                    />
-                    <el-option value="all" :label="allScopeLabel" />
-                    <el-option
-                        value="selected"
-                        :disabled="!selectedCount"
-                        :label="`${translate('Selected')} (${selectedCount} ${getCountLabel(selectedCount)})`"
-                    />
-                    <el-option
-                        value="search_results"
-                        :disabled="!searchResultsCount"
-                        :label="searchScopeLabel"
-                    />
-                </el-select>
+                <fct-select v-model="exportScope" class="fct-export-options" :options="scopeOptions"/>
             </section><!-- .fct-export-section -->
 
             <section class="fct-export-section">
@@ -322,24 +320,24 @@ const handleCancel = () => {
                 </div>
 
                 <div class="fct-export-columns-wrap">
-                    <el-checkbox
+                    <fct-choice
                         :model-value="areAllColumnsSelected"
                         :indeterminate="isColumnSelectionPartial"
                         :disabled="!columns.length"
                         @change="toggleAllColumns"
                     >
                         {{ translate('Select all') }}
-                    </el-checkbox>
+                    </fct-choice>
 
                     <div class="fct-export-columns-grid">
-                        <el-checkbox
+                        <fct-choice
                             v-for="column in columns"
                             :key="column.key"
                             :model-value="selectedColumnKeys.has(column.key)"
                             @change="toggleColumn(column.key)"
                         >
                             {{ column.label }}
-                        </el-checkbox>
+                        </fct-choice>
                     </div>
                 </div>
             </section><!-- .fct-export-section -->
@@ -366,7 +364,7 @@ const handleCancel = () => {
                         }"
                         @click="toggleModule(module)"
                     >
-                        <el-checkbox
+                        <fct-choice
                             :model-value="selectedModuleKeys.has(module.key)"
                             :disabled="module.required"
                             @click.stop
@@ -376,7 +374,7 @@ const handleCancel = () => {
                             <small v-if="module.required" class="fct-export-required">
                                 {{ translate('Required') }}
                             </small>
-                        </el-checkbox>
+                        </fct-choice>
                         <span>{{ module.description }}</span>
                     </div>
                 </div>
@@ -427,7 +425,7 @@ const handleCancel = () => {
                 </span>
             </div>
             <Animation :visible="true" fade :duration="300">
-                <el-progress
+                <fct-progress
                     :percentage="exportState.progress.value.percentage"
                     :stroke-width="6"
                     striped
@@ -466,18 +464,18 @@ const handleCancel = () => {
 
         <template #footer>
             <div class="dialog-footer">
-                <el-button @click="handleCancel">
+                <fct-button @click="handleCancel">
                     {{ exportState.isExporting.value ? translate('Cancel export') : translate('Close') }}
-                </el-button>
-                <el-button
+                </fct-button>
+                <fct-button
                     v-if="showConfig"
                     type="primary"
                     :disabled="isExportDisabled"
                     @click="handleExport"
                 >
                     {{ translate('Export file') }}
-                </el-button>
+                </fct-button>
             </div>
         </template>
-    </el-dialog>
+    </fct-dialog>
 </template>

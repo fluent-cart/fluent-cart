@@ -156,10 +156,7 @@ defineExpose({
 <template>
     <div class="fct-product-pricing-form-wrap">
         <div class="fct-product-pricing-form-inner">
-            <el-form
-                label-position="top"
-                require-asterisk-position="right"
-            >
+            <div>
                 <VariantPrice
                     :variant="variant"
                     :field-key="fieldKey"
@@ -194,16 +191,16 @@ defineExpose({
                     mode-type="update"
                     :is-group-mode="true"
                 />
-            </el-form>
+            </div>
         </div>
 
         <div class="dialog-footer">
             <div class="fct-btn-group sm">
-                <el-button @click="emit('closeModal')">
+                <fct-button @click="emit('closeModal')">
                     {{ translate('Cancel') }}
-                </el-button>
+                </fct-button>
 
-                <el-button
+                <fct-button
                     type="primary"
                     :loading="productEditModel.saving"
                     :disabled="productEditModel.saving"
@@ -213,7 +210,7 @@ defineExpose({
                         /* translators: %1$s: number of variants to bulk-update */
                         translate('Update %1$s variants', groupVariantIds.length)
                     }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
     </div>

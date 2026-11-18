@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <fct-dialog
       class="fct-role-assignment-modal"
       :title="title"
       v-model="modelValue"
@@ -8,97 +8,79 @@
   >
 
     <div class="role-form">
-      <el-form label-position="top">
-        <el-form-item :label="translate('Select User')" v-if="!isEditing">
-          <el-select
-              v-model="selectedUser"
-              :remote="true"
-              :remote-method="searchUsers"
-              :loading="loadingUsers"
-              filterable
-              clearable
-              :placeholder="translate('Type to search user')"
-              class="w-full"
-              @change="() => { delete validationErrors['user_id'] }"
-          >
-            <el-option
-                v-for="user in users"
-                :key="user.ID"
-                :label="user.name"
-                :value="user.ID"
-            >
-              <div class="select-use-option">
-                <span>{{ user.name }}</span>
-                <span>{{ user.email }}</span>
-              </div>
-            </el-option>
-          </el-select>
+      <div>
+        <fct-select
+            v-if="!isEditing"
+            :label="translate('Select User')"
+            :validation-errors="validationErrors"
+            field-key="user_id"
+            v-model="selectedUser"
+            :options="userOptions"
+            :remote="true"
+            :remote-method="searchUsers"
+            :loading="loadingUsers"
+            filterable
+            clearable
+            :placeholder="translate('Type to search user')"
+            class="w-full"
+            @change="() => { delete validationErrors['user_id'] }"
+        >
+          <template #option="{option}">
+            <div class="select-use-option">
+              <span>{{ option.label }}</span>
+              <span>{{ option.email }}</span>
+            </div>
+          </template>
+        </fct-select>
 
-          <ValidationError
-              v-if="validationErrors.hasOwnProperty('user_id')"
-              :validation-errors="validationErrors"
-              field-key="user_id"
-          />
-        </el-form-item>
-
-        <el-form-item :label="translate('Select Role')">
-          <el-select
-              @change="(currentUserName)=>{
-                delete validationErrors['role_key']
-              }"
-              id="role_key"
-              v-model="selectedRole"
-              :placeholder="translate('Select a role')"
-              class="w-full"
-              popper-class="fct-select-role-dropdown"
-          >
-            <el-option
-                v-for="(role, roleKey) in roles"
-                :key="roleKey"
-                :label="role.title"
-                :value="roleKey"
-            >
-              <div class="select-label">
-                {{ role.title }}
-              </div>
-              <div v-if="role.description" class="select-desc">
-                {{ role.description }}
-              </div>
-            </el-option>
-          </el-select>
-
-          <ValidationError
-              v-if="validationErrors.hasOwnProperty('role_key')"
-              :validation-errors="validationErrors"
-              field-key="role_key"
-          />
-        </el-form-item>
-      </el-form>
+        <fct-select
+            id="role_key"
+            :label="translate('Select Role')"
+            :validation-errors="validationErrors"
+            field-key="role_key"
+            @change="(currentUserName)=>{
+              delete validationErrors['role_key']
+            }"
+            v-model="selectedRole"
+            :options="roleOptions"
+            :placeholder="translate('Select a role')"
+            class="w-full"
+            popper-class="fct-select-role-dropdown"
+        >
+          <template #option="{option}">
+            <div class="select-label">
+              {{ option.label }}
+            </div>
+            <div v-if="option.description" class="select-desc">
+              {{ option.description }}
+            </div>
+          </template>
+        </fct-select>
+      </div>
     </div>
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="closeModal">
+        <fct-button @click="closeModal">
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             type="primary"
             @click="attachRole"
             :loading="submitting"
             :disabled="submitting"
         >
           {{ isEditing ? translate('Update Role') : translate('Attach Role') }}
-        </el-button>
+        </fct-button>
       </span>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>
 import {onMounted, ref, watch, computed} from 'vue';
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import translate from "@/utils/translator/Translator";
 
 const modelValue = ref(false);
@@ -112,6 +94,8 @@ const isEditing = ref(false);
 const users = ref(null);
 const roles = ref(null);
 const validationErrors = ref({});
+const userOptions = computed(() => (users.value || []).map(user => ({label: user.name, value: user.ID, email: user.email})));
+const roleOptions = computed(() => Object.entries(roles.value || {}).map(([roleKey, role]) => ({label: role.title, value: roleKey, description: role.description})));
 
 const loadingUsers = ref(false);
 const searchUsers = (query) => {
@@ -200,7 +184,9 @@ defineExpose({
 </script>
 
 <style scoped>
-.role-form .el-form-item:last-child {
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
+.role-form .fct-form-field:last-child {
   @apply mb-0;
 }
 

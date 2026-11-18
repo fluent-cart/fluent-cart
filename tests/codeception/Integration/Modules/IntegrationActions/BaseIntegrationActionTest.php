@@ -34,14 +34,6 @@ class BaseIntegrationActionTest extends WPTestCase
         };
     }
 
-    // Spec 168: GlobalIntegrationActionHandler::register wires fluentcart_loaded; init() wires init → do_action(register_integration_action)
-    public function test_global_action_handler_register_binds_fluentcart_loaded(): void
-    {
-        $handler = new GlobalIntegrationActionHandler();
-        $handler->register();
-        $this->assertNotFalse(has_action('fluentcart_loaded'));
-    }
-
     public function test_global_action_handler_init_binds_register_action_to_init(): void
     {
         // init()'s inner add_action('init', closure) registers a callback that emits register_integration_action.

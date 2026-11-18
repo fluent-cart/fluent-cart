@@ -132,7 +132,8 @@ class PlanUpgradeService
 
         // An upgrade is a new order: priced in the shopper's chosen currency
         // (else the subscription's) at today's rate and rules; the prorate
-        // credit is converted from what was paid (multi-currency plan §15.6).
+        // credit is converted from what was paid
+        // (dev-docs/multi-currency/06-orders-subscriptions.md, "Plan upgrades").
         // An order whose currency cannot be quoted offers no upgrade at all
         $quote = CartCurrency::upgradeQuote($order);
         $paidAt = CurrencySnapshot::fromOrder($order);

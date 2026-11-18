@@ -113,7 +113,7 @@ class OrdersSecurityCest
             ['POST',   '/fluent-cart/v2/orders/do-bulk-action',                  ['action' => 'delete_orders', 'order_ids' => [$orderId]], 'bulk-action', 'orders/manage'],
             ['POST',   '/fluent-cart/v2/orders/calculate-shipping',              [],                              'calculate-shipping', 'orders/create+manage'],
             ['POST',   '/fluent-cart/v2/orders/calculate-tax',                   [],                              'calculate-tax',   'orders/create+manage'],
-            ['GET',    '/fluent-cart/v2/orders/shipping_methods',                [],                              'shipping-methods', 'orders/manage'],
+            ['GET',    '/fluent-cart/v2/orders/shipping_methods',                [],                              'shipping-methods', 'orders/create OR orders/manage'],
             ['POST',   '/fluent-cart/v2/orders/' . $orderId . '/change-customer', [],                             'change-customer', 'orders/manage'],
             ['POST',   '/fluent-cart/v2/orders/' . $orderId . '/create-and-change-customer', [],                  'create-and-change-customer', 'orders/manage'],
             ['POST',   '/fluent-cart/v2/orders/' . $orderId . '/generate-missing-licenses', [],                   'generate-missing-licenses', 'orders/manage'],

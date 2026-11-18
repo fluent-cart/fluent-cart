@@ -165,6 +165,16 @@ describe('DataWatcher shipping destination saves', () => {
 
         expect(ui.holdCheckoutButton).toHaveBeenCalledTimes(1);
     });
+
+    it('holds for a field a request-building carrier quotes from', () => {
+        window.fluentcart_checkout_vars.shipping_quote_form_fields = ['billing_email', 'fct_billing_tax_id'];
+
+        watcher().saveCustomerData('billing_email', 'b@example.com');
+        watcher().saveCustomerData('fct_billing_tax_id', 'DE2');
+        watcher().saveCustomerData('_fct_pay_method', 'stripe');
+
+        expect(ui.holdCheckoutButton).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe('DataWatcher holds the button for the destination the form posts', () => {

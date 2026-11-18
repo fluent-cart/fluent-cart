@@ -21,6 +21,7 @@ class CartDrawerRenderer
 
     protected $isAdminBarEnabled = false;
 
+    protected $cart = null;
 
     public function __construct($cartItems, $config = [])
     {
@@ -28,6 +29,7 @@ class CartDrawerRenderer
         $this->cartItems = $cartItems;
         $this->itemCount = Arr::get($config, 'item_count') ?? 0;
         $this->defaultOpenCart = Arr::get($config, 'open_cart') ?? false;
+        $this->cart = Arr::get($config, 'cart');
 
         $this->isAdminBarEnabled = Arr::get($config, 'is_admin_bar_enabled') || is_admin_bar_showing() ?? false;
 
@@ -62,6 +64,8 @@ class CartDrawerRenderer
 
                 <?php $this->cartRenderer->renderItems(); ?>
 
+                <?php $this->renderAfterItems(); ?>
+
                 <?php $this->renderFooter(); ?>
 
 
@@ -73,6 +77,16 @@ class CartDrawerRenderer
 
         </div>
 
+        <?php
+    }
+
+    // Own wrapper so cart updates, and other tabs that keep their drawer, can replace this block.
+    public function renderAfterItems()
+    {
+        ?>
+        <div data-fluent-cart-drawer-after-items>
+            <?php do_action('fluent_cart/cart_drawer/after_items', ['cart' => $this->cart]); ?>
+        </div>
         <?php
     }
 

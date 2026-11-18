@@ -200,7 +200,7 @@ defineExpose({ focus });
 <template>
     <div class="fct-term-draft-form" :class="`fct-term-draft-form--${groupType}`">
         <div class="fct-term-draft-form-title-line">
-            <el-input
+            <fct-input
                 ref="titleInputRef"
                 v-model="term.title"
                 :placeholder="groupType === 'color' ? translate('e.g. Navy Blue') : translate('Term title')"
@@ -252,7 +252,7 @@ defineExpose({ focus });
                         @change="clearError('settings.color')"
                     />
                 </div>
-                <el-input
+                <fct-input
                     v-model="term.settings.color"
                     placeholder="#000000"
                     size="default"
@@ -283,7 +283,7 @@ defineExpose({ focus });
                     <img v-if="term.settings.image" :src="term.settings.image" alt=""/>
                     <DynamicIcon v-else name="Plus"/>
                 </button>
-                <el-input
+                <fct-input
                     v-model="term.settings.image"
                     :placeholder="translate('https://...')"
                     size="default"

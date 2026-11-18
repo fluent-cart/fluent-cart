@@ -1,54 +1,41 @@
 <template>
     <div>
-        <el-dialog width="60%"
-            :visible-sync="discountModalOpen"
+        <fct-dialog width="60%"
             v-model="discountModalOpen"
             :title="$t('Manage discount')">
-            <el-form label-position='top'>
-                <el-row :gutter="20">
-                    <el-col :md="12" :sm="12" :xs="24">
-                        <el-form-item :label="$t('Discount type')">
-                            <el-select v-model="discount.type" placeholder="Select">
-                                <el-option v-for="item in discountOptions"
-                                    :key="item.value" :label="item.label" :value="item.value">
-                                </el-option>
-                            </el-select>
-                        </el-form-item>
-                    </el-col>
-                    <el-col :md="12" :sm="12" :xs="24">
-                        <el-form-item :label="$t('Discount value')">
-                            <el-input type="number" v-model.number="discount.value">
-                                <template #prefix>
-                                    <span v-if="discount.type == 'amount'" v-html="appVars.shop.currency_sign"></span>
-                                    <span v-else>%</span>
-                                </template>
-                            </el-input>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-                <el-row>
-                    <el-col :md="12" :sm="12" :xs="24">
-                        <el-form-item :label="$t('Reason')">
-                            <el-input v-model="discount.reason">
-                            </el-input>
-                            <i>{{$t('Your customers can see this reason')}}</i>
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-            </el-form>
+            <div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5">
+                    <fct-select v-model="discount.type" :label="$t('Discount type')" placeholder="Select" :options="discountOptions"/>
+                    <fct-input :label="$t('Discount value')" type="number" :controls="false" v-model.number="discount.value">
+                        <template #prefix>
+                            <span v-if="discount.type == 'amount'" v-html="appVars.shop.currency_sign"></span>
+                            <span v-else>%</span>
+                        </template>
+                    </fct-input>
+                </div>
+                <div class="md:w-1/2">
+                    <Field :label="$t('Reason')">
+                        <fct-input v-model="discount.reason"/>
+                        <i>{{$t('Your customers can see this reason')}}</i>
+                    </Field>
+                </div>
+            </div>
             <template #footer>
                 <div class="dialog-footer">
-                    <el-button type="primary" @click="$emit('process_custom')">
+                    <fct-button type="primary" @click="$emit('process_custom')">
                         {{$t('Update')}}
-                    </el-button>
+                    </fct-button>
                 </div>
             </template>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 
 <script>
+import Field from "@/Bits/Components/Fct/Field.vue";
+
 export default {
+    components: {Field},
     props: ['discountModal', 'discount'],
     data() {
         return {

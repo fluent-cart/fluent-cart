@@ -1,0 +1,726 @@
+// Beats the global `.el-overlay .el-dialog` width, which keeps a fullscreen dialog small.
+.el-overlay .el-dialog.fct-placement-preview-modal {
+  @apply m-0 flex h-full w-full max-w-none flex-col rounded-none;
+
+  .el-dialog__body {
+    @apply min-h-0 flex-1 overflow-y-auto p-0;
+  }
+}
+
+.fct-placement-preview {
+  @apply flex h-full min-h-0 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden;
+
+  &__header {
+    @apply flex flex-col gap-1;
+  }
+
+  &__main {
+    @apply relative flex min-h-0 min-w-0 flex-1 flex-col;
+  }
+
+  &__cart-btn {
+    @apply absolute bottom-6 right-6 flex h-14 w-14 cursor-pointer items-center justify-center border-0 bg-white p-0 text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 dark:bg-dark-400 dark:text-gray-50;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(14, 18, 27, 0.16);
+
+    svg {
+      @apply h-6 w-6;
+    }
+  }
+
+  &__cart-count {
+    @apply absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center bg-black px-1 text-xs font-semibold text-white dark:bg-gray-100 dark:text-gray-900;
+    border-radius: 9999px;
+  }
+
+  &__switch {
+    @apply mx-auto mb-4 flex max-w-[820px] flex-col items-center gap-2 text-center;
+  }
+
+  &__canvas {
+    @apply min-w-0 flex-1 bg-gray-100 p-6 dark:bg-dark-700 lg:overflow-y-auto;
+  }
+
+  &__sidebar {
+    @apply flex w-full shrink-0 flex-col gap-3 border-0 border-solid border-gray-200 bg-white p-5 dark:border-dark-400 dark:bg-dark-600 lg:w-[320px] lg:overflow-y-auto lg:border-l;
+
+    .el-select {
+      @apply w-full;
+    }
+  }
+
+  &__sidebar-title {
+    @apply m-0 text-sm font-semibold text-gray-900 dark:text-gray-50;
+  }
+
+  &__sidebar-group {
+    @apply mt-2 flex flex-col gap-2 border-0 border-t border-solid border-gray-200 pt-4 dark:border-dark-400;
+
+    &--first {
+      @apply mt-0 border-t-0 pt-0;
+    }
+  }
+
+  &__sidebar-note {
+    @apply m-0 text-xs text-system-mid dark:text-gray-300;
+  }
+
+  &__title {
+    @apply text-lg font-semibold text-gray-900 dark:text-gray-50;
+  }
+
+  &__subtitle {
+    @apply text-sm text-system-mid dark:text-gray-300;
+  }
+
+  &__page {
+    @apply mx-auto max-w-[820px] bg-white p-5 dark:bg-dark-600;
+    border-radius: 8px;
+  }
+
+  &__notice {
+    @apply border border-solid border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-900 dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100;
+    border-radius: 8px;
+
+    // Sits above the page panel, in the same column.
+    &--note {
+      @apply mx-auto mb-4 max-w-[820px];
+    }
+
+    &--top {
+      @apply mb-4;
+    }
+  }
+
+  &__grid {
+    @apply grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr];
+  }
+
+  &__col {
+    @apply flex min-w-0 flex-col gap-3;
+  }
+
+  &__card {
+    @apply overflow-hidden border border-solid border-gray-200 text-gray-900 dark:border-dark-400 dark:text-gray-100;
+    border-radius: 8px;
+
+    &--padded {
+      @apply p-3.5;
+    }
+  }
+
+  &__field {
+    @apply flex items-center justify-between gap-3 border-0 border-b border-solid border-gray-200 px-3.5 py-2.5 last:border-b-0 dark:border-dark-400;
+  }
+
+  &__check {
+    @apply flex items-center gap-2;
+  }
+
+  &__box {
+    @apply h-3.5 w-3.5 shrink-0 border border-solid border-gray-400;
+    border-radius: 4px;
+  }
+
+  &__heading-row {
+    @apply flex items-center justify-between;
+  }
+
+  &__heading {
+    @apply m-0 mt-1 text-sm font-semibold text-gray-900 dark:text-gray-50;
+
+    &--flush {
+      @apply mt-0 mb-1;
+    }
+  }
+
+  &__row {
+    @apply flex items-center gap-3 px-3.5 py-2.5;
+  }
+
+  &__grow {
+    @apply min-w-0 flex-1;
+  }
+
+  &__radio {
+    @apply h-3.5 w-3.5 shrink-0 rounded-full border border-solid border-gray-400;
+
+    &--on {
+      @apply border-[4px] border-gray-900 dark:border-gray-100;
+    }
+  }
+
+  &__button {
+    @apply bg-primary-500 px-4 py-2.5 dark:bg-gray-100;
+    border-radius: 8px;
+  }
+
+  &__item {
+    @apply flex items-center gap-3 border-0 border-b border-solid border-gray-200 py-2.5 dark:border-dark-400;
+  }
+
+  &__thumb {
+    @apply h-[34px] w-[34px] shrink-0 bg-gray-200 dark:bg-dark-400;
+    border-radius: 8px;
+  }
+
+  &__sum {
+    @apply flex items-center justify-between py-1;
+
+    &--total {
+      @apply mt-1 border-0 border-t border-solid border-gray-200 pt-2 dark:border-dark-400;
+    }
+  }
+
+  &__coupon {
+    @apply my-1 bg-gray-100 px-3.5 py-2.5 dark:bg-dark-500;
+    border-radius: 8px;
+  }
+
+  &__note {
+    @apply flex items-center gap-2 px-2;
+  }
+
+  &__caret {
+    @apply h-0 w-0 border-y-4 border-l-4 border-r-0 border-solid border-y-transparent border-l-gray-900 dark:border-l-gray-100;
+  }
+
+  &__slot {
+    @apply relative cursor-grab touch-none select-none border border-dashed border-primary-500 p-2 pt-4 dark:border-gray-400;
+    border-radius: 8px;
+  }
+
+  &__stack {
+    @apply flex flex-col gap-[7px];
+  }
+
+  &__zone,
+  &__tray {
+    transition: min-height 0.15s, background-color 0.15s, border-color 0.15s;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  // Drop zones take no space at rest (the negative margin cancels the column gap) and open while dragging.
+  &__zone.is-empty {
+    @apply -my-1.5;
+  }
+
+  &.is-dragging {
+    @apply cursor-grabbing;
+
+    * {
+      @apply cursor-grabbing;
+    }
+
+    .fct-placement-preview__slot {
+      @apply opacity-35;
+    }
+
+    // While dragging, each place the offer can go is a clear target: thicker dashed border, a light fill, a readable label.
+    .fct-placement-preview__zone.is-empty {
+      @apply my-0 flex min-h-[46px] items-center justify-center border-2 border-dashed border-blue-300/60 bg-blue-50/50 dark:border-blue-400/40 dark:bg-dark-500;
+      border-radius: 8px;
+
+      &::after {
+        @apply text-sm font-medium text-blue-500 dark:text-blue-200;
+        content: attr(data-label);
+      }
+    }
+
+    .fct-placement-preview__zone.is-over {
+      @apply min-h-[60px] border-solid border-blue-300 bg-blue-50 shadow-[0_0_0_3px_rgba(59,130,246,0.1)] dark:border-blue-300 dark:bg-dark-400;
+
+      &::after {
+        @apply font-semibold text-blue-600 dark:text-blue-100;
+      }
+    }
+  }
+
+  &__tray {
+    @apply flex min-h-16 flex-col justify-center border-2 border-dashed border-blue-300/60 p-3 dark:border-blue-400/40;
+    border-radius: 8px;
+
+    &.is-over {
+      @apply border-solid border-blue-300 bg-blue-50 dark:border-blue-300 dark:bg-dark-500;
+    }
+
+    // A smaller card fits the sidebar.
+    .fct-placement-preview__bump .fct_order_promotion {
+      @apply p-2.5;
+    }
+
+    .fct-placement-preview__bump .fct_order_promotion_icon {
+      @apply h-10 w-10;
+    }
+
+    .fct-placement-preview__bump .fct_order_promotion_price,
+    .fct-placement-preview__bump .fct_order_promotion_footer {
+      @apply hidden;
+    }
+  }
+
+  &__actions {
+    @apply mt-auto flex gap-2 border-0 border-t border-solid border-gray-200 pt-4 dark:border-dark-400;
+
+    .el-button {
+      @apply m-0 flex-1;
+    }
+  }
+
+  &__slot-label {
+    @apply absolute -top-2.5 left-3 rounded bg-primary-500 px-2 text-xs font-medium leading-5 text-white dark:bg-gray-100 dark:text-gray-900;
+  }
+}
+
+// Skeleton line standing in for sample checkout and cart copy.
+.fct-placement-preview-bar {
+  @apply block h-2 max-w-full shrink-0 bg-gray-200 dark:bg-dark-400;
+  border-radius: 4px;
+
+  &--light {
+    @apply mx-auto bg-white/40 dark:bg-gray-900/30;
+  }
+}
+
+// Follows the pointer while dragging; appended to <body>. Element Plus raises the dialog
+// z-index on every open, so only the maximum stays above it.
+.fct-placement-preview__ghost {
+  @apply pointer-events-none fixed cursor-grabbing bg-white opacity-90 dark:bg-dark-600;
+  z-index: 2147483647;
+  transform: scale(0.6) rotate(-1.5deg);
+  transform-origin: top left;
+  box-shadow: 0 12px 32px rgba(14, 18, 27, 0.22);
+
+  .fct-placement-preview__slot-label {
+    @apply hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transform: scale(0.6);
+  }
+}
+
+// Mirrors the storefront bump card (Pro OrderBumpBoot) inside the placement preview only.
+.fct-placement-preview__bump {
+  @apply w-full;
+
+  .fct_order_promotion {
+    @apply p-4 bg-white text-black;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+  }
+
+  .fct_order_promotion_body {
+    @apply flex items-start;
+    column-gap: 16px;
+  }
+
+  .fct_order_promotion_icon {
+    @apply shrink-0 w-16 h-16 overflow-hidden;
+    border-radius: 8px;
+    background: #e5e7eb;
+
+    img {
+      @apply block w-full h-full object-cover;
+    }
+  }
+
+  .fct_bump_details {
+    @apply flex-1 min-w-0;
+  }
+
+  .fct_order_promotion_title {
+    @apply inline-block mb-1.5 rounded-full;
+    padding: 2px 8px;
+    background: rgba(125, 82, 244, 0.15);
+    color: #6a3fe0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .fct_order_promotion_product_title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .fct_order_promotion_variation_title {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .fct_order_promotion_original_price {
+    @apply line-through;
+    color: #6b7280;
+    margin-inline-end: 8px;
+  }
+
+  .fct_order_promotion_discounted_price {
+    @apply font-semibold text-black;
+  }
+
+  .fct_order_promotion_discount {
+    color: #c0392b;
+    margin-inline-start: 8px;
+  }
+
+  .fct_order_promotion_description {
+    @apply mt-1;
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .fct_order_promotion_footer {
+    @apply mt-4 pt-4;
+    border-top: 1px solid #e1e1e1;
+  }
+
+  .fct_order_promotion_toggle {
+    @apply flex items-center font-semibold m-0;
+    column-gap: 12px;
+  }
+
+  .fct_order_promotion_checkbox {
+    @apply shrink-0 bg-white;
+    border-radius: 2px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #6b7280;
+  }
+
+  // The Design page shows the cards as the store prints them, which has no dark mode.
+  .fluent_theme_dark &:not(.fct-order-bump-template-sample *) {
+    .fct_order_promotion {
+      @apply bg-slate-900 text-slate-100;
+      border-color: #2c3c4e;
+    }
+
+    .fct_order_promotion_icon {
+      background: #2c3c4e;
+    }
+
+    .fct_order_promotion_title {
+      background: rgba(125, 82, 244, 0.3);
+      color: #d9ccff;
+    }
+
+    .fct_order_promotion_variation_title,
+    .fct_order_promotion_original_price,
+    .fct_order_promotion_description {
+      color: #cbd5e1;
+    }
+
+    .fct_order_promotion_discounted_price {
+      @apply text-slate-100;
+    }
+
+    .fct_order_promotion_discount {
+      color: #fca5a5;
+    }
+
+    .fct_order_promotion_footer {
+      border-top-color: #2c3c4e;
+    }
+
+    .fct_order_promotion_checkbox {
+      @apply bg-slate-900;
+      border-color: #94a3b8;
+    }
+  }
+}
+
+// Mirrors the storefront cart drawer bump card (Pro OrderBumpBoot::renderDrawerCards).
+.fct-placement-preview-drawer__bump {
+  @apply flex items-center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #000;
+
+  .fct_cart_bump_icon {
+    @apply shrink-0 overflow-hidden;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    background: #e8edf6;
+
+    img {
+      @apply block w-full h-full object-cover;
+    }
+  }
+
+  .fct_cart_bump_details {
+    @apply flex-1 min-w-0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .fct_cart_bump_badge {
+    @apply inline-block;
+    margin-bottom: 2px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(125, 82, 244, 0.15);
+    color: #6a3fe0;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .fct_cart_bump_product {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    color: #000;
+  }
+
+  .fct_cart_bump_variation {
+    color: #6b7280;
+  }
+
+  .fct_order_promotion_original_price {
+    text-decoration: line-through;
+    color: #6b7280;
+    margin-inline-end: 6px;
+  }
+
+  .fct_order_promotion_discounted_price {
+    font-weight: 600;
+    color: #000;
+  }
+
+  .fct_order_promotion_discount {
+    color: #c0392b;
+    margin-inline-start: 6px;
+  }
+
+  .fct_cart_bump_actions {
+    @apply shrink-0 flex flex-col items-end;
+    gap: 4px;
+  }
+
+  .fct_cart_bump_btn {
+    @apply inline-block;
+    padding: 9px 20px;
+    border-radius: 8px;
+    background: #2c3c4e;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: default;
+    user-select: none;
+  }
+
+  // The Design page shows the cards as the store prints them, which has no dark mode.
+  .fluent_theme_dark &:not(.fct-order-bump-template-sample *) {
+    border-color: #2c3c4e;
+    background: #151d26;
+    color: #f1f5f9;
+
+    .fct_cart_bump_icon {
+      background: #2c3c4e;
+    }
+
+    .fct_cart_bump_badge {
+      background: rgba(125, 82, 244, 0.3);
+      color: #d9ccff;
+    }
+
+    .fct_cart_bump_product,
+    .fct_order_promotion_discounted_price {
+      color: #f1f5f9;
+    }
+
+    .fct_cart_bump_variation,
+    .fct_order_promotion_original_price {
+      color: #cbd5e1;
+    }
+
+    .fct_order_promotion_discount {
+      color: #fca5a5;
+    }
+
+    .fct_cart_bump_btn {
+      background: #475569;
+      color: #fff;
+    }
+  }
+}
+
+// Teleported to <body>, so everything is scoped to the drawer class. The doubled selector
+// beats the global `.el-drawer` header and body rules.
+.el-overlay .el-drawer.fct-placement-preview-drawer {
+  @apply bg-white dark:bg-dark-600;
+
+  .el-drawer__header {
+    @apply mb-0 border-0 border-b border-solid border-gray-200 px-6 py-5 dark:border-dark-400;
+  }
+
+  .el-drawer__body {
+    @apply flex min-h-0 flex-col p-0;
+  }
+
+  .el-drawer__close-btn {
+    @apply text-gray-900 dark:text-gray-50;
+  }
+
+  .fct-placement-preview-drawer__content {
+    @apply flex min-h-0 flex-1 flex-col;
+  }
+
+  .fct-placement-preview-drawer__scroll {
+    @apply min-h-0 flex-1 overflow-y-auto;
+  }
+
+  .fct-placement-preview-drawer__row {
+    @apply flex items-start gap-4 border-0 border-b border-solid border-gray-200 px-6 py-5 dark:border-dark-400;
+  }
+
+  .fct-placement-preview-drawer__thumb {
+    @apply h-16 w-16 shrink-0 bg-gray-200 dark:bg-dark-400;
+    border-radius: 8px;
+  }
+
+  .fct-placement-preview-drawer__info {
+    @apply flex min-w-0 flex-1 flex-col gap-1;
+  }
+
+  .fct-placement-preview-drawer__controls {
+    @apply mt-1 flex items-center;
+  }
+
+  // Price on top and trash below, both on the right edge whatever the price width.
+  .fct-placement-preview-drawer__side {
+    @apply flex shrink-0 flex-col items-end justify-between self-stretch;
+  }
+
+  .fct-placement-preview-drawer__qty {
+    @apply flex items-center border border-solid border-gray-300 text-gray-900 dark:border-dark-400 dark:text-gray-50;
+    border-radius: 8px;
+  }
+
+  .fct-placement-preview-drawer__qty-btn {
+    @apply flex h-8 w-8 items-center justify-center;
+
+    svg {
+      @apply h-3 w-3;
+    }
+  }
+
+  .fct-placement-preview-drawer__qty-value {
+    @apply flex h-8 w-9 items-center justify-center border-0 border-x border-solid border-gray-300 text-sm dark:border-dark-400;
+  }
+
+  .fct-placement-preview-drawer__trash {
+    @apply flex h-8 w-8 items-center justify-center border border-solid border-gray-300 text-gray-900 dark:border-dark-400 dark:text-gray-50;
+    border-radius: 8px;
+
+    svg {
+      @apply h-4 w-4;
+    }
+  }
+
+  .fct-placement-preview-drawer__offer {
+    @apply px-6 py-5;
+  }
+
+  .fct-placement-preview-drawer__title {
+    @apply text-lg font-semibold text-gray-900 dark:text-gray-50;
+  }
+
+  .fct-placement-preview-drawer__label {
+    @apply mb-3 text-xs font-semibold uppercase text-system-mid dark:text-gray-300;
+    letter-spacing: 0.1em;
+  }
+
+  .fct-placement-preview-drawer__footer {
+    @apply flex flex-col gap-4 border-0 border-t border-solid border-gray-200 px-6 py-5 dark:border-dark-400;
+  }
+
+  .fct-placement-preview-drawer__total {
+    @apply flex items-center justify-between;
+  }
+
+  .fct-placement-preview-drawer__checkout {
+    @apply bg-primary-500 px-4 py-3.5 dark:bg-gray-100;
+    border-radius: 8px;
+  }
+}
+
+// Cart page view of the preview.
+.fct-placement-preview-cartpage {
+  @apply flex flex-col;
+
+  .fct-placement-preview-cartpage__title {
+    @apply m-0 mb-5 text-xl font-semibold text-gray-900 dark:text-gray-50;
+  }
+
+  .fct-placement-preview-cartpage__row {
+    @apply flex items-start gap-4 border-0 border-b border-solid border-gray-200 py-5 dark:border-dark-400;
+  }
+
+  .fct-placement-preview-cartpage__thumb {
+    @apply h-16 w-16 shrink-0 bg-gray-200 dark:bg-dark-400;
+    border-radius: 8px;
+  }
+
+  .fct-placement-preview-cartpage__info {
+    @apply flex min-w-0 flex-1 flex-col items-start gap-1;
+  }
+
+  .fct-placement-preview-cartpage__qty {
+    @apply mt-1 flex items-center border border-solid border-gray-200 text-gray-900 dark:border-dark-400 dark:text-gray-50;
+    border-radius: 8px;
+  }
+
+  .fct-placement-preview-cartpage__qty-btn {
+    @apply flex h-8 w-8 items-center justify-center;
+
+    svg {
+      @apply h-3 w-3;
+    }
+  }
+
+  .fct-placement-preview-cartpage__qty-value {
+    @apply flex h-8 w-9 items-center justify-center border-0 border-x border-solid border-gray-200 text-sm dark:border-dark-400;
+  }
+
+  // Price on top and trash below, sharing the right edge whatever the price width.
+  .fct-placement-preview-cartpage__side {
+    @apply flex shrink-0 flex-col items-end justify-between self-stretch;
+  }
+
+  .fct-placement-preview-cartpage__trash {
+    @apply flex h-8 w-8 items-center justify-center border border-solid border-gray-200 text-gray-900 dark:border-dark-400 dark:text-gray-50;
+    border-radius: 8px;
+
+    svg {
+      @apply h-4 w-4;
+    }
+  }
+
+  .fct-placement-preview-cartpage__offer {
+    @apply pt-5;
+  }
+
+  .fct-placement-preview-cartpage__label {
+    @apply mb-3 text-xs font-semibold uppercase text-system-mid dark:text-gray-300;
+    letter-spacing: 0.1em;
+  }
+
+  .fct-placement-preview-cartpage__total {
+    @apply mt-6 flex items-center justify-between;
+  }
+
+  .fct-placement-preview-cartpage__checkout {
+    @apply mt-6 self-end bg-primary-500 px-6 py-3.5 dark:bg-gray-100;
+    border-radius: 8px;
+  }
+}

@@ -121,24 +121,20 @@ onUnmounted(() => {
     >
       <template #action>
         <div class="flex items-center gap-2">
-          <el-radio-group v-model="metric" size="small" :aria-label="translate('Chart metric')">
-            <el-radio-button value="net">{{ translate('Net sales') }}</el-radio-button>
-            <el-radio-button value="units">{{ translate('Units') }}</el-radio-button>
-          </el-radio-group>
-          <el-select
+          <fct-choice v-model="metric" size="small" :aria-label="translate('Chart metric')" type="radio" button :options="[{label: translate('Net sales'), value: 'net'}, {label: translate('Units'), value: 'units'}]"/>
+          <fct-select
               :model-value="groupKey"
               size="small"
               style="width: 120px"
               :aria-label="translate('Group by')"
               @update:model-value="(value) => emit('update:groupKey', value)"
-          >
-            <el-option v-for="group in groups" :key="group.value" :label="group.label" :value="group.value"/>
-          </el-select>
+              :options="groups"
+          />
         </div>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="6"/>
+      <fct-skeleton v-if="loading" animated :rows="6"/>
       <el-empty v-else-if="isEmpty" :description="translate('No sales in this date range')"/>
       <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 320px"></div>
     </Card.Body>

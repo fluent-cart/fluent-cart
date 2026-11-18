@@ -36,7 +36,7 @@
     }
   }
   .el-dialog__headerbtn{
-    @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5 hover:bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+    @apply relative top-0 left-0 flex justify-center items-center w-7.5 aspect-square h-7.5 shadow-none hover:bg-[var(--fct-customer-dashboard-card-bg,#ffffff)] hover:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
     i{
       @apply w-5 h-5;
       svg{
@@ -60,7 +60,7 @@
               .el-input {
                 .el-input__wrapper {
                   border-bottom-width: 0.5px !important;
-                  @apply rounded-none #{!important};
+                  @apply rounded-none!;
                 }
               }
             }

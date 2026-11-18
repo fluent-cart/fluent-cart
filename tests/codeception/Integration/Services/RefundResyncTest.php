@@ -8,6 +8,7 @@ use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Services\Payments\Refund;
 use Tests\Support\DatabaseTestCase;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Doubles\FakeRefundGateway;
 use Tests\Support\Factory\OrderItemFactory;
 use Tests\Support\Traits\BuildsRefundFixtures;
@@ -108,12 +109,12 @@ class RefundResyncTest extends DatabaseTestCase
     public function test_failed_row_save_rolls_back_the_line_write(): void
     {
         list($txn, $item, $refund) = $this->rowAwaitingResync();
-        $filter = $this->failQueries('/^update `[^`]*fct_order_transactions`/i');
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_transactions`/i');
 
         try {
             $result = Refund::resync($this->order($txn), $refund);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertWpError('resync_failed', 500, $result);
@@ -126,12 +127,12 @@ class RefundResyncTest extends DatabaseTestCase
     public function test_failed_line_write_stays_pending(): void
     {
         list($txn, $item, $refund) = $this->rowAwaitingResync();
-        $filter = $this->failQueries('/^update `[^`]*fct_order_items`/i');
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_items`/i');
 
         try {
             $result = Refund::resync($this->order($txn), $refund);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertWpError('resync_failed', 500, $result);
@@ -144,12 +145,12 @@ class RefundResyncTest extends DatabaseTestCase
     public function test_failed_count_stays_pending_and_a_retry_counts_once(): void
     {
         list($txn, $item, $refund) = $this->rowAwaitingResync();
-        $filter = $this->failQueries('/^update `[^`]*fct_orders` set/i');
+        $filter = FailingQueries::matching('/^update `[^`]*fct_orders` set/i');
 
         try {
             $result = Refund::resync($this->order($txn), $refund);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertWpError('resync_failed', 500, $result);
@@ -173,12 +174,12 @@ class RefundResyncTest extends DatabaseTestCase
     {
         $txn = $this->paidCharge();
         list($item, $intent) = $this->oneUnitRefundIntent($txn);
-        $filter = $this->failQueries('/^update `[^`]*fct_order_items`/i');
+        $filter = FailingQueries::matching('/^update `[^`]*fct_order_items`/i');
 
         try {
             $result = (new Refund())->processRefund($txn, 3000, [], $intent);
         } finally {
-            remove_filter('query', $filter);
+            $filter->remove();
         }
 
         $this->assertTrue($result['needs_resync']);
@@ -211,16 +212,6 @@ class RefundResyncTest extends DatabaseTestCase
             'shipping_amount' => 0,
             'manage_stock'    => false,
         ]];
-    }
-
-    private function failQueries(string $pattern): callable
-    {
-        $filter = function ($query) use ($pattern) {
-            return preg_match($pattern, $query) ? 'SELECT * FROM fct_missing_table_for_test' : $query;
-        };
-        add_filter('query', $filter);
-
-        return $filter;
     }
 
     private function assertWpError(string $code, int $status, $result): void

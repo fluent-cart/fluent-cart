@@ -28,6 +28,8 @@ const ProductImageBlock = {
                             allowedBlocks={[
                                 'fluent-cart/sold-out-badge',
                                 'fluent-cart/sale-badge',
+                                'fluent-cart/product-quick-view',
+                                ...(wp.blocks.getBlockType('fluent-cart-wishlist/wishlist-button') ? ['fluent-cart-wishlist/wishlist-button'] : []),
                             ]}
                             renderAppender={false}
                         />

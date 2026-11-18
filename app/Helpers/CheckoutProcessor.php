@@ -169,7 +169,7 @@ class CheckoutProcessor
                 unset($orderItem['additional_items']);
             }
 
-            if (Arr::get($orderItem, 'other_info.is_bundle_product', 'no') == 'yes') {
+            if (Helper::isBundleItem(Arr::get($orderItem, 'other_info', []))) {
                 $bundleItems = Arr::get($orderItem, 'bundle_items', []);
                 unset($orderItem['bundle_items']);
             }
@@ -397,7 +397,7 @@ class CheckoutProcessor
                     unset($orderItem['additional_items']);
                 }
 
-                if (Arr::get($orderItem, 'other_info.is_bundle_product', 'no') == 'yes') {
+                if (Helper::isBundleItem(Arr::get($orderItem, 'other_info', []))) {
                     $bundleItems = Arr::get($orderItem, 'bundle_items', []);
                     unset($orderItem['bundle_items']);
                 }
@@ -841,10 +841,7 @@ class CheckoutProcessor
                 Arr::set($item, 'other_info.signup_discount', $childDiscountTotal);
             }
 
-            if (
-                Arr::get($cartItem, 'other_info.is_bundle_product', 'no') == 'yes'
-                || !empty(Arr::get($cartItem, 'other_info.bundle_child_ids', []))
-            ) {
+            if (Helper::isBundleItem(Arr::get($cartItem, 'other_info', []))) {
                 $bundleItems = Arr::get($cartItem, 'child_variants', []);
 
                 foreach ($bundleItems as $bundleItem) {
@@ -1215,7 +1212,7 @@ class CheckoutProcessor
         }
 
         // Frozen from the cart's locked quote — Order::creating keeps an
-        // explicit snapshot (multi-currency plan §9.1)
+        // explicit snapshot (dev-docs/multi-currency/06-orders-subscriptions.md)
         $currencySnapshot = Arr::get($this->args, 'currency_snapshot');
         if (is_array($currencySnapshot) && !empty($currencySnapshot['currency'])) {
             $orderData['config']['fx'] = $currencySnapshot;

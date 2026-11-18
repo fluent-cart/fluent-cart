@@ -1,5 +1,5 @@
 .el-tag{
-    @apply font-normal rounded-xs border-0 h-auto py-0.5 px-2 !important;
+    @apply font-normal! rounded-xs! border-0! h-auto! py-0.5! px-2!;
 
     white-space: normal;
     &.el-tag--info {

@@ -17,7 +17,7 @@ class AddToCartShortcode extends ShortCode
     public function getStyles(): array
     {
         return [
-            'public/buttons/add-to-cart/style/style.scss',
+            ['source' => 'public/buttons/add-to-cart/style/style.scss', 'handle' => 'fluentcart-add-to-cart-btn-css', 'media' => 'all'],
         ];
     }
 
@@ -44,7 +44,7 @@ class AddToCartShortcode extends ShortCode
             return '';
         }
 
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
 
         $rendererConfig = [];
         $product        = null;

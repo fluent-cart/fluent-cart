@@ -39,36 +39,31 @@
         </div>
 
         <div class="dialog-footer is-border">
-          <el-button @click.prevent="forceLocalPrompt = null; failedRefundPayload = null" :disabled="refundProcessing">
+          <fct-button @click.prevent="forceLocalPrompt = null; failedRefundPayload = null" :disabled="refundProcessing">
             {{ translate('Cancel') }}
-          </el-button>
-          <el-button type="warning" @click.prevent="recordLocally" :loading="refundProcessing">
+          </fct-button>
+          <fct-button type="warning" @click.prevent="recordLocally" :loading="refundProcessing">
             {{ translate('Record locally only') }}
-          </el-button>
+          </fct-button>
         </div>
       </div>
 
       <div v-else>
-        <el-form label-position="top" require-asterisk-position="right">
-            <el-row :gutter="10">
-                <el-col :lg="24">
-                    <el-form-item :label="$t('Refund with transaction')" required="">
-                        <el-select v-model="refund.transaction_id" :placeholder="$t('Select')"
-                                   @change="updateMaxRefund">
-                            <el-option v-for="item in refundableTransactions" :key="item.id"
-                                       :label="
-                                       /* translators: %1$s - transaction id, %2$s - refundable amount */
-                                       translate(
-                                   '#%1$s - Paid %2$s',
-                                           item.id,
-                                           formatNumber(item.refundable, true)
-                                       )"
-                                       :value="item.id">
-                            </el-option>
-                        </el-select>
-                    </el-form-item>
+        <div>
+                    <fct-select
+                        v-model="refund.transaction_id"
+                        :label="$t('Refund with transaction')"
+                        required
+                        :placeholder="$t('Select')"
+                        :options="refundableTransactions.map((item) => ({
+                            /* translators: %1$s - transaction id, %2$s - refundable amount */
+                            label: translate('#%1$s - Paid %2$s', item.id, formatNumber(item.refundable, true)),
+                            value: item.id,
+                        }))"
+                        @change="updateMaxRefund"
+                    />
 
-                    <el-form-item :label="$t('Items')">
+                    <Field :label="$t('Items')">
                         <div class="fct-refund-items-scroll">
                             <div
                                 v-for="item in refundableItems"
@@ -76,7 +71,7 @@
                                 class="fct-refund-item-row"
                                 :class="{ 'is-disabled': item.remainingBase <= 0 }"
                             >
-                                <el-checkbox
+                                <fct-choice
                                     v-model="item.isSelected"
                                     :disabled="item.remainingBase <= 0"
                                 />
@@ -115,7 +110,7 @@
                         </div>
 
                         <div v-if="shippingRemaining > 0" class="fct-refund-shipping-row">
-                            <el-checkbox v-model="includeShipping">
+                            <fct-choice v-model="includeShipping">
                                 <template v-if="shippingTaxRemaining > 0">
                                     <!-- translators: %1$s: refundable shipping amount, %2$s: refundable shipping tax -->
                                     {{ translate('Include shipping (%1$s + %2$s tax)', formatNumber(shippingRemaining - shippingTaxRemaining), formatNumber(shippingTaxRemaining)) }}
@@ -124,9 +119,10 @@
                                     <!-- translators: %1$s: refundable shipping amount -->
                                     {{ translate('Include shipping (%1$s)', formatNumber(shippingRemaining)) }}
                                 </template>
-                            </el-checkbox>
-                            <el-input-number
+                            </fct-choice>
+                            <fct-input
                                 v-if="includeShipping"
+                                type="number"
                                 v-model="shippingRefundAmount"
                                 :min="Math.min(refundStep, shippingRemaining / 100)"
                                 :max="shippingRemaining / 100"
@@ -138,7 +134,7 @@
                         </div>
 
                         <div v-if="anyManageStockSelected" class="fct-refund-restock-row">
-                            <el-checkbox v-model="restockItems">{{ $t('Restock items to inventory') }}</el-checkbox>
+                            <fct-choice v-model="restockItems">{{ $t('Restock items to inventory') }}</fct-choice>
                         </div>
                         <el-alert
                             :title="translate('Shipped units will not be restocked.')"
@@ -146,65 +142,55 @@
                             type="info"
                             :closable="false"
                         />
-                    </el-form-item>
+                    </Field>
 
-                    <el-col :lg="24">
-                        <el-form-item :label="$t('Refund amount')" required="">
-                            <el-input
-                                type="number"
-                                :min="hasSelectedItems ? shippingCents / 100 + refundStep : refundStep"
-                                :step="refundStep"
-                                :max="hasRefundSelection ? computedRefundAmount : maxRefundAmount"
-                                :readonly="hasRefundSelection && !hasSelectedItems"
-                                :model-value="hasSelectedItems && itemRefundAmount !== null ? itemRefundAmount : (hasRefundSelection ? computedRefundAmount : refund.amount)"
-                                @input="val => { if (hasSelectedItems) { itemRefundAmount = val; } else if (!hasRefundSelection) { refund.amount = Number(val); checkMaxRefundAmount(); } }"
-                            >
-                                <template #prefix="">
-                                    {{ orderCurrencySign }}
-                                </template>
-                            </el-input>
-                            <div class="form-note">
-                                <p>{{ $t('Max refund amount for this transaction:') }}
-                                    <span style="color: #F04438; font-weight: 500;">
-                                      {{ formatNumber(maxRefundAmount * 100) }}
-                                    </span>
-                                </p>
-                            </div>
-                        </el-form-item>
-
-                        <el-col :lg="24" v-if="isSubscriptionCancelable">
-                            <el-form-item :label="$t('Subscription')">
-                                <el-checkbox :label="$t('Cancel Subscription (if any)')"
-                                             v-model="refund.cancelSubscription">
-                                </el-checkbox>
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="24">
-                          <el-form-item :label="$t('Reason of refund')">
-                            <el-input v-model="refund.reason"/>
-                            <div class="form-note form-note-tooltip">
-                              <p>
-                                {{ translate('Your customers can see this reason') }}
-                                <span>
-                                    <el-tooltip
-                                        popper-class="fct-tooltip"
-                                        placement="top"
-                                        :content="translate('Order_Set_Possible')"
-                                    >
-                                      <DynamicIcon name="InformationFill"/>
-                                    </el-tooltip>
+                    <Field :label="$t('Refund amount')" required>
+                        <fct-input
+                            type="number"
+                            :controls="false"
+                            :min="hasSelectedItems ? shippingCents / 100 + refundStep : refundStep"
+                            :step="refundStep"
+                            :max="hasRefundSelection ? computedRefundAmount : maxRefundAmount"
+                            :readonly="hasRefundSelection && !hasSelectedItems"
+                            :model-value="hasSelectedItems && itemRefundAmount !== null ? itemRefundAmount : (hasRefundSelection ? computedRefundAmount : refund.amount)"
+                            @input="val => { if (hasSelectedItems) { itemRefundAmount = val; } else if (!hasRefundSelection) { refund.amount = Number(val); checkMaxRefundAmount(); } }"
+                        >
+                            <template #prefix>
+                                {{ orderCurrencySign }}
+                            </template>
+                        </fct-input>
+                        <div class="form-note">
+                            <p>{{ $t('Max refund amount for this transaction:') }}
+                                <span style="color: #F04438; font-weight: 500;">
+                                  {{ formatNumber(maxRefundAmount * 100) }}
                                 </span>
-                              </p>
-                            </div>
-                          </el-form-item>
-                        </el-col>
-                    </el-col>
-                </el-col>
-            </el-row>
-        </el-form>
+                            </p>
+                        </div>
+                    </Field>
+
+                    <fct-choice v-if="isSubscriptionCancelable" v-model="refund.cancelSubscription" :label="$t('Subscription')">
+                        {{ $t('Cancel Subscription (if any)') }}
+                    </fct-choice>
+
+                    <Field :label="$t('Reason of refund')">
+                        <fct-input v-model="refund.reason"/>
+                        <div class="form-note form-note-tooltip">
+                          <p>
+                            {{ translate('Your customers can see this reason') }}
+                            <span>
+                                <fct-tooltip
+                                    placement="top"
+                                    :content="translate('Order_Set_Possible')"
+                                >
+                                  <DynamicIcon name="InformationFill"/>
+                                </fct-tooltip>
+                            </span>
+                          </p>
+                        </div>
+                    </Field>
+        </div>
         <div class="dialog-footer is-border">
-            <el-button
+            <fct-button
                 type="primary"
                 @click.prevent="processRefund"
                 :loading="refundProcessing"
@@ -213,7 +199,7 @@
                 {{ refundProcessing ? translate('Processing') : translate('Refund') }}
                 <template v-if="hasRefundSelection && selectionRefundAmount > 0"> {{ formatNumber(selectionRefundAmount * 100) }}</template>
                 <template v-else-if="!hasRefundSelection && refund.amount > 0"> {{ formatNumber(refund.amount * 100) }}</template>
-            </el-button>
+            </fct-button>
         </div>
       </div>
     </div>
@@ -228,12 +214,14 @@ import AppConfig from "@/utils/Config/AppConfig";
 import Arr from "@/utils/support/Arr";
 import Badge from "@/Bits/Components/Badge.vue";
 import QuantityStepper from "@/Bits/Components/Inputs/QuantityStepper.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 export default {
     name: "Refund",
     components: {
       Badge,
         QuantityStepper,
+        Field,
         VariationSelector,
         DynamicIcon
     },
@@ -715,7 +703,8 @@ export default {
     border-radius: var(--el-border-radius-base);
 }
 
-.fct-refund-shipping-amount {
+/* fct-input renders the el-input-number, which this scope's attribute does not reach. */
+.fct-refund-shipping-row :deep(.fct-refund-shipping-amount) {
     width: 120px;
 }
 

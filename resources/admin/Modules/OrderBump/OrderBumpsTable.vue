@@ -1,9 +1,13 @@
 <script setup>
 
-import Empty from "@/Bits/Components/Table/Empty.vue";
+import EmptyState from "@/Bits/Components/Layout/EmptyState.vue";
 import {translateNumber} from "@/utils/translator/Translator";
 import RouteCell from "@/Bits/Components/TableNew/RouteCell.vue";
-import Badge from "@/Bits/Components/Badge.vue";
+import OrderBumpOfferCell from "@/Modules/OrderBump/parts/OrderBumpOfferCell.vue";
+import OrderBumpPriceCell from "@/Modules/OrderBump/parts/OrderBumpPriceCell.vue";
+import OrderBumpShowsOnCell from "@/Modules/OrderBump/parts/OrderBumpShowsOnCell.vue";
+import OrderBumpDiscountCell from "@/Modules/OrderBump/parts/OrderBumpDiscountCell.vue";
+import OrderBumpStatusSwitch from "@/Modules/OrderBump/parts/OrderBumpStatusSwitch.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import {$confirm} from "@/Bits/common";
 import Notify from "@/utils/Notify";
@@ -35,9 +39,22 @@ const deleteOrderBump = (id) => {
 }
 
 
+// A bump that no longer fits the Active or Draft tab leaves it, so the tab loads again.
+const handleStatusChanged = (row, status) => {
+  row.status = status;
+
+  const tab = props.orderBumpTable.getSelectedTab();
+  if ((tab === 'active' || tab === 'draft') && tab !== status) {
+    props.orderBumpTable.fetch();
+  }
+}
+
+// A deleted product or variation cannot add anything at checkout, so its price, discount, priority and status mean nothing.
+const isProductGone = row => !row.product_variant?.product;
+
 const handleCommand = (command) => {
   if (command.action === 'delete') {
-    $confirm(translate('Are you sure you want to delete this order bump?'), translate("Confirm Delete!"), {
+    $confirm(translate('Are you sure you want to delete "%s"?', command.orderBump.title), translate("Confirm Delete!"), {
       confirmButtonText: translate("Yes, Delete!"),
       cancelButtonText: translate("Cancel"),
       type: "warning",
@@ -55,8 +72,8 @@ const handleCommand = (command) => {
 </script>
 
 <template>
-  <el-table :data="orderBumpTable.getTableData()" class="w-full compact-table">
-    <el-table-column :width="100" :label="translate('ID')">
+  <fct-table :data="orderBumpTable.getTableData()" class="w-full compact-table">
+    <fct-table-column :width="90" :label="translate('ID')">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -64,8 +81,8 @@ const handleCommand = (command) => {
           #{{ translateNumber(scope.row.id) }}
         </RouteCell>
       </template>
-    </el-table-column>
-    <el-table-column :label="translate('Title')">
+    </fct-table-column>
+    <fct-table-column :min-width="160" :label="translate('Bump Title')">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
@@ -75,84 +92,82 @@ const handleCommand = (command) => {
           </div>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-      <el-table-column :label="translate('Product')">
-          <template #default="scope">
-              <RouteCell
-                  class="hover:no-underline"
-                  :to="{ name: 'view_order_bump', params: { id: scope.row.id } }"
-              >
-                <div>
-                  <div class="mb-1">{{scope.row?.product_variant?.product?.post_title}}</div>
-                  <div v-if="scope.row?.product_variant?.other_info?.billing_summary" class="text-system-mid dark:text-gray-300">
-                    {{scope.row?.product_variant?.other_info?.billing_summary}}
-                  </div>
-                  <div v-else class="text-system-mid dark:text-gray-300">
-                    {{formatNumber(scope.row?.product_variant?.item_price, true)}}
-                  </div>
-                </div>
-              </RouteCell>
-          </template>
-      </el-table-column>
+    <fct-table-column :min-width="380" :label="translate('Offer')">
+      <template #default="scope">
+        <OrderBumpOfferCell :bump="scope.row"/>
+      </template>
+    </fct-table-column>
 
-    <el-table-column :width="130" :label="translate('Discount')">
+    <fct-table-column :width="190" :label="translate('Price')">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
             :to="{ name: 'view_order_bump', params: { id: scope.row.id } }">
-            <span v-if="scope.row.config.discount?.discount_type === 'fixed'"> {{formatNumber(scope.row.config.discount?.discount_amount * 100)}} </span> <span v-else> {{scope.row.config.discount?.discount_amount}}%</span>
+          <OrderBumpPriceCell :bump="scope.row"/>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column :width="90" :label="translate('Status')">
+    <fct-table-column :width="170" :label="translate('Discount')">
       <template #default="scope">
         <RouteCell
             class="hover:no-underline"
             :to="{ name: 'view_order_bump', params: { id: scope.row.id } }">
-          <Badge :status="scope.row.status" kind="order_bump" :hide-icon="true" :key="scope.row.id"/>
+          <span v-if="isProductGone(scope.row)" aria-hidden="true">—</span>
+          <OrderBumpDiscountCell v-else :bump="scope.row"/>
         </RouteCell>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
-    <el-table-column :width="80" align="right">
+    <fct-table-column :width="250" :label="translate('Shows on')">
       <template #default="scope">
-        <el-dropdown
+        <RouteCell
+            class="hover:no-underline"
+            :to="{ name: 'view_order_bump', params: { id: scope.row.id } }">
+          <span v-if="isProductGone(scope.row)" aria-hidden="true">—</span>
+          <OrderBumpShowsOnCell v-else :bump="scope.row"/>
+        </RouteCell>
+      </template>
+    </fct-table-column>
+
+    <fct-table-column :width="90" align="center" :label="translate('Priority')">
+      <template #default="scope">
+        <RouteCell
+            class="fct-order-bump-priority hover:no-underline"
+            :to="{ name: 'view_order_bump', params: { id: scope.row.id } }">
+          <span v-if="isProductGone(scope.row)" aria-hidden="true">—</span>
+          <template v-else>{{ translateNumber(scope.row.priority) }}</template>
+        </RouteCell>
+      </template>
+    </fct-table-column>
+
+    <fct-table-column :width="110" align="center" :label="translate('Status')">
+      <template #default="scope">
+        <span v-if="isProductGone(scope.row)" aria-hidden="true">—</span>
+        <OrderBumpStatusSwitch v-else :bump="scope.row" @changed="status => handleStatusChanged(scope.row, status)"/>
+      </template>
+    </fct-table-column>
+
+    <fct-table-column :width="80" align="right" fixed="right">
+      <template #default="scope">
+        <fct-dropdown
             trigger="click"
             class="fct-more-option-wrap"
-            popper-class="fct-dropdown"
+            :items="[{command: {action: 'delete', orderBump: scope.row}, label: translate('Delete'), icon: 'Delete', danger: true}]"
             @command="handleCommand"
             placement="bottom-end"
         >
           <span class="more-btn me-2">
             <DynamicIcon name="More"/>
           </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item
-                  :command="{
-                            action: 'delete',
-                            orderBump: scope.row
-                          }"
-                  class="item-destructive"
-              >
-                <DynamicIcon name="Delete"/>
-                {{ translate("Delete") }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        </fct-dropdown>
       </template>
-    </el-table-column>
+    </fct-table-column>
 
     <template #empty>
-      <Empty icon="Empty/ListView" :has-dark="true"
-             :text="translate('No order bumps found!')"/>
+      <EmptyState icon="Empty/ListView" :text="translate('No order bumps found!')"/>
     </template>
-  </el-table>
+  </fct-table>
 </template>
-
-<style scoped>
-
-</style>

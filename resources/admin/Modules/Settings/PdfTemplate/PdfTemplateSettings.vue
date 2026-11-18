@@ -1,13 +1,15 @@
 <script setup>
 import {onMounted, ref} from "vue";
 import Rest from "@/utils/http/Rest";
+import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
-import * as Card from "@/Bits/Components/Card/Card.js";
-import ValidationError from "@/Bits/Components/Form/Error/ValidationError.vue";
-import SettingsHeader from "../Parts/SettingsHeader.vue";
+import SettingsPage from "../Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
+import AdminAlert from "@/Bits/Components/Alert.vue";
 import Alert from "../../../../public/customer-profile/Vue/parts/Alert.vue";
 
 const loading = ref(true);
@@ -15,6 +17,10 @@ const saving = ref(false);
 const validationErrors = ref({});
 const storeCountrySet = ref(true);
 const storeSettingsUrl = ref('');
+// Fluent PDF builds the receipts that carry the e-invoice; addonInfo is set only while it is not active.
+const hasFluentPdf = ref(true);
+const addonInfo = ref(null);
+const settingUpPdf = ref(false);
 
 const form = ref({
     zugferd_enabled: '0',
@@ -77,6 +83,8 @@ const fetchSettings = () => {
             }
             storeCountrySet.value = response.store_country_set !== false;
             storeSettingsUrl.value = response.store_settings_url || '';
+            hasFluentPdf.value = response.has_fluent_pdf !== false;
+            addonInfo.value = response.addon_info || null;
         })
         .catch((error) => {
             Notify.error(error.data?.message || translate('Failed to load settings'));
@@ -104,196 +112,151 @@ const saveSettings = () => {
         });
 };
 
+// Same endpoints as the PDF Templates screen. No reload: this page needs nothing new from Fluent PDF,
+// and a reload would drop the unsaved toggle and fields.
+const setupFluentPdf = () => {
+    const installed = addonInfo.value.is_installed;
+    settingUpPdf.value = true;
+    Rest.post(installed ? 'settings/modules/plugin-addons/activate' : 'settings/modules/plugin-addons/install', installed
+        ? {plugin_file: addonInfo.value.plugin_file}
+        : {plugin_slug: addonInfo.value.plugin_slug, source_type: addonInfo.value.source_type || 'wordpress'})
+        .then((response) => {
+            Notify.success(response.message || translate('Plugin activated successfully'));
+            hasFluentPdf.value = true;
+            addonInfo.value = null;
+            settingUpPdf.value = false;
+        })
+        .catch((error) => {
+            Notify.error(error.data?.message || translate('Failed to activate plugin'));
+            settingUpPdf.value = false;
+        });
+};
+
 onMounted(() => {
     fetchSettings();
 });
 </script>
 
 <template>
-    <div class="setting-wrap">
-        <SettingsHeader
-            :heading="translate('E-Invoice Settings')"
-            :loading="saving"
-            @on-save="saveSettings"
-        />
+    <SettingsPage
+        :heading="translate('E-Invoice Settings')"
+        :loading="saving"
+        @on-save="saveSettings"
+    >
+        <AdminNotice/>
 
-        <div class="setting-wrap-inner">
-            <AdminNotice/>
-            
-            <template v-if="loading">
-                <Card.Container>
-                    <Card.Body>
-                        <el-skeleton animated>
-                            <template #template>
-                                <div class="grid gap-3 mb-6">
-                                    <el-skeleton-item variant="p" class="w-[20%]"/>
-                                    <el-skeleton-item variant="p"/>
-                                </div>
-                                <div class="grid gap-3 mb-6">
-                                    <el-skeleton-item variant="p" class="w-[20%]"/>
-                                    <el-skeleton-item variant="p"/>
-                                </div>
-                                <div class="grid gap-3 mb-6">
-                                    <el-skeleton-item variant="p" class="w-[20%]"/>
-                                    <el-skeleton-item variant="p"/>
-                                </div>
-                                <div class="grid gap-3">
-                                    <el-skeleton-item variant="p" class="w-[20%]"/>
-                                    <el-skeleton-item variant="p"/>
-                                </div>
-                            </template>
-                        </el-skeleton>
-                    </Card.Body>
-                </Card.Container>
-            </template>
+        <Section v-if="loading">
+            <fct-skeleton animated>
+                <div class="grid gap-3 mb-6">
+                    <fct-skeleton variant="p" class="w-[20%]"/>
+                    <fct-skeleton variant="p"/>
+                </div>
+                <div class="grid gap-3 mb-6">
+                    <fct-skeleton variant="p" class="w-[20%]"/>
+                    <fct-skeleton variant="p"/>
+                </div>
+                <div class="grid gap-3 mb-6">
+                    <fct-skeleton variant="p" class="w-[20%]"/>
+                    <fct-skeleton variant="p"/>
+                </div>
+                <div class="grid gap-3">
+                    <fct-skeleton variant="p" class="w-[20%]"/>
+                    <fct-skeleton variant="p"/>
+                </div>
+            </fct-skeleton>
+        </Section>
 
-            <template v-if="!loading">
-                <div
-                    v-if="form.zugferd_enabled === '1' && !storeCountrySet"
-                    class="mb-4 p-4 rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-800 text-sm"
-                >
-                    <strong>{{ translate('Store country is not configured.') }}</strong>
-                    {{ translate('ZUGFeRD XML cannot be embedded in PDFs until your store country is set.') }}
-                    <a v-if="storeSettingsUrl" :href="storeSettingsUrl" class="underline ms-1">
-                        {{ translate('Go to Store Settings') }}
-                    </a>
+        <template v-if="!loading">
+            <div
+                v-if="form.zugferd_enabled === '1' && !storeCountrySet"
+                class="p-4 rounded-lg [border-width:1px] border-yellow-300 bg-yellow-50 text-yellow-800 text-sm"
+            >
+                <strong>{{ translate('Store country is not configured.') }}</strong>
+                {{ translate('ZUGFeRD XML cannot be embedded in PDFs until your store country is set.') }}
+                <a v-if="storeSettingsUrl" :href="storeSettingsUrl" class="underline ms-1">
+                    {{ translate('Go to Store Settings') }}
+                </a>
+            </div>
+
+            <AdminAlert v-if="form.zugferd_enabled === '1' && !hasFluentPdf && addonInfo" type="warning" icon="InformationFill" class="items-center">
+                <template #content>
+                    <div class="flex flex-1 flex-wrap items-center gap-3">
+                        <span class="flex-1 min-w-[240px]">
+                            <strong>{{ translate('Fluent PDF is required.') }}</strong>
+                            {{ translate('E-invoices are embedded in PDF receipts, and Fluent PDF creates them.') }}
+                        </span>
+                        <fct-button size="small" :loading="settingUpPdf" @click="setupFluentPdf">
+                            {{ addonInfo.is_installed ? translate('Activate') : translate('Install & Activate') }}
+                        </fct-button>
+                    </div>
+                </template>
+            </AdminAlert>
+
+            <Section
+                :title="translate('E-Invoice Configuration')"
+                :description="translate('Settings_Configure_Zugferd')"
+                divided
+            >
+                <template #actions>
+                    <fct-switch
+                        v-model="form.zugferd_enabled"
+                        active-value="1"
+                        inactive-value="0"
+                    />
+                </template>
+
+                <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+                    <fct-select v-model="form.zugferd_profile" :options="zugferdProfileOptions" :label="translate('ZUGFeRD Profile')" :help="translate('Select the e-invoice formatter used when generating the embedded XML.')"/>
+                    <Field :label="translate('Legal Registration Scheme')" v-slot="{id}">
+                        <fct-select :id="id" v-model="form.seller_legal_registration_scheme" :options="icdSchemeOptions" :placeholder="translate('Select scheme')" clearable filterable/>
+
+                        <div class="form-note">
+                            <p>{{ translate('ISO 6523 ICD code for the legal registration identifier') }}</p>
+                        </div>
+
+                        <ValidationError :validation-errors="validationErrors.seller_legal_registration_scheme || {}" field-key="seller_legal_registration_scheme"/>
+                    </Field>
                 </div>
 
-                <Card.Container>
-                    <Card.Header
-                        :title="translate('E-Invoice Configuration')"
-                        :text="translate('Settings_Configure_Zugferd')"
-                        border_bottom
-                    >
-                        <template #action>
-                            <el-switch
-                                v-model="form.zugferd_enabled"
-                                active-value="1"
-                                inactive-value="0"
-                            />
-                        </template>
-                    </Card.Header>
-                    <Card.Body>
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('ZUGFeRD Profile')" label-position="top">
-                                    <el-select v-model="form.zugferd_profile">
-                                        <el-option
-                                            v-for="opt in zugferdProfileOptions"
-                                            :key="opt.value"
-                                            :label="opt.label"
-                                            :value="opt.value"
-                                        />
-                                    </el-select>
-                                    <div class="form-note">
-                                        <p>{{ translate('Select the e-invoice formatter used when generating the embedded XML.') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Legal Registration Scheme')" label-position="top">
-                                    <el-select v-model="form.seller_legal_registration_scheme" :placeholder="translate('Select scheme')" clearable filterable>
-                                        <el-option
-                                            v-for="opt in icdSchemeOptions"
-                                            :key="opt.value"
-                                            :label="opt.label"
-                                            :value="opt.value"
-                                        />
-                                    </el-select>
+                <Alert type="info" :closable="false" show-icon class="mb-4">
+                    <template #default>
+                        {{ translate('Company Name, VAT ID, Tax ID, and Legal Registration ID are managed in') }}
 
-                                    <div class="form-note">
-                                        <p>{{ translate('ISO 6523 ICD code for the legal registration identifier') }}</p>
-                                    </div>
+                        <a v-if="storeSettingsUrl" :href="storeSettingsUrl" target="_blank" class="">{{ translate('Store Settings → Business Details') }}</a>
+                    </template>
+                </Alert>
 
-                                    <ValidationError :validation-errors="validationErrors.seller_legal_registration_scheme || {}" field-key="seller_legal_registration_scheme"/>
+                <h3 class="mb-4 text-sm">{{ translate('Seller Contact') }}</h3>
 
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <Alert type="info" :closable="false" show-icon class="mb-4">
-                            <template #default>
-                                {{ translate('Company Name, VAT ID, Tax ID, and Legal Registration ID are managed in') }}
-
-                                <a v-if="storeSettingsUrl" :href="storeSettingsUrl" target="_blank" class="">{{ translate('Store Settings → Business Details') }}</a>
-                            </template>
-                        </Alert>
-
-                        <h4 class="mb-4">{{ translate('Seller Contact') }}</h4>
-
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Contact Name')" label-position="top">
-                                    <el-input v-model="form.seller_contact_name"/>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Contact Email')" label-position="top">
-                                    <el-input v-model="form.seller_contact_email" type="email"/>
-                                    <ValidationError :validation-errors="validationErrors.seller_contact_email || {}" field-key="seller_contact_email"/>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Contact Phone')" label-position="top">
-                                    <el-input v-model="form.seller_contact_phone"/>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <el-divider/>
-
-                        <h4 class="mb-4">{{ translate('Seller Bank Details') }}</h4>
-
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Bank IBAN')" label-position="top">
-                                    <el-input v-model="form.seller_bank_iban"/>
-                                    <ValidationError :validation-errors="validationErrors.seller_bank_iban || {}" field-key="seller_bank_iban"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('International Bank Account Number') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Bank BIC')" label-position="top">
-                                    <el-input v-model="form.seller_bank_bic"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('Bank Identifier Code (SWIFT)') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Bank Account Name')" label-position="top">
-                                    <el-input v-model="form.seller_bank_account_name"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('Name of the bank account holder') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12">
-                                <el-form-item :label="translate('Electronic Address')" label-position="top">
-                                    <el-input v-model="form.seller_electronic_address"/>
-                                    <div class="form-note">
-                                        <p>{{ translate('Electronic address for receiving e-invoices (e.g. PEPPOL ID)') }}</p>
-                                    </div>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-                    </Card.Body>
-                </Card.Container>
-
-                <div class="setting-save-action">
-                    <el-button type="primary" @click="saveSettings()" :loading="saving">
-                        {{ translate('Save Settings') }}
-                    </el-button>
+                <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+                    <fct-input v-model="form.seller_contact_name" :label="translate('Contact Name')"/>
+                    <fct-input v-model="form.seller_contact_email" type="email" :label="translate('Contact Email')" :validation-errors="validationErrors" field-key="seller_contact_email"/>
+                    <fct-input v-model="form.seller_contact_phone" :label="translate('Contact Phone')"/>
                 </div>
-            </template>
-        </div>
-    </div>
+
+                <el-divider/>
+
+                <h3 class="mb-4 text-sm">{{ translate('Seller Bank Details') }}</h3>
+
+                <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+                    <Field :label="translate('Bank IBAN')" v-slot="{id}">
+                        <fct-input :id="id" v-model="form.seller_bank_iban"/>
+                        <ValidationError :validation-errors="validationErrors.seller_bank_iban || {}" field-key="seller_bank_iban"/>
+                        <div class="form-note">
+                            <p>{{ translate('International Bank Account Number') }}</p>
+                        </div>
+                    </Field>
+                    <fct-input v-model="form.seller_bank_bic" :label="translate('Bank BIC')" :help="translate('Bank Identifier Code (SWIFT)')"/>
+                    <fct-input v-model="form.seller_bank_account_name" :label="translate('Bank Account Name')" :help="translate('Name of the bank account holder')"/>
+                    <fct-input v-model="form.seller_electronic_address" :label="translate('Electronic Address')" :help="translate('Electronic address for receiving e-invoices (e.g. PEPPOL ID)')"/>
+                </div>
+            </Section>
+
+            <div class="setting-save-action">
+                <fct-button type="primary" @click="saveSettings()" :loading="saving">
+                    {{ translate('Save Settings') }}
+                </fct-button>
+            </div>
+        </template>
+    </SettingsPage>
 </template>

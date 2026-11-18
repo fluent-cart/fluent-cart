@@ -1,4 +1,5 @@
-@config "../../../../styles/tailwind/scales.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../styles/tailwind/scales.config.mjs";
 
 /* ----------------------------------
    Carousel Wrapper
@@ -62,6 +63,11 @@
     border-color 0.3s ease;
 }
 
+/* A card layout draws its own frame, so clipping would cut the Floating panel's shadow and lower corners. */
+.fct-product-carousel .fct-product-card:has(> .fct-card-layout) {
+  overflow: visible;
+}
+
 /* Active slide emphasis */
 .fct-product-carousel .swiper-slide-active .fct-product-card {
   border-color: var(--fct-active-border-color, rgba(0, 115, 170, 0.45));
@@ -82,7 +88,8 @@
 .fct-product-carousel .swiper-button-prev,
 .fct-product-carousel .swiper-button-next {
   position: absolute;
-  top: 50%;
+  // Set on each arrow by product-carousel.js to the middle of the picture beside it, for layout cards.
+  top: var(--fct-carousel-arrow-top, 50%);
   transform: translateY(-50%);
   width: 38px;
   height: 38px;

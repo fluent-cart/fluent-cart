@@ -33,7 +33,7 @@
                 }
                 &__text{
                     @apply w-full text-end text-system-mid ml-0 mt-2.5 dark:text-gray-300;
-                    @apply text-[13px] #{!important};
+                    @apply text-[13px]!;
                 }
             }
         }

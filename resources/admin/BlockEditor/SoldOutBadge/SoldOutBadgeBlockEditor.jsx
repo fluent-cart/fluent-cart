@@ -1,4 +1,3 @@
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/SoldOutBadge/Components/InspectorSettings";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {SoldOutBadge} from "@/BlockEditor/Icons";
@@ -60,7 +59,8 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const badgeClasses = [
             'fct-sold-out-badge',
             `fct-sold-out-badge--${attributes.badge_style || 'badge'}`,
-            attributes.badge_position ? `fct-sold-out-badge--${attributes.badge_position}` : '',
+            // Same default as the storefront renderer, so the editor shows the badge where the page does.
+            `fct-sold-out-badge--${attributes.badge_position || 'top-left'}`,
         ].filter(Boolean).join(' ');
 
         const hasProduct = selectedProduct?.ID || selectedProduct?.detail;
@@ -78,12 +78,6 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                           style={hasProduct && !isOutOfStock ? {opacity: 0.4} : {}}>
                         {attributes.badge_text || 'Sold Out'}
                     </span>
-
-                    {hasProduct && !isOutOfStock && (
-                        <small style={{display: 'block', color: '#999', fontSize: '11px', marginTop: '4px'}}>
-                            {blocktranslate('Product is in stock')}
-                        </small>
-                    )}
                 </ErrorBoundary>
             </div>
         );

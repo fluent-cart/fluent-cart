@@ -162,7 +162,7 @@ onUnmounted(() => {
 <template>
     <UserCan :permission="'reports/view'">
         <div class="fct-revenue-report-page">
-            <PageHeading :title="translate('Payment Methods')"></PageHeading>
+            <PageHeading><template #title><h2 class="page-title">{{ translate('Payment Methods') }}</h2></template></PageHeading>
 
             <SummaryLoader v-if="loading" :loading="loading" :count="4"/>
             <div v-else class="fct-report-order-summary summary-col-4">
@@ -184,11 +184,11 @@ onUnmounted(() => {
                         </div>
                         <div class="title">
                             {{ item.title }}
-                            <el-tooltip :content="item.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+                            <fct-tooltip :content="item.info" placement="top" :trigger="['hover', 'focus']">
                                 <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
                                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true"/>
                                 </button>
-                            </el-tooltip>
+                            </fct-tooltip>
                         </div>
                     </div>
                 </div>
@@ -203,18 +203,18 @@ onUnmounted(() => {
                             <div class="flex-1"></div>
                             <div class="fct-card-header-actions">
                                 <div class="fct-btn-group sm">
-                                    <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+                                    <fct-tooltip :content="translate('Export CSV')" placement="top">
                                         <IconButton tag="button" :disabled="loading || !rows.length"
                                             :aria-label="translate('Export CSV')" @click="exportCsv">
                                             <DynamicIcon name="Download" />
                                         </IconButton>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="fct-card-body">
-                        <el-skeleton class="px-5 pb-5" v-if="loading" :rows="4" animated></el-skeleton>
+                        <fct-skeleton class="px-5 pb-5" v-if="loading" :rows="4" animated></fct-skeleton>
 
                         <el-table v-else :data="rows" class="w-full" show-summary :summary-method="summaryRow">
                             <el-table-column :label="translate('Payment Method')" min-width="160" fixed>
@@ -228,9 +228,9 @@ onUnmounted(() => {
                                     :min-width="column.info ? 170 : 130" sortable :sort-method="byNumber(column.prop)">
                                     <template #header>
                                         {{ column.label }}
-                                        <el-tooltip v-if="column.info" :content="column.info" placement="top" popper-class="fct-tooltip" effect="dark">
+                                        <fct-tooltip v-if="column.info" :content="column.info" placement="top">
                                             <DynamicIcon class="text-gray-500 w-4 h-4 cursor-help inline-block align-middle" name="InformationFill" />
-                                        </el-tooltip>
+                                        </fct-tooltip>
                                     </template>
                                     <template #default="scope">{{ cell(column, scope.row) }}</template>
                                 </el-table-column>

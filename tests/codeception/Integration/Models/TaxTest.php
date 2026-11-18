@@ -34,20 +34,6 @@ class TaxTest extends DatabaseTestCase
     // Spec 1-11: fct_tax_rates schema
     // =========================================================================
 
-    public function test_fct_tax_rates_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_tax_rates'));
-    }
-
-    public function test_fct_tax_rates_has_expected_columns(): void
-    {
-        $this->assertColumnsExist('fct_tax_rates', [
-            'id', 'class_id', 'country', 'state', 'postcode', 'city',
-            'rate', 'name', 'group', 'priority', 'is_compound',
-            'for_shipping', 'for_order',
-        ]);
-    }
-
     public function test_fct_tax_rates_class_id_is_bigint_unsigned(): void
     {
         $col = $this->getColumn('fct_tax_rates', 'class_id');
@@ -135,18 +121,6 @@ class TaxTest extends DatabaseTestCase
     // Spec 12-17: fct_tax_classes schema
     // =========================================================================
 
-    public function test_fct_tax_classes_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_tax_classes'));
-    }
-
-    public function test_fct_tax_classes_has_expected_columns(): void
-    {
-        $this->assertColumnsExist('fct_tax_classes', [
-            'id', 'title', 'slug', 'description', 'meta', 'created_at', 'updated_at',
-        ]);
-    }
-
     public function test_fct_tax_classes_title_is_exactly_varchar_192(): void
     {
         $col = $this->getColumn('fct_tax_classes', 'title');
@@ -210,19 +184,6 @@ class TaxTest extends DatabaseTestCase
     // =========================================================================
     // Spec 18-24: fct_order_tax_rate schema
     // =========================================================================
-
-    public function test_fct_order_tax_rate_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_order_tax_rate'));
-    }
-
-    public function test_fct_order_tax_rate_has_expected_columns(): void
-    {
-        $this->assertColumnsExist('fct_order_tax_rate', [
-            'id', 'order_id', 'tax_rate_id', 'shipping_tax', 'order_tax',
-            'total_tax', 'meta', 'filed_at', 'created_at', 'updated_at',
-        ]);
-    }
 
     public function test_fct_order_tax_rate_order_id_is_bigint_not_null(): void
     {

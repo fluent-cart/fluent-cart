@@ -1,36 +1,36 @@
 <template>
 	<div class="fct-edit-term-modal">
-		<el-form label-position="top" :data="editing">
-			<el-form-item :label="groupType === 'color' ? translate('Color Name') : translate('Title')">
-				<el-input
-					type="text"
-					v-model="localTitle"
-					:placeholder="groupType === 'color' ? translate('e.g. Navy Blue') : translate('Title')"
-					:class="validationErrors['title'] ? 'is-error' : ''"
-				/>
-				<ValidationError :validation-errors="validationErrors" field-key="title"/>
-			</el-form-item>
+		<div>
+			<fct-input
+				type="text"
+				v-model="localTitle"
+				:label="groupType === 'color' ? translate('Color Name') : translate('Title')"
+				:placeholder="groupType === 'color' ? translate('e.g. Navy Blue') : translate('Title')"
+				:class="validationErrors['title'] ? 'is-error' : ''"
+				:validation-errors="validationErrors"
+				field-key="title"
+			/>
 
-			<el-form-item v-if="groupType === 'color'" :label="translate('Color')">
+			<Field v-if="groupType === 'color'" :label="translate('Color')">
 				<ColorPicker v-model="settingsColor" :with-presets="true"/>
-			</el-form-item>
+			</Field>
 
-			<el-form-item v-if="groupType === 'image'" :label="translate('Image URL')">
-				<el-input v-model="settingsImage" :placeholder="translate('https://...')">
+			<Field v-if="groupType === 'image'" :label="translate('Image URL')">
+				<fct-input v-model="settingsImage" :placeholder="translate('https://...')">
 					<template #append>
-						<el-button @click="openMediaUploader">{{ translate('Upload') }}</el-button>
+						<fct-button @click="openMediaUploader">{{ translate('Upload') }}</fct-button>
 					</template>
-				</el-input>
+				</fct-input>
 				<div v-if="settingsImage" class="mt-2">
-					<img :src="settingsImage" alt="" class="rounded border border-gray-200 dark:border-dark-400" style="width: 60px; height: 60px; object-fit: contain;"/>
+					<img :src="settingsImage" alt="" class="rounded [border-width:1px] border-gray-200 dark:border-dark-400" style="width: 60px; height: 60px; object-fit: contain;"/>
 				</div>
-			</el-form-item>
-		</el-form>
+			</Field>
+		</div>
 
 		<div class="dialog-footer">
-			<el-button :disabled="!localTitle || loading" :loading="loading" @click="updateTerm" type="primary">
+			<fct-button :disabled="!localTitle || loading" :loading="loading" @click="updateTerm" type="primary">
 				{{ translate('Save changes') }}
-			</el-button>
+			</fct-button>
 		</div>
 	</div>
 </template>
@@ -40,7 +40,7 @@ import { ref, computed, watch } from "vue";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
 import { handleSuccess } from "@/Bits/common";
-import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import ColorPicker from "@/Bits/Components/Form/Components/Base/Inputs/ColorPicker.vue";
 import Notify from "@/utils/Notify";
 import { getSuggestedColor } from "@/utils/colorPresets";

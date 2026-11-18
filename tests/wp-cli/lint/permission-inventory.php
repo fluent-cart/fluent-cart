@@ -170,6 +170,12 @@ foreach ($inventory['declarations'] as $declaration) {
 }
 
 $runtime = number_format(microtime(true) - $startedAt, 3, '.', '');
+
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
+if (!$errors) {
+    exit(0);
+}
+
 echo 'permission-inventory: configured ' . count($inventory['route_files'])
     . ' files; discovered ' . count($inventory['declarations'])
     . ' mutating declarations; classified ' . count($classified) . "\n";
@@ -199,16 +205,10 @@ echo sprintf(
     $categoryTotals['known_failure']
 );
 
-if ($errors) {
-    echo "\nFAIL — " . count($errors) . " permission inventory violation(s):\n\n";
-    foreach ($errors as $error) {
-        echo '  ' . $error['location'] . "\n";
-        echo '    ' . $error['reason'] . "\n\n";
-    }
-    echo 'permission-inventory runtime: ' . $runtime . "s\n";
-    exit(1);
+echo "\nFAIL — " . count($errors) . " permission inventory violation(s):\n\n";
+foreach ($errors as $error) {
+    echo '  ' . $error['location'] . "\n";
+    echo '    ' . $error['reason'] . "\n\n";
 }
-
-echo "\nOK — every configured mutating declaration has reviewed permission metadata and classification.\n";
 echo 'permission-inventory runtime: ' . $runtime . "s\n";
-exit(0);
+exit(1);

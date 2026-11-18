@@ -232,8 +232,6 @@ describe('buildVariantUpdatePayload', () => {
  *     The variants.0.post_id field is required.
  *     The variants.0.other_info field is required.
  *     Payment Type is required.
- *
- * See dev-docs/framework-update-2.12.6-qa.md finding 11.
  */
 describe('buildSimpleVariantUpdatePayload', () => {
     const storedSimple = () => ([

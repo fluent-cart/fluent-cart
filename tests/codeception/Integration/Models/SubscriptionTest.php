@@ -7,11 +7,9 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Customer;
 use FluentCart\App\Models\CustomerAddresses;
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
-use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\App\Services\Payments\PaymentHelper;
@@ -25,9 +23,12 @@ use Tests\Support\Factory\OrderTransactionFactory;
 use Tests\Support\Factory\ProductFactory;
 use Tests\Support\Factory\SubscriptionFactory;
 use Tests\Support\Factory\SubscriptionMetaFactory;
+use Tests\Support\Traits\ConfiguresStoreOrderMode;
 
 class SubscriptionTest extends DatabaseTestCase
 {
+    use ConfiguresStoreOrderMode;
+
     private CustomerFactory $customerFactory;
     private ProductFactory $productFactory;
     private OrderFactory $orderFactory;
@@ -48,6 +49,7 @@ class SubscriptionTest extends DatabaseTestCase
         $this->txnFactory         = new OrderTransactionFactory();
         $this->itemFactory        = new OrderItemFactory();
         $this->planMetaFactory    = new MetaFactory();
+        $this->setStoreOrderMode(Status::ORDER_MODE_LIVE);
     }
 
     // =========================================================================
@@ -141,13 +143,6 @@ class SubscriptionTest extends DatabaseTestCase
     // =========================================================================
     // Spec 11-13: fct_subscription_meta schema
     // =========================================================================
-
-    public function test_subscription_meta_table_has_expected_columns(): void
-    {
-        $this->assertColumnsExist('fct_subscription_meta', [
-            'id', 'subscription_id', 'meta_key', 'meta_value', 'created_at', 'updated_at',
-        ]);
-    }
 
     public function test_subscription_meta_has_index_on_subscription_id(): void
     {
@@ -1340,6 +1335,27 @@ class SubscriptionTest extends DatabaseTestCase
         $this->assertTrue($nbd === null || $nbd === '0000-00-00 00:00:00');
     }
 
+    public function test_check_and_expire_skips_subscription_of_other_store_mode(): void
+    {
+        $past = gmdate('Y-m-d H:i:s', time() - 60 * DAY_IN_SECONDS);
+        ['sub' => $sub] = $this->makeSubscription([
+            'status'            => Status::SUBSCRIPTION_ACTIVE,
+            'collection_method' => 'automatic',
+            'billing_interval'  => 'monthly',
+            'next_billing_date' => $past,
+        ]);
+
+        $this->setStoreOrderMode(Status::ORDER_MODE_TEST);
+        Subscription::checkAndExpireSubscriptions();
+        $this->assertSame(Status::SUBSCRIPTION_ACTIVE, Subscription::query()->find($sub->id)->status);
+
+        $this->setStoreSetting('subscription_mode_guard', 'no');
+        Subscription::checkAndExpireSubscriptions();
+        $this->assertSame(Status::SUBSCRIPTION_EXPIRED, Subscription::query()->find($sub->id)->status);
+
+        $this->setStoreOrderMode(Status::ORDER_MODE_LIVE);
+    }
+
     // =========================================================================
     // Spec 104: Canceled past grace clears NBD but keeps status=canceled
     // =========================================================================
@@ -1646,40 +1662,6 @@ class SubscriptionTest extends DatabaseTestCase
         $this->assertSame($expected, $nbd);
     }
 
-    public function test_guess_parent_non_renewal_no_trial_uses_parent_plus_interval(): void
-    {
-        $customer = $this->customerFactory->create();
-        $product  = $this->productFactory->withVariantAttributes(['payment_type' => 'subscription'])->create();
-        $variant  = $product->variants->first();
-        $parent = $this->orderFactory->create([
-            'customer_id'    => $customer->id,
-            'type'           => 'subscription',
-            'payment_status' => Status::PAYMENT_PAID,
-        ]);
-        global $wpdb;
-        $baseTime = time() - 10 * DAY_IN_SECONDS;
-        $wpdb->update(
-            "{$wpdb->prefix}fct_orders",
-            ['created_at' => gmdate('Y-m-d H:i:s', $baseTime)],
-            ['id' => $parent->id]
-        );
-        $sub = $this->subscriptionFactory->create([
-            'customer_id'      => $customer->id,
-            'parent_order_id'  => $parent->id,
-            'product_id'       => $product->ID,
-            'variation_id'     => $variant->id,
-            'billing_interval' => 'monthly',
-            'trial_days'       => 0,
-        ]);
-        $fresh = Subscription::query()->find($sub->id);
-        $fresh->next_billing_date = null;
-
-        $nbd = $fresh->guessNextBillingDate();
-        // monthly = days in the current month (PaymentHelper::getIntervalDays), not a flat 30.
-        $expected = gmdate('Y-m-d H:i:s', $baseTime + PaymentHelper::getIntervalDays('monthly') * DAY_IN_SECONDS);
-        $this->assertSame($expected, $nbd);
-    }
-
     // =========================================================================
     // Spec 82-84: getDownloads — rows returned for active sub, product_title/variation_ids/titles attached
     // =========================================================================
@@ -1744,41 +1726,24 @@ class SubscriptionTest extends DatabaseTestCase
     }
 
     // =========================================================================
-    // Spec 54: canUpdatePaymentMethod returns false when gateway lacks card_update
+    // Spec 54: canUpdatePaymentMethod returns false when the gateway does not opt in
     // =========================================================================
 
-    public function test_can_update_payment_method_false_without_card_update_feature(): void
+    public function test_can_update_payment_method_false_when_gateway_does_not_opt_in(): void
     {
         ['sub' => $sub] = $this->makeSubscription([
             'status'                 => Status::SUBSCRIPTION_ACTIVE,
-            'current_payment_method' => 'offline_payment', // COD — no card_update
+            'current_payment_method' => 'offline_payment', // COD — no update override
         ]);
         $fresh = Subscription::query()->find($sub->id);
         $this->assertFalse($fresh->canUpdatePaymentMethod());
     }
 
-    public function canUpdatePaymentMethodStatusMatrix(): array
-    {
-        return [
-            'active'    => [Status::SUBSCRIPTION_ACTIVE, true],
-            'trialing'  => [Status::SUBSCRIPTION_TRIALING, true],
-            'paused'    => [Status::SUBSCRIPTION_PAUSED, true],
-            'intended'  => [Status::SUBSCRIPTION_INTENDED, true],
-            'past_due'  => [Status::SUBSCRIPTION_PAST_DUE, true],
-            'failing'   => [Status::SUBSCRIPTION_FAILING, true],
-            'expiring'  => [Status::SUBSCRIPTION_EXPIRING, true],
-            // Denied controls:
-            'canceled'  => [Status::SUBSCRIPTION_CANCELED, false],
-            'completed' => [Status::SUBSCRIPTION_COMPLETED, false],
-            'expired'   => [Status::SUBSCRIPTION_EXPIRED, false],
-        ];
-    }
-
     // =========================================================================
-    // Spec 56: canSwitchPaymentMethod returns false when gateway lacks switch_payment_method
+    // Spec 56: canSwitchPaymentMethod returns false when the gateway does not opt in
     // =========================================================================
 
-    public function test_can_switch_payment_method_false_without_feature(): void
+    public function test_can_switch_payment_method_false_when_gateway_does_not_opt_in(): void
     {
         ['sub' => $sub] = $this->makeSubscription([
             'status'                 => Status::SUBSCRIPTION_ACTIVE,
@@ -1788,29 +1753,11 @@ class SubscriptionTest extends DatabaseTestCase
         $this->assertFalse($fresh->canSwitchPaymentMethod());
     }
 
-    public function canSwitchPaymentMethodStatusMatrix(): array
-    {
-        return [
-            'active'    => [Status::SUBSCRIPTION_ACTIVE, true],
-            'trialing'  => [Status::SUBSCRIPTION_TRIALING, true],
-            'paused'    => [Status::SUBSCRIPTION_PAUSED, true],
-            // Denied controls:
-            'canceled'  => [Status::SUBSCRIPTION_CANCELED, false],
-            'expired'   => [Status::SUBSCRIPTION_EXPIRED, false],
-            'past_due'  => [Status::SUBSCRIPTION_PAST_DUE, false],
-            'failing'   => [Status::SUBSCRIPTION_FAILING, false],
-            'expiring'  => [Status::SUBSCRIPTION_EXPIRING, false],
-            'completed' => [Status::SUBSCRIPTION_COMPLETED, false],
-            'pending'   => [Status::SUBSCRIPTION_PENDING, false],
-            'intended'  => [Status::SUBSCRIPTION_INTENDED, false],
-        ];
-    }
-
     // =========================================================================
-    // Spec 58: switchablePaymentMethods returns configured supported_gateways
+    // Spec 58: switchablePaymentMethods returns the gateway's switchable list
     // =========================================================================
 
-    public function test_switchable_payment_methods_returns_empty_when_feature_missing(): void
+    public function test_switchable_payment_methods_returns_empty_when_gateway_does_not_opt_in(): void
     {
         ['sub' => $sub] = $this->makeSubscription([
             'current_payment_method' => 'offline_payment',
@@ -1918,7 +1865,7 @@ class SubscriptionTest extends DatabaseTestCase
         $stub = new class implements PaymentGatewayInterface {
             public function has(string $feature): bool
             {
-                return in_array($feature, ['card_update', 'pause_subscription']);
+                return in_array($feature, ['pause_subscription']);
             }
 
             public function meta(): array
@@ -1959,9 +1906,9 @@ class SubscriptionTest extends DatabaseTestCase
 
             $fresh = Subscription::query()->find($sub->id);
 
-            $this->assertTrue(
+            $this->assertFalse(
                 $fresh->canUpdatePaymentMethod(),
-                'an interface-only gateway declaring card_update must not resolve to null'
+                'payment-method update is decided on AbstractPaymentGateway; an interface-only gateway reports false rather than erroring'
             );
             $this->assertTrue(
                 $fresh->canPause(),
@@ -1974,7 +1921,7 @@ class SubscriptionTest extends DatabaseTestCase
             $this->assertSame(
                 [],
                 $fresh->switchablePaymentMethods(),
-                'switch config lives on AbstractPaymentGateway; an interface-only gateway reports none rather than erroring'
+                'switchable methods are decided on AbstractPaymentGateway; an interface-only gateway reports none rather than erroring'
             );
 
             // And it must serialize — permissions is an $appends entry.

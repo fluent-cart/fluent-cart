@@ -115,8 +115,12 @@ class ModuleSettingsController extends Controller
             }
         }
 
+        unset($addon);
+
         return $this->sendSuccess([
-            'addons' => $addons,
+            'addons'          => $addons,
+            // Same rules as the dashboard card; the status above is already known here.
+            'recommendations' => AddonManager::pickRecommendations($addons, AddonManager::getStoreSignals()),
         ]);
     }
 
@@ -254,7 +258,7 @@ class ModuleSettingsController extends Controller
         ]);
     }
 
-    private function getRegisteredPluginAddons(): array
+    public function getRegisteredPluginAddons(): array
     {
         $addons = [
             'elementor-block' => [
@@ -312,7 +316,8 @@ class ModuleSettingsController extends Controller
                 'source_type' => 'cdn',
                 'source_link' => 'https://addons-cdn.fluentcart.com/fluent-cart-migrator.zip',
                 'upcoming'    => false,
-                'repo_link'   => 'https://fluentcart.com/fluentcart-addons/?3181_search=Migrator'
+                'repo_link'   => 'https://fluentcart.com/fluentcart-addons/?3181_search=Migrator',
+                'redirect_url' => '/settings/migrator'
             ],
             'fluent-cart-customer-rights' => [
                 'title'       => __('FluentCart Customer Rights', 'fluent-cart'),
@@ -322,7 +327,8 @@ class ModuleSettingsController extends Controller
                 'plugin_file' => 'fluent-cart-customer-rights/fluent-cart-customer-rights.php',
                 'source_type' => 'cdn',
                 'upcoming'    => false,
-                'repo_link' => 'https://fluentcart.com/fluentcart-addons/'
+                'repo_link' => 'https://fluentcart.com/fluentcart-addons/',
+                'redirect_url' => '/settings/withdrawal-settings'
             ],
             'shipping-for-fluent-cart' => [
                 'title'       => __('Shipping For FluentCart', 'fluent-cart'),
@@ -341,9 +347,26 @@ class ModuleSettingsController extends Controller
                 'repo_link'   => 'https://fluentcart.com/fluentcart-addons/',
                 'settings_route' => '/settings/shipping/carriers'
             ],
+            'address-autofill-for-fluent-cart' => [
+                'title'       => __('Address Autofill for FluentCart', 'fluent-cart'),
+                'description' => __('Fill the prefecture, city and street at checkout from a Japanese postal code.', 'fluent-cart'),
+                'logo'        => Vite::getAssetUrl('images/address-autofill/black.svg'),
+                'dark_logo'   => Vite::getAssetUrl('images/address-autofill/white.svg'),
+                'plugin_slug' => 'address-autofill-for-fluent-cart',
+                'plugin_file' => 'address-autofill-for-fluent-cart/address-autofill-for-fluent-cart.php',
+                'source_type' => 'cdn',
+                'source_link' => 'https://addons-cdn.fluentcart.com/address-autofill-for-fluent-cart.zip',
+                'license_required' => [
+                    'enabled'           => false,
+                    'parent_product_id' => 21480
+                ],
+                'upcoming'    => false,
+                'repo_link'   => 'https://fluentcart.com/fluentcart-addons/',
+            ],
         ];
 
-        // Allow other modules/plugins to register their addons
+        // Allow other modules/plugins to register their addons.
+        // 'redirect_url' (admin route or full URL): the gear link and the page after install/activation. Older 'settings_route' (route only) still works.
         return apply_filters('fluent_cart/module_settings/plugin_addons', $addons);
     }
 }

@@ -8,12 +8,13 @@ use FluentCart\App\Modules\MCP\Support\MCPHelper;
 use FluentCart\App\Modules\MCP\Support\PermissionGate;
 use FluentCart\App\Modules\MCP\Support\PaymentProjector;
 use FluentCart\App\Modules\MCP\Support\ProductFinancialsCalculator as Calc;
+use FluentCart\App\Services\Payments\SubscriptionHelper;
 
 /**
  * get-upcoming-payments — the renewal cohort view: expected billings grouped by
  * date over a window, separating finite (split-pay) installments from open-ended
- * recurring renewals, with an at_risk figure derived from past_due subscriptions
- * and the store's historical renewal success rate.
+ * recurring renewals, with an at_risk figure: what the overdue subscriptions
+ * (past_due, expiring, failing) are expected to bill in the window.
  *
  * It anchors on next_billing_date (never created_at), steps by each
  * subscription's interval, and stops finite plans at their remaining bills —
@@ -26,7 +27,10 @@ use FluentCart\App\Modules\MCP\Support\ProductFinancialsCalculator as Calc;
 class PaymentScheduleTools
 {
     /** Statuses that produce a future charge and so feed the projection. */
-    const FORWARD_STATUSES = ['active', 'past_due', 'trialing'];
+    const FORWARD_STATUSES = ['active', 'trialing', 'past_due', 'expiring', 'failing'];
+
+    // Overdue, as InstallmentReportService::OVERDUE: a payment was due and is not collected yet
+    const AT_RISK_STATUSES = ['past_due', 'expiring', 'failing'];
 
     /** Safety ceiling on subscriptions loaded for one projection. */
     const MAX_SUBS = 50000;
@@ -35,16 +39,16 @@ class PaymentScheduleTools
     {
         return [
             'fluent-cart/get-upcoming-payments' => [
-                'label'       => __('Get Upcoming Payments', 'fluent-cart'),
-                'description' => __('Forward view of expected subscription billings grouped by date, split into finite_installments (split-pay, bill_times > 0) vs recurring_renewals (open-ended), plus an at_risk figure from past_due subscriptions discounted by the store\'s historical renewal success rate. Anchors on next_billing_date, steps by each plan\'s interval, stops finite plans at their remaining bills. Optional product_id/variation_id scope to one product. Single currency: store default, others in meta.other_currencies. date_from/date_to default to now..+90 days. Money is {amount, amount_cents, currency, display}.', 'fluent-cart'),
+                'label'       => 'Get Upcoming Payments',
+                'description' => 'Expected subscription billings ahead, by day or month, with an at-risk figure. Split into split-pay installments and open-ended renewals. finite_installments are split-pay plans (bill_times > 0), recurring_renewals are open-ended; at_risk is what overdue subscriptions (past_due, expiring, failing) are expected to bill in the window. Anchors on next_billing_date, steps by each plan\'s interval, stops finite plans at their remaining bills. Periods are store-timezone days or months; a finite installment already past due counts at the window start, so monthly finite counts match get-report report=installments. Optional product_id/variation_id scope to one product. Other currencies are listed in meta.other_currencies. date_from/date_to default to now..+90 days.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'product_id'   => ['type' => 'integer', 'description' => 'Limit to subscriptions for one product. Omit for the whole store.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Limit to one variation.'],
                         'currency'     => ['type' => 'string', 'description' => 'ISO currency for the (single-currency) report. Defaults to store currency.'],
-                        'date_from'    => ['type' => 'string', 'description' => 'ISO 8601 or YYYY-MM-DD, UTC. Window start. Default now.'],
-                        'date_to'      => ['type' => 'string', 'description' => 'ISO 8601 or YYYY-MM-DD, UTC. Window end. Default 90 days out.'],
+                        'date_from'    => ['type' => 'string', 'description' => 'ISO 8601 or YYYY-MM-DD; store time unless it has an offset. Window start. Default now.'],
+                        'date_to'      => ['type' => 'string', 'description' => 'ISO 8601 or YYYY-MM-DD; store time unless it has an offset. Window end. Default 90 days out.'],
                         'bucket'       => ['type' => 'string', 'enum' => ['day', 'month'], 'default' => 'day', 'description' => 'Calendar granularity of the schedule.'],
                     ],
                 ],
@@ -81,7 +85,7 @@ class PaymentScheduleTools
                 continue;
             }
             $projSubs[] = $ps;
-            if ($row['status'] === 'past_due') {
+            if (in_array($row['status'], self::AT_RISK_STATUSES, true)) {
                 $pastDueSubs[] = $ps;
             }
         }
@@ -89,18 +93,19 @@ class PaymentScheduleTools
         $fromTs = strtotime($window['from'] . ' UTC');
         $toTs   = strtotime($window['to'] . ' UTC');
 
-        $projection   = PaymentProjector::project($projSubs, $fromTs, $toTs, $bucket);
-        $pastDueProj  = PaymentProjector::project($pastDueSubs, $fromTs, $toTs, $bucket);
+        // Periods are store days, as the reports bucket (get-report installments counts the same months)
+        $projection   = PaymentProjector::project($projSubs, $fromTs, $toTs, $bucket, wp_timezone(), time());
+        $pastDueProj  = PaymentProjector::project($pastDueSubs, $fromTs, $toTs, $bucket, wp_timezone(), time());
 
         $buckets      = self::formatBuckets($projection['buckets'], $currency);
         $totals       = self::totals($projection['buckets']);
         $pastDueTotal = self::totals($pastDueProj['buckets'])['total_expected'];
 
+        // Everything the overdue plans owe is at risk. The store-wide success rate covers
+        // healthy renewals too, so it says little about plans that already missed a payment;
+        // it is returned for reference and not applied.
         $successRate = self::renewalSuccessRate();
-        // Unknown history -> treat the whole past_due expectation as at risk.
-        $atRiskCents = ($successRate === null)
-            ? $pastDueTotal
-            : (int) round($pastDueTotal * (1 - $successRate));
+        $atRiskCents = $pastDueTotal;
 
         $data = [
             'window' => [
@@ -120,9 +125,7 @@ class PaymentScheduleTools
                 'from_past_due_expected'  => MCPHelper::money($pastDueTotal, $currency),
                 'past_due_subscriptions'  => count($pastDueSubs),
                 'historical_success_rate' => $successRate,
-                'basis'                   => $successRate === null
-                    ? 'no renewal history yet — full past_due expectation shown as at risk'
-                    : 'store-wide renewal charge success rate (succeeded / (succeeded + failed))',
+                'basis'                   => 'amount is everything the overdue plans (past_due, expiring, failing) are expected to bill in the window. historical_success_rate is the store-wide renewal charge success rate (succeeded / (succeeded + failed)), for reference; it is not applied.',
             ],
         ];
 
@@ -130,12 +133,11 @@ class PaymentScheduleTools
             'currency'         => $currency,
             'other_currencies' => $otherCurrencies,
             'forward_statuses' => self::FORWARD_STATUSES,
-            'note'             => 'Projected from next_billing_date, stepping by each plan\'s interval; finite plans stop at remaining bills. Forward-billing statuses only (active, past_due, trialing).',
+            'note'             => 'Projected from next_billing_date, stepping by each plan\'s interval; finite plans stop at remaining bills. Forward-billing statuses only (meta.forward_statuses); at_risk and its past_due_* fields cover past_due, expiring and failing. schedule periods are store-timezone days or months. A finite installment already past due counts at the window start; with the default window, finite_count per month equals the payments of get-report report=installments schedule, which also counts plans waiting for gateway activation.',
         ];
         if ($load['truncated']) {
             $meta['warnings'] = [sprintf(
-                /* translators: %1$d: subscription load cap */
-                __('More than %1$d subscriptions matched; the projection uses the first %1$d and may be incomplete.', 'fluent-cart'),
+                'More than %1$d subscriptions matched; the projection uses the first %1$d and may be incomplete.',
                 self::MAX_SUBS
             )];
         }
@@ -189,6 +191,7 @@ class PaymentScheduleTools
                 'bill_times'        => (int) $sub->bill_times,
                 'status'            => (string) $sub->status,
                 'next_billing_date' => $sub->next_billing_date,
+                'billing_schedule'  => SubscriptionHelper::getBillingSchedule($sub),
             ];
         }
 
@@ -213,6 +216,7 @@ class PaymentScheduleTools
             'remaining_bills' => ($settle === 'finite') ? max(0, $billTimes - $billCount) : -1,
             'anchor'          => (string) $anchor,
             'status'          => $row['status'],
+            'schedule'        => isset($row['billing_schedule']) ? $row['billing_schedule'] : null,
         ];
     }
 
@@ -266,36 +270,23 @@ class PaymentScheduleTools
 
     private static function resolveWindow($params)
     {
-        $tz   = new \DateTimeZone('UTC');
-        $from = !empty($params['date_from']) ? self::instant($params['date_from'], $tz, false) : gmdate('Y-m-d H:i:s');
-        $to   = !empty($params['date_to']) ? self::instant($params['date_to'], $tz, true) : gmdate('Y-m-d H:i:s', strtotime('+90 days'));
+        // A bare date is a store day, as in the report windows
+        $from = !empty($params['date_from']) ? MCPHelper::storeDateBound($params['date_from'], false) : gmdate('Y-m-d H:i:s');
+        $to   = !empty($params['date_to']) ? MCPHelper::storeDateBound($params['date_to'], true) : gmdate('Y-m-d H:i:s', strtotime('+90 days'));
 
         if ($from === null || $to === null) {
-            return MCPHelper::error('invalid_date', __('date_from / date_to must be ISO 8601 or YYYY-MM-DD.', 'fluent-cart'), ['fields' => ['date_from', 'date_to']]);
+            return MCPHelper::error('invalid_param', 'date_from / date_to must be ISO 8601 or YYYY-MM-DD.', ['fields' => ['date_from', 'date_to']]);
+        }
+        if ($from > $to) {
+            return ReportTools::reversedRangeError($from, $to, ['date_from', 'date_to']);
         }
         return ['from' => $from, 'to' => $to];
-    }
-
-    /** Parse a date bound to UTC 'Y-m-d H:i:s'; date-only snaps to the day edge. */
-    private static function instant($value, $tz, $isEnd)
-    {
-        try {
-            $dt = new \DateTime((string) $value, $tz);
-        } catch (\Exception $e) {
-            return null;
-        }
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $value))) {
-            $dt->setTime($isEnd ? 23 : 0, $isEnd ? 59 : 0, $isEnd ? 59 : 0);
-        }
-        $dt->setTimezone(new \DateTimeZone('UTC'));
-        return $dt->format('Y-m-d H:i:s');
     }
 
     private static function summary($totals, $atRiskCents, $currency, $bucketCount)
     {
         return sprintf(
-            /* translators: 1: total expected, 2: number of buckets, 3: at-risk amount */
-            __('%1$s expected across %2$d billing periods; %3$s at risk from past-due plans.', 'fluent-cart'),
+            '%1$s expected across %2$d billing periods; %3$s at risk from overdue plans.',
             MCPHelper::displayAmount($totals['total_expected'], $currency),
             $bucketCount,
             MCPHelper::displayAmount($atRiskCents, $currency)

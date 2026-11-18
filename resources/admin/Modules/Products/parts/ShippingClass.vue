@@ -109,7 +109,7 @@ onMounted(() => {
       </Card.Header>
       <Card.Body>
         <div class="fct-shipping-class-select-wrap relative">
-          <el-select
+          <fct-select
               v-model="selectedClass"
               remote
               :placeholder="translate('Search Shipping Class')"
@@ -120,25 +120,21 @@ onMounted(() => {
               @change="saveShippingClass"
               @clear="removeShippingClass"
               popper-class="fct-shipping-class-select"
+              :options="shippingClasses.map(item => ({label: item.name, value: item.id, item}))"
           >
-            <el-option
-                v-for="item in shippingClasses"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-            >
+            <template #option="{option}">
               <div class="fct-select-option-with-leftright-value">
-                {{ item.name }}
-                <span class="text-sm text-gray-500">{{ item.type === 'percentage' ?
-                    item.cost + '%' :
-                    CurrencyFormatter.formatNumber(item.cost * 100, true) }}</span>
+                {{ option.item.name }}
+                <span class="text-sm text-gray-500">{{ option.item.type === 'percentage' ?
+                    option.item.cost + '%' :
+                    CurrencyFormatter.formatNumber(option.item.cost * 100, true) }}</span>
               </div>
-            </el-option>
-          </el-select>
+            </template>
+          </fct-select>
           <div class="pt-1.5 text-end">
-            <el-button @click.stop="openAddClassDrawer" size="small" text>
+            <fct-button @click.stop="openAddClassDrawer" size="small" text>
               <DynamicIcon name="Plus" class="w-3 h-3"/> {{ translate('Add Shipping Class') }}
-            </el-button>
+            </fct-button>
           </div>
         </div>
 

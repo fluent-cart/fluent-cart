@@ -1,8 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./shop-app-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./shop-app-block-editor.config.mjs";
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+.fluent-cart-product-block-editor {
+    @tailwind utilities source(none);
+}
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 :root {
     --shop-app-block-primary-color: var(--shop-app-primary-color, theme('colors.dark.700'));
@@ -78,7 +83,7 @@
     @apply box-border;
 }
 .block-editor-block-list__block.wp-block[data-type="fluent-cart/fluent-cart-products"] {
-    @apply ml-0 mr-0 w-full max-w-full !important
+    @apply ml-0! mr-0! w-full! max-w-full!
 }
 
 /* product menu items */
@@ -113,16 +118,16 @@
     @apply border border-solid border-t-0 border-r-0 border-l-0 border-[var(--filter-item-divider-color)] pb-4 mb-4;
 }
 .fct-product-block-filter-title{
-    @apply font-medium text-[var(--filter-title-color)] m-0 text-[15px] !important;
+    @apply font-medium! text-[var(--filter-title-color)]! m-0! text-[15px]!;
 }
 .fct-product-block-input{
-    @apply bg-[--filter-input-bg] rounded w-full border-[var(--filter-input-border-color)] p-2.5 pl-8.5 min-h-10 max-h-10 text-sm leading-none focus:shadow-none focus:border-[var(--filter-input-focus-border-color)] outline-none placeholder:text-system-light font-normal text-[var(--filter-input-color)] !important;
+    @apply bg-[--filter-input-bg]! rounded! w-full! border-[var(--filter-input-border-color)]! p-2.5! pl-8.5! min-h-10! max-h-10! text-sm! leading-none! focus:shadow-none! focus:border-[var(--filter-input-focus-border-color)]! outline-hidden! placeholder:text-system-light! font-normal! text-[var(--filter-input-color)]!;
 }
 .fct-product-block-filter-checkbox{
-    @apply flex items-center leading-none text-sm capitalize text-[var(--filter-checkbox-text-color)] font-normal relative mb-4 !important;
+    @apply flex! items-center! leading-none! text-sm! capitalize! text-[var(--filter-checkbox-text-color)]! font-normal! relative! mb-4!;
 }
 .fct-product-block-filter-checkbox input{
-    @apply bg-[var(--filter-checkmark-bg)] mr-2 mb-0 mt-0 ml-0 border border-solid border-[var(--filter-checkmark-border-color)] shadow-none focus:shadow-none focus:border-gray-outline focus:outline-none checked:border-[var(--filter-checkmark-active-border-color)] checked:bg-[var(--filter-checkmark-active-bg)] checked:focus:border-[var(--filter-checkmark-active-border-color)];
+    @apply bg-[var(--filter-checkmark-bg)] mr-2 mb-0 mt-0 ml-0 border border-solid border-[var(--filter-checkmark-border-color)] shadow-none focus:shadow-none focus:border-gray-outline focus:outline-hidden checked:border-[var(--filter-checkmark-active-border-color)] checked:bg-[var(--filter-checkmark-active-bg)] checked:focus:border-[var(--filter-checkmark-active-border-color)];
 }
 
 .fct-product-block-editor-view-mode-button{
@@ -254,7 +259,7 @@
             @apply box-border;
         }
         button {
-            @apply w-auto bg-transparent text-primary-500 w-8 h-8 p-0 min-h-[32px];
+            @apply bg-transparent text-primary-500 w-8 h-8 p-0 min-h-[32px];
             svg {
                 @apply block;
             }

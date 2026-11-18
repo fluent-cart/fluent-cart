@@ -3,9 +3,9 @@
     <div class="flex items-center justify-between mb-3">
       <h3 class="text-sm font-semibold m-0 text-system-dark dark:text-gray-50">{{ translate('Shipping Zones') }}</h3>
       <!-- Default, not primary: Save in the page header is this page's one primary action. -->
-      <el-button size="small" @click="router.push({ name: 'add_shipping_zone' })">
+      <fct-button size="small" @click="router.push({ name: 'add_shipping_zone' })">
         {{ translate('Add Shipping Zone') }}
-      </el-button>
+      </fct-button>
     </div>
     <Card.Container>
       <Card.Body>

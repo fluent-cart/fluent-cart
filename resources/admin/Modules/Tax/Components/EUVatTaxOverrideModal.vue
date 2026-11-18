@@ -254,7 +254,7 @@ function saveTaxOverride() {
 </script>
 
 <template>
-    <el-dialog
+    <fct-dialog
         :model-value="modelValue"
         :title="editRow ? translate('Edit tax override') : translate('Add tax override')"
         width="520px"
@@ -263,142 +263,113 @@ function saveTaxOverride() {
         :append-to-body="true"
         @update:model-value="emit('update:modelValue', $event)"
     >
-        <el-form label-position="top" :model="form">
-            <el-form-item :label="translate('Override type')">
-                <el-radio-group v-model="form.type">
-                    <el-radio value="products">{{ translate('Products') }}</el-radio>
-                    <el-radio value="shipping">{{ translate('Shipping') }}</el-radio>
-                </el-radio-group>
-            </el-form-item>
+        <div>
+            <fct-choice
+                v-model="form.type"
+                type="radio"
+                :label="translate('Override type')"
+                :options="[
+                    {value: 'products', label: translate('Products')},
+                    {value: 'shipping', label: translate('Shipping')},
+                ]"
+            />
 
             <!-- Products mode -->
             <template v-if="form.type === 'products'">
-                <el-form-item :label="translate('Category')">
-                    <el-select
-                        v-model="form.category_id"
-                        filterable
-                        :placeholder="translate('Select a category')"
-                        :loading="fetchingCategories"
-                        style="width: 100%"
-                        @change="onOverrideCategoryChange"
-                    >
-                        <el-option
-                            v-for="cat in categories"
-                            :key="cat.value"
-                            :label="cat.label"
-                            :value="cat.value"
-                        />
-                    </el-select>
-                </el-form-item>
-                <el-form-item v-if="taxClasses.length > 0" :label="translate('Tax Class')">
-                    <el-select v-model="form.class_id" style="width: 100%">
-                        <el-option :value="0" :label="translate('All Tax Classes')" />
-                        <el-option
-                            v-for="tc in taxClasses"
-                            :key="tc.id"
-                            :value="Number(tc.id)"
-                            :label="tc.title"
-                        />
-                    </el-select>
-                </el-form-item>
-                <el-form-item :label="translate('Tax label')">
-                    <el-input
-                        v-model="form.tax_label"
-                        :placeholder="translate('e.g. Tax, VAT, GST')"
-                    />
-                </el-form-item>
-                <el-form-item :label="translate('Location')">
-                    <el-select
-                        v-model="form.country"
-                        :placeholder="translate('Select country')"
-                        filterable
-                        style="width: 100%"
-                    >
-                        <el-option
-                            v-for="c in countries"
-                            :key="c.value"
-                            :label="c.label"
-                            :value="c.value"
-                        />
-                    </el-select>
-                </el-form-item>
-                <el-form-item :label="translate('City (optional)')">
-                    <el-input
-                        v-model="form.city"
-                        :placeholder="translate('Leave empty to match all cities')"
-                    />
-                </el-form-item>
-                <el-form-item :label="translate('Postcode (optional)')">
-                    <el-input
-                        v-model="form.postcode"
-                        :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
-                    />
-                </el-form-item>
-                <el-form-item :label="translate('Tax rate (%)')">
-                    <el-input
-                        v-model="form.tax_rate"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        :placeholder="translate('e.g. 0 for tax exempt')"
-                    />
-                </el-form-item>
+                <fct-select
+                    :label="translate('Category')"
+                    v-model="form.category_id"
+                    filterable
+                    :placeholder="translate('Select a category')"
+                    :loading="fetchingCategories"
+                    style="width: 100%"
+                    @change="onOverrideCategoryChange"
+                    :options="categories"
+                />
+                <fct-select
+                    v-if="taxClasses.length > 0"
+                    v-model="form.class_id"
+                    :label="translate('Tax Class')"
+                    style="width: 100%"
+                    :options="[
+                        {value: 0, label: translate('All Tax Classes')},
+                        ...taxClasses.map(tc => ({value: Number(tc.id), label: tc.title})),
+                    ]"
+                />
+                <fct-input
+                    :label="translate('Tax label')"
+                    v-model="form.tax_label"
+                    :placeholder="translate('e.g. Tax, VAT, GST')"
+                />
+                <fct-select
+                    :label="translate('Location')"
+                    v-model="form.country"
+                    :placeholder="translate('Select country')"
+                    filterable
+                    style="width: 100%"
+                    :options="countries"
+                />
+                <fct-input
+                    :label="translate('City (optional)')"
+                    v-model="form.city"
+                    :placeholder="translate('Leave empty to match all cities')"
+                />
+                <fct-input
+                    :label="translate('Postcode (optional)')"
+                    v-model="form.postcode"
+                    :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
+                />
+                <fct-input
+                    :label="translate('Tax rate (%)')"
+                    v-model="form.tax_rate"
+                    type="number" :controls="false"
+                    step="0.01"
+                    min="0"
+                    :placeholder="translate('e.g. 0 for tax exempt')"
+                />
             </template>
 
             <!-- Shipping mode -->
             <template v-else>
-                <el-form-item :label="translate('Location')">
-                    <el-select
-                        v-model="form.country"
-                        :placeholder="translate('Select country')"
-                        filterable
-                        style="width: 100%"
-                    >
-                        <el-option
-                            v-for="c in countries"
-                            :key="c.value"
-                            :label="c.label"
-                            :value="c.value"
-                        />
-                    </el-select>
-                </el-form-item>
-                <el-form-item v-if="taxClasses.length > 0" :label="translate('Tax Class')">
-                    <el-select v-model="form.class_id" style="width: 100%">
-                        <el-option
-                            v-for="tc in taxClasses"
-                            :key="tc.id"
-                            :value="Number(tc.id)"
-                            :label="tc.title"
-                        />
-                    </el-select>
-                </el-form-item>
-                <el-form-item :label="translate('City (optional)')">
-                    <el-input
-                        v-model="form.city"
-                        :placeholder="translate('Leave empty to match all cities')"
-                    />
-                </el-form-item>
-                <el-form-item :label="translate('Postcode (optional)')">
-                    <el-input
-                        v-model="form.postcode"
-                        :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
-                    />
-                </el-form-item>
-                <el-form-item :label="translate('Tax rate (%)')">
-                    <el-input
-                        v-model="form.tax_rate"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                    />
-                </el-form-item>
+                <fct-select
+                    :label="translate('Location')"
+                    v-model="form.country"
+                    :placeholder="translate('Select country')"
+                    filterable
+                    style="width: 100%"
+                    :options="countries"
+                />
+                <fct-select
+                    v-if="taxClasses.length > 0"
+                    v-model="form.class_id"
+                    :label="translate('Tax Class')"
+                    style="width: 100%"
+                    :options="taxClasses.map(tc => ({value: Number(tc.id), label: tc.title}))"
+                />
+                <fct-input
+                    :label="translate('City (optional)')"
+                    v-model="form.city"
+                    :placeholder="translate('Leave empty to match all cities')"
+                />
+                <fct-input
+                    :label="translate('Postcode (optional)')"
+                    v-model="form.postcode"
+                    :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
+                />
+                <fct-input
+                    :label="translate('Tax rate (%)')"
+                    v-model="form.tax_rate"
+                    type="number" :controls="false"
+                    step="0.01"
+                    min="0"
+                />
             </template>
-        </el-form>
+        </div>
         <template #footer>
-            <el-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</el-button>
-            <el-button type="primary" :loading="savingOverride" @click="saveTaxOverride">
+            <fct-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</fct-button>
+            <fct-button type="primary" :loading="savingOverride" @click="saveTaxOverride">
                 {{ editRow ? translate('Save changes') : translate('Add override') }}
-            </el-button>
+            </fct-button>
         </template>
-    </el-dialog>
+    </fct-dialog>
 </template>

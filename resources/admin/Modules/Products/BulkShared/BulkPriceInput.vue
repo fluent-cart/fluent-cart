@@ -31,13 +31,9 @@ const emit = defineEmits(['change']);
       @update:model-value="variant.item_price = $event; emit('change')"
     >
       <template v-if="variant.other_info?.manage_setup_fee === 'yes' && variant.other_info.signup_fee" #suffix>
-        <el-tooltip
-          :content="(variant.other_info.signup_fee_name || $t('Setup fee')) + ': ' + formatNumber(variant.other_info.signup_fee, true)"
-          placement="top"
-          popper-class="fct-tooltip"
-        >
+        <fct-tooltip :content="(variant.other_info.signup_fee_name || $t('Setup fee')) + ': ' + formatNumber(variant.other_info.signup_fee, true)">
           <span class="bulk-setup-fee-badge">+ {{ $t('fee') }}</span>
-        </el-tooltip>
+        </fct-tooltip>
       </template>
     </PriceInput>
   </template>

@@ -26,6 +26,58 @@ class FluentCartProductCarousel {
      * Cleanup hover zone listeners for a specific carousel
      * @param {HTMLElement} carousel - The carousel element to clean up
      */
+    static #arrowObservers = new WeakMap();
+
+    /**
+     * Layout cards are taller than the old cards, with text around their middle, so each arrow sits on the
+     * picture of the visible slide beside it; Masonry pictures keep their own heights, so each arrow follows
+     * its own slide. Old cards have no layout picture and keep the arrows at 50%.
+     */
+    static #placeArrowsOnPicture(carousel, swiper, arrows) {
+        // Safe to call again for the same carousel: the previous observer and listeners go first.
+        const previous = FluentCartProductCarousel.#arrowObservers.get(carousel);
+        if (previous) {
+            previous.observer.disconnect();
+            previous.swiper.off('slideChangeTransitionEnd', previous.place);
+            previous.swiper.off('resize', previous.place);
+            FluentCartProductCarousel.#arrowObservers.delete(carousel);
+        }
+        arrows = arrows.filter(Boolean);
+        const pictures = [...carousel.querySelectorAll('.swiper-slide :is(.fct-card-layout-media, .fct-product-card-template .fct-product-image-block)')];
+        if (!pictures.length || !arrows.length || typeof ResizeObserver === 'undefined') {
+            arrows.forEach(arrow => arrow.style.removeProperty('--fct-carousel-arrow-top'));
+            return;
+        }
+        const place = () => {
+            const frame = carousel.getBoundingClientRect();
+            const visible = pictures.map(picture => picture.getBoundingClientRect())
+                .filter(rect => rect.height > 0 && rect.right > frame.left + 1 && rect.left < frame.right - 1);
+            arrows.forEach(arrow => {
+                const own = arrow.getBoundingClientRect();
+                const middle = own.left + own.width / 2;
+                let nearest = null;
+                visible.forEach(rect => {
+                    if (!nearest || Math.abs(rect.left + rect.width / 2 - middle) < Math.abs(nearest.left + nearest.width / 2 - middle)) {
+                        nearest = rect;
+                    }
+                });
+                if (nearest) {
+                    const box = (arrow.offsetParent || carousel).getBoundingClientRect();
+                    // Swiper's own CSS adds a negative margin-top on top of the centring transform.
+                    const margin = parseFloat(getComputedStyle(arrow).marginTop) || 0;
+                    arrow.style.setProperty('--fct-carousel-arrow-top', `${nearest.top - box.top + nearest.height / 2 - margin}px`);
+                }
+            });
+        };
+        const observer = new ResizeObserver(place);
+        pictures.forEach(picture => observer.observe(picture));
+        observer.observe(carousel);
+        FluentCartProductCarousel.#arrowObservers.set(carousel, { observer, swiper, place });
+        swiper.on('slideChangeTransitionEnd', place);
+        swiper.on('resize', place);
+        place();
+    }
+
     static cleanupHoverZones(carousel) {
         const controller = FluentCartProductCarousel.#hoverZoneControllers.get(carousel);
         if (controller) {
@@ -111,8 +163,13 @@ class FluentCartProductCarousel {
         if (!carousels.length) return;
 
         carousels.forEach((carousel) => {
-            // Avoid re-init
+            // Avoid re-init. The media carousel script shares this selector and may have set it up
+            // first; its arrows still go on the pictures.
             if (carousel.swiper) {
+                FluentCartProductCarousel.#placeArrowsOnPicture(carousel, carousel.swiper, [
+                    carousel.querySelector('.swiper-button-prev'),
+                    carousel.querySelector('.swiper-button-next'),
+                ]);
                 return;
             }
 
@@ -228,6 +285,7 @@ class FluentCartProductCarousel {
             };
 
             const swiper = new Swiper(carousel, swiperConfig);
+            FluentCartProductCarousel.#placeArrowsOnPicture(carousel, swiper, [prevEl, nextEl]);
 
             /**
              * Hover autoplay handling

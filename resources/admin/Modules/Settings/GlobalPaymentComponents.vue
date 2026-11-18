@@ -11,8 +11,9 @@
           </el-breadcrumb-item>
         </el-breadcrumb>
 
-        <div v-if="!fetching" class="setting-switcher flex items-center gap-3">
-          <el-switch
+        <!-- A placeholder (add-on or Pro missing) has nothing to switch on or save yet. -->
+        <div v-if="!fetching && !isPlaceholder" class="setting-switcher flex items-center gap-3">
+          <fct-switch
               v-model="settings.is_active"
               active-value="yes"
               inactive-value="no"
@@ -23,14 +24,14 @@
 
       <Card.Container>
         <Card.Header :title="methodTitle" border_bottom>
-          <template #action>
+          <template v-if="!isPlaceholder" #action>
             <el-icon class="text-gray-500 cursor-pointer" @click="editDesign">
               <Edit />
             </el-icon>
           </template>
         </Card.Header>
         <Card.Body class="pt-0">
-          <el-skeleton :loading="fetching" animated :rows="6" class="pt-5"/>
+          <fct-skeleton v-if="fetching" animated :rows="6" class="pt-5"/>
           <template v-if="!fetching">
             <Renderer
                 @on-settings-change="updateSettings"
@@ -41,13 +42,14 @@
                 :brandColor="brandColor"
                 :fields="fields"
                 :settings="settings"/>
+            <TestConnection v-if="!hasModeLayout" :mode="storeOrderMode"/>
           </template>
         </Card.Body>
       </Card.Container>
-      <div class="setting-save-action">
-        <el-button @click="saveSettings()" type="primary" :loading="saving">
+      <div v-if="!fetching && !isPlaceholder" class="setting-save-action">
+        <fct-button @click="saveSettings()" type="primary" :loading="saving">
           {{ $t('Save Settings')}}
-        </el-button>
+        </fct-button>
       </div>
     </div>
   </div><!-- .setting-wrap -->
@@ -62,6 +64,9 @@ import {ArrowRight} from "@element-plus/icons-vue";
 import MediaInput from "@/Bits/Components/Inputs/MediaInput.vue";
 import WpEditor from "@/Bits/Components/Inputs/WpEditor.vue";
 import Str from "@/utils/support/Str";
+import TestConnection from "@/Modules/Settings/PaymentComponet/TestConnection.vue";
+import AppConfig from "@/utils/Config/AppConfig";
+const storeOrderMode = AppConfig.get('shop.order_mode');
 const selfRef = getCurrentInstance().ctx;
 const saveShortcut = useSaveShortcut();
 saveShortcut.onSave(()=>{
@@ -71,11 +76,22 @@ saveShortcut.onSave(()=>{
 
 <script type="text/babel">
 
+import {computed} from "vue";
 import Asset from "@/utils/support/Asset";
 import {handleSuccess, handleError} from "@/Bits/common";
 
 export default {
   name: 'GlobalPaymentComponents',
+  provide() {
+    return {
+      paymentConnectionTest: computed(() => ({
+        canTest: this.canTestConnection,
+        routeName: this.route_name,
+        saved: this.savedSnapshot,
+        dirty: this.settingsSnapshot(this.settings) !== this.savedSnapshot
+      }))
+    };
+  },
   data() {
     return {
       fields: {},
@@ -102,7 +118,16 @@ export default {
       checkout_logo: '',
       checkout_instructions: '',
       addonInfo: null,
+      isPlaceholder: false,
+      canTestConnection: false,
+      savedSnapshot: '',
       thank_you_page_instructions: ''
+    }
+  },
+  computed: {
+    // Gateways without mode tabs or a connect provider follow the store's order mode.
+    hasModeLayout() {
+      return Object.values(this.fields || {}).some(field => ['tabs', 'provider'].includes(field?.type));
     }
   },
   watch: {
@@ -154,6 +179,17 @@ export default {
     },
     updateSettings(settings) {
       this.settings = settings;
+      this.savedSnapshot = this.settingsSnapshot(settings);
+    },
+    // The mode tab, the activation switch and the design fields do not change which credentials a test reads.
+    // checkout_label is also filled in by the settings GET but not by connect/info.
+    settingsSnapshot(settings) {
+      const {
+        payment_mode, is_active,
+        checkout_label, checkout_logo, checkout_instructions, thank_you_page_instructions,
+        ...rest
+      } = settings || {};
+      return JSON.stringify(rest);
     },
     getSettings() {
       this.fetching = true;
@@ -173,6 +209,9 @@ export default {
             this.fields = response.fields;
             this.settings = response.settings;
             this.addonInfo = response.addon_info || null;
+            this.isPlaceholder = !!response.is_placeholder;
+            this.canTestConnection = !!response.can_test_connection;
+            this.savedSnapshot = this.settingsSnapshot(this.settings);
 
             this.registerCopyAction()
             //set checkout label and logo from settings
@@ -188,13 +227,18 @@ export default {
           });
     },
     saveSettings() {
+      if (this.isPlaceholder) {
+        return;
+      }
       this.saving = true;
+      const posted = this.settingsSnapshot(this.settings);
       this.$post('settings/payment-methods', {
         settings: this.settings,
         method: this.route_name
       })
           .then(response => {
             this.saving = false;
+            this.savedSnapshot = posted;
             handleSuccess('Settings updated!')
           })
           .catch(error => {

@@ -521,8 +521,15 @@ class ShippingModule
         $changes = Arr::get($data, 'changes', []);
         // Live carriers also quote with the contact, once it is complete (AddressHelper::quoteContact()).
         $prevForm = (array) Arr::get((array) ($cart->checkout_data ?? []), 'form_data', []);
-        $contactChanged = AddressHelper::quoteContact($prevForm) !== AddressHelper::quoteContact((array) Arr::get($fillData, 'checkout_data.form_data', []));
-        if (!$contactChanged && !array_intersect(array_keys($changes), $watchingKeys)) {
+        $newForm = (array) Arr::get($fillData, 'checkout_data.form_data', []);
+        $contactChanged = AddressHelper::quoteContact($prevForm) !== AddressHelper::quoteContact($newForm);
+        // A carrier that builds its own request may quote from any field; its cache
+        // keeps a request that did not change free.
+        $formChanged = !$contactChanged
+            && AddressHelper::quoteFormData(AddressHelper::checkoutFormFields((array) ($cart->checkout_data ?? [])))
+                !== AddressHelper::quoteFormData(AddressHelper::checkoutFormFields((array) Arr::get($fillData, 'checkout_data', [])))
+            && AddressHelper::carriersBuildRequests();
+        if (!$contactChanged && !$formChanged && !array_intersect(array_keys($changes), $watchingKeys)) {
             // No changes detected
             return $fillData;
         }
@@ -549,8 +556,9 @@ class ShippingModule
         }
 
         $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState, null, (array) Arr::get($fillData, 'cart_data', []), [
-            'postcode' => Arr::get($fillData, 'checkout_data.form_data.' . $addressPrefix . 'postcode', ''),
-            'city'     => Arr::get($fillData, 'checkout_data.form_data.' . $addressPrefix . 'city', ''),
+            'postcode'  => Arr::get($fillData, 'checkout_data.form_data.' . $addressPrefix . 'postcode', ''),
+            'city'      => Arr::get($fillData, 'checkout_data.form_data.' . $addressPrefix . 'city', ''),
+            'form_data' => AddressHelper::checkoutFormFields((array) Arr::get($fillData, 'checkout_data', [])),
         ] + AddressHelper::quoteContact((array) Arr::get($fillData, 'checkout_data.form_data', [])));
 
         if (!$availableShippingMethods || is_wp_error($availableShippingMethods)) {

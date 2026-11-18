@@ -115,7 +115,7 @@ onUnmounted(() => {
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-product-report-page">
-      <PageHeading :title="translate('Products')"/>
+      <PageHeading><template #title><h2 class="page-title">{{ translate('Products') }}</h2></template></PageHeading>
 
       <SummaryLoader v-if="loading" :loading="loading" :count="6"/>
       <div v-else class="fct-report-order-summary summary-col-6">
@@ -137,11 +137,11 @@ onUnmounted(() => {
             </div>
             <div class="title">
               {{ item.title }}
-              <el-tooltip :content="item.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+              <fct-tooltip :content="item.info" placement="top" :trigger="['hover', 'focus']">
                 <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
                   <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true"/>
                 </button>
-              </el-tooltip>
+              </fct-tooltip>
             </div>
           </div>
         </div>

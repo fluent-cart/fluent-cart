@@ -12,6 +12,8 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductStock extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name = 'fct-product-stock';
     public $icon = 'ti-package fluent-cart-element-icon';

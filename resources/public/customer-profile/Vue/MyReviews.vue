@@ -18,7 +18,7 @@
         <el-tabs v-model="activeTab" @tab-change="onTabChange">
             <el-tab-pane name="to-review" :label="pendingTabLabel">
                 <div v-if="pendingLoading" aria-live="polite">
-                    <el-skeleton :rows="3" animated/>
+                    <fct-skeleton :rows="3" animated/>
                 </div>
 
                 <div v-else aria-live="polite">
@@ -77,7 +77,7 @@
 
             <el-tab-pane name="history" :label="historyTabLabel">
                 <div v-if="loading && !historyLoaded" aria-live="polite">
-                    <el-skeleton :rows="3" animated/>
+                    <fct-skeleton :rows="3" animated/>
                 </div>
 
                 <div v-else v-loading="loading" aria-live="polite">

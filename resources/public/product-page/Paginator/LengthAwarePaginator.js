@@ -156,20 +156,33 @@ export default class LengthAwarePaginator extends Paginator {
         const currentPage = parseInt(this.paginator.currentPage);
         const jumpSize = this.paginationJump || 3; // Default jump size = 3
 
-        const createButton = (label, page, isActive = false, isArrow = false) => {
+        const labels = this.paginatorWrapper.dataset;
+        const goTo = (page) => (labels.labelGoTo || '').replace(/%(1\$)?d/, page);
+
+        const createButton = (label, page, isActive = false, isArrow = false, ariaLabel = '') => {
             // Clone a clean paginator item
             const btn = this.paginatorItem.cloneNode(true);
 
-            // Always reset first
+            // The clone carries the first item's state (aria-current, an arrow's label).
             btn.classList.remove('active', 'arrow');
+            btn.removeAttribute('aria-current');
+            btn.removeAttribute('aria-label');
 
             btn.innerHTML = label;
             btn.setAttribute('data-page', page);
 
-            if (isActive) btn.classList.add('active');
+            if (isActive) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-current', 'page');
+            }
             if (isArrow) btn.classList.add('arrow');
+            if (ariaLabel) btn.setAttribute('aria-label', ariaLabel);
 
-            return btn;
+            const item = document.createElement('li');
+            item.className = isActive ? 'pager-number active' : 'pager-number';
+            item.appendChild(btn);
+
+            return item;
         };
 
         const svgLeft = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12.9168 15.8333L7.7906 10.7071C7.40008 10.3166 7.40008 9.68342 7.7906 9.29289L12.9168 4.16667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -187,7 +200,7 @@ export default class LengthAwarePaginator extends Paginator {
 
         // ← Previous button
         if (currentPage > 1) {
-            wrapper.appendChild(createButton(svgLeft, currentPage - 1, false, true));
+            wrapper.appendChild(createButton(svgLeft, currentPage - 1, false, true, labels.labelPrevious));
         }
 
         // First page (1)
@@ -196,7 +209,7 @@ export default class LengthAwarePaginator extends Paginator {
         // « Jump back button
         if (currentPage > jumpSize + 1) {
             const jumpBack = Math.max(2, currentPage - jumpSize);
-            wrapper.appendChild(createButton('«', jumpBack, false, true));
+            wrapper.appendChild(createButton('«', jumpBack, false, true, goTo(jumpBack)));
         }
 
         // Pages before current
@@ -221,7 +234,7 @@ export default class LengthAwarePaginator extends Paginator {
         // » Jump forward button
         if (currentPage < totalPages - jumpSize) {
             const jumpForward = Math.min(totalPages - 1, currentPage + jumpSize);
-            wrapper.appendChild(createButton('»', jumpForward, false, true));
+            wrapper.appendChild(createButton('»', jumpForward, false, true, goTo(jumpForward)));
         }
 
         // Last page
@@ -231,7 +244,7 @@ export default class LengthAwarePaginator extends Paginator {
 
         // → Next button
         if (currentPage < totalPages) {
-            wrapper.appendChild(createButton(svgRight, currentPage + 1, false, true));
+            wrapper.appendChild(createButton(svgRight, currentPage + 1, false, true, labels.labelNext));
         }
     }
 

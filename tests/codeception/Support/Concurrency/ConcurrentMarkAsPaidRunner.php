@@ -19,7 +19,7 @@ final class ConcurrentMarkAsPaidRunner
      * loaded before either handler starts. The synchronized wpdb connections
      * then release both fresh order reads together. If the production query
      * lacks FOR UPDATE, both workers pause after reading the same due balance
-     * and are released together, deterministically reproducing FC-SEC-03.
+     * and are released together, reproducing the race that records two succeeded charges.
      *
      * @return array<int, array{status: int, body: array}>
      */

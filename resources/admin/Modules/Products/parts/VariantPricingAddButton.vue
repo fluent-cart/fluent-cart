@@ -22,7 +22,7 @@ const isDisabled = () => {
 
 <template>
   <div class="fct-variant-pricing-add-button-wrap">
-    <el-button
+    <fct-button
       v-if="product.detail?.variation_type !== 'simple'"
       text
       type="primary"
@@ -32,6 +32,6 @@ const isDisabled = () => {
     >
       <DynamicIcon name="Plus" />
       {{ product.variants.length > 0 ? $t('Add more') : $t('Add Pricing') }}
-    </el-button>
+    </fct-button>
   </div>
 </template>

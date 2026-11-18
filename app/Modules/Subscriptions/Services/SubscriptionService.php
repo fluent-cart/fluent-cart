@@ -19,6 +19,7 @@ use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTaxRate;
+use FluentCart\App\Services\Tax\RenewalTaxRates;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
@@ -154,8 +155,9 @@ class SubscriptionService
             }
         }
 
-        // Renewals carry the subscription's rate (plan §9.2); a gateway that does
-        // not report the paid currency defaults to the subscription's, not the parent's
+        // Renewals carry the subscription's rate; a gateway that does not report the
+        // paid currency defaults to the subscription's, not the parent's
+        // (dev-docs/multi-currency/06-orders-subscriptions.md)
         $fx = CurrencySnapshot::fromSubscription($subscriptionModel);
 
         $transactionDefaults = [
@@ -327,8 +329,8 @@ class SubscriptionService
                 $childOrder->updateMeta('tax_id', $parentTaxId);
             }
 
-            // Copy order tax rates from parent order
-            $parentTaxRates = $parentOrder->orderTaxRates;
+            // The renewal's own tax per rate, built from the parent order
+            $parentTaxRates = RenewalTaxRates::fromParent($parentOrder, $parentOrderItem, $taxTotal, $transactionData['currency']);
             foreach ($parentTaxRates as $taxRate) {
                 OrderTaxRate::query()->create([
                     'order_id'    => $childOrder->id,
@@ -344,6 +346,7 @@ class SubscriptionService
             $orderItem['order_id'] = $childOrder->id;
             $orderItem['created_at'] = $createdAt;
             OrderItem::query()->create($orderItem);
+            RenewalTaxRates::reconcileOrder($childOrder);
 
             // let's create the transaction
             $transactionData['order_id'] = $childOrder->id;
@@ -1186,6 +1189,8 @@ class SubscriptionService
                                 ? (int) round($unitPriceBase / $subscription->quantity)
                                 : $unitPriceBase,
                         ]);
+
+                    RenewalTaxRates::refreshAfterEdit($pendingInvoice);
 
                     OrderTransaction::query()
                         ->where('order_id', $pendingInvoice->id)

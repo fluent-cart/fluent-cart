@@ -102,7 +102,8 @@ class Cart extends Model
             }
         });
 
-        // One currency, one locked rate per cart (multi-currency plan §11.6)
+        // One currency, one locked rate per cart
+        // (dev-docs/multi-currency/05-storefront-cart-checkout.md, "The cart")
         static::saving(function ($model) {
             CartCurrency::reconcile($model);
         });
@@ -996,6 +997,78 @@ class Cart extends Model
         $this->cachedFees = $validFees;
 
         return $validFees;
+    }
+
+    /** Billing terms a line takes from its variation; the signup fee is compared in base currency. */
+    private const CATALOG_BILLING_KEYS = ['manage_setup_fee', 'trial_days', 'repeat_interval', 'times'];
+
+    /**
+     * Whether a stored line would be charged differently from the same line built now.
+     */
+    private function hasStaleCharge(array $stored, array $fresh): bool
+    {
+        if ((int) $fresh['unit_price'] !== CartCurrency::baseUnitPrice($stored)) {
+            return true;
+        }
+
+        $storedSignupFee = Arr::get($stored, 'other_info.fx_base.signup_fee', Arr::get($stored, 'other_info.signup_fee', 0));
+        if ((int) Arr::get($fresh, 'other_info.signup_fee', 0) !== (int) $storedSignupFee) {
+            return true;
+        }
+
+        foreach (self::CATALOG_BILLING_KEYS as $key) {
+            if ((string) Arr::get($fresh, 'other_info.' . $key, '') !== (string) Arr::get($stored, 'other_info.' . $key, '')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A line keeps the price from when it was added. Re-price the lines whose
+     * catalog price changed since, so checkout never charges an old price.
+     *
+     * @return bool Whether any line was re-priced.
+     */
+    public function refreshStalePrices(): bool
+    {
+        // A checkout-locked cart or a renewal is billed at its agreed price, not the catalog.
+        // The marker itself, not isLocked(): early-installment carts are locked before any order exists.
+        if (!$this->exists || Arr::get($this->checkout_data, 'is_locked') === 'yes' || Arr::get($this->checkout_data, 'renew_data.is_renewal') === 'yes') {
+            return false;
+        }
+
+        $changed = false;
+        foreach (array_values((array) $this->cart_data) as $index => $item) {
+            if (!empty($item['is_custom']) || Arr::get($item, 'other_info.promotion_id') || Arr::get($item, 'other_info.is_price_locked') === 'yes') {
+                continue;
+            }
+
+            $variation = ProductVariation::query()->with(['product', 'product_detail'])->find(Arr::get($item, 'object_id'));
+            if (!$variation) {
+                continue;
+            }
+
+            $fresh = CartHelper::generateCartItemFromVariation($variation, (int) Arr::get($item, 'quantity', 1));
+            if (!$this->hasStaleCharge($item, $fresh)) {
+                continue;
+            }
+
+            // Keep this line's own extras (its matched_args identity), but not the catalog's
+            // billing terms or the old fx: those come from the fresh line only.
+            $kept = array_diff_key(
+                (array) Arr::get($item, 'other_info', []),
+                array_flip(array_merge(self::CATALOG_BILLING_KEYS, ['payment_type', 'signup_fee', 'signup_fee_name', 'fx', 'fx_base']))
+            );
+            $fresh['other_info'] = array_merge($kept, $fresh['other_info']);
+
+            if (!is_wp_error($this->addItem($fresh, $index))) {
+                $changed = true;
+            }
+        }
+
+        return $changed;
     }
 
     /**

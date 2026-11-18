@@ -10,9 +10,9 @@
       />
 
       <div v-else>
-        <el-table class="w-full" :data="logTable.getTableData()">
+        <fct-table class="w-full" :data="logTable.getTableData()">
 
-          <el-table-column :label="translate('ID')" :width="100">
+          <fct-table-column :label="translate('ID')" :width="100">
             <template #default="scope">
               <div class="inline-flex items-center gap-1">
                 <span
@@ -36,70 +36,68 @@
                 #{{ translateNumber(scope.row.id) }}
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column v-if="logTable.isColumnVisible('date')" :label="translate('Date')" :width="120">
+          <fct-table-column v-if="logTable.isColumnVisible('date')" :label="translate('Date')" :width="120">
             <template #default="scope">
               <ConvertedTime :date-time="scope.row.created_at"/>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column v-if="logTable.isColumnVisible('title')" :label="translate('Title')" :width="200">
+          <fct-table-column v-if="logTable.isColumnVisible('title')" :label="translate('Title')" :width="200">
             <template #default="scope">
               {{ scope.row.title }}
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column v-if="logTable.isColumnVisible('content')" :label="translate('Content')" :width="200">
+          <fct-table-column v-if="logTable.isColumnVisible('content')" :label="translate('Content')" :width="200">
             <template #default="scope">
               {{ scope.row.content }}
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column :label="translate('Status')" :width="100">
+          <fct-table-column :label="translate('Status')" :width="100">
             <template #default="scope">
               <Badge :status="scope.row.status" kind="log" size="small" :key="scope.row.id"/>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column :label="translate('Module')" :width="100">
+          <fct-table-column :label="translate('Module')" :width="100">
             <template #default="scope">
               {{ scope.row.module_name }}
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="80">
+          <fct-table-column v-if="logTable.isColumnVisible('actions')" :label="translate('Actions')" :width="80">
             <template #default="scope">
-              <el-button
+              <fct-button
                   v-if="scope.row.module_id && scope.row.module_name.toLowerCase() === 'order'"
-                  tag="router-link"
-                  class="el-button--x-small"
+                  size="x-small"
                   :to="{
                     name: 'view_order',
                     params: { order_id: scope.row.module_id }
                   }"
               >
                 {{ translate('View') }}
-              </el-button>
-              <el-button
+              </fct-button>
+              <fct-button
                   v-if="scope.row.module_id && scope.row.module_name.toLowerCase() === 'subscription'"
-                  tag="router-link"
-                  class="el-button--x-small"
+                  size="x-small"
                   :to="{
                     name: 'view_subscription',
                     params: { subscription_id: scope.row.module_id }
                   }"
               >
                 {{ translate('View') }}
-              </el-button>
+              </fct-button>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
           <template #empty>
             <Empty icon="Empty/ListView" :has-dark="true" :text="translate('We could\'t find any logs matching your filter.')"/>
           </template>
 
-        </el-table>
+        </fct-table>
       </div>
 
       <template #mobile>

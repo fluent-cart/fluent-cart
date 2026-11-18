@@ -66,6 +66,14 @@ abstract class ShortCode
         });
     }
 
+    // Not get_the_content(): wp_enqueue_scripts runs outside the Loop, where
+    // its post globals may be unset and count(null) fatals on PHP 8.
+    public static function currentPostContent(): string
+    {
+        $post = get_post();
+        return $post ? (string) $post->post_content : '';
+    }
+
     protected function generateEnqueueSlug(): string
     {
         return Str::of(

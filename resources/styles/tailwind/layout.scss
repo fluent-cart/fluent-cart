@@ -1,0 +1,494 @@
+// Shared admin layout components (Bits/Components/Layout). The classes and
+// --fct-* variables here are public: add-ons use them. See
+// dev-docs/admin-design-system/spec.md before renaming anything.
+
+:root {
+  --fct-surface: #{theme('colors.white')};
+  --fct-surface-subtle: #{theme('colors.gray.50')};
+  --fct-border: #{theme('colors.gray.divider')};
+  --fct-text: #{theme('colors.system.dark')};
+  --fct-text-muted: #{theme('colors.system.mid')};
+  --fct-radius: #{theme('borderRadius.DEFAULT')};
+  --fct-space-section: #{theme('spacing.5')};
+  --fct-space-row: #{theme('spacing.4')};
+  --fct-space-stack: #{theme('spacing[7.5]')};
+}
+
+.fluent_theme_dark {
+  --fct-surface: #{theme('colors.dark.700')};
+  --fct-surface-subtle: #{theme('colors.dark.600')};
+  --fct-border: #{theme('colors.dark.500')};
+  --fct-text: #{theme('colors.gray.50')};
+  --fct-text-muted: #{theme('colors.gray.300')};
+}
+
+// Title
+.fct-title {
+  @apply m-0 p-0 flex items-center gap-2;
+  color: var(--fct-text);
+
+  &--lg {
+    @apply text-lg font-semibold;
+  }
+  &--md {
+    @apply text-base font-medium;
+  }
+  &--sm {
+    @apply text-sm font-medium leading-[21px];
+  }
+  &--xs {
+    @apply text-sm font-semibold;
+    color: var(--fct-text-muted);
+  }
+}
+
+// Page
+.fct-page {
+  &__header {
+    @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-5 min-h-9;
+  }
+  &__heading {
+    @apply flex flex-1 flex-wrap items-center gap-2 min-w-0;
+  }
+  &__leading {
+    @apply flex items-center;
+  }
+  &__breadcrumbs {
+    @apply flex items-center gap-2 text-[20px] leading-[28px];
+  }
+  &__crumb {
+    @apply no-underline;
+    color: var(--fct-text-muted);
+  }
+  a.fct-page__crumb:hover {
+    @apply text-primary-500;
+  }
+  &__crumb-separator {
+    color: var(--fct-text-muted);
+  }
+  [dir="rtl"] &__crumb-separator svg {
+    transform: scaleX(-1);
+  }
+  &__title {
+    @apply m-0 text-[20px] leading-[28px] font-medium;
+    color: var(--fct-text);
+  }
+  &__status {
+    @apply flex items-center gap-2;
+  }
+  &__actions {
+    @apply flex flex-wrap items-center gap-2;
+    .el-button + .el-button {
+      @apply ml-0;
+    }
+  }
+  &__description {
+    @apply basis-full m-0 text-sm;
+    color: var(--fct-text-muted);
+  }
+  // Sections are spaced by the container's gap, not their own margins.
+  &__body {
+    @apply flex flex-col;
+    gap: var(--fct-space-stack);
+  }
+
+  // Settings-style bar: full-width white strip, smaller title.
+  &--bar > &__header {
+    @apply mt-[1px] mb-0 min-h-[52px] px-7 flex-nowrap border-0 border-b border-solid;
+    background: var(--fct-surface);
+    border-color: var(--fct-border);
+  }
+  &--bar &__title,
+  &--bar &__breadcrumbs {
+    @apply text-base leading-[24px];
+  }
+}
+
+// Section (a top-level one also carries .fct-card)
+.fct-section {
+  &.fct-card {
+    @apply mb-0;
+    background: var(--fct-surface);
+    border-radius: var(--fct-radius);
+  }
+
+  &__header {
+    @apply flex flex-wrap items-start justify-between gap-2;
+    padding: var(--fct-space-section) var(--fct-space-section) 0;
+  }
+  &__heading {
+    @apply flex-1 min-w-0;
+  }
+  &__description {
+    @apply mt-1 mb-0 text-sm;
+    color: var(--fct-text-muted);
+  }
+  &__actions {
+    @apply flex items-center justify-end gap-2;
+  }
+  &__body {
+    padding: var(--fct-space-section);
+  }
+  &--flush > &__body {
+    @apply p-0;
+  }
+  &--flush > &__header,
+  &--divided > &__header {
+    padding-bottom: var(--fct-space-section);
+  }
+  &--divided > &__header {
+    @apply border-0 border-b border-solid;
+    border-color: var(--fct-border);
+  }
+  &__footer {
+    @apply border-0 border-t border-solid;
+    border-color: var(--fct-border);
+    padding: theme('spacing.4') var(--fct-space-section);
+  }
+
+  &--sm > &__header {
+    padding: theme('spacing.4') theme('spacing.4') 0;
+  }
+  &--sm > &__body {
+    padding: theme('spacing.4');
+  }
+  &--sm.fct-section--divided > &__header {
+    padding-bottom: theme('spacing.4');
+  }
+
+  // A nested section sits inside its parent's body: no card, a divider above.
+  &--nested {
+    @apply border-0 border-t border-solid;
+    border-color: var(--fct-border);
+    margin-top: var(--fct-space-section);
+    padding-top: var(--fct-space-section);
+
+    > .fct-section__header,
+    > .fct-section__body {
+      @apply px-0;
+    }
+    > .fct-section__header {
+      @apply pt-0;
+    }
+    > .fct-section__body {
+      @apply pb-0;
+      padding-top: theme('spacing.3');
+    }
+  }
+}
+
+// List
+.fct-list {
+  @apply list-none m-0 p-0;
+}
+.fct-list-item {
+  @apply flex items-center gap-3 m-0 border-0 border-b border-solid;
+  border-color: var(--fct-border);
+  padding: var(--fct-space-row) 0;
+
+  &:first-child {
+    @apply pt-0;
+  }
+  &:last-child {
+    @apply border-b-0 pb-0;
+  }
+
+  &__media {
+    @apply shrink-0 flex items-center;
+    // A fixed height gives SVG logos without their own size a width to scale from.
+    img {
+      @apply h-6 w-auto max-w-12 rounded-sm;
+    }
+  }
+  &__handle {
+    @apply shrink-0 flex items-center self-center;
+  }
+  &__content {
+    @apply flex-1 min-w-0;
+  }
+  &__heading {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  &__badges {
+    @apply flex flex-wrap items-center gap-1.5;
+  }
+  &__title {
+    @apply text-sm font-medium;
+    color: var(--fct-text);
+    a {
+      @apply no-underline text-primary-500 hover:underline dark:text-gray-50;
+    }
+  }
+  &__meta {
+    @apply text-sm mt-1;
+    color: var(--fct-text-muted);
+  }
+  &__aside {
+    @apply shrink-0 text-sm text-end;
+    color: var(--fct-text);
+  }
+  &__actions {
+    @apply shrink-0 flex items-center gap-2;
+  }
+}
+// Sortable list: the handle a SortableList hands each row, and the drop placeholder.
+.fct-sortable-list__handle {
+  @apply flex items-center justify-center shrink-0 w-6 h-6 p-0 m-0 border-0 rounded-sm bg-transparent cursor-grab select-none;
+  color: var(--fct-text-muted);
+
+  svg {
+    @apply w-4 h-4;
+  }
+  &:active {
+    @apply cursor-grabbing;
+  }
+  &:focus-visible {
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
+    color: var(--fct-text);
+  }
+  &:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+.fct-sortable-list__ghost {
+  @apply opacity-40;
+}
+.fct-sortable-list__status {
+  @apply sr-only;
+}
+
+// A flush section's list runs edge to edge, so its rows need side padding.
+.fct-section--flush .fct-list-item {
+  padding: var(--fct-space-row) var(--fct-space-section);
+}
+
+// Key-value
+.fct-kv-list {
+  @apply m-0 flex flex-col gap-2.5;
+
+  &--stacked .fct-kv {
+    @apply flex-col items-start gap-0.5;
+  }
+}
+.fct-kv {
+  @apply flex items-baseline justify-between gap-4 text-sm;
+
+  &__label {
+    @apply m-0 shrink-0;
+    color: var(--fct-text-muted);
+  }
+  &__value {
+    @apply m-0 min-w-0 text-end break-words;
+    color: var(--fct-text);
+  }
+}
+.fct-kv-list--stacked .fct-kv__value {
+  @apply text-start;
+}
+
+// Setting row (.fct-setting-row is taken by the gateway field renderers)
+.fct-setting-field {
+  @apply flex flex-col md:flex-row gap-2 md:gap-7.5 border-0 border-b border-solid;
+  border-color: var(--fct-border);
+  padding: var(--fct-space-section) 0;
+
+  &:first-child {
+    @apply pt-0;
+  }
+  // A nested section draws its own divider above.
+  &:last-child,
+  &:has(+ .fct-section--nested) {
+    @apply border-b-0 pb-0;
+  }
+
+  &__info {
+    @apply md:w-[300px] md:shrink-0;
+  }
+  &__label {
+    @apply block text-sm font-medium;
+    color: var(--fct-text);
+  }
+  &__description {
+    @apply mt-1 mb-0 text-xs;
+    color: var(--fct-text-muted);
+  }
+  &__control {
+    @apply flex-1 min-w-0;
+  }
+
+  &--inline {
+    @apply flex-row items-center gap-4;
+  }
+  &--inline &__info {
+    @apply w-auto flex-1;
+  }
+  &--inline &__control {
+    @apply flex-none flex justify-end;
+  }
+
+  // The switch leads visually; the label stays first in the DOM so it is read first.
+  &--toggle {
+    @apply flex-row items-start gap-3;
+  }
+  &--toggle &__info {
+    @apply w-auto flex-1 order-2;
+  }
+  &--toggle &__control {
+    @apply flex-none order-1;
+  }
+  // Two classes, so .fct-card p's dark text colour can't turn the error grey.
+  & &__error {
+    @apply mt-1 mb-0 text-xs text-red-500;
+  }
+}
+
+// Stats
+.fct-stat-grid {
+  @apply m-0 grid gap-4;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+
+  &--fixed {
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(var(--fct-stat-columns), minmax(0, 1fr));
+    }
+  }
+}
+.fct-stat {
+  @apply flex flex-col gap-1 p-4 border border-solid;
+  background: var(--fct-surface);
+  border-color: var(--fct-border);
+  border-radius: var(--fct-radius);
+
+  &__label {
+    @apply flex items-center gap-2 text-sm;
+    color: var(--fct-text-muted);
+  }
+  &__icon svg {
+    @apply w-4 h-4;
+  }
+  &__value {
+    @apply m-0 flex items-center gap-2 text-xl font-semibold;
+    color: var(--fct-text);
+  }
+  &__trend {
+    @apply text-xs font-normal;
+  }
+  &__footer {
+    @apply m-0 text-xs;
+    color: var(--fct-text-muted);
+  }
+  &__skeleton {
+    @apply block h-7 w-[96px] rounded-sm animate-pulse;
+    background: var(--fct-surface-subtle);
+  }
+}
+
+// Empty state
+// CoreUpdateCard: an add-on asks for a newer FluentCart.
+.fct-core-update {
+  @apply border border-solid;
+  border-color: var(--fct-border);
+  border-radius: var(--fct-radius);
+  background: var(--fct-surface);
+
+  &__body {
+    @apply flex items-start gap-4 p-6;
+  }
+  &__icon {
+    @apply inline-flex items-center justify-center shrink-0 w-10 h-10 rounded-[10px] text-amber-700 bg-amber-100;
+    svg {
+      @apply w-5 h-5;
+    }
+  }
+  &__content {
+    @apply min-w-0;
+  }
+  // Two classes, so these beat Title's own size and margin.
+  &__title.fct-title {
+    @apply mb-1 text-base leading-6 font-semibold;
+  }
+  &__text {
+    @apply m-0 mb-4 text-sm leading-[22px];
+    color: var(--fct-text-muted);
+  }
+  &__actions {
+    @apply flex flex-wrap items-center gap-3;
+  }
+  a.fct-core-update__button {
+    @apply no-underline;
+  }
+  &__version {
+    @apply text-[13px] leading-5;
+    color: var(--fct-text-muted);
+    strong {
+      @apply font-semibold;
+      color: var(--fct-text);
+    }
+  }
+  &__note {
+    @apply flex items-center gap-1.5 m-0 px-6 py-3 text-[13px] leading-5 border-0 border-t border-solid;
+    border-color: var(--fct-border);
+    color: var(--fct-text-muted);
+    svg {
+      @apply w-4 h-4 shrink-0 text-green-600;
+    }
+  }
+  @media (max-width: 600px) {
+    &__body {
+      @apply flex-col p-5;
+    }
+    &__note {
+      @apply px-5;
+    }
+  }
+}
+
+.fluent_theme_dark .fct-core-update {
+  &__icon {
+    @apply text-amber-400 bg-amber-400/15;
+  }
+  // Dark links take a light grey that is unreadable on the light primary button.
+  a.fct-core-update__button {
+    color: var(--fct-surface);
+  }
+}
+
+.fct-empty-state {
+  @apply flex flex-col items-center text-center gap-2 py-10 px-5;
+
+  &__icon {
+    @apply mb-2;
+    svg {
+      @apply w-[100px] h-auto;
+    }
+  }
+  &__text {
+    @apply m-0 text-sm max-w-md;
+    color: var(--fct-text-muted);
+  }
+  &__actions {
+    @apply mt-2 flex flex-wrap justify-center gap-2;
+  }
+
+  &--sm {
+    @apply py-6;
+  }
+}
+
+// Detail layout: main column + 360px sidebar, stacked below 1360px.
+.fct-detail-layout {
+  @apply flex flex-col 1xl:flex-row items-start;
+  gap: var(--fct-space-stack);
+
+  &__main,
+  &__sidebar {
+    @apply flex flex-col w-full min-w-0;
+  }
+  &__main {
+    @apply 1xl:flex-1;
+    gap: var(--fct-space-stack);
+  }
+  &__sidebar {
+    @apply 1xl:w-[360px] 1xl:shrink-0 gap-5;
+  }
+}

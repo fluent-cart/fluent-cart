@@ -20,7 +20,7 @@ use Tests\Support\Factory\SubscriptionFactory;
 /**
  * Every order and subscription carries a currency snapshot; transactions,
  * renewals and refunds copy the stored rate instead of looking one up.
- * dev-docs/multi-currency/plan.md §9. The test store's base currency is USD.
+ * dev-docs/multi-currency/06-orders-subscriptions.md. The test store's base currency is USD.
  */
 class CurrencySnapshotTest extends DatabaseTestCase
 {

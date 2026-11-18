@@ -22,8 +22,8 @@ class IPN
     private const PENDING_SALES_META = 'paypal_pending_sales';
     private static $paypalSettings = null;
 
-    /** @var \WP_Error|null unacknowledged failure from the recurring-payment handler */
-    private static $recurringPaymentError = null;
+    /** @var \WP_Error|null retryable failure: the webhook answers 500 so PayPal redelivers */
+    private static $webhookRetryError = null;
 
     /**
      * Indirection so PHPStan reads the declared property type instead of
@@ -31,9 +31,9 @@ class IPN
      *
      * @return \WP_Error|null
      */
-    private static function getRecurringPaymentError()
+    private static function getWebhookRetryError()
     {
-        return self::$recurringPaymentError;
+        return self::$webhookRetryError;
     }
 
     public function init()
@@ -543,23 +543,23 @@ class IPN
 
         // Only a delivery that passed signature verification (or whose verification
         // the site explicitly bypassed above) may reach extension listeners.
-        // Firing this earlier let an anonymous sender feed forged events to every
-        // listener even though the request was then rejected (FC-SEC-05).
+        // Firing it before verification would let an anonymous sender feed forged
+        // events to every listener.
         do_action('fluent_cart/paypal_webhook_received', [
             'data' => $data,
             'raw'  => $post_data
         ]);
 
-        self::$recurringPaymentError = null;
+        self::$webhookRetryError = null;
 
         $this->processPaypalWebhookEvents($data);
 
-        $recurringPaymentError = self::getRecurringPaymentError();
+        $webhookRetryError = self::getWebhookRetryError();
 
-        if (is_wp_error($recurringPaymentError)) {
+        if (is_wp_error($webhookRetryError)) {
             fluent_cart_add_log(
-                'PayPal renewal processing failed: ' . $recurringPaymentError->get_error_message() . ' Webhook: ' . $webhookType,
-                json_encode($recurringPaymentError->get_error_data()),
+                'PayPal webhook processing failed: ' . $webhookRetryError->get_error_message() . ' Webhook: ' . $webhookType,
+                json_encode($webhookRetryError->get_error_data()),
                 'error',
                 [
                     'log_type'    => 'webhook',
@@ -568,7 +568,7 @@ class IPN
                 ]
             );
 
-            // Non-2xx so PayPal redelivers; the payment is not recorded yet.
+            // Non-2xx so PayPal redelivers; the work is not done yet.
             return 500;
         }
 
@@ -613,6 +613,13 @@ class IPN
             if ($subscriptionHash) {
                 $subscriptionModel = Subscription::query()->where('uuid', $subscriptionHash)->first();
             }
+
+            // A switch the customer approved but the browser never confirmed.
+            $switchPlanId = $subscriptionModel ? $subscriptionModel->getMeta('paypal_switch_plan_id') : null;
+            if ($switchPlanId && $switchPlanId === Arr::get($paypalSubscription, 'plan_id')) {
+                $this->finishPendingSwitch($subscriptionModel, $paypalSubscription);
+                return;
+            }
         }
 
         if (!$subscriptionModel || $subscriptionModel->status === Status::SUBSCRIPTION_ACTIVE) {
@@ -627,6 +634,43 @@ class IPN
         (new Processor())->activateSubscription($paypalSubscription, $transaction, $subscriptionModel);
     }
 
+    private function finishPendingSwitch(Subscription $subscription, array $paypalSubscription)
+    {
+        if (!$subscription->lockPaymentMethodSwitch()) {
+            // The browser confirm holds it; the redelivery sees the switch done or finishes it.
+            self::$webhookRetryError = new \WP_Error('paypal_switch_in_progress', __('The PayPal payment method switch is still being confirmed.', 'fluent-cart'));
+            return;
+        }
+
+        try {
+            $fresh = Subscription::query()->where('id', $subscription->id)->first();
+            $newVendorSubscriptionId = (string)Arr::get($paypalSubscription, 'id');
+            if (!$fresh || $fresh->vendor_subscription_id === $newVendorSubscriptionId || !preg_match('/^[a-zA-Z0-9_-]+$/', $newVendorSubscriptionId)) {
+                return;
+            }
+
+            // The event is a snapshot: the browser may have refused and cancelled this subscription since.
+            $livePayPalSubscription = (new API())->verifySubscription($newVendorSubscriptionId);
+            if (is_wp_error($livePayPalSubscription)) {
+                if (self::isRetryableRemoteError($livePayPalSubscription)) {
+                    self::$webhookRetryError = $livePayPalSubscription;
+                }
+                return;
+            }
+
+            $result = (new SubscriptionManager())->finishSwitch($fresh, $livePayPalSubscription);
+            if (is_wp_error($result)) {
+                $fresh->addLog(
+                    __('PayPal payment method switch was not finished', 'fluent-cart'),
+                    $result->get_error_message(),
+                    'error'
+                );
+            }
+        } finally {
+            $subscription->unlockPaymentMethodSwitch();
+        }
+    }
+
     public function processSubscriptionPaymentFailed($data)
     {
         $paypalSubscription = Arr::get($data, 'paypal_subscription', []);
@@ -637,7 +681,7 @@ class IPN
         if (!$subscriptionModel) {
             $subscriptionHash = Arr::get($paypalSubscription, 'custom_id', '');
             if ($subscriptionHash) {
-                $subscriptionModel = Subscription::query()->where('uuid', $subscriptionHash)->first();
+                $subscriptionModel = $this->getUnlinkedSubscriptionByUuid($subscriptionHash);
             }
         }
 
@@ -771,10 +815,10 @@ class IPN
         if ($latestTransaction && !$latestTransaction->vendor_charge_id && $latestTransaction->total) {
 
             if (!is_array($paypalSubscription)) {
-                self::$recurringPaymentError = is_wp_error($paypalSubscription)
+                self::$webhookRetryError = is_wp_error($paypalSubscription)
                     ? $paypalSubscription
                     : new \WP_Error('paypal_subscription_fetch_failed', __('Could not fetch the PayPal subscription to confirm this payment.', 'fluent-cart'));
-                if (self::isRetryableRemoteError(self::$recurringPaymentError)) {
+                if (self::isRetryableRemoteError(self::$webhookRetryError)) {
                     self::scheduleResyncRetry($subscriptionModel, $chargeId);
                 }
                 return false;
@@ -791,7 +835,7 @@ class IPN
                     return true;
                 }
 
-                self::$recurringPaymentError = $remoteTransactions;
+                self::$webhookRetryError = $remoteTransactions;
                 if (self::isRetryableRemoteError($remoteTransactions)) {
                     self::scheduleResyncRetry($subscriptionModel, $chargeId);
                 }
@@ -812,7 +856,7 @@ class IPN
             }
 
             if (!$saleInRemoteList) {
-                self::$recurringPaymentError = new \WP_Error(
+                self::$webhookRetryError = new \WP_Error(
                     'paypal_transaction_list_lagging',
                     __('The incoming sale is not yet on the PayPal transaction list.', 'fluent-cart')
                 );
@@ -847,7 +891,7 @@ class IPN
                     return true;
                 }
 
-                self::$recurringPaymentError = $result;
+                self::$webhookRetryError = $result;
                 if (self::isRetryableRemoteError($result)) {
                     self::scheduleResyncRetry($subscriptionModel, $chargeId);
                 }
@@ -916,7 +960,7 @@ class IPN
         // become unreachable — leaving the sale unrecorded keeps both recovery
         // channels (PayPal redelivery, the resync ladder) able to repair it.
         if (is_wp_error($credited)) {
-            self::$recurringPaymentError = $credited;
+            self::$webhookRetryError = $credited;
             self::scheduleResyncRetry($subscriptionModel, $chargeId);
             return false;
         }
@@ -935,7 +979,7 @@ class IPN
                     return true;
                 }
 
-                self::$recurringPaymentError = $result;
+                self::$webhookRetryError = $result;
                 self::scheduleResyncRetry($subscriptionModel, $chargeId);
                 return false;
             }
@@ -948,7 +992,7 @@ class IPN
                 return true;
             }
 
-            self::$recurringPaymentError = $result;
+            self::$webhookRetryError = $result;
             if (self::isRetryableRemoteError($result)) {
                 self::scheduleResyncRetry($subscriptionModel, $chargeId);
             }
@@ -1214,7 +1258,7 @@ class IPN
         ], $parentTransaction);
 
         if (is_wp_error($recorded) && $recorded->get_error_code() === 'refund_lock_timeout') {
-            self::$recurringPaymentError = $recorded;
+            self::$webhookRetryError = $recorded;
         }
 
         return $recorded;
@@ -1273,7 +1317,7 @@ class IPN
         ], $parentTransaction);
 
         if (is_wp_error($recorded) && $recorded->get_error_code() === 'refund_lock_timeout') {
-            self::$recurringPaymentError = $recorded;
+            self::$webhookRetryError = $recorded;
         }
 
         return $recorded;
@@ -1540,13 +1584,25 @@ class IPN
         if (!$subscription) {
             $subscriptionHash = Arr::get($subscriptionInfo, 'custom_id', '');
             if ($subscriptionHash) {
-                $subscription = Subscription::query()->where('uuid', $subscriptionHash)->first();
+                $subscription = $this->getUnlinkedSubscriptionByUuid($subscriptionHash);
             }
         }
 
         return $subscription;
     }
 
+    // Every PayPal sub of a row carries custom_id = row uuid; once the row is
+    // linked to another vendor id, the event is about a sub it no longer owns.
+    private function getUnlinkedSubscriptionByUuid($uuid)
+    {
+        $subscription = Subscription::query()->where('uuid', $uuid)->first();
+
+        if ($subscription && !empty($subscription->vendor_subscription_id)) {
+            return null;
+        }
+
+        return $subscription;
+    }
 
     private static function getPayPalSettings()
     {

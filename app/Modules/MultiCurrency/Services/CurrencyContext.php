@@ -10,11 +10,12 @@ if (!defined('ABSPATH')) {
 /**
  * The presentment currency for the current storefront request.
  *
- * Distinct from the base currency on purpose (plan §12.1): admin screens,
+ * Distinct from the base currency on purpose: admin screens,
  * cron, renewals and webhooks always work in the base currency; only a
  * storefront visitor ever sees another one. Resolution order: a cart pinned
  * to an existing order's currency, the ?currency= switch / cookie, a
  * geo-hint via fluent_cart/currency/resolve_for_request, then the base.
+ * See dev-docs/multi-currency/04-conversion-engine.md, "Which currency a request is in".
  */
 class CurrencyContext
 {

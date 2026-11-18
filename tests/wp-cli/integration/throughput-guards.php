@@ -20,7 +20,7 @@ $assertStableProfile = function (array $small, array $large, $label) {
 };
 
 $logProfiles = function ($label, array $small, array $large) {
-    WP_CLI::log(sprintf(
+    FcTest::note(sprintf(
         '  throughput %s: rows=5 queries=%d elapsed=%.3fms; rows=25 queries=%d elapsed=%.3fms',
         $label,
         $small['query_count'],

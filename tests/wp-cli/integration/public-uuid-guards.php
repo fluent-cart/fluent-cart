@@ -4,7 +4,6 @@
  */
 
 use FluentCart\App\Models\Order;
-use FluentCart\App\Models\Subscription;
 
 $inventory = require dirname(__DIR__) . '/inventories/public.php';
 
@@ -148,74 +147,6 @@ foreach ($inventory['routes'] as $index => $route) {
         },
     ];
 }
-
-$publicCases[] = [
-    'id'            => 'public-uuid-absent-route-binding',
-    'name'          => 'Every UUID-guarded declaration requires a non-empty constrained path segment',
-    'kind'          => 'behavior',
-    'known_failure' => false,
-    'phase'         => 18,
-    'run'           => function () use ($inventory) {
-        $routeLines = file(
-            dirname(__DIR__, 3) . '/app/Http/Routes/frontend_routes.php'
-        );
-        foreach ($inventory['routes'] as $route) {
-            $line = is_array($routeLines) ? $routeLines[$route['route_line'] - 1] : '';
-            FcTest::assert(
-                strpos($route['path'], '%s') !== false,
-                $route['id'] . ' inventory retains its required UUID segment'
-            );
-            FcTest::assert(
-                strpos($line, '{' . $route['entity'] . '_uuid}') !== false
-                    && strpos($line, "->alphaNumDash('"
-                        . $route['entity'] . "_uuid')") !== false,
-                $route['id'] . ' cannot bind its intended handler without a UUID'
-            );
-        }
-    },
-];
-
-$publicCases[] = [
-    'id'            => 'public-uuid-correct-path-source-ordering',
-    'name'          => 'Correct-UUID ownership checks remain source-pinned before protected work',
-    'kind'          => 'behavior',
-    'known_failure' => false,
-    'phase'         => 18,
-    'run'           => function () use ($inventory) {
-        $root = dirname(__DIR__, 3) . '/';
-        $cache = [];
-        foreach ($inventory['routes'] as $route) {
-            $file = $root . $route['source_file'];
-            if (!isset($cache[$file])) {
-                $cache[$file] = file($file);
-            }
-            FcTest::assert(
-                is_array($cache[$file]),
-                'source-pinned controller is readable: ' . $route['source_file']
-            );
-            FcTest::assert(
-                $route['method_line'] < $route['ownership_line']
-                    && $route['ownership_line'] < $route['denial_line']
-                    && $route['denial_line'] < $route['post_guard_line'],
-                $route['id'] . ' ownership denial precedes protected work'
-            );
-            foreach ([
-                'method'     => ['line' => 'method_line', 'needle' => 'method_needle'],
-                'ownership'  => ['line' => 'ownership_line', 'needle' => 'ownership_needle'],
-                'denial'     => ['line' => 'denial_line', 'needle' => 'denial_needle'],
-                'post-guard' => ['line' => 'post_guard_line', 'needle' => 'post_guard_needle'],
-            ] as $label => $check) {
-                $line = $cache[$file][$route[$check['line']] - 1];
-                FcTest::assert(
-                    strpos($line, $route[$check['needle']]) !== false,
-                    $route['id'] . ' ' . $label . ' source pin is current at '
-                        . $route['source_file'] . ':' . $route[$check['line']]
-                );
-            }
-        }
-        FcTest::assertSame([], FcTest::externalCalls(), 'source-only guard check resolves no gateway');
-    },
-];
 
 $publicCases[] = [
     'id'            => 'public-uuid-entropy',

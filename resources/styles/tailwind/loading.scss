@@ -83,50 +83,50 @@
 
 @keyframes fadeBar{
   0%{
-    @apply bg-dark-500;
+    background-color: theme('colors.dark.500');
   }
 
   100%{
-    @apply bg-gray-400;
+    background-color: theme('colors.gray.400');
   }
 }
 
 @-o-keyframes fadeBar{
   0%{
-    @apply bg-dark-500;
+    background-color: theme('colors.dark.500');
   }
 
   100%{
-    @apply bg-gray-400;
+    background-color: theme('colors.gray.400');
   }
 }
 
 @-ms-keyframes fadeBar{
   0%{
-    @apply bg-dark-500;
+    background-color: theme('colors.dark.500');
   }
 
   100%{
-    @apply bg-gray-400;
+    background-color: theme('colors.gray.400');
   }
 }
 
 @-webkit-keyframes fadeBar{
   0%{
-    @apply bg-dark-500;
+    background-color: theme('colors.dark.500');
   }
 
   100%{
-    @apply bg-gray-400;
+    background-color: theme('colors.gray.400');
   }
 }
 
 @-moz-keyframes fadeBar{
   0%{
-    @apply bg-dark-500;
+    background-color: theme('colors.dark.500');
   }
 
   100%{
-    @apply bg-gray-400;
+    background-color: theme('colors.gray.400');
   }
 }

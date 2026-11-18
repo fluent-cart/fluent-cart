@@ -30,29 +30,18 @@ const getOperatorScheme = (operator) => {
 <template>
   <div class="grid grid-cols-3 w-full">
     <div>
-      <el-select
+      <fct-select
           popper-class="operator-popover"
 
           v-model="condition.column"
-      >
-        <el-option
-            v-for="column in columns"
-            :key="column.name"
-            :label="column.title"
-            :value="column.name"
-        />
-      </el-select>
+          :options="columns.map(column => ({label: column.title, value: column.name}))"
+      />
     </div>
     <div>
 
-      <el-select popper-class="operator-popover" v-model="condition.operator" filterable>
-        <el-option
-            v-for="(operator, index) in Object.values(queryState.operatorList)"
-            :key="operator.operator"
-            :label="operator.title"
-            :value="operator.operator"
-        />
-      </el-select>
+      <fct-select popper-class="operator-popover" v-model="condition.operator" filterable
+          :options="Object.values(queryState.operatorList).map(operator => ({label: operator.title, value: operator.operator}))"
+      />
     </div>
     <div>
 
@@ -60,10 +49,10 @@ const getOperatorScheme = (operator) => {
       <template v-if="getOperatorScheme(condition.operator).isNull !== true">
 
         <template v-if="!isDate()">
-          <el-input v-model="condition.value"/>
+          <fct-input v-model="condition.value"/>
         </template>
         <template v-else>
-          <el-date-picker popper-class="operator-popover" v-model="condition.value"
+          <fct-date-picker popper-class="operator-popover" v-model="condition.value"
                           :type="getOperatorScheme(condition.operator).multiple === true? 'daterange':'date'"/>
         </template>
 

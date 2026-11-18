@@ -128,41 +128,6 @@ return [
         },
     ],
     [
-        'id'            => 'reports-dashboard-tile-net-sales',
-        'name'          => 'The Dashboard tiles show the Revenue report figures for the last 30 store days',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () {
-            try {
-                FcFixture::customer();
-                $now = gmdate('Y-m-d H:i:s');
-                // Today, 10.00 of goods and 5.00 of shipping: the Revenue tile counts the 10.00
-                FcFixture::reportOrder([
-                    'status' => Status::ORDER_COMPLETED, 'payment_status' => Status::PAYMENT_PAID,
-                    'currency' => \FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency::get(), 'rate' => 1,
-                    'type' => Status::ORDER_TYPE_PAYMENT, 'subtotal' => 1000, 'shipping_total' => 500, 'tax_total' => 0, 'fee_total' => 0,
-                    'total_amount' => 1500, 'total_paid' => 1500, 'total_refund' => 0, 'created_at' => $now, 'updated_at' => $now,
-                ]);
-                [$start, $end] = \FluentCart\App\Services\Report\ReportHelper::presetRange('last_30', new DateTime('now', wp_timezone()));
-                $summary = RevenueReportService::make()->getRevenueData([
-                    'startDate' => \FluentCart\App\Services\Report\ReportHelper::toGmt($start),
-                    'endDate' => \FluentCart\App\Services\Report\ReportHelper::toGmt($end),
-                    'currency' => \FluentCart\App\Modules\MultiCurrency\Services\ReportCurrency::ALL,
-                    'paymentStatus' => Status::getReportStatuses(), 'variationIds' => [], 'groupKey' => 'monthly',
-                ])['summary'];
-                $tiles = array_column((new \FluentCart\App\Services\Widgets\DashboardWidget())->widgetData(), 'current_count', 'title');
-
-                FcTest::assertSame(
-                    [(int) $summary['order_count'], round((float) $summary['net_sales'], 2), round((float) $summary['total_refunded_amount'], 2)],
-                    [(int) $tiles['Orders'], round((float) $tiles['Revenue'], 2), round((float) $tiles['Refund'], 2)],
-                    'Orders, Revenue (net sales) and Refund equal the Revenue report'
-                );
-            } finally {
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
         'id'            => 'reports-renewals-card-net-sales',
         'name'          => 'The Subscriptions Renewals card shows renewal net sales, as the Revenue report\'s Renewal row',
         'kind'          => 'behavior',

@@ -196,10 +196,19 @@ class TaxModule
         add_action('fluent_cart/cart/cart_data_items_updated', [$this, 'recalculateTax']);
     }
 
-    private function resolvePriceSuffix($variant)
+    public function getPriceSuffix($variant, ?array $settings = null): string
     {
-        $includedSuffix = Arr::get($this->taxSettings, 'price_suffix_included', '');
-        $excludedSuffix = Arr::get($this->taxSettings, 'price_suffix_excluded', '');
+        // Card suffixes do not need the checkout configuration's VAT registration queries.
+        $settings = $settings ?? (array) get_option('fluent_cart_tax_configuration_settings', []);
+        return Arr::get($settings, 'enable_tax', 'no') === 'yes'
+            ? (string) $this->resolvePriceSuffix($variant, $settings) : '';
+    }
+
+    private function resolvePriceSuffix($variant, ?array $settings = null)
+    {
+        $settings = $settings ?? $this->taxSettings;
+        $includedSuffix = Arr::get($settings, 'price_suffix_included', '');
+        $excludedSuffix = Arr::get($settings, 'price_suffix_excluded', '');
 
         if ($variant !== null) {
             $taxInclusion = Arr::get($variant->other_info ?: [], 'tax_inclusion', '');
@@ -212,13 +221,13 @@ class TaxModule
         } elseif ($taxInclusion === 'excluded') {
             $isInclusive = false;
         } else {
-            $isInclusive = Arr::get($this->taxSettings, 'tax_inclusion') === 'included';
+            $isInclusive = Arr::get($settings, 'tax_inclusion', 'included') === 'included';
         }
 
         $suffix = $isInclusive ? $includedSuffix : $excludedSuffix;
 
         if (!$suffix) {
-            $suffix = Arr::get($this->taxSettings, 'price_suffix', '');
+            $suffix = Arr::get($settings, 'price_suffix', '');
         }
 
         return $suffix;
@@ -1769,10 +1778,14 @@ class TaxModule
         // Build exact per-rate shipping tax map from checkout-time calculation when available.
         // Falls back to proportional split for admin order recalculation and legacy callers.
         $shippingTaxByRateId = [];
+        $shippingBaseByRateId = [];
         foreach ($shippingTaxLines as $stl) {
             $stlRateId = (int) Arr::get($stl, 'rate_id', 0);
             if ($stlRateId !== 0) {
                 $shippingTaxByRateId[$stlRateId] = (int) Arr::get($stl, 'shipping_tax', 0);
+                if (isset($stl['shipping_taxable_amount'])) {
+                    $shippingBaseByRateId[$stlRateId] = (int) round($stl['shipping_taxable_amount']);
+                }
             }
         }
 
@@ -1822,6 +1835,10 @@ class TaxModule
                 'inclusive'      => Arr::get($taxLine, 'inclusive', null),
                 'is_mixed_inclusive' => (bool) Arr::get($taxLine, 'is_mixed_inclusive', false),
             ]);
+            // Exact shipping base, so the breakdown need not derive it from the rounded tax.
+            if (isset($shippingBaseByRateId[$rateId])) {
+                $lineMeta['shipping_taxable_amount'] = $shippingBaseByRateId[$rateId];
+            }
 
             $existing = OrderTaxRate::query()
                 ->where('order_id', $orderId)

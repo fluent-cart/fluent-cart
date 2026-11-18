@@ -14,7 +14,7 @@ defineProps({
 <template>
   <UserCan :permission="'reports/view'">
     <div class="fct-product-compare-page">
-      <PageHeading :title="translate('Compare products')"/>
+      <PageHeading><template #title><h2 class="page-title">{{ translate('Compare products') }}</h2></template></PageHeading>
       <p class="text-sm text-system-mid dark:text-gray-300 -mt-3 mb-5">
         {{ translate('Pick whole products or single variations and see how they perform side by side.') }}
       </p>

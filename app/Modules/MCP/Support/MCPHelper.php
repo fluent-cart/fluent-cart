@@ -85,83 +85,6 @@ class MCPHelper
     }
 
     // -----------------------------------------------------------------
-    // Output schema (advertised to clients; not validated server-side)
-    // -----------------------------------------------------------------
-
-    /**
-     * JSON Schema fragment for the full money object returned by money(). Inlined
-     * by each tool's output_schema (rather than a $ref) so it never depends on the
-     * client validator resolving $defs across JSON-Schema draft versions.
-     *
-     * @return array
-     */
-    public static function moneyDef()
-    {
-        // Field docs live in the object description (once), not per-property: this
-        // object is inlined many times across an output_schema (10x on the sales
-        // report alone), so per-field descriptions multiply into real token cost
-        // for names that are already self-explanatory.
-        return [
-            'type'        => 'object',
-            'description' => 'Money: amount (decimal), amount_cents (integer, smallest unit), currency (ISO 4217), display (formatted string, e.g. "$19.99").',
-            'properties'  => [
-                'amount'       => ['type' => 'number'],
-                'amount_cents' => ['type' => 'integer'],
-                'currency'     => ['type' => 'string'],
-                'display'      => ['type' => 'string'],
-            ],
-        ];
-    }
-
-    /**
-     * JSON Schema for the shared meta block. Permissive (extra keys allowed) so a
-     * tool can add its own meta (mode, date_basis, page, warnings, …) without a
-     * client that validates structuredContent tripping on the extras.
-     *
-     * @param array $extraProps additional documented meta properties for this tool
-     * @return array
-     */
-    public static function metaSchema(array $extraProps = [])
-    {
-        return [
-            'type'        => 'object',
-            'description' => 'Envelope metadata: schema version, currency, plus per-tool keys (date_basis, mode, page, warnings).',
-            'properties'  => array_merge([
-                'schema_version' => ['type' => 'string'],
-                'generated_at'   => ['type' => 'string', 'description' => 'ISO-8601 UTC timestamp.'],
-                'currency'       => ['type' => 'string', 'description' => 'ISO 4217 store currency for reference.'],
-                'warnings'       => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Non-fatal notes, e.g. an ignored parameter.'],
-            ], $extraProps),
-        ];
-    }
-
-    /**
-     * Wrap a `data` schema in the canonical { summary, data, meta } envelope every
-     * tool returns.
-     *
-     * `data` keys are DESCRIBED but not required: the fields[] projection may prune
-     * them and summary_only omits records, so a client should treat declared data
-     * keys as optional. The adapter advertises this to the model but does not
-     * validate results against it, so it is documentation, not a runtime gate.
-     *
-     * @param array $dataSchema JSON Schema for the tool's data payload
-     * @param array $metaProps  extra documented meta properties
-     * @return array
-     */
-    public static function envelopeSchema(array $dataSchema, array $metaProps = [])
-    {
-        return [
-            'type'       => 'object',
-            'properties' => [
-                'summary' => ['type' => 'string', 'description' => 'One-line, human-readable answer — quotable verbatim.'],
-                'data'    => $dataSchema,
-                'meta'    => self::metaSchema($metaProps),
-            ],
-            'required' => ['summary', 'data', 'meta'],
-        ];
-    }
-
-    // -----------------------------------------------------------------
     // Money
     // -----------------------------------------------------------------
 
@@ -248,6 +171,94 @@ class MCPHelper
     // -----------------------------------------------------------------
     // Dates
     // -----------------------------------------------------------------
+
+    /**
+     * Whether a date input starts with a real calendar day. PHP alone is too lenient:
+     * it reads "x" as a timezone and rolls 2026-02-31 into March.
+     */
+    public static function isReadableDate($value)
+    {
+        $value = trim((string) $value);
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/', $value, $m) || !checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+            return false;
+        }
+        try {
+            new \DateTime($value);
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * A date filter bound as a stored UTC 'Y-m-d H:i:s', or null when it is not a date.
+     *
+     * A value with no offset is store time, as in the report windows, so a list and a
+     * report agree on what a day is; a day alone covers the whole store day. A value
+     * with an offset or Z is that exact moment.
+     *
+     * @param bool $isEnd true for an upper bound: a day alone then ends at 23:59:59
+     */
+    public static function storeDateBound($value, $isEnd = false)
+    {
+        $value = trim((string) $value);
+        if (!self::isReadableDate($value)) {
+            return null;
+        }
+
+        $date = new \DateTime($value, wp_timezone());
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            $date->setTime($isEnd ? 23 : 0, $isEnd ? 59 : 0, $isEnd ? 59 : 0);
+        }
+
+        return $date->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * The error for the first unreadable date among the named params, or null.
+     */
+    public static function unreadableDateError(array $params, array $fields)
+    {
+        foreach ($fields as $field) {
+            if (!empty($params[$field]) && !self::isReadableDate($params[$field])) {
+                return self::error(
+                    'invalid_param',
+                    sprintf('%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.', $field),
+                    ['fields' => [$field]]
+                );
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The error for a start bound later than its end bound, or null. A reversed filter
+     * matches nothing, which reads as "no records" instead of a mistake.
+     *
+     * @param array $pairs after-param => before-param
+     */
+    public static function reversedBoundsError(array $params, array $pairs)
+    {
+        foreach ($pairs as $after => $before) {
+            if (empty($params[$after]) || empty($params[$before])) {
+                continue;
+            }
+            // The same reading the filter uses: store time, and a bare end day runs to 23:59:59
+            $from = self::storeDateBound($params[$after], false);
+            $to   = self::storeDateBound($params[$before], true);
+            if ($from !== null && $to !== null && $from > $to) {
+                return self::error(
+                    'invalid_param',
+                    sprintf('%1$s is later than %2$s. Swap the two dates and retry.', $after, $before),
+                    ['fields' => [$after, $before]]
+                );
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Normalize any stored datetime to an ISO-8601 UTC string. Accepts a

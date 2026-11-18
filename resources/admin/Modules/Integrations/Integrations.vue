@@ -40,15 +40,15 @@
                         </FluidTab>
 
                         <div class="fct-integration-search">
-                            <el-input :placeholder="$t('Search...')" v-model="search">
+                            <fct-input :placeholder="$t('Search...')" v-model="search">
                                 <template #prefix>
                                     <DynamicIcon name="Search"/>
                                 </template>
-                            </el-input>
+                            </fct-input>
                         </div>
                     </div>
 
-                    <el-skeleton v-if="fetching" :loading="true" animated :rows="4"/>
+                    <fct-skeleton v-if="fetching" animated :rows="4"/>
 
                     <div v-if="!fetching">
                         <div
@@ -63,28 +63,28 @@
                                         <img v-if="addon.logo" :src="addon.logo" :alt="addon.title"/>
                                     </div>
                                     <div>
-                                        <h5 class="title">
+                                        <h3 class="title">
                                             {{ addon.title }}
                                             <Badge v-if="addon.is_pro && !addon.enabled" status="warning" text="Pro"/>
                                             <Badge v-else :status="addon.enabled ? 'active' : 'info'"
                                                    :text="addon.enabled ? 'enabled' : 'disabled'"/>
-                                        </h5>
+                                        </h3>
                                         <p class="desc">{{ addon.description }}</p>
                                         <div v-if="addon.is_pro && !addon.is_pro_active" class="mt-2">
-                                            <el-button type="warning" size="small" tag="a" :href="upgradeUrl('feature_lock_integrations')" target="_blank">
+                                            <fct-button type="warning" size="small" tag="a" :href="upgradeUrl('feature_lock_integrations')" target="_blank">
                                                 <DynamicIcon name="Crown" class="mr-1"/>
                                                 {{ translate('Upgrade to Pro') }}
-                                            </el-button>
+                                            </fct-button>
                                         </div>
                                         <div v-else-if="!addon.enabled && addon.installable" class="mt-2">
-                                            <el-button :loading="installingAdding == addonKey"
+                                            <fct-button :loading="installingAdding == addonKey"
                                                        :disabled="installingAdding == addonKey"
                                                        @click="installAddon(addon, addonKey)" type="primary" size="small">
                                                 {{
                                                   /* translators: %s - addon name */
                                                   translate('Install %s', addon.title)
                                                 }}
-                                            </el-button>
+                                            </fct-button>
                                         </div>
                                     </div>
                                 </div>

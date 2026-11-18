@@ -4,7 +4,7 @@
       <div class="fct-file-upload-rename" v-if="!uploading">
         <div class="fct-form-group">
           <label for="filename_input">{{ $t('File Name') }}</label>
-          <el-input id="filename_input" v-model="fileName" :maxlength="MAX_FILENAME_LENGTH"/>
+          <fct-input id="filename_input" v-model="fileName" :maxlength="MAX_FILENAME_LENGTH"/>
 
           <div style="display: flex; justify-content: space-between">
 
@@ -25,7 +25,7 @@
 
         </div>
         <div class="fct-btn-group sm fct-file-upload-rename-actions">
-          <el-button type="primary" @click="upload" :disabled="!isFileNameValid">{{ $t("Upload") }}</el-button>
+          <fct-button type="primary" @click="upload" :disabled="!isFileNameValid">{{ $t("Upload") }}</fct-button>
           <IconButton @click.prevent="reset" tag="button">
             <DynamicIcon name="Delete"/>
           </IconButton>
@@ -110,7 +110,7 @@
         <div class="fct-file-upload-name" v-if="files.length > 0">
           {{ concatenateFileExtension(files[0].name) }}
         </div>
-        <el-progress
+        <fct-progress
             :stroke-width="5"
             :percentage="uploadProgress"
             striped
@@ -126,7 +126,7 @@
                 translate('%1$s Uploaded', `${uploadProgress}%`)
               }}</span>
           </div>
-        </el-progress>
+        </fct-progress>
       </div>
 
       <div class="fct-file-upload-progress-cancel" @click="cancelUploadingFile">

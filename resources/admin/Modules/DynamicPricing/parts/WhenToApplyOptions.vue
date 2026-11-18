@@ -44,23 +44,21 @@ const options = [
 </script>
 
 <template>
-    <el-radio-group
+    <fct-choice
         :model-value="modelValue"
+        type="radio"
+        :options="options"
         class="fct-pricing-rule-when-options"
         :disabled="disabled"
         @update:model-value="(value) => emit('update:modelValue', value)"
     >
-        <el-radio
-            v-for="option in options"
-            :key="option.value"
-            :value="option.value"
-        >
+        <template #option="{option}">
             <span class="fct-pricing-rule-when-title">{{ option.label }}</span>
             <Animation :visible="modelValue === option.value" accordion>
                 <span class="fct-pricing-rule-when-hint">
                     {{ option.hint }}
                 </span>
             </Animation>
-        </el-radio>
-    </el-radio-group>
+        </template>
+    </fct-choice>
 </template>

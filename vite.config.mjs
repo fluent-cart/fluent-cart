@@ -163,6 +163,8 @@ const inputs = [
     // product card
     //"resources/public/product-card/product-card.js",
     "resources/public/product-card/style/product-card.scss",
+    "resources/public/product-card/style/card-layouts.scss",
+    "resources/public/product-card/style/card-layout-picker.scss",
     'resources/public/product-card/product-card.js',
     // Shop App/Product Page
     "resources/public/product-page/ShopApp.js",
@@ -185,6 +187,10 @@ const inputs = [
     "resources/admin/BlockEditor/Cart/InnerBlocks/InnerBlocks.jsx",
     "resources/admin/BlockEditor/ProductTitle/ProductTitleBlockEditor.jsx",
     "resources/admin/BlockEditor/ProductTitle/style/product-title-block-editor.scss",
+    "resources/admin/BlockEditor/ProductSwatches/ProductSwatchesBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductSwatches/style/product-swatches-block-editor.scss",
+    "resources/admin/BlockEditor/ProductQuickView/ProductQuickViewBlockEditor.jsx",
+    "resources/admin/BlockEditor/ProductQuickView/style/product-quick-view-block-editor.scss",
     "resources/admin/BlockEditor/ProductImage/ProductImageBlockEditor.jsx",
     "resources/admin/BlockEditor/ProductImage/style/product-image-block-editor.scss",
 
@@ -200,6 +206,7 @@ const inputs = [
     "resources/admin/admin_hooks.js",
     "resources/admin/utils/edit-wp-user-global.js",
     "resources/admin/dark-mode-toggle.js",
+    "resources/admin/term-products.js",
 
     // Globals
     "resources/public/globals/FluentCartApp.js",
@@ -267,8 +274,6 @@ const inputs = [
     "resources/admin/shared/module-dayjs.js",
     "resources/admin/shared/module-echarts.js",
     "resources/admin/shared/module-ui.js",
-    // EU Withdrawal addon (admin requests page)
-    "resources/withdrawal/withdrawal.js",
     // Addon Assets
     "resources/addon-assets/addon-assets.js",
     // Reviews PRO

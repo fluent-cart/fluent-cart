@@ -1,6 +1,8 @@
 <template>
-  <span
+  <button
+      type="button"
       class="fct-fluid-tab-item"
+      :aria-pressed="isActiveItem($refs.btn)"
       @click="clicked"
       ref="btn"
   >
@@ -11,7 +13,7 @@
     <template v-else>
       <slot/>
     </template>
-  </span>
+  </button>
 </template>
 
 <script>

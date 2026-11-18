@@ -14,11 +14,10 @@ use Tests\Support\FunctionalTester;
 /**
  * Spec: Cases/Functional/products.md → "Managing downloadable files", items 117a-117d.
  *
- * Security finding FC-SEC-04 (2026-08-25 assessment): a product editor could put any
- * bucket name in a downloadable file's `settings.bucket`. The controller stored it
- * verbatim and DownloadService fed it straight into cloud download signing, so the
- * store's credentials would sign a link for a private object in a sibling bucket that
- * the store never configured.
+ * A product editor could put any bucket name in a downloadable file's `settings.bucket`.
+ * The controller stored it verbatim and DownloadService fed it straight into cloud
+ * download signing, so the store's credentials would sign a link for a private object
+ * in a sibling bucket that the store never configured.
  *
  * The store configures exactly one bucket per driver (S3Settings::resolveEffectiveBucket,
  * R2Settings likewise); the admin file browser only ever echoes that same bucket back.

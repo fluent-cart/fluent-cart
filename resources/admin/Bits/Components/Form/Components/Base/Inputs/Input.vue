@@ -1,5 +1,5 @@
 <script setup>
-import {defineModel, onMounted, ref, getCurrentInstance, computed, onUpdated} from "vue";
+import {onMounted, ref, getCurrentInstance, computed, onUpdated} from "vue";
 import Resolver from "@/Bits/Components/Form/Components/Resolver.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 

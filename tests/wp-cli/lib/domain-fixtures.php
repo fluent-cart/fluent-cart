@@ -10,7 +10,6 @@
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Hooks\Scheduler\JobRunner;
 use FluentCart\App\Models\ScheduledAction;
-use FluentCart\App\Services\Payments\SubscriptionHelper;
 
 class FcPhase8RecordingJobRunner extends JobRunner
 {
@@ -75,9 +74,6 @@ class FcDomainFixture
 
     /** @var array<int,array<string,mixed>> */
     private static $activityHistory = [];
-
-    /** @var int|null */
-    private static $activityHighWater = null;
 
     /**
      * Return an exact identity-derived scalar marker.
@@ -271,62 +267,6 @@ class FcDomainFixture
     }
 
     /**
-     * Create one exact ScheduledAction.
-     *
-     * @param array<string,mixed> $attributes
-     * @return object
-     */
-    public static function scheduledAction(array $attributes = [])
-    {
-        $class = self::rowConfig('scheduled_action')['model_class'];
-        $action = self::marker(
-            isset($attributes['action_suffix'])
-                ? (string) $attributes['action_suffix']
-                : 'scheduled-action'
-        );
-        unset($attributes['action_suffix']);
-        if ($class::query()->where('action', $action)->count() !== 0) {
-            throw new RuntimeException('ScheduledAction fixture action already exists.');
-        }
-
-        $defaults = [
-            'scheduled_at' => '2001-02-03 04:05:06',
-            'action'       => $action,
-            'status'       => Status::SCHEDULE_PENDING,
-            'group'        => self::marker('scheduled-group'),
-            'object_id'    => 0,
-            'object_type'  => 'phase8-test',
-            'completed_at' => null,
-            'retry_count'  => 0,
-            'data'         => ['fixture_identity' => FcFixture::identity()],
-            'response_note'=> '',
-        ];
-        $row = $class::query()->create(array_merge($defaults, $attributes, [
-            'action' => $action,
-            'data'   => array_merge(
-                $defaults['data'],
-                isset($attributes['data']) && is_array($attributes['data'])
-                    ? $attributes['data']
-                    : []
-            ),
-        ]));
-        $id = isset($row->id) ? (int) $row->id : 0;
-        if ($id > 0) {
-            self::$scheduledActions[$id] = [
-                'id'     => $id,
-                'group'  => (string) $row->group,
-                'action' => $action,
-            ];
-            self::$scheduledHistory[$id] = self::$scheduledActions[$id];
-        }
-        if ($id <= 0) {
-            throw new RuntimeException('ScheduledAction fixture create returned no positive ID.');
-        }
-
-        return $row;
-    }
-
-    /**
      * Enroll an exact owned queue row through JobRunner::addQueue().
      *
      * @param array<string,mixed> $attributes
@@ -466,128 +406,6 @@ class FcDomainFixture
         }
 
         return $row;
-    }
-
-    /**
-     * Return the exact IDs selected by the production expiry predicate.
-     *
-     * @return array<int,int>
-     */
-    public static function expiryCandidateIds()
-    {
-        $currentTime = time();
-        $now = gmdate('Y-m-d H:i:s', $currentTime);
-        $gracePeriodDays = SubscriptionHelper::getSubscriptionsGracePeriodDays();
-        $cutoffDates = [];
-        foreach ($gracePeriodDays as $interval => $days) {
-            $cutoffDates[$interval] = gmdate(
-                'Y-m-d H:i:s',
-                $currentTime - ((int) $days * DAY_IN_SECONDS)
-            );
-        }
-        $defaultCutoff = gmdate('Y-m-d H:i:s', $currentTime - (7 * DAY_IN_SECONDS));
-        $knownIntervals = array_keys($cutoffDates);
-        $class = self::rowConfig('subscription')['model_class'];
-
-        $ids = $class::query()
-            ->whereIn('status', [
-                Status::SUBSCRIPTION_ACTIVE,
-                Status::SUBSCRIPTION_TRIALING,
-                Status::SUBSCRIPTION_CANCELED,
-                Status::SUBSCRIPTION_EXPIRING,
-                Status::SUBSCRIPTION_PAST_DUE,
-            ])
-            ->whereNotIn('collection_method', ['manual', 'system'])
-            ->whereNotNull('next_billing_date')
-            ->where('next_billing_date', '>', '0000-00-00 00:00:00')
-            ->where(function ($query) use ($now, $cutoffDates, $knownIntervals, $defaultCutoff) {
-                $query->where(function ($subQuery) use ($cutoffDates, $knownIntervals, $defaultCutoff) {
-                    $subQuery->whereIn('status', [
-                        Status::SUBSCRIPTION_ACTIVE,
-                        Status::SUBSCRIPTION_TRIALING,
-                        Status::SUBSCRIPTION_EXPIRING,
-                        Status::SUBSCRIPTION_PAST_DUE,
-                    ])->where(function ($dateQuery) use ($cutoffDates, $knownIntervals, $defaultCutoff) {
-                        $index = 0;
-                        foreach ($cutoffDates as $interval => $cutoff) {
-                            $method = $index === 0 ? 'where' : 'orWhere';
-                            $dateQuery->{$method}(function ($intervalQuery) use ($interval, $cutoff) {
-                                $intervalQuery->where('billing_interval', $interval)
-                                    ->where('next_billing_date', '<', $cutoff);
-                            });
-                            $index++;
-                        }
-                        $dateQuery->orWhere(function ($intervalQuery) use ($knownIntervals, $defaultCutoff) {
-                            $intervalQuery->where(function ($unknownQuery) use ($knownIntervals) {
-                                $unknownQuery->whereNotIn('billing_interval', $knownIntervals)
-                                    ->orWhereNull('billing_interval');
-                            })->where('next_billing_date', '<', $defaultCutoff);
-                        });
-                    });
-                })->orWhere(function ($subQuery) use ($now) {
-                    $subQuery->where('status', Status::SUBSCRIPTION_CANCELED)
-                        ->where('next_billing_date', '<', $now);
-                });
-            })
-            ->orderBy('id', 'ASC')
-            ->pluck('id')
-            ->toArray();
-
-        return array_map('intval', $ids);
-    }
-
-    /**
-     * Capture the Activity high-water mark immediately before expiry dispatch.
-     *
-     * @return void
-     */
-    public static function beginActivityCapture()
-    {
-        $class = self::rowConfig('activity')['model_class'];
-        self::$activityHighWater = (int) $class::query()->max('id');
-    }
-
-    /**
-     * Capture and validate every Activity inserted since beginActivityCapture().
-     *
-     * @return array<int,object>
-     */
-    public static function captureExpiryActivities()
-    {
-        if (self::$activityHighWater === null) {
-            throw new LogicException('Activity capture was not started.');
-        }
-
-        $class = self::rowConfig('activity')['model_class'];
-        $rows = $class::query()
-            ->where('id', '>', self::$activityHighWater)
-            ->orderBy('id', 'ASC')
-            ->get();
-        $ownedSubscriptionIds = array_map('intval', array_keys(self::$subscriptions));
-
-        foreach ($rows as $row) {
-            $isOwnedSubscription = $row->module_type === 'FluentCart\\App\\Models\\Subscription'
-                && in_array((int) $row->module_id, $ownedSubscriptionIds, true);
-            $isOwnedSummary = (string) $row->title === 'Subscription Validity Expiration Check'
-                && (int) $row->module_id === 0;
-            if (!$isOwnedSubscription && !$isOwnedSummary) {
-                throw new RuntimeException(
-                    'Concurrent/unowned Activity appeared during Phase 8 capture: ID '
-                    . (int) $row->id
-                );
-            }
-
-            $id = (int) $row->id;
-            self::$activities[$id] = [
-                'id'          => $id,
-                'module_id'   => (int) $row->module_id,
-                'module_type' => (string) $row->module_type,
-                'title'       => (string) $row->title,
-            ];
-            self::$activityHistory[$id] = self::$activities[$id];
-        }
-
-        return $rows->all();
     }
 
     /**

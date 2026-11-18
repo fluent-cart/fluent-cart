@@ -1,5 +1,5 @@
 <script setup>
-import {defineModel, onMounted, ref} from "vue";
+import {onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import Arr from "@/utils/support/Arr";
@@ -97,15 +97,13 @@ onMounted(() => {
     <div class="fct-input-group w-full" :class="{'focused': inputFocus}">
       <div class="input-prepend">
 
-        <el-select filterable v-model="model" @focus="_=>handleFocus(true)" @blur="_=>handleFocus(false)"
+        <fct-select filterable v-model="model" @focus="_=>handleFocus(true)" @blur="_=>handleFocus(false)"
                    :placeholder="translate('Select')" clearable @change="(value)=>{
                     if(!value){
                       model = '';
                     }
-                   }">
-          <el-option v-for="(page,index) of options" :key="index" :label="page.label"
-                     :value="Number(page.value)"/>
-        </el-select>
+                   }"
+                   :options="options.map(page => ({label: page.label, value: Number(page.value)}))"/>
 
         <div class="input-info-note flex gap-2 mt-2 flex-wrap items-center">
           <div v-if="field.note" class="form-note mr-1 !mt-0" v-html="field.note"></div>

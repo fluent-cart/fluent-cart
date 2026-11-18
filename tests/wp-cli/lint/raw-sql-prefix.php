@@ -232,13 +232,12 @@ foreach ($scanDirs as $dir) {
     }
 }
 
-echo "raw-sql-prefix: scanned {$scanned} PHP files\n";
-
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
 if (!$violations) {
-    echo "OK — no unprefixed plugin table identifiers inside raw SQL.\n";
     exit(0);
 }
 
+echo "raw-sql-prefix: scanned {$scanned} PHP files\n";
 echo "\nFAIL — " . count($violations) . " violation(s):\n\n";
 foreach ($violations as $v) {
     echo "  {$v['file']}:{$v['line']}\n";

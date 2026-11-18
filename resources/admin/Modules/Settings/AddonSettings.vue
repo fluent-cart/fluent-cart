@@ -1,147 +1,168 @@
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :heading="translate('Addon Settings')"
-        :show-save-button="!formLoading && hasSettings"
-        :loading="saving"
-        :show-cmnd-icon="true"
-        @on-save="saveSettings"
-    />
+  <SettingsPage
+      :heading="translate('Addon Settings')"
+      :show-save-button="!formLoading && hasSettings"
+      :loading="saving"
+      :show-cmnd-icon="true"
+      @on-save="saveSettings"
+  >
+    <AdminNotice/>
 
-    <div class="setting-wrap-inner">
-      <AdminNotice/>
-
-      <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
-        <el-skeleton :loading="formLoading" animated>
-          <template #template>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3 mb-6">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
-            <div class="grid gap-3">
-              <el-skeleton-item variant="p" class="w-[20%]"/>
-              <el-skeleton-item variant="p"/>
-            </div>
+    <!-- Above Features: the full Plugin Addons list starts below the fold on most screens. -->
+    <Section v-if="recommendations.length" :title="translate('Recommended for your store')" :description="translate('Add-ons that match how you sell.')" divided>
+      <List class="payment-method-list">
+        <ListItem v-for="item in recommendations" :key="item.key">
+          <template v-if="item.logo || item.dark_logo" #media>
+            <img v-if="item.logo" :class="{ 'dark:hidden': item.dark_logo }" :src="item.logo" alt=""/>
+            <img v-if="item.dark_logo" :src="item.dark_logo" alt="" class="hidden dark:block"/>
           </template>
-        </el-skeleton>
+          <template #title>
+            <span class="font-semibold text-system-dark dark:text-gray-50">{{ item.title }}</span>
+          </template>
+          <template v-if="item.badge" #badges>
+            <Badge size="small" status="warning" :text="item.badge"/>
+          </template>
+          <template #meta>{{ item.reason }}</template>
+          <template #actions>
+            <fct-button
+                v-if="item.is_installed"
+                type="success"
+                size="small"
+                :loading="activatingAddon === item.key"
+                :disabled="activatingAddon === item.key"
+                @click="activateAddon(item, item.key)"
+            >
+              {{ translate('Activate') }}
+            </fct-button>
+            <fct-button
+                v-else
+                type="primary"
+                size="small"
+                :loading="installingAddon === item.key"
+                :disabled="installingAddon === item.key"
+                @click="installAddon(item, item.key)"
+            >
+              {{ hasPro ? translate('Install & Activate') : translate('Download') }}
+            </fct-button>
+          </template>
+        </ListItem>
+      </List>
+    </Section>
+
+    <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
+      <fct-skeleton animated>
+        <div class="grid gap-3 mb-6">
+          <fct-skeleton variant="p" class="w-[20%]"/>
+          <fct-skeleton variant="p"/>
+        </div>
+        <div class="grid gap-3 mb-6">
+          <fct-skeleton variant="p" class="w-[20%]"/>
+          <fct-skeleton variant="p"/>
+        </div>
+        <div class="grid gap-3 mb-6">
+          <fct-skeleton variant="p" class="w-[20%]"/>
+          <fct-skeleton variant="p"/>
+        </div>
+        <div class="grid gap-3">
+          <fct-skeleton variant="p" class="w-[20%]"/>
+          <fct-skeleton variant="p"/>
+        </div>
+      </fct-skeleton>
+    </div>
+
+    <template v-if="!formLoading">
+      <!-- Skip the empty form: the page's gap would add space above Plugin Addons. -->
+      <div v-if="form.isReady && (hasSettings || !hasPluginAddons)">
+        <VueForm
+            v-if="hasSettings"
+            :form="form"
+            :showSubmitButton="true"
+            @on-submit-button-click="saveSettings"
+            :submitButtonText="translate('Save Settings')"
+            :loading="saving"
+            @on-change="(value) => {}"
+            :validation-errors="validationErrors"
+        />
+        <Section v-else :title="translate('Features & addon')" divided>
+          <EmptyState class="fct-addon-empty-state" icon="Empty/Integrations"
+                      :text="translate('No module settings found.')"/>
+        </Section>
       </div>
 
-      <template v-if="!formLoading">
-        <el-form v-if="form.isReady">
-          <VueForm
-              v-if="hasSettings"
-              :form="form"
-              :showSubmitButton="true"
-              @on-submit-button-click="saveSettings"
-              :submitButtonText="translate('Save Settings')"
-              :loading="saving"
-              @on-change="(value) => {}"
-              :validation-errors="validationErrors"
-          />
-          <Card.Container v-else-if="!hasPluginAddons">
-            <Card.Header :title="translate('Features & addon')" border_bottom/>
-            <Card.Body>
-              <Empty class="fct-addon-empty-state" icon="Empty/Integrations"
-                     :text="translate('No module settings found.')"/>
-            </Card.Body>
-          </Card.Container>
-        </el-form>
+      <!-- Plugin Addons Section -->
+      <!-- Body padding, not row padding: the list resets the first and last row's own padding. -->
+      <Section v-if="hasPluginAddons" :title="translate('Plugin Addons')" divided>
+        <List class="payment-method-list">
+          <!-- fct-content-card-list-item: the add-on redirect test finds rows by it. -->
+          <ListItem
+              v-for="(addon, addonKey) in pluginAddons"
+              :key="addonKey"
+              class="fct-content-card-list-item"
+              :id="addon.plugin_slug === hashId ? hashId : null"
+          >
+            <!-- Name and badge only render with a logo, as before. -->
+            <template v-if="addon.logo" #media>
+              <img :class="{ 'dark:hidden': addon.dark_logo }" :src="addon.logo" :alt="addon.title"/>
+              <img
+                  v-if="addon.dark_logo"
+                  :src="addon.dark_logo"
+                  :alt="addon.title"
+                  class="hidden dark:block"
+              />
+            </template>
+            <template v-if="addon.logo" #title>
+              <span class="font-semibold text-system-dark dark:text-gray-50">{{ addon.title }}</span>
+            </template>
+            <template v-if="addon.logo && addon.is_active" #badges>
+              <Badge status="active" :text="translate('Active')"/>
+            </template>
+            <template #meta>{{ addon.description }}</template>
 
-        <!-- Plugin Addons Section -->
-        <Card.Container v-if="hasPluginAddons" class="mt-6">
-          <Card.Header :title="translate('Plugin Addons')" border_bottom/>
-          <Card.Body class="py-0">
-            <div class="payment-method-list fct-content-card-list">
-              <div
-                  v-for="(addon, addonKey) in pluginAddons"
-                  :key="addonKey"
-                  class="fct-content-card-list-item"
-                  :id="addon.plugin_slug === hashId ? hashId : null"
-              >
+            <template #actions>
+              <template v-if="addon.upcoming">
+                <div>{{ translate('Coming Soon') }}</div>
+              </template>
+              <template v-else>
+                <fct-button
+                    v-if="!addon.is_installed"
+                    type="primary"
+                    size="small"
+                    :loading="installingAddon === addonKey"
+                    :disabled="installingAddon === addonKey"
+                    @click="installAddon(addon, addonKey)"
+                >
+                  {{ hasPro ? translate('Install & Activate') : translate('Download') }}
+                </fct-button>
 
-                <div class="flex items-start gap-3">
-                  <div class="grid gap-2 flex-1">
-                    <div v-if="addon.logo" class="fct-content-card-list-head stripe">
-                      <img :class="{ 'dark:hidden': addon.dark_logo }" :src="addon.logo" :alt="addon.title"/>
-                      <img
-                          v-if="addon.dark_logo"
-                          :src="addon.dark_logo"
-                          :alt="addon.title"
-                          class="hidden dark:block"
-                      />
-                      <span class="block font-semibold text-system-dark dark:text-gray-50">{{ addon.title }}</span>
-                      <Badge
-                          v-if="addon.is_active"
-                          status="active"
-                          :text="translate('Active')"
-                      />
-                    </div>
-                    <div class="fct-content-card-list-content">
-                      <p>{{ addon.description }}</p>
+                <!-- Installed but not active: Show Activate button (hidden without pro for github-sourced addons) -->
+                <fct-button
+                    v-else-if="addon.is_installed && !addon.is_active && (hasPro || addon.source_type !== 'github')"
+                    type="success"
+                    size="small"
+                    :loading="activatingAddon === addonKey"
+                    :disabled="activatingAddon === addonKey"
+                    @click="activateAddon(addon, addonKey)"
+                >
+                  {{ translate('Activate') }}
+                </fct-button>
 
-                    </div>
-                  </div>
-                  <div class="fct-content-card-list-action flex items-center gap-2">
-
-                    <template v-if="addon.upcoming">
-                      <div>{{ translate('Coming Soon') }}</div>
-                    </template>
-                    <template v-else>
-                      <el-button
-                          v-if="!addon.is_installed"
-                          type="primary"
-                          size="small"
-                          :loading="installingAddon === addonKey"
-                          :disabled="installingAddon === addonKey"
-                          @click="installAddon(addon, addonKey)"
-                      >
-                        {{ hasPro ? translate('Install & Activate') : translate('Download') }}
-                      </el-button>
-
-                      <!-- Installed but not active: Show Activate button (hidden without pro for github-sourced addons) -->
-                      <el-button
-                          v-else-if="addon.is_installed && !addon.is_active && (hasPro || addon.source_type !== 'github')"
-                          type="success"
-                          size="small"
-                          :loading="activatingAddon === addonKey"
-                          :disabled="activatingAddon === addonKey"
-                          @click="activateAddon(addon, addonKey)"
-                      >
-                        {{ translate('Activate') }}
-                      </el-button>
-
-                      <router-link
-                          v-if="addon.is_active && addon.settings_route"
-                          :to="{ path: addon.settings_route }"
-                          :aria-label="translate('Settings')"
-                      >
-                        <el-icon class="text-gray-500 hover:text-primary cursor-pointer" :size="18">
-                          <Setting />
-                        </el-icon>
-                      </router-link>
-
-                    </template>
-
-                  </div>
-                </div>
-
-
-              </div>
-            </div>
-          </Card.Body>
-        </Card.Container>
-      </template>
-    </div>
-  </div>
-  <!-- .setting-wrap -->
+                <component
+                    :is="addonTarget(addon).charAt(0) === '/' ? 'router-link' : 'a'"
+                    v-if="addon.is_active && addonTarget(addon)"
+                    v-bind="addonTarget(addon).charAt(0) === '/' ? { to: { path: addonTarget(addon) } } : { href: addonTarget(addon) }"
+                    :aria-label="translate('Settings')"
+                >
+                  <el-icon class="text-gray-500 hover:text-primary cursor-pointer" :size="18">
+                    <Setting />
+                  </el-icon>
+                </component>
+              </template>
+            </template>
+          </ListItem>
+        </List>
+      </Section>
+    </template>
+  </SettingsPage>
 </template>
 
 <script setup>
@@ -156,14 +177,16 @@ import Url from "@/utils/support/Url";
 import {useSaveShortcut} from '@/mixin/saveButtonShortcutMixin.js';
 import VueForm from "@/Bits/Components/Form/VueForm.vue";
 import {useSettingsModel} from "@/Models/SettingsModel";
-import Empty from "@/Bits/Components/Table/Empty.vue";
-import * as Card from "@/Bits/Components/Card/Card.js";
 import translate from "@/utils/translator/Translator";
 import Badge from "@/Bits/Components/Badge.vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
-import ClipBoard from "@/utils/Clipboard";
+import SettingsPage from "@/Modules/Settings/Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
+import List from "@/Bits/Components/Layout/List.vue";
+import ListItem from "@/Bits/Components/Layout/ListItem.vue";
+import EmptyState from "@/Bits/Components/Layout/EmptyState.vue";
+import {activatePluginAddon, addonTarget, installPluginAddon} from "./pluginAddonActions";
 import {Setting} from '@element-plus/icons-vue';
 import AppConfig from "@/utils/Config/AppConfig";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
@@ -187,6 +210,7 @@ const hasSettings = ref(false);
 
 // Plugin addons state
 const pluginAddons = ref({});
+const recommendations = ref([]);
 const pluginAddonsLoading = ref(false);
 const installingAddon = ref('');
 const activatingAddon = ref('');
@@ -257,6 +281,7 @@ const getPluginAddons = () => {
   Rest.get('settings/modules/plugin-addons', {})
       .then((response) => {
         pluginAddons.value = response.addons || {};
+        recommendations.value = response.recommendations || [];
 
         // The target card renders only after this async response, so scroll once it exists.
         if (hashId.value) {
@@ -272,63 +297,19 @@ const getPluginAddons = () => {
 };
 
 const hasPro = AppConfig.get('app_config.isProActive');
+
 const installAddon = (addon, addonKey) => {
-
-  if(!hasPro){
-    window.open(addon.repo_link, '_blank', 'noopener,noreferrer');
-    return;
-  }
   installingAddon.value = addonKey;
-  Rest.post('settings/modules/plugin-addons/install', {
-    plugin_slug: addon.plugin_slug,
-    source_type: addon.source_type || 'wordpress',
-    source_link: addon.source_link || '',
-    asset_path: addon.asset_path || ''
-  })
-      .then((response) => {
-
-        if (response.action === 'copy' && response.url) {
-          ClipBoard.copy(response.url, {
-            successMessage: translate('Download link copied to your clipboard')
-          });
-          const newTab = window.open(response.url, '_blank', 'noopener,noreferrer');
-        } else if (response.action === 'reload') {
-          Notify.success(response.message || translate('Addon installed successfully'));
-          // Reload the page to reflect changes
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
-        } else {
-          Notify.success(response.message || translate('Addon installed successfully'));
-        }
-
-      })
-      .catch((errors) => {
-        Notify.error(errors);
-      })
-      .finally(() => {
-        installingAddon.value = '';
-      });
+  installPluginAddon(addon, hasPro).finally(() => {
+    installingAddon.value = '';
+  });
 };
 
 const activateAddon = (addon, addonKey) => {
   activatingAddon.value = addonKey;
-  Rest.post('settings/modules/plugin-addons/activate', {
-    plugin_file: addon.plugin_file
-  })
-      .then((response) => {
-        Notify.success(response.message || translate('Addon activated successfully'));
-        // Reload the page to reflect changes
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      })
-      .catch((errors) => {
-        Notify.error(errors);
-      })
-      .finally(() => {
-        activatingAddon.value = '';
-      });
+  activatePluginAddon(addon).finally(() => {
+    activatingAddon.value = '';
+  });
 };
 
 onMounted(() => {

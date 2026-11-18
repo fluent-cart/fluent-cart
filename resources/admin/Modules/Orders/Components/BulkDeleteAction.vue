@@ -194,13 +194,14 @@ const handleCloseModal = () => {
 
 <template>
   <div class="fct-bulk-delete-action-wrap p-4 ps-5 pt-0">
-    <el-popconfirm
+    <fct-popover
+        confirm
         :title="translate('Are you sure you want to delete these orders?')"
         @confirm="handleBulkDelete"
         width="250"
     >
       <template #reference>
-        <el-button
+        <fct-button
             type="danger"
             size="small"
             :loading="isDeleting"
@@ -217,12 +218,12 @@ const handleCloseModal = () => {
           <template v-else>
             {{ translate('Deleting...') }}
           </template>
-        </el-button>
+        </fct-button>
       </template>
-    </el-popconfirm>
+    </fct-popover>
 
     <!-- Progress Dialog -->
-    <el-dialog
+    <fct-dialog
         v-model="showDialog"
         :title="translate('Deleting Orders')"
         width="800px"
@@ -247,7 +248,7 @@ const handleCloseModal = () => {
           <p class="m-0 mb-3">{{ translate('Deletion completed') }}</p>
         </div>
 
-        <el-progress
+        <fct-progress
             :percentage="progress"
             :stroke-width="6"
             striped
@@ -258,14 +259,14 @@ const handleCloseModal = () => {
 
         <!-- Orders Status Table -->
         <div class="max-h-60 overflow-x-hidden">
-          <el-table :data="deletedOrders" class="w-full" size="small">
-            <el-table-column :label="translate('Invoice No.')" min-width="120">
+          <fct-table :data="deletedOrders" class="w-full" size="small">
+            <fct-table-column :label="translate('Invoice No.')" min-width="120">
               <template #default="scope">
                 <span class="font-mono text-sm">{{ scope.row.invoice_no || scope.row.id }}</span>
               </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('Status')" width="150" align="right">
+            <fct-table-column :label="translate('Status')" width="150" align="right">
               <template #default="scope">
                 <div class="flex items-center justify-end gap-2">
                   <DynamicIcon
@@ -284,8 +285,8 @@ const handleCloseModal = () => {
                   </span>
                 </div>
               </template>
-            </el-table-column>
-          </el-table>
+            </fct-table-column>
+          </fct-table>
         </div>
 
         <!-- Summary -->
@@ -313,15 +314,15 @@ const handleCloseModal = () => {
 
       <template #footer>
         <div class="flex justify-end">
-          <el-button
+          <fct-button
               @click="handleCloseModal()"
               :disabled="isDeleting"
               type="primary"
           >
             {{ isDeleting ? translate('Processing...') : translate('Done') }}
-          </el-button>
+          </fct-button>
         </div>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

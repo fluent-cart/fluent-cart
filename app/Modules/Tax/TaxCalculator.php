@@ -264,6 +264,10 @@ class TaxCalculator
                         'is_compound' => $isCompound,
                         'taxable_amount' => $this->roundTax($currentTaxableAmount),
                     ];
+                    if ($recurringAmount) {
+                        // Renewals show this base instead of working it back from the tax.
+                        $taxLines[count($taxLines) - 1]['recurring_taxable_amount'] = $this->roundTax($currentRecurringAmount);
+                    }
 
                     if ($rateSignupFeeTax) {
                         $signupFeeTaxLines[] = [
@@ -547,9 +551,11 @@ class TaxCalculator
                         'label'        => $label,
                         'rate_percent' => $effectiveRate,
                         'shipping_tax' => 0,
+                        'shipping_taxable_amount' => 0,
                     ];
                 }
                 $byRate[$rateId]['shipping_tax'] += $rounded;
+                $byRate[$rateId]['shipping_taxable_amount'] += $this->inclusive ? $shippingBase - $rounded : $shippingBase;
             }
         }
 

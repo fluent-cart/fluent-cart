@@ -1,16 +1,14 @@
 <template>
     <div class="fct-early-installment-payment">
-        <el-button type="primary" @click="showModal = true" :aria-label="$t('Pay Remaining Installments')">
+        <fct-button type="primary" @click="showModal = true" :aria-label="$t('Pay Remaining Installments')">
             {{ $t('Pay Remaining Installments') }}
-        </el-button>
+        </fct-button>
 
-        <el-dialog
+        <fct-dialog
             v-model="showModal"
             :append-to-body="true"
             :title="$t('Complete Installment Payment')"
             class="fct-early-payment-dialog fluent-cart-customer-profile-app"
-            role="dialog"
-            aria-modal="true"
         >
             <div class="fct-early-payment-content">
                 <div class="fct-installment-progress mb-4">
@@ -20,7 +18,7 @@
                             {{ subscription.bill_count }} / {{ subscription.bill_times }}
                         </span>
                     </div>
-                    <el-progress
+                    <fct-progress
                         :percentage="Math.round((subscription.bill_count / subscription.bill_times) * 100)"
                         :show-text="false"
                         :stroke-width="8"
@@ -44,12 +42,12 @@
             </div>
 
             <template #footer>
-                <el-button @click="showModal = false">{{ $t('Cancel') }}</el-button>
-                <el-button type="primary" :loading="loading" @click="proceedToCheckout">
+                <fct-button @click="showModal = false">{{ $t('Cancel') }}</fct-button>
+                <fct-button type="primary" :loading="loading" @click="proceedToCheckout">
                     {{ $t('Proceed to Payment') }}
-                </el-button>
+                </fct-button>
             </template>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 

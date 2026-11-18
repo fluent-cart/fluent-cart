@@ -130,14 +130,14 @@ defineExpose({
       />
 
 
-      <el-table class="w-full compact-table"
+      <fct-table class="w-full compact-table"
                   :data="formattedOrders"
                   :tooltip-options="{ popperClass: 'fct-tooltip-long' }"
                   @selection-change="handleSelectionChange"
         >
-            <el-table-column v-if="table && table.data.showDeleteBulkAction" type="selection" width="45"/>
+            <fct-table-column v-if="table && table.data.showDeleteBulkAction" type="selection" width="45"/>
 
-            <el-table-column :width="140" :label="translate('Date')" class-name="fct-orders-date-column">
+            <fct-table-column :width="140" :label="translate('Date')" class-name="fct-orders-date-column">
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
@@ -151,9 +151,9 @@ defineExpose({
                       </div>
                     </RouteCell>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column v-if="isColumnVisible('customer')" :width="130" :label="translate('Customer')" class-name="fct-orders-customer-column">
+            <fct-table-column v-if="isColumnVisible('customer')" :width="130" :label="translate('Customer')" class-name="fct-orders-customer-column">
                 <template #default="scope">
                     <CustomerInfoPopover
                         v-if="scope.row.customer"
@@ -162,12 +162,12 @@ defineExpose({
                     />
                     <span v-else>{{ translate('Customer Not Found') }}</span>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column v-if="isColumnVisible('order_items')" :min-width="200" :label="translate('Items')" class-name="fct-orders-items-column">
+            <fct-table-column v-if="isColumnVisible('order_items')" :min-width="200" :label="translate('Items')" class-name="fct-orders-items-column">
                 <template #default="scope">
                     <div class="fct-popover-box">
-                        <el-popover
+                        <fct-popover
                             placement="bottom-start"
                             :width="360"
                             trigger="click"
@@ -218,7 +218,7 @@ defineExpose({
                                     </div>
                                 </div>
                             </template>
-                        </el-popover>
+                        </fct-popover>
 
                         <RouteCell class="hover:no-underline"
                                    :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
@@ -226,9 +226,9 @@ defineExpose({
                         </RouteCell>
                     </div>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :width="150" :label="translate('Total')" class-name="fct-orders-total-column">
+            <fct-table-column :width="150" :label="translate('Total')" class-name="fct-orders-total-column">
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
@@ -239,9 +239,9 @@ defineExpose({
                         </template>
                     </RouteCell>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :width="150" :label="translate('Payment Status')">
+            <fct-table-column :width="150" :label="translate('Payment Status')">
                 <template #default="scope">
                     <RouteCell class="hover:no-underline"
                                :to="{ name: 'view_order',  params: { order_id: scope.row.id } }">
@@ -260,9 +260,9 @@ defineExpose({
                         </div>
                     </RouteCell>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column v-if="isColumnVisible('status')" :width="120" :label="translate('Status')">
+            <fct-table-column v-if="isColumnVisible('status')" :width="120" :label="translate('Status')">
                 <template #default="scope">
 
                     <RouteCell class="hover:no-underline"
@@ -271,17 +271,17 @@ defineExpose({
                     </RouteCell>
 
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column v-if="isColumnVisible('type')" :width="140" :label="translate('Order Type')">
+            <fct-table-column v-if="isColumnVisible('type')" :width="140" :label="translate('Order Type')">
                 <template #default="scope">
                     <Badge :type="isInstallmentOrder(scope.row) ? 'blue' : 'info'" :text="orderTypeText(scope.row)" size="small" :hide-icon="true"/>
                     <OrderUpDownIndicator :order="scope.row"/>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
 
-            <el-table-column v-if="table" v-for="column of table.getCustomColumns()" :label="column.label">
+            <fct-table-column v-if="table" v-for="column of table.getCustomColumns()" :label="column.label">
               <template #default="scope">
                 <div v-if="column.render_template">
                   <component
@@ -290,7 +290,7 @@ defineExpose({
                       :data="{
                         column,
                         order: scope.row,
-                        index: scope.$index,
+                        index: scope.index,
                       }"
                   />
                 </div>
@@ -304,14 +304,13 @@ defineExpose({
                 </div>
               </template>
 
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column v-if="isColumnVisible('actions') && hasInvoiceUrl" width="60" label="">
+            <fct-table-column v-if="isColumnVisible('actions') && hasInvoiceUrl" width="60" label="">
                 <template #default="scope">
                     <div class="fct-btn-group sm justify-end">
                         <div class="table-cell">
-                            <el-tooltip :content="translate('View Invoice')" placement="top"
-                                        popper-class="fct-tooltip">
+                            <fct-tooltip :content="translate('View Invoice')" placement="top">
                                 <IconButton
                                     target="_blank"
                                     :href="getInvoiceUrl(scope.row.uuid)"
@@ -321,7 +320,7 @@ defineExpose({
                                 >
                                     <DynamicIcon name="Print"/>
                                 </IconButton>
-                            </el-tooltip>
+                            </fct-tooltip>
                         </div>
 
 
@@ -337,12 +336,12 @@ defineExpose({
 
                     </div>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
             <template #empty>
                 <Empty icon="Empty/Order" has-dark :text="emptyText"/>
             </template>
-        </el-table>
+        </fct-table>
     </div>
 </template>
 

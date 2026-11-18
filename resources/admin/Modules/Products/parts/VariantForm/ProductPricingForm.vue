@@ -328,10 +328,7 @@ defineExpose({
 <template>
   <div class="fct-product-pricing-form-wrap">
     <div class="fct-product-pricing-form-inner">
-      <el-form
-          label-position="top"
-          require-asterisk-position="right"
-      >
+      <div>
         <!-- Media -->
         <VariantTitleMedia
             :variant="variant"
@@ -377,32 +374,32 @@ defineExpose({
             :mode-type="modeType"
         />
 
-      </el-form>
+      </div>
     </div>
 
     <div class="dialog-footer" v-if="modeType !=='add'">
       <div class="fct-btn-group sm">
-        <el-button
+        <fct-button
             v-if="dirtyDraftCount"
             @click="discardDrafts"
         >
           {{ translate('Discard') }}
-        </el-button>
+        </fct-button>
 
-        <el-button @click="(() => {
+        <fct-button @click="(() => {
         emit('closeModal')
       })">
           {{ translate('Cancel') }}
-        </el-button>
+        </fct-button>
 
-        <el-button
+        <fct-button
             :disabled="productEditModel.saving || (modeType === 'update' && !dirtyDraftCount)"
             @click="handleVariantSave"
             type="primary"
             :loading="productEditModel.saving"
         >
           {{ typeof variant.id === 'undefined' ? translate('Save') : translate('Update') }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
   </div>

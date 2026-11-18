@@ -229,7 +229,14 @@ class ShopController extends Controller
         $hideExcerpt = filter_var($request->get('hide_excerpt', false), FILTER_VALIDATE_BOOLEAN);
         ob_start();
         if (($products['total'])) {
-            (new ProductListRenderer(Arr::get($products, 'products.products'), null, null, ['hide_excerpt' => $hideExcerpt]))->renderProductList();
+            (new ProductListRenderer(Arr::get($products, 'products.products'), null, null, [
+                'hide_excerpt'        => $hideExcerpt,
+                // Unknown layouts are ignored by the card renderer.
+                'card_layout'         => sanitize_key($request->get('card_layout', '')),
+                'layout_price_format' => sanitize_key($request->get('price_format', 'starts_from')),
+                // Only known keys are read, each typed in ProductCardLayoutPresets::withCardOptions().
+                'layout_options'      => (array) $request->get('layout_options', []),
+            ]))->renderProductList();
         } else {
             ProductRenderer::renderNoProductFound();
         }

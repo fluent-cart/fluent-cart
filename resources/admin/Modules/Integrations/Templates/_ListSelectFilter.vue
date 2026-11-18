@@ -1,11 +1,6 @@
 <template>
     <div class="fluent_cart_list_select_filter">
-        <el-select clearable v-model="settings[field.key]" :placeholder="field.placeholder">
-            <el-option v-for="item in listItems"
-                       :key="item.label"
-                       :label="item.label"
-                       :value="item.value"></el-option>
-        </el-select>
+        <fct-select clearable v-model="settings[field.key]" :placeholder="field.placeholder" :options="listItems"/>
     </div>
 </template>
 <script type="text/babel">

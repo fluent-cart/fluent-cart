@@ -1,50 +1,43 @@
 <template>
   <div class="fct-discount-modal">
-    <el-form label-position="top">
-      <el-row :gutter="20">
-        <el-col :md="12" :sm="12" :xs="24">
-          <el-form-item :label="$t('Discount type')">
-            <el-select v-model="initialDiscount.type" :placeholder="$t('Select')" @change="value => {
+    <div>
+      <div class="fct-discount-modal__row">
+        <fct-select
+            v-model="initialDiscount.type"
+            :label="$t('Discount type')"
+            :placeholder="$t('Select')"
+            :options="discountOptions"
+            @change="value => {
 							error = ''
-						}">
-              <el-option v-for="item in discountOptions"
-                         :key="item.value" :label="item.label" :value="item.value">
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :md="12" :sm="12" :xs="24">
-          <el-form-item :label="$t('Discount value')">
-            <el-input type="number" :min="1" v-model.number="initialDiscount.value" @keyup="isDisabledApplyButton">
-              <template #prefix>
-                <span v-if="initialDiscount.type === 'amount'" v-html="currencySign"></span>
-                <span v-else>%</span>
-              </template>
-            </el-input>
-            <span style="color: red;">{{ error }}</span>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :md="24" :sm="12" :xs="24">
-          <el-form-item :label="$t('Reason for discount')">
-            <el-input v-model="initialDiscount.reason" minlength="1" maxlength="255" show-word-limit>
-            </el-input>
-            <div class="form-note">
-              <p>{{ $t('Customer can see this reason') }}</p>
-            </div>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
+						}"
+        />
+        <Field :label="$t('Discount value')">
+          <fct-input type="number" :controls="false" :min="1" v-model.number="initialDiscount.value" @keyup="isDisabledApplyButton">
+            <template #prefix>
+              <span v-if="initialDiscount.type === 'amount'" v-html="currencySign"></span>
+              <span v-else>%</span>
+            </template>
+          </fct-input>
+          <span style="color: red;">{{ error }}</span>
+        </Field>
+      </div>
+      <div class="fct-discount-modal__reason">
+        <Field :label="$t('Reason for discount')">
+          <fct-input v-model="initialDiscount.reason" minlength="1" maxlength="255" show-word-limit/>
+          <div class="form-note">
+            <p>{{ $t('Customer can see this reason') }}</p>
+          </div>
+        </Field>
+      </div>
+    </div>
     <div class="dialog-footer">
-      <el-button type="info" @click="cancelDiscount" soft>
+      <fct-button type="info" @click="cancelDiscount" soft>
         {{ $t('Cancel') }}
-      </el-button>
+      </fct-button>
 
-      <el-button type="primary" :disabled="isDisabledApplyButton()" @click="applyDiscount">
+      <fct-button type="primary" :disabled="isDisabledApplyButton()" @click="applyDiscount">
         {{ $t('Apply') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 
@@ -56,9 +49,11 @@ import {formatNumber} from "@/Bits/productService";
 import AppConfig from "@/utils/Config/AppConfig";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import translate from "@/utils/translator/Translator";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 export default {
   name: "DiscountModal",
+  components: {Field},
   props: ['discount', 'showModal', 'totalAmount', 'currency'],
   setup(props, {emit}) {
 

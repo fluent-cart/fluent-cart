@@ -32,33 +32,29 @@
         <div class="single-page-body">
           <div class="fct-add-edit-coupon">
             <div class="fct-add-edit-coupon-main">
-              <el-form :model="coupon" label-position="top" require-asterisk-position="right">
+              <div>
                 <CardContainer>
                   <CardHeader :title="translate('Basic Information')" border_bottom title_size="small"/>
                   <CardBody class="pb-1.5">
-                    <el-row :gutter="20">
-                        <el-col :lg="24">
-                          <el-form-item :label="translate('Title')" required>
-                            <el-input
-                                v-model="coupon.title"
-                                :placeholder="translate('Enter title')"
-                                :class="
-                                  validationErrors?.hasOwnProperty('title') ? 'is-error' : ''
-                                "
-                                maxlength="50"
-                                id="title"
-                            ></el-input>
+                    <div class="grid grid-cols-12 gap-x-5">
+                        <div class="col-span-12">
+                          <fct-input
+                              v-model="coupon.title"
+                              :label="translate('Title')"
+                              required
+                              :placeholder="translate('Enter title')"
+                              :class="
+                                validationErrors?.hasOwnProperty('title') ? 'is-error' : ''
+                              "
+                              maxlength="50"
+                              id="title"
+                              :validation-errors="validationErrors"
+                              field-key="title"
+                          />
+                        </div>
 
-                            <ValidationError
-                                v-if="validationErrors?.hasOwnProperty('title')"
-                                :validation-errors="validationErrors"
-                                field-key="title"
-                            />
-                          </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="12">
-                          <el-form-item>
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                          <div class="fct-form-field">
                             <div class="flex gap-2 items-center justify-between w-full mb-2.5">
                               <LabelHint :title="translate('Code')" required/>
                               <span
@@ -68,14 +64,14 @@
                               </span>
                             </div>
 
-                            <el-input
+                            <fct-input
                                 v-model="coupon.code"
                                 :placeholder="translate('Eg. COUPON10')"
                                 :class="
                                   validationErrors?.hasOwnProperty('code') ? 'is-error' : ''
                                 "
                                 maxlength="20"
-                            ></el-input>
+                            />
 
                             <ValidationError
                                 v-if="validationErrors?.hasOwnProperty('code')"
@@ -85,46 +81,33 @@
                             <div class="form-note">
                               <p>{{ translate("Customers must enter this code at checkout.") }}</p>
                             </div>
-                          </el-form-item>
-                        </el-col>
+                          </div>
+                        </div>
 
-                        <el-col :lg="12">
-                          <el-form-item>
-                            <template #label>
-                              <LabelHint
-                                  :title="translate('Coupon Priority')"
-                                  :content="
-                                  translate(
-                                    'Coupon_Coupons_Calculated'
-                                  )
-                                "
-                              />
-                            </template>
-                            <el-input
-                                v-model="coupon.priority"
-                                type="number"
-                                :placeholder="translate('Enter priority')"
-                                :class="
-                                  validationErrors?.hasOwnProperty('priority') ? 'is-error' : ''
-                                "
-                                min="0"
-                                max="100"
-                                @input="
-                                  (value) => {
-                                    onChangeCouponInput('priority', value);
-                                  }
-                                "
-                                @keypress="preventInvalidChars"
-                            ></el-input>
-
-                            <ValidationError
-                                v-if="validationErrors?.hasOwnProperty('priority')"
-                                :validation-errors="validationErrors"
-                                field-key="priority"
-                            />
-                          </el-form-item>
-                        </el-col>
-                    </el-row>
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                          <fct-input
+                              v-model="coupon.priority"
+                              type="number"
+                              :controls="false"
+                              :label="translate('Coupon Priority')"
+                              :tooltip="translate('Coupon_Coupons_Calculated')"
+                              :placeholder="translate('Enter priority')"
+                              :class="
+                                validationErrors?.hasOwnProperty('priority') ? 'is-error' : ''
+                              "
+                              min="0"
+                              max="100"
+                              @input="
+                                (value) => {
+                                  onChangeCouponInput('priority', value);
+                                }
+                              "
+                              @keypress="preventInvalidChars"
+                              :validation-errors="validationErrors"
+                              field-key="priority"
+                          />
+                        </div>
+                    </div>
                   </CardBody>
                 </CardContainer>
                 
@@ -132,34 +115,32 @@
                 <CardContainer>
                   <CardHeader :title="translate('Discount Details')" border_bottom title_size="small"/>
                   <CardBody class="pb-1.5">
-                    <el-row :gutter="20">
-                        <el-col :lg="8">
-                          <el-form-item :label="translate('Type')" required>
-                            <el-select
-                                v-model="coupon.type"
-                                :placeholder="translate('Select coupon type')"
-                                :class="
-                                  validationErrors?.hasOwnProperty('type')
-                                    ? 'is-error'
-                                    : ''
-                                "
-                                default-first-option
-                            >
-                              <el-option
-                                  :label="translate('Fixed')"
-                                  value="fixed"
-                              ></el-option>
-                              <el-option
-                                  :label="translate('Percentage')"
-                                  value="percentage"
-                              ></el-option>
-                            </el-select>
-                          </el-form-item>
-                        </el-col>
+                    <div class="grid grid-cols-12 gap-x-5">
+                        <div class="col-span-12 min-[1200px]:col-span-4">
+                          <fct-select
+                              v-model="coupon.type"
+                              :label="translate('Type')"
+                              required
+                              :placeholder="translate('Select coupon type')"
+                              :class="
+                                validationErrors?.hasOwnProperty('type')
+                                  ? 'is-error'
+                                  : ''
+                              "
+                              default-first-option
+                              :options="[
+                                {label: translate('Fixed'), value: 'fixed'},
+                                {label: translate('Percentage'), value: 'percentage'}
+                              ]"
+                          />
+                        </div>
 
                         <template v-if="coupon.type === 'fixed' || coupon.type === 'percentage'">
-                            <el-col :lg="8">
-                              <el-form-item
+                            <div class="col-span-12 min-[1200px]:col-span-4">
+                              <fct-input
+                                  v-model="coupon.amount"
+                                  type="number"
+                                  :controls="false"
                                   :label="
                                     coupon.type === 'percentage'
                                       ?
@@ -168,60 +149,48 @@
                                       : translate('Discount Amount')
                                   "
                                   required
+                                  placeholder="0.00"
+                                  :min="minDiscountAmount"
+                                  :max="maxDiscountAmount"
+                                  step="0.01"
+                                  @input="
+                                    (value) => {
+                                      onChangeCouponInput('amount', value);
+                                    }
+                                  "
+                                  @keypress="(event) => preventInvalidChars(event, true)"
+                                  :validation-errors="validationErrors"
+                                  field-key="amount"
                               >
-                                <el-input
-                                    v-model="coupon.amount"
+                                <template #prefix>
+                                    <span
+                                        v-if="coupon.type === 'fixed'"
+                                        v-html="appVars.shop.currency_sign"
+                                    ></span>
+
+                                    <span v-else>%</span>
+                                </template>
+                              </fct-input>
+                            </div>
+
+                            <div class="col-span-12 min-[1200px]:col-span-4" v-if="coupon.type === 'percentage'">
+                                <fct-input
+                                    v-model="coupon.conditions.max_discount_amount"
                                     type="number"
-                                    placeholder="0.00"
-                                    :min="minDiscountAmount"
-                                    :max="maxDiscountAmount"
-                                    step="0.01"
-                                    @input="
-                                      (value) => {
-                                        onChangeCouponInput('amount', value);
-                                      }
-                                    "
-                                    @keypress="(event) => preventInvalidChars(event, true)"
-                                >
-                                  <template #prefix>
-                                      <span
-                                          v-if="coupon.type === 'fixed'"
-                                          v-html="appVars.shop.currency_sign"
-                                      ></span>
-
-                                      <span v-else>%</span>
-                                  </template>
-                                </el-input>
-
-                                <ValidationError
-                                    v-if="validationErrors?.hasOwnProperty('amount')"
+                                    :controls="false"
+                                    :label="translate('Max Discount Amount')"
+                                    :placeholder="translate('leave empty or 0 for no max limit')"
+                                    :class="validationErrors?.hasOwnProperty('max_discount_amount') ? 'is-error' : ''"
                                     :validation-errors="validationErrors"
-                                    field-key="amount"
-                                />
-                              </el-form-item>
-                            </el-col>
-
-                            <el-col :lg="8" v-if="coupon.type === 'percentage'">
-                                <el-form-item :label="translate('Max Discount Amount')">
-                                    <el-input
-                                        v-model="coupon.conditions.max_discount_amount"
-                                        type="number"
-                                        :placeholder="translate('leave empty or 0 for no max limit')"
-                                        :class="validationErrors?.hasOwnProperty('max_discount_amount') ? 'is-error' : ''"
-                                    >
-                                        <template #prefix>
-                                            <span v-html="appVars.shop.currency_sign"></span>
-                                        </template>
-                                    </el-input>
-
-                                    <ValidationError
-                                        :validation-errors="validationErrors"
-                                        field-key="max_discount_amount"
-                                    />
-                                </el-form-item>
-                            </el-col>
+                                    field-key="max_discount_amount"
+                                >
+                                    <template #prefix>
+                                        <span v-html="appVars.shop.currency_sign"></span>
+                                    </template>
+                                </fct-input>
+                            </div>
                         </template>
-                      </el-row>
+                      </div>
                   </CardBody>
                 </CardContainer>
                 
@@ -229,195 +198,129 @@
                 <CardContainer>
                   <CardHeader :title="translate('Usage Restrictions')" border_bottom title_size="small"/>
                   <CardBody class="pb-1.5">
-                    <el-row :gutter="20">
-                        <el-col :lg="12">
-                            <el-form-item>
-                                <template #label>
-                                    <LabelHint
-                                        :title="translate('Min Spend Amount')"
-                                        :content="translate('Minimum spend (subtotal) allowed to use the coupon.')"
-                                    />
-                                </template>
-                                <el-input
-                                    v-model="coupon.conditions.min_purchase_amount"
-                                    type="number"
-                                    placeholder="0.00"
-                                    :class="
-                                      validationErrors?.hasOwnProperty('min_purchase_amount')
-                                        ? 'is-error'
-                                        : ''
-                                    "
-                                >
-                                    <template #prefix>
-                                        <span v-html="appVars.shop.currency_sign"></span>
-                                    </template>
-                                </el-input>
-                                <ValidationError
-                                    v-if="
-                                      validationErrors?.hasOwnProperty('min_purchase_amount')
-                                    "
-                                    :validation-errors="validationErrors"
-                                    field-key="min_purchase_amount"
-                                />
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="12">
-                            <el-form-item>
-                                <template #label>
-                                    <LabelHint
-                                        :title="translate('Max Spend Amount')"
-                                        :content="translate('Set the maximum spend (subtotal) allowed when using the coupon.')"
-                                    />
-                                </template>
-                                <el-input
-                                    v-model="coupon.conditions.max_purchase_amount"
-                                    type="number"
-                                    :placeholder="translate('leave empty or 0 for no max limit')"
-                                    :class="
-                                      validationErrors?.hasOwnProperty('max_purchase_amount')
-                                        ? 'is-error'
-                                        : ''
-                                    "
-                                >
-                                    <template #prefix>
-                                        <span v-html="appVars.shop.currency_sign"></span>
-                                    </template>
-                                </el-input>
-                                <ValidationError
-                                    v-if="
-                                      validationErrors?.hasOwnProperty('max_purchase_amount')
-                                    "
-                                    :validation-errors="validationErrors"
-                                    field-key="max_purchase_amount"
-                                />
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="24">
-                            <el-form-item>
-                                <template #label>
-                                    <LabelHint
-                                        :title="translate('Spend Amount Based On')"
-                                        :content="translate('Coupon_Choose_Min')"
-                                    />
-                                </template>
-                                <el-radio-group v-model="coupon.conditions.min_amount_basis">
-                                    <el-radio value="subtotal" :label="translate('Subtotal (items only)')" />
-                                    <el-radio value="total" :label="translate('Total (includes shipping & fees)')" />
-                                </el-radio-group>
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="12">
-                            <el-form-item
-                                :label="translate('Include Categories')"
-                            >
-                                <el-select
-                                    v-model="coupon.conditions.included_categories"
-                                    multiple
-                                    :placeholder="translate('Any Category')"
-                                    filterable
-                                    remote
-                                    :reserve-keyword="false"
-                                >
-                                    <el-option
-                                        v-for="category in categories"
-                                        :key="category.value"
-                                        :label="category.label"
-                                        :value="category.value"
-                                    ></el-option>
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="12">
-                            <el-form-item
-                                :label="translate('Exclude Categories')"
-                            >
-                                <el-select
-                                    v-model="coupon.conditions.excluded_categories"
-                                    multiple
-                                    :placeholder="translate('No Categories')"
-                                    filterable
-                                    remote
-                                    :reserve-keyword="false"
-                                >
-                                    <el-option
-                                        v-for="category in categories"
-                                        :key="category.value"
-                                        :label="category.label"
-                                        :value="category.value"
-                                    ></el-option>
-                                </el-select>
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="24">
-                            <el-form-item :label="translate('Include Products')">
-                                <ProductVariationSelector v-model="coupon.conditions.included_products" />
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="24">
-                            <el-form-item :label="translate('Excluded Products')">
-                                <ProductVariationSelector v-model="coupon.conditions.excluded_products" />
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="24">
-                            <el-form-item>
-                                <template #label>
-                                    <LabelHint
-                                        :title="translate('By Email Address')"
-                                        :content="translate('Coupon_List_Email')"
-                                    />
-                                </template>
-                                <el-input
-                                    autocomplete="off"
-                                    v-model="coupon.conditions.email_restrictions"
-                                    type="text"
-                                    :placeholder="translate('email1@domain.com, *@special.com, ... or regex pattern')"
-                                >
-                                </el-input>
-                                <ValidationError
-                                    v-if="
-                                      validationErrors?.hasOwnProperty('email_restrictions')
-                                    "
-                                    :validation-errors="validationErrors"
-                                    field-key="email_restrictions"
-                                />
-                            </el-form-item>
-                        </el-col>
-
-                        <el-col :md="24">
-                          <el-form-item>
-                            <template #label>
-                              <LabelHint
-                                  :title="translate('Recurring Coupon')"
-                                  :content="
-                                  translate(
-                                    'Coupon_Mark_Coupon'
-                                  )
+                    <div class="grid grid-cols-12 gap-x-5">
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                            <fct-input
+                                v-model="coupon.conditions.min_purchase_amount"
+                                type="number"
+                                :controls="false"
+                                :label="translate('Min Spend Amount')"
+                                :tooltip="translate('Minimum spend (subtotal) allowed to use the coupon.')"
+                                placeholder="0.00"
+                                :class="
+                                  validationErrors?.hasOwnProperty('min_purchase_amount')
+                                    ? 'is-error'
+                                    : ''
                                 "
-                              />
-                            </template>
-                            <el-checkbox
-                                v-model="coupon.conditions.is_recurring"
-                                :label="translate('Make this coupon recurring')"
-                                true-value="yes"
-                                false-value="no"
+                                :validation-errors="validationErrors"
+                                field-key="min_purchase_amount"
+                            >
+                                <template #prefix>
+                                    <span v-html="appVars.shop.currency_sign"></span>
+                                </template>
+                            </fct-input>
+                        </div>
+
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                            <fct-input
+                                v-model="coupon.conditions.max_purchase_amount"
+                                type="number"
+                                :controls="false"
+                                :label="translate('Max Spend Amount')"
+                                :tooltip="translate('Set the maximum spend (subtotal) allowed when using the coupon.')"
+                                :placeholder="translate('leave empty or 0 for no max limit')"
+                                :class="
+                                  validationErrors?.hasOwnProperty('max_purchase_amount')
+                                    ? 'is-error'
+                                    : ''
+                                "
+                                :validation-errors="validationErrors"
+                                field-key="max_purchase_amount"
+                            >
+                                <template #prefix>
+                                    <span v-html="appVars.shop.currency_sign"></span>
+                                </template>
+                            </fct-input>
+                        </div>
+
+                        <div class="col-span-12">
+                            <fct-choice
+                                v-model="coupon.conditions.min_amount_basis"
+                                type="radio"
+                                :label="translate('Spend Amount Based On')"
+                                :tooltip="translate('Coupon_Choose_Min')"
+                                :options="[
+                                  {label: translate('Subtotal (items only)'), value: 'subtotal'},
+                                  {label: translate('Total (includes shipping & fees)'), value: 'total'}
+                                ]"
                             />
-                          </el-form-item>
-                          <ValidationError
-                              v-if="validationErrors?.hasOwnProperty('is_recurring')"
+                        </div>
+
+                        <div class="col-span-12 min-[992px]:col-span-6">
+                            <fct-select
+                                v-model="coupon.conditions.included_categories"
+                                :label="translate('Include Categories')"
+                                multiple
+                                :placeholder="translate('Any Category')"
+                                filterable
+                                remote
+                                :reserve-keyword="false"
+                                :options="categories"
+                            />
+                        </div>
+
+                        <div class="col-span-12 min-[992px]:col-span-6">
+                            <fct-select
+                                v-model="coupon.conditions.excluded_categories"
+                                :label="translate('Exclude Categories')"
+                                multiple
+                                :placeholder="translate('No Categories')"
+                                filterable
+                                remote
+                                :reserve-keyword="false"
+                                :options="categories"
+                            />
+                        </div>
+
+                        <div class="col-span-12">
+                            <Field :label="translate('Include Products')">
+                                <ProductVariationSelector v-model="coupon.conditions.included_products" />
+                            </Field>
+                        </div>
+
+                        <div class="col-span-12">
+                            <Field :label="translate('Excluded Products')">
+                                <ProductVariationSelector v-model="coupon.conditions.excluded_products" />
+                            </Field>
+                        </div>
+
+                        <div class="col-span-12">
+                            <fct-input
+                                autocomplete="off"
+                                v-model="coupon.conditions.email_restrictions"
+                                type="text"
+                                :label="translate('By Email Address')"
+                                :tooltip="translate('Coupon_List_Email')"
+                                :placeholder="translate('email1@domain.com, *@special.com, ... or regex pattern')"
+                                :validation-errors="validationErrors"
+                                field-key="email_restrictions"
+                            />
+                        </div>
+
+                        <div class="col-span-12">
+                          <fct-choice
+                              v-model="coupon.conditions.is_recurring"
+                              :label="translate('Recurring Coupon')"
+                              :tooltip="translate('Coupon_Mark_Coupon')"
+                              true-value="yes"
+                              false-value="no"
                               :validation-errors="validationErrors"
                               field-key="is_recurring"
-                          />
-                        </el-col>
+                          >{{ translate('Make this coupon recurring') }}</fct-choice>
+                        </div>
 
 
-                    </el-row>
+                    </div>
                     
                   </CardBody>
                 </CardContainer>
@@ -425,142 +328,107 @@
                 <CardContainer>
                   <CardHeader :title="translate('Maximum Discount Uses')" border_bottom title_size="small"/>
                   <CardBody class="pb-1.5">
-                      <el-row :gutter="20">
-                        <el-col :lg="12">
-                          <el-form-item>
-                            <template #label>
-                              <LabelHint
-                                  :title="translate('Total Limit')"
-                                  :content="
-                                  translate(
-                                    'Total number of times this coupon can be redeemed across the entire store.'
-                                  )
-                                "
-                              />
-                            </template>
-                            <el-input
-                                v-model="coupon.conditions.max_uses"
-                                type="number"
-                                :placeholder="translate('Total limit')"
-                                :class="
-                                  validationErrors?.hasOwnProperty('max_uses')
-                                    ? 'is-error'
-                                    : '' || usageError
-                                "
-                                :min="minLimit"
-                                :max="maxLimit"
-                                @input="
-                                  (value) => {
-                                    onChangeCouponInput('max_uses', value);
-                                  }
-                                "
-                                @keypress="preventInvalidChars"
-                            ></el-input>
-
-                            <ValidationError
-                              v-if="validationErrors?.hasOwnProperty('max_uses')"
-                              :validation-errors="validationErrors"
-                              field-key="max_uses"
-                            />
-                          </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="12">
-                          <el-form-item>
-                            <template #label>
-                              <LabelHint
-                                  :title="translate('Per Logged in User Limit')"
-                                  :content="
-                                  translate('Coupon_Maximum_Logged')
-                                "
-                              />
-                            </template>
-                            <el-input
-                                v-model="coupon.conditions.max_per_customer"
-                                type="number"
-                                :placeholder="translate('Max limit per logged in user')"
-                                :class="
-                                validationErrors.hasOwnProperty('max_per_customer')
+                      <div class="grid grid-cols-12 gap-x-5">
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                          <fct-input
+                              v-model="coupon.conditions.max_uses"
+                              type="number"
+                              :controls="false"
+                              :label="translate('Total Limit')"
+                              :tooltip="translate('Total number of times this coupon can be redeemed across the entire store.')"
+                              :placeholder="translate('Total limit')"
+                              :class="
+                                validationErrors?.hasOwnProperty('max_uses')
                                   ? 'is-error'
-                                  : ''
+                                  : '' || usageError
                               "
-                                :min="minLimit"
-                                :max="maxLimit"
-                                @input="
+                              :min="minLimit"
+                              :max="maxLimit"
+                              @input="
                                 (value) => {
-                                  onChangeCouponInput('max_per_customer', value);
+                                  onChangeCouponInput('max_uses', value);
                                 }
                               "
-                                @keypress="preventInvalidChars"
-                            ></el-input>
-                            <ValidationError
-                                :validation-errors="validationErrors"
-                                field-key="max_per_customer"
-                            />
-                          </el-form-item>
-                        </el-col>
-                      </el-row>
+                              @keypress="preventInvalidChars"
+                              :validation-errors="validationErrors"
+                              field-key="max_uses"
+                          />
+                        </div>
+
+                        <div class="col-span-12 min-[1200px]:col-span-6">
+                          <fct-input
+                              v-model="coupon.conditions.max_per_customer"
+                              type="number"
+                              :controls="false"
+                              :label="translate('Per Logged in User Limit')"
+                              :tooltip="translate('Coupon_Maximum_Logged')"
+                              :placeholder="translate('Max limit per logged in user')"
+                              :class="
+                              validationErrors.hasOwnProperty('max_per_customer')
+                                ? 'is-error'
+                                : ''
+                            "
+                              :min="minLimit"
+                              :max="maxLimit"
+                              @input="
+                              (value) => {
+                                onChangeCouponInput('max_per_customer', value);
+                              }
+                            "
+                              @keypress="preventInvalidChars"
+                              :validation-errors="validationErrors"
+                              field-key="max_per_customer"
+                          />
+                        </div>
+                      </div>
                   </CardBody>
                 </CardContainer>
                 
                 <CardContainer>
                   <CardHeader :title="translate('Additional Information')" border_bottom title_size="small"/>
                   <CardBody class="pb-1.5">
-                      <el-row :gutter="20">
-                        <el-col :lg="24">
-                          <el-form-item :label="translate('Status')">
-                              <el-radio-group v-model="coupon.status">
-                                <el-radio value="active" :label="_x('Active', 'Coupon status')" />
-                                <el-radio value="disabled" :label="_x('Disabled', 'Coupon status')" />
-                                <el-radio disabled value="expired" :label="_x('Expired', 'Coupon status')" />
-                              </el-radio-group>
+                      <div class="grid grid-cols-12 gap-x-5">
+                        <div class="col-span-12">
+                          <fct-choice
+                              v-model="coupon.status"
+                              type="radio"
+                              :label="translate('Status')"
+                              :options="[
+                                {label: _x('Active', 'Coupon status'), value: 'active'},
+                                {label: _x('Disabled', 'Coupon status'), value: 'disabled'},
+                                {label: _x('Expired', 'Coupon status'), value: 'expired', disabled: true}
+                              ]"
+                              :validation-errors="validationErrors"
+                              field-key="status"
+                          />
+                        </div>
 
-                            <ValidationError
-                                :validation-errors="validationErrors"
-                                field-key="status"
-                            />
-                          </el-form-item>
-                        </el-col>
+                        <div class="col-span-12">
+                          <fct-input
+                              v-model="coupon.notes"
+                              type="textarea"
+                              :label="translate('Internal Notes')"
+                              :placeholder="translate('Enter note')"
+                              :class="
+                              validationErrors?.hasOwnProperty('notes')
+                                ? 'is-error'
+                                : ''
+                            "
+                              :validation-errors="validationErrors"
+                              field-key="notes"
+                          />
+                        </div>
 
-                        <el-col :lg="24">
-                          <el-form-item :label="translate('Internal Notes')">
-                            <el-input
-                                v-model="coupon.notes"
-                                type="textarea"
-                                :placeholder="translate('Enter note')"
-                                :class="
-                                validationErrors?.hasOwnProperty('notes')
-                                  ? 'is-error'
-                                  : ''
-                              "
-                            ></el-input>
-
-                            <ValidationError
-                                :validation-errors="validationErrors"
-                                field-key="notes"
-                            />
-                          </el-form-item>
-                        </el-col>
-
-                        <el-col :lg="24">
-                          <el-form-item>
-                            <template #label>
-                              <LabelHint
-                                  :title="translate('Stackable')"
-                                  :content="
-                                  translate(
-                                    'Yes means the coupon can be applied with other coupons'
-                                  )
-                                "
-                              />
-                            </template>
-                            <el-radio-group v-model="coupon.stackable">
-                              <el-radio value="yes">{{ translate("Yes") }}</el-radio>
-                              <el-radio value="no">{{ translate("No") }}</el-radio>
-                            </el-radio-group>
-                          </el-form-item>
-                          <ValidationError
-                              v-if="validationErrors?.hasOwnProperty('stackable')"
+                        <div class="col-span-12">
+                          <fct-choice
+                              v-model="coupon.stackable"
+                              type="radio"
+                              :label="translate('Stackable')"
+                              :tooltip="translate('Yes means the coupon can be applied with other coupons')"
+                              :options="[
+                                {label: translate('Yes'), value: 'yes'},
+                                {label: translate('No'), value: 'no'}
+                              ]"
                               :validation-errors="validationErrors"
                               field-key="stackable"
                           />
@@ -589,8 +457,8 @@
                             field-key="show_on_checkout"
                           /> -->
 
-                        </el-col>
-                      </el-row>
+                        </div>
+                      </div>
                   </CardBody>
                 </CardContainer>
 
@@ -598,7 +466,7 @@
 
 
 
-              </el-form>
+              </div>
             </div><!-- .coupon main -->
 
             <div class="fct-add-edit-coupon-aside">
@@ -661,58 +529,48 @@
                         title_size="small"
                     />
                     <CardBody class="pb-1.5">
-                      <el-form label-position="top">
-                        <el-row :gutter="20">
-                          <el-col :lg="24">
-                            <el-form-item :label="translate('Start Date & Time')">
-                              <el-date-picker
-                                  v-model="coupon.start_date"
-                                  type="datetime"
-                                  value-format="YYYY-MM-DDTHH:mm:ssZ"
-                                  :placeholder="translate('Start date & time')"
-                                  @change="setDefaultStatus"
-                                  :disabled-date="disabledStartDate"
-                              ></el-date-picker>
-                            </el-form-item>
-                          </el-col>
+                      <div>
+                          <div>
+                            <fct-date-picker
+                                v-model="coupon.start_date"
+                                type="datetime"
+                                value-format="YYYY-MM-DD HH:mm:ss"
+                                :label="translate('Start Date & Time')"
+                                :placeholder="translate('Start date & time')"
+                                @change="setDefaultStatus"
+                                :disabled-date="disabledStartDate"
+                            />
+                          </div>
 
-                          <el-col :lg="24">
-                            <el-form-item>
-                              <el-checkbox
-                                  v-model="isEndDateEnabled"
-                                  :label="translate('Set end date & time')"
-                                  @change="
-                                  (value) => {
-                                    // changes_made += coupon.end_date ? 1 : 0;
-                                    if (!value) {
-                                      coupon.end_date = null;
-                                    }
+                          <div class="mb-[18px] flex">
+                            <fct-choice
+                                v-model="isEndDateEnabled"
+                                @change="
+                                (value) => {
+                                  // changes_made += coupon.end_date ? 1 : 0;
+                                  if (!value) {
+                                    coupon.end_date = null;
                                   }
-                                "
-                              />
-                            </el-form-item>
-                          </el-col>
+                                }
+                              "
+                            >{{ translate('Set end date & time') }}</fct-choice>
+                          </div>
                           <template v-if="isEndDateEnabled">
-                            <el-col :lg="24">
-                              <el-form-item :label="translate('End Date & Time')">
-                                <el-date-picker
-                                    v-model="coupon.end_date"
-                                    type="datetime"
-                                    value-format="YYYY-MM-DDTHH:mm:ssZ"
-                                    :placeholder="translate('End date & time')"
-                                    @change="setDefaultStatus"
-                                    :disabled-date="disabledEndDate"
-                                ></el-date-picker>
-                                <ValidationError
-                                    v-if="validationErrors.hasOwnProperty('end_date')"
-                                    :validation-errors="validationErrors"
-                                    field-key="end_date"
-                                />
-                              </el-form-item>
-                            </el-col>
+                            <div>
+                              <fct-date-picker
+                                  v-model="coupon.end_date"
+                                  type="datetime"
+                                  value-format="YYYY-MM-DD HH:mm:ss"
+                                  :label="translate('End Date & Time')"
+                                  :placeholder="translate('End date & time')"
+                                  @change="setDefaultStatus"
+                                  :disabled-date="disabledEndDate"
+                                  :validation-errors="validationErrors"
+                                  field-key="end_date"
+                              />
+                            </div>
                           </template>
-                        </el-row>
-                      </el-form>
+                      </div>
                     </CardBody>
                   </CardContainer>
                 </div>
@@ -763,22 +621,25 @@ import translate, {_x} from "@/utils/translator/Translator";
 import { Container as CardContainer, Header as CardHeader, Body as CardBody } from '@/Bits/Components/Card/Card.js';
 import LabelHint from "@/Bits/Components/LabelHint.vue";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import Rest from "@/utils/http/Rest";
 import CopyToClipboard from "@/Bits/Components/CopyToClipboard.vue";
 import DynamicTemplates from "@/Bits/Components/DynamicTemplates/DynamicTemplates.vue";
-import dayjs from "dayjs";
 import Notify from "@/utils/Notify";
 import ProductVariationSelector from "@/Bits/Components/ProductVariationSelector.vue";
-import dayjs_plugin_utc from "dayjs/plugin/utc";
-import dayjs_plugin_timezone from "dayjs/plugin/timezone";
+import {storeNow, storeWallToUtc, toStoreTimezone} from "@/utils/dateFormats";
 import {formatNumber} from "@/Bits/productService";
 import SingleCouponLoader from "@/Modules/Coupons/SingleCouponLoader.vue";
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
 import Activity from "@/Modules/Orders/Activity.vue";
+import {couponStatusForDates} from "@/Modules/Coupons/couponStatus";
 
+// The pickers hold zone-less text in the store timezone; the API takes UTC.
+const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
-dayjs.extend(dayjs_plugin_utc);
-dayjs.extend(dayjs_plugin_timezone);
+// The picker hands over a browser-local Date for the calendar day.
+const toDay = (date) => String(date.getFullYear()).padStart(4, "0") + "-" +
+    String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
 
 export default {
   name: "AddOrEditCoupon",
@@ -788,6 +649,7 @@ export default {
     CardBody,
     LabelHint,
     ValidationError,
+    Field,
     CopyToClipboard,
     DynamicTemplates,
     SaveBar,
@@ -988,49 +850,44 @@ export default {
     setDefaultStatus(){
       const currentDate = new Date();
       const startDate = this.coupon.start_date
-          ? new Date(this.coupon.start_date)
+          ? storeWallToUtc(this.coupon.start_date).toDate()
           : null;
       const endDate = this.coupon.end_date
-          ? new Date(this.coupon.end_date)
+          ? storeWallToUtc(this.coupon.end_date).toDate()
           : null;
 
-      if (this.coupon.status === "disabled") {
+      // A turned-off coupon stays off; an "inactive" one shows and saves as Disabled.
+      const wasOff = this.coupon.status === "disabled" || this.coupon.status === "inactive";
+      this.coupon.status = couponStatusForDates(this.coupon.status, startDate, endDate, currentDate);
+      if (wasOff) {
         return;
       }
 
       if (endDate === null) {
         this.isEndDateEnabled = false;
       }
-
-      if (!startDate && !endDate) {
-        this.coupon.status = "active";
-      } else if (startDate && currentDate < startDate) {
-        this.coupon.status = "scheduled";
-      } else if (endDate && currentDate > endDate) {
-        this.coupon.status = "expired";
-      } else {
-        this.coupon.status = "active";
-      }
     },
     disabledStartDate(date){
-      // return date < new Date();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Set time to midnight to only compare dates
-      return date && date.getTime() < today.getTime();
+      return !!date && toDay(date) < storeNow().format("YYYY-MM-DD");
     },
     disabledEndDate(date) {
-      // return date < this.coupon.start_date;
-      const today = this.coupon.start_date
-          ? new Date(this.coupon.start_date)
-          : new Date();
-      today.setHours(0, 0, 0, 0); // Set time to midnight to only compare dates
-      return date && date.getTime() < today.getTime();
+      const from = this.coupon.start_date
+          ? String(this.coupon.start_date).slice(0, 10)
+          : storeNow().format("YYYY-MM-DD");
+      return !!date && toDay(date) < from;
     },
-    formatDate(date){
-      if (!date || date === "0000-00-00 00:00:00") {
+    toUtcString(wall){
+      if (!wall || wall === "0000-00-00 00:00:00") {
         return null;
       }
-      return dayjs(date).format("YYYY-MM-DD HH:mm:ssZ");
+      const utc = storeWallToUtc(wall);
+      return utc.isValid() ? utc.format(DATE_FORMAT) : null;
+    },
+    toWallString(utcString){
+      if (!utcString || utcString === "0000-00-00 00:00:00") {
+        return null;
+      }
+      return toStoreTimezone(utcString).format(DATE_FORMAT);
     },
     formatAmount(){
       if (this.coupon.amount === null) {
@@ -1091,15 +948,14 @@ export default {
       this.changes_made = 0;
       return window.location.reload();
     },
-    validateAndFormatDate(date){
-      let formattedDate = this.formatDate(date);
-      return formattedDate !== null && formattedDate !== "Invalid date"
-          ? formattedDate
-          : null;
-    },
-    validateDate(){
-      this.coupon.start_date = this.validateAndFormatDate(this.coupon.start_date);
-      this.coupon.end_date = this.validateAndFormatDate(this.coupon.end_date);
+    // Dates go out as UTC in the payload only; the form keeps its store-timezone text.
+    couponPayload(){
+      return {
+        ...this.coupon,
+        start_date: this.toUtcString(this.coupon.start_date),
+        end_date: this.toUtcString(this.coupon.end_date),
+        metaValue: this.$refs.dynamic_templates?.getFormStates()
+      };
     },
     fetchTerms(){
       Rest.get("products/fetch-term")
@@ -1122,34 +978,14 @@ export default {
 
       Rest.get(`coupons/${this.coupon_id}`, {})
           .then((response) => {
-
-            const startDateRaw = response?.coupon?.start_date;
-            const endDateRaw = response?.coupon?.end_date;
-
-
-            if (startDateRaw && '0000-00-00 00:00:00' !== startDateRaw) {
-              response.coupon.start_date = dayjs.utc(startDateRaw).tz(dayjs.tz.guess()).format("YYYY-MM-DD HH:mm:ss");
-            }
-
-            if (endDateRaw && '0000-00-00 00:00:00' !== endDateRaw) {
-              response.coupon.end_date = dayjs.utc(endDateRaw).tz(dayjs.tz.guess()).format("YYYY-MM-DD HH:mm:ss")
-            }
-
-
             response = response.coupon;
             this.coupon = response;
-            this.coupon.start_date = this.formatDate(this.coupon.start_date);
-            this.coupon.end_date = this.formatDate(this.coupon.end_date);
+            this.coupon.start_date = this.toWallString(this.coupon.start_date);
+            this.coupon.end_date = this.toWallString(this.coupon.end_date);
 
             if (this.coupon.end_date !== null) {
               this.isEndDateEnabled = true;
             }
-
-            this.coupon.end_date =
-                this.coupon.end_date !== null &&
-                this.coupon.end_date !== "Invalid date"
-                    ? this.coupon.end_date
-                    : null;
 
             // Parse excluded and included products
             this.coupon.conditions.excluded_products = this.parseProductIds(
@@ -1187,7 +1023,6 @@ export default {
     },
     updateCoupon() {
       this.updating = true;
-      this.validateDate();
 
       this.$refs.dynamic_templates?.beforeUpdatingData({
         data: {
@@ -1195,12 +1030,7 @@ export default {
         },
       })
 
-      Rest.put(`coupons/${this.coupon_id}`, {
-        ...{
-          ...this.coupon,
-          metaValue: this.$refs.dynamic_templates?.getFormStates()
-        }
-      })
+      Rest.put(`coupons/${this.coupon_id}`, this.couponPayload())
           .then((response) => {
             this.$refs.dynamic_templates?.afterUpdatingData({
               coupon: this.coupon,
@@ -1231,7 +1061,6 @@ export default {
     },
     addCoupon(){
       this.creating = true;
-      this.validateDate();
 
       this.$refs.dynamic_templates?.beforeUpdatingData({
         data: {
@@ -1239,12 +1068,7 @@ export default {
         },
       })
 
-      Rest.post('coupons', {
-        ...{
-          ...this.coupon,
-          metaValue: this.$refs.dynamic_templates?.getFormStates()
-        }
-      })
+      Rest.post('coupons', this.couponPayload())
           .then(async (response) => {
             this.$refs.dynamic_templates?.afterUpdatingData({
               coupon: this.coupon,

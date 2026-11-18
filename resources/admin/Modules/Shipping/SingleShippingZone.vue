@@ -7,7 +7,7 @@
             {{ translate('Manual carrier') }}
           </el-breadcrumb-item>
           <el-breadcrumb-item>
-            {{ isEdit ? translate('Edit Shipping Zone') : translate('Add Shipping Zone') }}
+            <span role="heading" aria-level="1">{{ isEdit ? translate('Edit Shipping Zone') : translate('Add Shipping Zone') }}</span>
           </el-breadcrumb-item>
           <el-breadcrumb-item v-if="isEdit">
             {{ zoneForm.name }}
@@ -16,10 +16,10 @@
       </template>
 
       <template #action>
-        <el-button type="primary" @click="saveZone" :loading="saving" size="small">
+        <fct-button type="primary" @click="saveZone" :loading="saving" size="small">
           <span v-if="!saving" class="cmd">⌘s</span>
           {{ saving ? translate('Saving') : translate('Save') }}
-        </el-button>
+        </fct-button>
       </template>
     </SettingsHeader>
 
@@ -42,7 +42,7 @@
             <CardBody>
               <el-form :model="zoneForm" :rules="rules" ref="zoneFormRef" label-position="top" require-asterisk-position="right">
                 <el-form-item :label="translate('Zone Name')" prop="name">
-                  <el-input v-model="zoneForm.name" :placeholder="translate('Enter zone name')"></el-input>
+                  <fct-input v-model="zoneForm.name" :placeholder="translate('Enter zone name')"/>
                 </el-form-item>
 
                 <el-form-item :label="translate('Coverage')" prop="region" class="mt-2 mb-0" required>

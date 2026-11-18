@@ -22,7 +22,6 @@ const settingsRoutes = [
     { path: '/settings/tax_settings/tax_rates',              title: translate('Tax Rates'),                      perm: 'store/settings' },
     { path: '/settings/tax_settings/eu',                     title: translate('EU VAT Settings'),                perm: 'store/settings' },
     { path: '/settings/storage',                             title: translate('Storage Providers'),              perm: 'is_super_admin' },
-    { path: '/settings/coupons',                             title: translate('Coupon Settings'),                perm: 'is_super_admin' },
 ];
 
 const Settings = settingsRoutes

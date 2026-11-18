@@ -78,7 +78,7 @@ class WriteGuard
         if (empty($token)) {
             return MCPHelper::error(
                 'confirmation_required',
-                __('This action changes data. Call again with dry_run:true to preview, then pass the returned confirm_token to execute.', 'fluent-cart'),
+                'This action changes data. Call again with dry_run:true to preview, then pass the returned confirm_token to execute.',
                 ['next_step' => 'set dry_run:true']
             );
         }
@@ -88,7 +88,7 @@ class WriteGuard
         if (!is_array($stored) || empty($stored['token'])) {
             return MCPHelper::error(
                 'confirmation_expired',
-                __('Your confirmation has expired. Run a fresh dry_run to preview and get a new confirm_token.', 'fluent-cart'),
+                'Your confirmation has expired. Run a fresh dry_run to preview and get a new confirm_token.',
                 ['next_step' => 'set dry_run:true']
             );
         }
@@ -96,7 +96,7 @@ class WriteGuard
         if (!hash_equals((string) $stored['token'], (string) $token)) {
             return MCPHelper::error(
                 'confirmation_invalid',
-                __('The confirm_token does not match. Run a fresh dry_run.', 'fluent-cart'),
+                'The confirm_token does not match. Run a fresh dry_run.',
                 ['next_step' => 'set dry_run:true']
             );
         }
@@ -105,7 +105,7 @@ class WriteGuard
             delete_transient(self::confirmKey($tool, $entityKey));
             return MCPHelper::error(
                 'state_changed',
-                __('The record changed since you previewed it. Run a fresh dry_run to see the current state before executing.', 'fluent-cart'),
+                'The record changed since you previewed it. Run a fresh dry_run to see the current state before executing.',
                 ['next_step' => 'set dry_run:true']
             );
         }
@@ -192,7 +192,7 @@ class WriteGuard
 
         return MCPHelper::error(
             'live_gateway_blocked',
-            __('This is a live (real-money) gateway action and live mutations are disabled. Enable the mcp_allow_live_gateway option or the fluent_cart/mcp_allow_live_gateway filter to permit live refunds and cancellations.', 'fluent-cart'),
+            'This is a live (real-money) gateway action and live mutations are disabled. Enable the mcp_allow_live_gateway option or the fluent_cart/mcp_allow_live_gateway filter to permit live refunds and cancellations.',
             [
                 'payment_mode' => 'live',
                 'hint'         => 'Test-mode records can be refunded or cancelled without this flag.',

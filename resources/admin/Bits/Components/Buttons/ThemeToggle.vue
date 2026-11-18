@@ -69,10 +69,10 @@ onBeforeUnmount(() => {
 <template>
 
   <div class="fct-theme-button-container">
-    <el-dropdown
+    <fct-dropdown
         placement="bottom-end"
         trigger="click"
-        popper-class="fct-dropdown"
+        :items="themeOptions.map((option) => ({command: option.value, label: option.label, icon: option.icon, class: {active: currentTheme === option.value}}))"
         @command="handleThemeChange"
     >
       <div class="theme-selected-button">
@@ -80,21 +80,7 @@ onBeforeUnmount(() => {
         <DynamicIcon v-else-if="currentTheme === 'dark'" name="Moon"/>
         <DynamicIcon v-else-if="currentTheme === 'system'" name="Tools"/>
       </div>
-
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item
-              v-for="option in themeOptions"
-              :key="option.value"
-              :command="option.value"
-              :class="{ 'active': currentTheme === option.value }"
-          >
-            <DynamicIcon :name="option.icon" />
-            {{ option.label }}
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+    </fct-dropdown>
 
   </div>
 

@@ -173,19 +173,16 @@ class CreateOrderStockEffectsCest
             ],
         ]);
 
-        // validateStockStatus throws an uncaught Exception that wpfluent's
-        // Route::handleUnknownException converts to status 500 with
-        // code='plugin_exception' (vendor/wpfluent/framework/src/WPFluent/Http/Route.php:955-972).
+        // The admin route answers a stock rejection as a validation error, as checkout does.
         Assert::assertSame(
-            500,
+            422,
             $status,
-            'out-of-stock rejection must land as the framework\'s 500/plugin_exception envelope. Body: ' . wp_json_encode($body)
+            'out-of-stock rejection must be a 422 validation error, not a server error. Body: ' . wp_json_encode($body)
         );
-        Assert::assertArrayHasKey('code', (array) $body, 'rejection envelope must carry a code key. Body: ' . wp_json_encode($body));
-        Assert::assertSame(
-            'plugin_exception',
-            (string) ($body['code'] ?? ''),
-            'rejection envelope must use the plugin_exception code per the framework error contract. Body: ' . wp_json_encode($body)
+        Assert::assertStringContainsString(
+            '[' . $product->post_title . ']',
+            (string) ($body['message'] ?? ''),
+            'rejection message must name the product. Body: ' . wp_json_encode($body)
         );
         Assert::assertArrayHasKey('message', (array) $body, 'rejection envelope must carry a human-readable message. Body: ' . wp_json_encode($body));
         $message = (string) ($body['message'] ?? '');
@@ -241,19 +238,16 @@ class CreateOrderStockEffectsCest
             ],
         ]);
 
-        // validateStockQuantity throws an uncaught Exception that wpfluent's
-        // Route::handleUnknownException converts to status 500 with
-        // code='plugin_exception' (vendor/wpfluent/framework/src/WPFluent/Http/Route.php:955-972).
+        // The admin route answers a stock rejection as a validation error, as checkout does.
         Assert::assertSame(
-            500,
+            422,
             $status,
-            'qty-exceeds-stock rejection must land as the framework\'s 500/plugin_exception envelope. Body: ' . wp_json_encode($body)
+            'qty-exceeds-stock rejection must be a 422 validation error, not a server error. Body: ' . wp_json_encode($body)
         );
-        Assert::assertArrayHasKey('code', (array) $body, 'rejection envelope must carry a code key. Body: ' . wp_json_encode($body));
-        Assert::assertSame(
-            'plugin_exception',
-            (string) ($body['code'] ?? ''),
-            'rejection envelope must use the plugin_exception code per the framework error contract. Body: ' . wp_json_encode($body)
+        Assert::assertStringContainsString(
+            '[' . $product->post_title . ']',
+            (string) ($body['message'] ?? ''),
+            'rejection message must name the product. Body: ' . wp_json_encode($body)
         );
         Assert::assertArrayHasKey('message', (array) $body, 'rejection envelope must carry a human-readable message. Body: ' . wp_json_encode($body));
         $message = (string) ($body['message'] ?? '');

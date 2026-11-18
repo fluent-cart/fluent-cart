@@ -74,6 +74,12 @@ class FilterState extends Model {
     return this.data.activeFilter || null;
   }
 
+  // The filter left open on another report stays closed where this report does not read it
+  get openFilter() {
+    const filter = this.data.activeFilter;
+    return filter && this.shouldRenderOption(filter) ? filter : null;
+  }
+
   selectFilterOption(filterOption) {
     const selectedFilter = this.activeFilterOptions;
 
@@ -374,6 +380,12 @@ class FilterState extends Model {
     const route = useRoute();
 
     if (disableRoutes.includes(route.name)) {
+      return false;
+    }
+
+    // An add-on report lists the filters it reads; the others would show but change nothing
+    const allowed = route.meta?.report_filters;
+    if (Array.isArray(allowed) && !allowed.includes(filterOption.value)) {
       return false;
     }
 

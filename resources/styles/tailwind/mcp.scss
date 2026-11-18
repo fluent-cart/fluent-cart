@@ -41,3 +41,32 @@
         @apply text-system-mid dark:text-gray-300;
     }
 }
+
+.fct-mcp-hub {
+    @apply border border-solid border-gray-outline rounded-[12px] p-5 dark:border-dark-400;
+    &__title {
+        @apply text-[15px] font-medium mb-1.5 mt-0;
+    }
+    &__text {
+        @apply text-sm leading-5 mt-0 mb-3;
+    }
+    &__actions {
+        @apply flex items-center justify-between gap-3 flex-wrap mb-3;
+    }
+    &__products {
+        @apply border-0 border-t border-solid border-gray-outline mt-4 pt-4 dark:border-dark-400;
+    }
+    &__product {
+        @apply flex items-center justify-between gap-3 py-1.5 text-sm;
+    }
+    a {
+        @apply dark:text-blue-300;
+    }
+}
+
+// .fct-form-group is a grid whose one column grows to its widest child. A snippet is a
+// <pre> with long lines, so the column grew past the drawer and the whole body scrolled
+// sideways. The column now takes the drawer's width and the snippet scrolls inside itself.
+.fct-mcp-settings-drawer .fct-form-group {
+    grid-template-columns: minmax(0, 1fr);
+}

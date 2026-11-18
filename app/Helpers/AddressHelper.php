@@ -406,6 +406,85 @@ class AddressHelper
     }
 
     /**
+     * Whether an enabled carrier builds its own rate request, so any checkout
+     * form field may change its quote (ProvidesLiveRates::liveRatesRequest()).
+     */
+    public static function carriersBuildRequests(): bool
+    {
+        foreach (CarrierManager::getInstance()->enabled() as $carrier) {
+            if (method_exists($carrier, 'buildsLiveRatesRequests') && $carrier->buildsLiveRatesRequests()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The checkout fields a live carrier may quote from, each with where the cart
+     * stores it. Checkout saves exactly these, plus the shipping and payment method.
+     *
+     * @return array<string, string> field name => checkout_data path
+     */
+    public static function quoteFormFields(): array
+    {
+        $fields = [
+            'ship_to_different'             => 'form_data.ship_to_different',
+            'billing_email'                 => 'form_data.billing_email',
+            'billing_first_name'            => 'form_data.billing_first_name',
+            'billing_last_name'             => 'form_data.billing_last_name',
+            'billing_address_id'            => 'form_data.billing_address_id',
+            'shipping_address_id'           => 'form_data.shipping_address_id',
+            'billing_company'               => 'form_data.billing_company',
+            'order_notes'                   => 'form_data.order_notes',
+            'billing_company_name'          => 'form_data.billing_company_name',
+            'billing_legal_registration_id' => 'form_data.billing_legal_registration_id',
+            'is_business'                   => 'form_data.is_business',
+            'fct_billing_tax_id'            => 'tax_data.vat_number',
+        ];
+
+        foreach (['full_name', 'country', 'address_1', 'address_2', 'state', 'city', 'postcode', 'company_name', 'phone'] as $addressField) {
+            $fields['billing_' . $addressField] = 'form_data.billing_' . $addressField;
+            $fields['shipping_' . $addressField] = 'form_data.shipping_' . $addressField;
+        }
+
+        return $fields;
+    }
+
+    /**
+     * quoteFormFields() read from a cart's checkout_data, by field name.
+     */
+    public static function checkoutFormFields(array $checkoutData): array
+    {
+        $values = [];
+        foreach (static::quoteFormFields() as $field => $path) {
+            $value = Arr::get($checkoutData, $path);
+            if ($value !== null) {
+                $values[$field] = $value;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * The checkout form for live carriers (CarrierContract::getRates 'form_data'):
+     * the quoteFormFields() that are scalar, as plain text, at most 255 characters.
+     * In quoteFormFields() order, so display and Place Order build the same request.
+     */
+    public static function quoteFormData(array $formData): array
+    {
+        $clean = [];
+        foreach (array_keys(static::quoteFormFields()) as $key) {
+            if (isset($formData[$key]) && is_scalar($formData[$key])) {
+                $clean[$key] = mb_substr(sanitize_text_field((string) $formData[$key]), 0, 255);
+            }
+        }
+
+        return $clean;
+    }
+
+    /**
      * The contact a live carrier quote uses, read from checkout form data. All ''
      * until every field quoteContactFields() lists is filled, so a half-typed
      * contact never makes a new quote.
@@ -467,7 +546,8 @@ class AddressHelper
         if (!$destination && $cart) {
             $cartAddress = (array) $cart->getShippingAddress();
             if (strcasecmp((string) Arr::get($cartAddress, 'country', ''), (string) $country) === 0) {
-                $destination = array_merge($cartAddress, static::quoteContact((array) Arr::get((array) $cart->checkout_data, 'form_data', [])));
+                $formData = (array) Arr::get((array) $cart->checkout_data, 'form_data', []);
+                $destination = array_merge($cartAddress, static::quoteContact($formData), ['form_data' => static::checkoutFormFields((array) $cart->checkout_data)]);
             }
         }
 
@@ -493,6 +573,12 @@ class AddressHelper
             return Arr::only((array) $item, ['object_id', 'post_id', 'quantity', 'fulfillment_type', 'other_info', 'unit_price', 'subtotal']);
         }, $args['items']);
         $requestKey = md5(serialize([array_merge($args, ['items' => $parcel]), CartCurrency::revisionOfQuote($quote)]));
+        // After $requestKey: checkout's rates_key must not change on every keystroke.
+        $args['form_data'] = static::quoteFormData((array) Arr::get($destination, 'form_data', []));
+        // Read-only context: items and destination are what is priced, and the
+        // cache follows the carrier's request, so the cart never keys a quote.
+        $args['cart'] = $cart ?: CartHelper::getCart();
+        $formKey = md5(serialize($args['form_data']));
         if (static::$reuseCarrierQuotes) {
             $args['reuse_quote'] = true;
         }
@@ -531,7 +617,7 @@ class AddressHelper
 
             // Zone rates are read fresh. Live rates are held for the request so the
             // rate validated is the rate charged, even if the carrier answers differently.
-            $cacheKey = $slug . '|' . $carrierArgs['currency'] . '|' . $requestKey . '|' . (isset($carrierArgs['fetch_source']) ? $carrierArgs['fetch_source'] : '');
+            $cacheKey = $slug . '|' . $carrierArgs['currency'] . '|' . $requestKey . '|' . $formKey . '|' . (isset($carrierArgs['fetch_source']) ? $carrierArgs['fetch_source'] : '');
             if ($slug !== Shipment::CARRIER_MANUAL && array_key_exists($cacheKey, static::$carrierRateCache)) {
                 $liveRates = array_merge($liveRates, static::$carrierRateCache[$cacheKey]);
                 $pending = array_merge($pending, static::$carrierPendingCache[$cacheKey]);
@@ -581,16 +667,64 @@ class AddressHelper
             $pending = array_merge($pending, $carrierPending);
         }
 
-        static::$rateSourceState = ['key' => md5($requestKey), 'pending' => $pending];
+        // A carrier that builds its own request may quote from any form field, so its
+        // list changes with the form; other stores keep one key per address.
+        static::$rateSourceState = ['key' => md5($requestKey . (static::carriersBuildRequests() ? '|' . $formKey : '')), 'pending' => $pending];
 
         // Zone methods keep the merchant's order; live rates follow, cheapest first.
-        return array_merge($rates, static::sortRatesByCost($liveRates));
+        $rates = array_merge($rates, static::sortRatesByCost($liveRates));
+
+        // The filter sees only rates this state can use. State-limited ones pass
+        // through untouched, so getShippingMethods() can still ask for a state.
+        $byKey = [];
+        $stateLimited = [];
+        foreach ($rates as $rate) {
+            $states = (array) Arr::get($rate, 'states', []);
+            if ($states && !($state && in_array($state, $states))) {
+                $stateLimited[] = $rate;
+                continue;
+            }
+            $byKey[$rate['carrier'] . '|' . $rate['id']] = $rate;
+        }
+        $rates = array_values($byKey);
+
+        /**
+         * Hide or reorder the shipping rates offered for this cart. Checkout and
+         * Place Order read the same list, so a hidden rate can't be picked.
+         *
+         * @since 2.4.0
+         *
+         * @param array[] $rates   Rate arrays (see CarrierContract::getRates), cost in cents.
+         * @param array   $context ['items' => cart lines, 'destination' => address args,
+         *                         'currency' => checkout ISO]
+         */
+        $filtered = apply_filters('fluent_cart/shipping/available_rates', $rates, [
+            'items'       => $args['items'],
+            'destination' => Arr::except($args, ['items', 'currency', 'base_currency', 'reuse_quote', 'defer_sources', 'form_data', 'cart']),
+            'currency'    => $quoteCurrency,
+        ]);
+
+        if (!is_array($filtered)) {
+            return array_merge($rates, $stateLimited);
+        }
+
+        // Only rates core quoted, as quoted: a filter can't add one or change a price.
+        $kept = [];
+        foreach ($filtered as $rate) {
+            $key = is_array($rate) ? Arr::get($rate, 'carrier') . '|' . Arr::get($rate, 'id') : '';
+            if (isset($byKey[$key])) {
+                $kept[$key] = $byKey[$key];
+            }
+        }
+
+        return array_merge(array_values($kept), $stateLimited);
     }
 
     /**
      * The last rate list's key and the carrier rate sources it left pending.
      *
-     * @return array ['key' => string, 'pending' => [['carrier' =>, 'source' =>, 'label' =>], ...]]
+     * @return array ['key' => string, 'pending' => [['carrier' =>, 'source' =>, 'label' =>], ...],
+     *                'ids' => string[]|null after fetchRateSource(): the whole list's rate ids]
      */
     public static function rateSourceState(): array
     {
@@ -613,6 +747,10 @@ class AddressHelper
         } finally {
             static::$fetchRateSource = null;
         }
+
+        // The whole list's ids, so checkout can drop shown rows the
+        // available_rates filter hides now that this source has quoted.
+        static::$rateSourceState['ids'] = is_wp_error($rates) ? null : array_map('strval', array_column($rates, 'id'));
 
         if (is_wp_error($rates)) {
             return [];

@@ -308,8 +308,8 @@ return [
                     return (int) (array_column($renewals['projections'], 'renewals_count', 'group')['2025-01'] ?? -1);
                 };
                 FcTest::assertSame([1, 0], [
-                    FcReportFixture::inSiteTimezone('America/New_York', 0, $january),
-                    FcReportFixture::inSiteTimezone('UTC', 0, $january),
+                    FcReportFixture::inSiteTimezone('America/New_York', $january),
+                    FcReportFixture::inSiteTimezone('UTC', $january),
                 ], 'The renewal counts in January in New York and in February in UTC');
             } finally {
                 FcDomainFixture::cleanupAll();

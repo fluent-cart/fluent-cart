@@ -10,6 +10,7 @@ use FluentCart\App\CPT\FluentProducts;
 use FluentCart\App\Hooks\Handlers\ShortCodes\SingleProductShortCode;
 use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Modules\Data\ProductQuery;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
 use FluentCart\App\Services\Renderer\ProductListRenderer;
 use FluentCart\App\Services\Renderer\ProductRenderer;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
@@ -86,8 +87,10 @@ class TemplateActions
 
         add_shortcode('fluent_cart_related_products', function ($atts = []) {
             $atts = shortcode_atts([
-                'id' => 0,
-            ], $atts);
+                'id'           => 0,
+                'card_layout'  => '',
+                'price_format' => 'starts_from',
+            ] + ProductCardLayoutPresets::SHORTCODE_CARD_ATTRIBUTES, $atts);
 
             $productId = absint($atts['id']);
 
@@ -126,12 +129,22 @@ class TemplateActions
                 return '';
             }
 
+            // An unknown layout keeps the standard card, as [fluent_cart_products] does. Without the attribute,
+            // the site's own choice applies, as on the classic theme's list below.
+            $cardLayout = sanitize_key($atts['card_layout'] !== '' ? $atts['card_layout'] : $this->relatedCardLayout($productId));
+            $listConfig = ['rating_context' => 'relevant'];
+            if (ProductCardLayoutPresets::cardBlock($cardLayout)) {
+                $listConfig['card_layout'] = $cardLayout;
+                $listConfig['layout_price_format'] = sanitize_key($atts['price_format']);
+                $listConfig['layout_options'] = ProductCardLayoutPresets::shortcodeCardOptions($atts);
+            }
+
             ob_start();
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
                 'fct-similar-product-list-container',
-                ['rating_context' => 'relevant']
+                $listConfig
             ))->render();
 
             $content = ob_get_clean();
@@ -224,10 +237,15 @@ class TemplateActions
         }
 
         $products = $productsQuery->get();
+        // A classic theme's archive keeps the standard card unless a site picks a layout (key as in [fluent_cart_products card_layout]).
+        $cardLayout = apply_filters('fluent_cart/product_archive/card_layout', '', ['term' => $queried_object]);
+        $cardLayout = is_string($cardLayout) ? sanitize_key($cardLayout) : '';
         (new ShopAppRenderer([
             'products' => $products,
             'total'    => $products->total(),
         ], [
+            'card_layout'     => ProductCardLayoutPresets::cardBlock($cardLayout) ? $cardLayout : '',
+            'grid_only'       => ProductCardLayoutPresets::isGridOnly($cardLayout),
             'default_filters' => $productsQuery->getDefaultFilters(),
             'custom_filters'  => [
                 'taxonomies'  => [
@@ -283,6 +301,13 @@ class TemplateActions
         add_filter('the_content', [$this, 'filterSingleProductContent'], 999);
     }
 
+    // The card layout a site picks for Related Products on the single product page; empty keeps the standard card.
+    private function relatedCardLayout($productId): string
+    {
+        $layout = apply_filters('fluent_cart/single_product_page/related_card_layout', '', ['product_id' => (int) $productId]);
+        return is_string($layout) ? $layout : '';
+    }
+
     public function filterSingleProductContent($content)
     {
         if (apply_filters('fluent_cart/disable_auto_single_product_page', false)) {
@@ -308,12 +333,18 @@ class TemplateActions
         $showRelevant = apply_filters('fluent_cart/single_product_page/show_relevant_products', $showRelevant, $post->ID);
         if ($showRelevant) {
             $products = ShopResource::getSimilarProducts($post->ID, false);
+            // Standard card unless a site picks a layout (key as in [fluent_cart_related_products card_layout]).
+            $cardLayout = sanitize_key($this->relatedCardLayout($post->ID));
+            $listConfig = ['rating_context' => 'relevant'];
+            if (ProductCardLayoutPresets::cardBlock($cardLayout)) {
+                $listConfig['card_layout'] = $cardLayout;
+            }
             ob_start();
             (new ProductListRenderer(
                 $products,
                 __('Related Products', 'fluent-cart'),
                 'fct-similar-product-list-container',
-                ['rating_context' => 'relevant']
+                $listConfig
             ))->render();
 
             $relevantProducts = ob_get_clean();

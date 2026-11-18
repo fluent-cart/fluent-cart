@@ -1,4 +1,5 @@
-@config "./style.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./style.config.mjs";
 
 .sr-only {
   position: absolute;
@@ -19,7 +20,7 @@
 		.fluent-cart-search-bar-app-wrapper-select-container {
 			@apply max-w-180 min-w-180;
 			select {
-				@apply w-full outline-none h-10 bg-white text-sm border border-solid border-gray-outline;
+				@apply w-full outline-hidden h-10 bg-white text-sm border border-solid border-gray-outline;
 				border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
               margin-right: 0 !important;
               box-shadow: none !important;
@@ -35,7 +36,7 @@
 				@apply hidden start-auto end-[-1px] cursor-pointer transform-none rounded-se rounded-ee bg-transparent border-0;
 			}
 			input {
-				@apply text-sm w-full bg-white shadow-none outline-none border border-solid border-gray-outline px-[36px] m-0 leading-[1.43] placeholder:text-system-light placeholder:text-[13px] focus:border-primary-500 #{!important};
+				@apply text-sm! w-full! bg-white! shadow-none! outline-hidden! border! border-solid! border-gray-outline! px-[36px]! m-0! leading-[1.43]! placeholder:text-system-light! placeholder:text-[13px]! focus:border-primary-500!;
 				padding-top: var(--fct-input-padding-y, theme('spacing.2')) !important;
 				padding-bottom: var(--fct-input-padding-y, theme('spacing.2')) !important;
 				border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
@@ -76,7 +77,7 @@
                     @apply w-7.5 h-7.5 rounded-xs;
                 }
 				a {
-					@apply items-center flex justify-between gap-2 no-underline text-sm text-system-dark font-semibold relative hover:text-primary-500 hover:no-underline !important;
+					@apply items-center! flex! justify-between! gap-2! no-underline! text-sm! text-system-dark! font-semibold! relative! hover:text-primary-500! hover:no-underline!;
 				}
 			}
 		}

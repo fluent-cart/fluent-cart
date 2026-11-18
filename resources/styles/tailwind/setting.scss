@@ -24,7 +24,7 @@
         &.fields-inner-inline{
             @apply flex items-center gap-3 flex-row-reverse justify-end;
             .setting-label{
-                @apply mb-0 #{!important};
+                @apply mb-0!;
             }
         }
     }
@@ -65,7 +65,7 @@
 .fct-setting-row{
     a{
         @apply inline-flex items-center gap-0.5 text-blue-500 dark:text-gray-50;
-        @apply hover:underline #{!important};
+        @apply hover:underline!;
         svg {
             width: 14px;
             height: 14px;
@@ -77,6 +77,7 @@
             @apply mt-2.5;
         }
     }
+    h3,
     h4,
     b{
         @apply text-sm m-0;
@@ -121,10 +122,10 @@
         @apply text-sm font-medium text-system-dark dark:text-gray-50;
     }
     .display-role {
-        @apply mt-0 text-[13px];
+        @apply my-0 text-[13px];
     }
     .el-tag.el-tag--success {
-        @apply bg-success-100 text-success-800 border-success-100 rounded-[6px] dark:bg-success-800 dark:text-gray-50 !important;
+        @apply bg-success-100! text-success-800! border-success-100! rounded-[6px]! dark:bg-success-800! dark:text-gray-50!;
     }
 }
 
@@ -149,7 +150,7 @@
     }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-1 outline-primary-500 dark:outline-primary-300;
+        @apply [outline-width:2px] outline-offset-1 outline-primary-500 dark:outline-primary-300;
     }
 
     &.is-selected {
@@ -167,13 +168,16 @@
 
         &::after {
             content: '';
-            @apply absolute rounded-full bg-primary-500 dark:bg-primary-300;
+            @apply absolute rounded-full bg-primary-500;
             width: 8px;
             height: 8px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0);
             transition: transform 0.15s ease;
+        }
+        .fluent_theme_dark &::after {
+            @apply bg-primary-300;
         }
     }
 
@@ -274,7 +278,7 @@
 }
 
 .fct-settings-description {
-    @apply text-xs pt-1 text-system-mid dark:text-gray-300 !important;
+    @apply text-xs! pt-1! text-system-mid! dark:text-gray-300!;
 }
 
 .fct-events-wrap {
@@ -289,6 +293,25 @@
 .fct-payment-steps-list {
     li {
         @apply flex items-center gap-2 mb-2 last:mb-0;
+    }
+}
+.fct-payment-method-list {
+    .fct-payment-method-logo img {
+        @apply h-5 min-h-5 max-h-5;
+    }
+    .fct-payment-method-logo.cashondelivery img {
+        @apply dark:invert;
+    }
+}
+// Storage provider logo badge in a ListItem's media slot.
+.fct-storage-provider-icon {
+    @apply w-12 h-12 flex items-center justify-center rounded-full border border-solid border-gray-outline bg-white dark:bg-dark-600 dark:border-dark-400;
+
+    img {
+        @apply max-h-5 min-h-5;
+    }
+    &.local img {
+        @apply dark:brightness-[10];
     }
 }
 .fct-payment-steps-number {
@@ -375,11 +398,11 @@
                 @apply rounded-[5px];
             }
             .el-icon{
-                @apply hidden #{!important};
+                @apply hidden!;
             }
         }
         .fct-color-picker-hex-input {
-            @apply bg-transparent border-x-0 border-t-0 border-solid border-transparent outline-none focus:outline-none p-0 m-0 w-full min-h-[auto] [font:inherit] text-inherit shadow-none focus:shadow-none placeholder:text-xs rounded-none placeholder:text-system-light transition-colors duration-150;
+            @apply bg-transparent border-x-0 border-t-0 border-solid border-transparent outline-hidden focus:outline-hidden p-0 m-0 w-full min-h-[auto] [font:inherit] text-inherit shadow-none focus:shadow-none placeholder:text-xs rounded-none placeholder:text-system-light transition-colors duration-150;
             &:hover,
             &:focus-visible {
                 @apply border-primary-300 dark:border-dark-200;
@@ -417,7 +440,7 @@
 
 .fct-compact-form .fct-global-address-component {
     .setting-fields-inner.city .el-input .el-input__wrapper {
-        @apply border-t-[0.5px] !rounded-tl-none !rounded-tr-none border-t-gray-200 dark:border-t-primary-500;
+        @apply [border-top-width:0.5px] rounded-tl-none! rounded-tr-none! border-t-gray-200 dark:border-t-primary-500;
         &.is-focus {
             @apply border-t-primary-500 dark:border-t-gray-100;
         }
@@ -503,7 +526,9 @@
             @apply mb-12.5;
         }
     }
-    .setting-wrap-inner {
+    // SettingsPage renders Page with .setting-wrap; its body takes the inner padding.
+    .setting-wrap-inner,
+    .setting-wrap > .fct-page__body {
       @apply px-7.5 max-w-[1100px] pt-7.5 mx-auto;
     }
     .fct-tab-wrapper {
@@ -519,7 +544,10 @@
           @apply bg-transparent rounded-[6px];
         }
         &:hover::-webkit-scrollbar-thumb {
-          @apply bg-gray-200 dark:bg-dark-400;
+          @apply bg-gray-200;
+        }
+        .fluent_theme_dark &:hover::-webkit-scrollbar-thumb {
+          @apply bg-dark-400;
         }
     }
     .fct-tab-content {
@@ -535,11 +563,11 @@
 
     .fct-tab-content-inner {
       overscroll-behavior: contain;
-      @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-none right-0 rounded;
+      @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto right-0 rounded;
     }
 
     .fct-edit-email-notification-wrapper {
-        .el-form-item {
+        .fct-form-field {
           .el-input {
             &.is-focus {
               .el-input-group__append {
@@ -573,7 +601,7 @@
     @apply bg-gray-100 dark:bg-dark-600 dark:text-system-light;
   }
   &.active {
-    @apply bg-white text-system-dark dark:bg-dark-600 dark:text-system-light shadow-sm;
+    @apply bg-white text-system-dark dark:bg-dark-600 dark:text-system-light shadow-xs;
   }
   svg {
     @apply w-4 h-4;
@@ -613,7 +641,8 @@
   .fct-settings-nav-content {
     @apply ps-[72px];
   }
-  .setting-wrap-inner {
+  .setting-wrap-inner,
+  .setting-wrap > .fct-page__body {
     max-width: 100%;
   }
 }
@@ -679,6 +708,10 @@
 .fct-checkout-field {
     @apply flex items-center justify-between p-3 border border-solid border-gray-divider border-x-0 border-t-0 last:border-0 dark:border-dark-400;
 }
+// Same box as the switch it replaces in rearrange mode.
+.fct-checkout-field-handle {
+    @apply flex items-center justify-center shrink-0 w-9 h-8;
+}
 .fct-checkout-fields-wrapp {
     .fct-checkout-field {
         @apply flex-wrap;
@@ -712,7 +745,7 @@
   @apply bg-gray-50 inline-flex rounded-sm p-[3px] gap-[2px];
 
   .fluent_theme_dark & {
-    @apply bg-dark-500;
+  @apply bg-dark-500;
   }
 }
 
@@ -727,7 +760,7 @@
   }
 
   &:focus {
-    @apply outline-none;
+    @apply outline-hidden;
   }
 
   .fluent_theme_dark & {
@@ -778,14 +811,17 @@
     @apply bg-transparent rounded-[6px];
   }
   &:hover::-webkit-scrollbar-thumb {
-    @apply bg-gray-200 dark:bg-dark-400;
+    @apply bg-gray-200;
+  }
+  .fluent_theme_dark &:hover::-webkit-scrollbar-thumb {
+    @apply bg-dark-400;
   }
 
   .fct-settings-nav-item {
     @apply mb-1.5 last:mb-0;
   }
   .fct-settings-nav-link {
-    @apply whitespace-nowrap min-h-[36px] relative rounded cursor-pointer py-2 px-2.5 outline-none gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
+    @apply whitespace-nowrap min-h-[36px] relative rounded cursor-pointer py-2 px-2.5 outline-hidden gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
 
     .icon:not(.fct-settings-nav-link-icon) {
       svg{
@@ -800,7 +836,6 @@
         @apply w-2.5 h-2.5;
       }
     }
-
   }
 
   .fct-settings-nav-item-active {
@@ -816,7 +851,10 @@
     @apply relative ps-6.5 my-1;
     &::before {
       content: '';
-      @apply absolute start-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+      @apply absolute start-4.5 top-1/2 bg-gray-100 h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+    }
+    .fluent_theme_dark &::before {
+        @apply bg-primary-500;
     }
 
     .fct-settings-nav-item {
@@ -824,7 +862,10 @@
         @apply bg-transparent text-system-mid hover:bg-primary-25 hover:text-primary-500 dark:text-gray-300 dark:hover:bg-dark-600 dark:hover:text-gray-50;
         &::before {
           content: "";
-          @apply absolute top-2 start-[-8px] w-0 h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
+          @apply absolute top-2 start-[-8px] w-0 h-[calc(100%-16px)] bg-primary-500 duration-100 transition-all rounded;
+        }
+        .fluent_theme_dark &::before {
+          @apply bg-gray-300;
         }
         &.router-link-exact-active {
           @apply bg-transparent font-medium dark:bg-transparent;
@@ -852,7 +893,7 @@
 
 .fct-settings-nav-content-inner {
   overscroll-behavior: contain;
-  @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto scrollbar-none;
+  @apply max-h-[calc(100vh-96px)] min-h-[calc(100vh-96px)] overflow-y-auto;
   /* dvh override — the vh values above stay as fallback for older browsers */
   max-height: calc(100dvh - 96px);
   min-height: calc(100dvh - 96px);
@@ -935,10 +976,13 @@
     @apply w-4 h-4 border border-solid border-gray-outline rounded-full relative transition-all flex-shrink-0 mt-0.5 dark:border-dark-400;
 
     &:before {
-      @apply w-2 h-2 bg-primary-500 rounded-full absolute top-[50%] left-[50%] transition-all dark:bg-gray-50;
+      @apply w-2 h-2 bg-primary-500 rounded-full absolute top-[50%] left-[50%] transition-all;
       content: "";
       transform: translate(-50%, -50%) scale(0.6);
       opacity: 0;
+    }
+    .fluent_theme_dark &:before {
+        @apply bg-gray-50;
     }
 
     &-wrap {
@@ -1014,14 +1058,14 @@
   @apply inline-flex rounded-[6px];
 
   &:focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+    @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
   }
 }
 
 .fct-radio-cards {
   li {
     &:focus-visible {
-      @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+      @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
     }
 
     &.active {
@@ -1048,7 +1092,7 @@
       @apply flex justify-between items-start gap-3 py-3 px-4 cursor-pointer rounded-[12px];
 
       &:focus-visible {
-        @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+        @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
       }
     }
 
@@ -1149,9 +1193,8 @@
   }
 
   .fct-settings-nav-content {
-    @apply ps-0 #{!important};
+    @apply ps-0!;
   }
-
 }
 
 
@@ -1255,7 +1298,7 @@
         }
         .info-value a {
             @apply text-blue-500 dark:text-gray-50;
-            @apply hover:underline #{!important}
+            @apply hover:underline!
         }
         svg {
             @apply text-gray-500 dark:text-gray-500;
@@ -1273,7 +1316,7 @@
  * renewals, and which payment methods customers can use.
  */
 .fct-settings-danger-zone {
-    @apply border border-yellow-400 bg-yellow-50 rounded-lg p-5 mt-8;
+    @apply [border-width:1px] border-yellow-400 bg-yellow-50 rounded-lg p-5 mt-8;
     @apply dark:border-yellow-600 dark:bg-yellow-900/10;
     border-left-width: 4px;
 
@@ -1330,26 +1373,24 @@
 
 // Multi-currency settings, sized to the Figma "Multi Currency" frame
 .fct-mc-settings{
-    .fct-card{
+    // Cards sit inside Animation wrappers, so Page's gap can't space them.
+    .fct-section.fct-card{
         @apply mb-5;
     }
-    .fct-card-header.border-bottom{
-        @apply h-14 px-5 py-0 flex-nowrap border-gray-divider dark:border-dark-500;
+    .fct-section--divided > .fct-section__header{
+        @apply h-14 px-5 py-0 flex-nowrap items-center;
     }
-    .fct-card-header-title{
+    .fct-section__header .fct-title{
         @apply text-base font-semibold leading-6 tracking-[-0.011em] text-system-dark dark:text-gray-50;
     }
     .fct-mc-icon{
         @apply w-5 h-5 shrink-0;
     }
-    .fct-mc-body{
-        @apply flex flex-col gap-3 p-5;
+    .fct-mc-body > .fct-section__body{
+        @apply flex flex-col gap-3;
     }
-    .fct-mc-checkout{
+    .fct-mc-checkout > .fct-section__body{
         @apply gap-4 px-5 py-4;
-    }
-    .fct-mc-toggle-row{
-        @apply flex items-start gap-3;
     }
     .fct-mc-field-text{
         @apply flex flex-col flex-1 min-w-0;
@@ -1371,6 +1412,11 @@
     }
     .fct-mc-setting-row{
         @apply flex items-center justify-between gap-4;
+    }
+    .fct-mc-beta-notice.el-alert{
+        @apply border border-solid;
+        background-color: var(--fct-surface);
+        border-color: var(--fct-border);
     }
     .fct-mc-beta-notice .el-alert__title{
         @apply text-xs leading-5;
@@ -1464,7 +1510,7 @@
             @apply p-0 bg-transparent text-xs text-inherit;
         }
         &:focus-visible{
-            @apply outline outline-2 outline-offset-1 outline-primary-500;
+            @apply outline-solid outline-2 outline-offset-1 outline-primary-500;
         }
     }
 
@@ -1500,7 +1546,7 @@
         }
     }
     .fct-mc-table-empty{
-        @apply px-5 py-6 text-sm text-center text-system-mid dark:text-gray-300;
+        @apply py-6;
     }
     .fct-mc-col-currency{
         @apply w-[140px] shrink-0;
@@ -1554,7 +1600,7 @@
     .fct-mc-icon-button{
         @apply inline-flex items-center justify-center border-0 bg-transparent cursor-pointer text-system-mid hover:bg-gray-50 hover:text-system-dark dark:text-gray-300 dark:hover:bg-dark-500 dark:hover:text-gray-50;
         &:focus-visible{
-            @apply outline outline-2 outline-offset-1 outline-primary-500;
+            @apply outline-solid outline-2 outline-offset-1 outline-primary-500;
         }
     }
     .fct-mc-compact-button{
@@ -1664,7 +1710,7 @@
         height: 37px;
     }
     .fct-mc-history-skeleton-row{
-        @apply flex items-center gap-5 px-5 border-b border-gray-divider dark:border-dark-400;
+        @apply flex items-center gap-5 px-5 [border-bottom-width:1px] border-gray-divider dark:border-dark-400;
         height: 66px;
         .el-skeleton__item{
             height: 14px;
@@ -1923,7 +1969,7 @@
     @apply inline-flex items-center gap-1.5 p-0 border-0 bg-transparent cursor-pointer text-[13px] font-medium text-system-dark dark:text-gray-50;
 
     &:focus-visible {
-      @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
+      @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-50;
     }
 
     &.is-open .fct-carrier-man__chevron {

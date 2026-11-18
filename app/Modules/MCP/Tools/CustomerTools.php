@@ -28,8 +28,8 @@ class CustomerTools
     {
         return [
             'fluent-cart/list-customers' => [
-                'label'       => __('List Customers', 'fluent-cart'),
-                'description' => __('Find and filter customers. Compact rows with LTV, order count, AOV, and location. For one customer\'s full history use get-customer. min_ltv is in store currency (e.g. 500), not cents. For conditions these flat filters cannot express (OR groups, buyers of a specific product/variation, relative purchase-date windows, labels) pass advanced_filters — call get-search-schema entity=customers first (Pro).', 'fluent-cart'),
+                'label'       => 'List Customers',
+                'description' => 'Find and filter customers. Compact rows with LTV, order count, AOV, and location. For one customer\'s full history use get-customer. min_ltv is in store currency (e.g. 500), not cents. For conditions these flat filters cannot express (OR groups, buyers of a specific product/variation, relative purchase-date windows, labels) pass advanced_filters — call get-search-schema entity=customers first (Pro).',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -40,9 +40,9 @@ class CustomerTools
                         'city'                 => ['type' => 'string', 'description' => 'Customer profile city — same caveat as country.'],
                         'min_ltv'              => ['type' => 'number', 'description' => 'Minimum lifetime value in store currency.'],
                         'min_purchase_count'   => ['type' => 'integer'],
-                        'first_purchase_after' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
-                        'last_purchase_after'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
-                        'last_purchase_before' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
+                        'first_purchase_after' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
+                        'last_purchase_after'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
+                        'last_purchase_before' => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
                         'advanced_filters'     => ['type' => 'array', 'items' => ['type' => ['object', 'array']], 'description' => 'Pro: condition groups {property, operator, value} — outer array = OR groups, inner = AND. Call get-search-schema entity=customers FIRST for properties/operators/format. AND-combines with the other filters here. An empty array means no advanced filter.'],
                         'sort_by'              => ['type' => 'string', 'enum' => ['id', 'ltv', 'purchase_count', 'last_purchase_date', 'created_at'], 'default' => 'ltv'],
                         'sort_type'            => ['type' => 'string', 'enum' => ['ASC', 'DESC'], 'default' => 'DESC'],
@@ -58,10 +58,9 @@ class CustomerTools
             ],
 
             'fluent-cart/get-customer' => [
-                'label'       => __('Get Customer', 'fluent-cart'),
+                'label'       => 'Get Customer',
                 'description' => sprintf(
-                    /* translators: %1$s: comma-separated include[] section names */
-                    __('Full profile + metrics for one customer. Identify by customer_id OR email. Add include[] for any of: %1$s (orders carry their line items: product id, title, quantity; subscriptions carry plan_type so installment plans are distinguishable from recurring ones). Use with_orders_limit to bound order history.', 'fluent-cart'),
+                    'Full profile + metrics for one customer. Identify by customer_id OR email. Add include[] for any of: %1$s (orders carry their line items: product id, title, quantity; subscriptions carry plan_type so installment plans are distinguishable from recurring ones). Use with_orders_limit to bound order history.',
                     implode(', ', self::includeSections())
                 ),
                 'input_schema' => [
@@ -85,8 +84,8 @@ class CustomerTools
             ],
 
             'fluent-cart/upsert-customer' => [
-                'label'       => __('Create or Update Customer', 'fluent-cart'),
-                'description' => __('Create a customer or update an existing one. Identify by customer_id to update, or email to create or match. On create, email is required. Only the fields you pass change. Set status to archived to deactivate; there is no hard delete. Use new_email to rename. if_exists handles a matched email: merge updates, skip leaves it, error returns a conflict.', 'fluent-cart'),
+                'label'       => 'Create or Update Customer',
+                'description' => 'Create a customer or update an existing one. Identify by customer_id to update, or email to create or match. On create, email is required. Only the fields you pass change. Set status to archived to deactivate; there is no hard delete. Use new_email to rename. if_exists handles a matched email: merge updates, skip leaves it, error returns a conflict.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -154,10 +153,9 @@ class CustomerTools
                 $clean = sanitize_email($params[$emailField]);
                 if (!$clean || !is_email($clean)) {
                     return MCPHelper::error(
-                        'invalid_email',
+                        'invalid_param',
                         sprintf(
-                            /* translators: 1: field name */
-                            __('The provided %1$s is not a valid email address.', 'fluent-cart'),
+                            'The provided %1$s is not a valid email address.',
                             $emailField
                         ),
                         ['fields' => [$emailField]]
@@ -170,28 +168,28 @@ class CustomerTools
         if (!empty($params['customer_id'])) {
             $existing = Customer::query()->where('id', (int) $params['customer_id'])->first();
             if (!$existing) {
-                return MCPHelper::error('customer_not_found', __('No customer found for the given customer_id.', 'fluent-cart'));
+                return MCPHelper::error('customer_not_found', 'No customer found for the given customer_id.');
             }
         } elseif (!empty($params['email'])) {
             $existing = Customer::query()->where('email', sanitize_email($params['email']))->first();
         } else {
-            return MCPHelper::error('missing_identifier', __('Provide customer_id to update, or email to create or match.', 'fluent-cart'), ['fields' => ['customer_id', 'email']]);
+            return MCPHelper::error('invalid_param', 'Provide customer_id to update, or email to create or match.', ['fields' => ['customer_id', 'email']]);
         }
 
         $fields = self::writableFields($params);
 
         if ($existing) {
             if ($ifExists === 'skip') {
-                return MCPHelper::envelope(__('Customer already exists; left unchanged.', 'fluent-cart'), ['customer_id' => (int) $existing->id, 'action' => 'skipped']);
+                return MCPHelper::envelope('Customer already exists; left unchanged.', ['customer_id' => (int) $existing->id, 'action' => 'skipped']);
             }
             if ($ifExists === 'error') {
-                return MCPHelper::error('customer_exists', __('A customer with this identifier already exists.', 'fluent-cart'), ['customer_id' => (int) $existing->id]);
+                return MCPHelper::error('customer_exists', 'A customer with this identifier already exists.', ['customer_id' => (int) $existing->id]);
             }
             if (!empty($params['new_email'])) {
                 $newEmail = sanitize_email($params['new_email']);
                 $taken    = Customer::query()->where('email', $newEmail)->where('id', '!=', $existing->id)->first();
                 if ($taken) {
-                    return MCPHelper::error('email_taken', __('Another customer already uses that email.', 'fluent-cart'));
+                    return MCPHelper::error('email_taken', 'Another customer already uses that email.');
                 }
                 $fields['email'] = $newEmail;
             }
@@ -207,7 +205,7 @@ class CustomerTools
         }
 
         if (empty($params['email'])) {
-            return MCPHelper::error('missing_param', __('email is required to create a customer.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'email is required to create a customer.');
         }
         $fields['email'] = sanitize_email($params['email']);
         if (empty($fields['status'])) {
@@ -224,7 +222,7 @@ class CustomerTools
         }
         $customer = is_array($result) && isset($result['data']) ? $result['data'] : null;
         if (!is_object($customer) || empty($customer->id)) {
-            return MCPHelper::error('customer_create_failed', __('Customer creation failed.', 'fluent-cart'));
+            return MCPHelper::error('customer_create_failed', 'Customer creation failed.');
         }
 
         return MCPHelper::envelope(
@@ -287,6 +285,10 @@ class CustomerTools
         if (isset($params['min_purchase_count'])) {
             $query->where('purchase_count', '>=', (int) $params['min_purchase_count']);
         }
+        $reversed = MCPHelper::reversedBoundsError((array) $params, ['last_purchase_after' => 'last_purchase_before']);
+        if ($reversed) {
+            return $reversed;
+        }
         $dateFilters = [
             'first_purchase_after' => ['first_purchase_date', '>='],
             'last_purchase_after'  => ['last_purchase_date', '>='],
@@ -296,7 +298,7 @@ class CustomerTools
             if (empty($params[$field])) {
                 continue;
             }
-            $date = self::toDbDate($params[$field]);
+            $date = MCPHelper::storeDateBound($params[$field], $spec[1] === '<=');
             if ($date === null) {
                 return self::invalidDateError($field);
             }
@@ -329,8 +331,7 @@ class CustomerTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: number of matching customers */
-                _n('%d customer found.', '%d customers found.', $total, 'fluent-cart'),
+                $total === 1 ? '%d customer found.' : '%d customers found.',
                 $total
             ),
             ['customers' => $rows],
@@ -367,8 +368,7 @@ class CustomerTools
         }
 
         return sprintf(
-            /* translators: 1: customer name, 2: email, 3: lifetime value */
-            __('%1$s [%2$s] — LTV %3$s', 'fluent-cart'),
+            '%1$s [%2$s] — LTV %3$s',
             $name,
             $customer->email,
             MCPHelper::displayAmount($ltvCents)
@@ -447,11 +447,11 @@ class CustomerTools
         } elseif (!empty($params['email'])) {
             $customer = Customer::query()->where('email', sanitize_email($params['email']))->first();
         } else {
-            return MCPHelper::error('missing_identifier', __('Provide customer_id or email.', 'fluent-cart'), ['fields' => ['customer_id', 'email']]);
+            return MCPHelper::error('invalid_param', 'Provide customer_id or email.', ['fields' => ['customer_id', 'email']]);
         }
 
         if (!$customer) {
-            return MCPHelper::error('customer_not_found', __('No customer found for the given identifier.', 'fluent-cart'));
+            return MCPHelper::error('customer_not_found', 'No customer found for the given identifier.');
         }
 
         return $customer;
@@ -548,8 +548,10 @@ class CustomerTools
                 'billing_interval'       => $sub->billing_interval,
                 'next_billing_date'      => MCPHelper::toIso8601($sub->next_billing_date),
                 'bill_times'             => (int) $sub->bill_times,
-                'installments_paid'      => (int) $sub->bill_count,
-                'installments_remaining' => $sub->installmentsRemaining(),
+                'bill_count'             => (int) $sub->bill_count,
+                // Null on open-ended plans: they have no installments (bill_count holds their payments)
+                'installments_paid'      => $isInstallment ? (int) $sub->bill_count : null,
+                'installments_remaining' => $isInstallment ? $sub->installmentsRemaining() : null,
                 'total_contract_value'   => $isInstallment ? MCPHelper::moneyCompact($sub->totalContractValue()) : null,
             ];
         }
@@ -648,24 +650,12 @@ class CustomerTools
         return MCPHelper::paginatorTotal($paginator);
     }
 
-    private static function toDbDate($value)
-    {
-        try {
-            return (new \DateTime((string) $value, new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-        } catch (\Exception $e) {
-            // Return null so callers reject the input. An epoch fallback would
-            // silently turn a typo'd date bound into an unbounded "match all".
-            return null;
-        }
-    }
-
     private static function invalidDateError($field)
     {
         return MCPHelper::error(
-            'invalid_date',
+            'invalid_param',
             sprintf(
-                /* translators: 1: field name */
-                __('%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.', 'fluent-cart'),
+                '%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.',
                 $field
             ),
             ['fields' => [$field]]

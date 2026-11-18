@@ -7,6 +7,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Modules\MCP\Tools\OrderTools;
 use Tests\Support\DatabaseTestCase;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Doubles\FakeRefundGateway;
 use Tests\Support\Factory\OrderTransactionFactory;
 use Tests\Support\Traits\BuildsRefundFixtures;
@@ -229,18 +230,12 @@ class RefundOrderToolTest extends DatabaseTestCase
     public function test_the_unrecorded_refund_error_reaches_the_caller_when_the_marker_cannot_be_saved(): void
     {
         $charge = $this->paidCharge(['payment_mode' => 'test']);
-        $failMetaWrites = function ($query) {
-            if (preg_match('/^(insert into|update) `[^`]*fct_order_meta`/i', $query)) {
-                return 'SELECT * FROM fct_missing_table_for_test';
-            }
-            return $query;
-        };
-        add_filter('query', $failMetaWrites);
+        $failMetaWrites = FailingQueries::matching('/^(insert into|update) `[^`]*fct_order_meta`/i');
 
         try {
             $this->refundWithoutRecording($charge);
         } finally {
-            remove_filter('query', $failMetaWrites);
+            $failMetaWrites->remove();
         }
 
         $this->assertFalse(Order::query()->findOrFail($charge->order_id)->getMeta(OrderTools::UNRECORDED_REFUND_META));
@@ -336,7 +331,7 @@ class RefundOrderToolTest extends DatabaseTestCase
     private function refundWithoutRecording(OrderTransaction $charge, string $idempotencyKey = ''): void
     {
         $preview = OrderTools::refundOrder(['order_id' => $charge->order_id, 'amount' => 30, 'dry_run' => true]);
-        $failInserts = $this->failRefundInserts();
+        $failInserts = FailingQueries::matching('/^insert into `[^`]*fct_order_transactions`/i');
 
         try {
             $result = OrderTools::refundOrder([
@@ -346,7 +341,7 @@ class RefundOrderToolTest extends DatabaseTestCase
                 'idempotency_key' => $idempotencyKey,
             ]);
         } finally {
-            remove_filter('query', $failInserts);
+            $failInserts->remove();
         }
 
         $this->assertInstanceOf(\WP_Error::class, $result);

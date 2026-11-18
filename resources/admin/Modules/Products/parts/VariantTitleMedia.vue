@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from "vue";
 import BulkMediaPicker from "@/Bits/Components/Attachment/BulkMediaPicker.vue";
-import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
 import translate from "@/utils/translator/Translator";
 
@@ -53,23 +52,18 @@ const isAdvanced = computed(() => {
                 </div>
             </div>
 
-            <el-form-item v-else :label="translate('Variation Title')">
-                <div class="fct-admin-input-wrapper">
-                    <el-input
-                        :class="productEditModel.hasValidationError(`${fieldKey}.variation_title`) ? 'is-error' : ''"
-                        :id="`${fieldKey}.variation_title`"
-                        :placeholder="translate('e.g. Small, Medium, Large')" type="text"
-                        v-model="variant.variation_title"
-                        @input="value => {productEditModel.updatePricingValue('variation_title', value, fieldKey, variant, modeType)}"
-                    >
-                    </el-input>
-
-                    <ValidationError
-                        :validation-errors="productEditModel.validationErrors"
-                        :field-key="`${fieldKey}.variation_title`"
-                    />
-                </div>
-            </el-form-item>
+            <div v-else class="fct-admin-input-wrapper">
+                <fct-input
+                    :label="translate('Variation Title')"
+                    :class="productEditModel.hasValidationError(`${fieldKey}.variation_title`) ? 'is-error' : ''"
+                    :id="`${fieldKey}.variation_title`"
+                    :placeholder="translate('e.g. Small, Medium, Large')" type="text"
+                    v-model="variant.variation_title"
+                    :validation-errors="productEditModel.validationErrors"
+                    :field-key="`${fieldKey}.variation_title`"
+                    @input="value => {productEditModel.updatePricingValue('variation_title', value, fieldKey, variant, modeType)}"
+                />
+            </div>
         </div>
     </SharedVariantItemBox>
 </template>

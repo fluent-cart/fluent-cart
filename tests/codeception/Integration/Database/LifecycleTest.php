@@ -16,8 +16,9 @@ use Tests\Support\DatabaseTestCase;
  * those filters are attached, so they are permanent tables. This means:
  *
  *   - DBMigrator::migrateDown() calls Schema::dropTable() which goes through
- *     $wpdb->query(), hits the filter, and silently fails (tries to drop
- *     a temporary table that doesn't exist).
+ *     $wpdb->query() and hits the filter, which tries to drop a temporary
+ *     table that doesn't exist. setUp() makes that drop a no-op, because an
+ *     error from it would print to the terminal.
  *
  *   - We cannot fix the framework here. Instead we test migrateDown()'s
  *     non-drop side effects (product deletion, license cleanup) directly,
@@ -25,6 +26,26 @@ use Tests\Support\DatabaseTestCase;
  */
 class LifecycleTest extends DatabaseTestCase
 {
+    private \Closure $dropIfExists;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $prefix = 'DROP TEMPORARY TABLE ';
+        $this->dropIfExists = function ($query) use ($prefix) {
+            $isPlainDrop = 0 === strpos($query, $prefix) && 0 !== strpos($query, $prefix . 'IF EXISTS');
+
+            return $isPlainDrop ? $prefix . 'IF EXISTS ' . substr($query, strlen($prefix)) : $query;
+        };
+        add_filter('query', $this->dropIfExists, 11);
+    }
+
+    public function tearDown(): void
+    {
+        remove_filter('query', $this->dropIfExists, 11);
+        parent::tearDown();
+    }
+
     // =========================================================================
     // ActivationHandler
     // =========================================================================

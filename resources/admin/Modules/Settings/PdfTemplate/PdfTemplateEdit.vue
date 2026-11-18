@@ -1,11 +1,11 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {useRouter} from "vue-router";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import NewEditorFrame from "@/Bits/Components/BlockEditorFrame.vue";
-import SettingsHeader from "../Parts/SettingsHeader.vue";
+import SettingsPage from "../Parts/SettingsPage.vue";
 import {ArrowRight, MoreFilled} from "@element-plus/icons-vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 
@@ -193,96 +193,87 @@ const revertToDefault = () => {
         });
 };
 
+const actionItems = computed(() => [
+    {command: 'download', label: downloading.value ? translate('Downloading...') : translate('Test Download'), disabled: downloading.value},
+    {command: 'revert', label: translate('Revert to Default')},
+    ...(isCustomTemplate() ? [{command: 'delete', label: translate('Delete Template'), divided: true, danger: true}] : []),
+]);
+
+const onAction = (command) => {
+    ({download: downloadTestPdf, revert: revertToDefault, delete: deleteTemplate})[command]();
+};
+
 onMounted(() => {
     fetchTemplate();
 });
 </script>
 
 <template>
-    <div class="setting-wrap fct-pdf-template-edit-wrapper">
-        <SettingsHeader
-            :loading="saving"
-            :loading-text="translate('Saving')"
-            :save-button-text="translate('Save Template')"
-            @on-save="saveTemplate"
+    <SettingsPage
+        class="fct-pdf-template-edit-wrapper"
+        :loading="saving"
+        :save-button-text="translate('Save Template')"
+        @on-save="saveTemplate"
+    >
+        <template #heading>
+            <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
+                <el-breadcrumb-item :to="{ path: '/settings/pdf-template' }">
+                    {{ translate("PDF Templates") }}
+                </el-breadcrumb-item>
+                <el-breadcrumb-item>
+                    <span class="capitalize">{{ templateData?.title || translate('Edit Template') }}</span>
+                </el-breadcrumb-item>
+            </el-breadcrumb>
+        </template>
+
+        <template #action>
+            <fct-dropdown trigger="click" style="margin-left: 12px; display: inline-flex; align-items: center;" :items="actionItems" @command="onAction">
+                <fct-button size="small" text style="height: auto; padding: 4px;">
+                    <el-icon style="transform: rotate(90deg); font-size: 16px;"><MoreFilled /></el-icon>
+                </fct-button>
+            </fct-dropdown>
+        </template>
+
+        <AdminNotice/>
+
+        <fct-skeleton
+            v-if="loading"
+            class="bg-white rounded p-6 dark:bg-dark-700"
+            animated
         >
-            <template #heading>
-                <el-breadcrumb class="mb-0" :separator-icon="ArrowRight">
-                    <el-breadcrumb-item :to="{ path: '/settings/pdf-template' }">
-                        {{ translate("PDF Templates") }}
-                    </el-breadcrumb-item>
-                    <el-breadcrumb-item>
-                        <span class="capitalize">{{ templateData?.title || translate('Edit Template') }}</span>
-                    </el-breadcrumb-item>
-                </el-breadcrumb>
-            </template>
+            <fct-skeleton variant="p" class="w-[200px] h-[18px] mb-5"/>
+            <fct-skeleton variant="p" style="width: 100%; height: 500px;"/>
+        </fct-skeleton>
 
-            <template #action>
-                <el-dropdown trigger="click" style="margin-left: 12px; display: inline-flex; align-items: center;" popper-class="fct-dropdown">
-                    <el-button size="small" text style="height: auto; padding: 4px;">
-                        <el-icon style="transform: rotate(90deg); font-size: 16px;"><MoreFilled /></el-icon>
-                    </el-button>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item @click="downloadTestPdf" :disabled="downloading">
-                                {{ downloading ? translate('Downloading...') : translate('Test Download') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item @click="revertToDefault">
-                                {{ translate('Revert to Default') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item v-if="isCustomTemplate()" divided @click="deleteTemplate" style="color: #F56C6C;">
-                                {{ translate('Delete Template') }}
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
-            </template>
-        </SettingsHeader>
+        <template v-if="!loading && templateData">
+            <div class="bg-white rounded dark:bg-dark-700 p-6">
+                <NewEditorFrame
+                    ref="editorFrameRef"
+                    :editorParams="{ block_type: 'pdf_template', campaign_title: templateData.title, bid: props.template }"
+                    :frameHeight="'calc(100vh - 200px)'"
+                    :documentTitle="templateData.title || translate('Receipt Template')"
+                    @preview-request="onPreviewRequest"
+                    v-model="pdfContent"
+                />
+            </div>
 
-        <div class="setting-wrap-inner">
-            <AdminNotice/>
-
-            <el-skeleton
-                :loading="loading"
-                class="bg-white rounded p-6 dark:bg-dark-700"
-                animated
-            >
-                <template #template>
-                    <el-skeleton-item variant="h3" class="w-[200px] mb-5"/>
-                    <el-skeleton-item variant="rect" style="width: 100%; height: 500px;"/>
-                </template>
-            </el-skeleton>
-
-            <template v-if="!loading && templateData">
-                <div class="bg-white rounded dark:bg-dark-700 p-6 mb-4">
-                    <NewEditorFrame
-                        ref="editorFrameRef"
-                        :editorParams="{ block_type: 'pdf_template', campaign_title: templateData.title, bid: props.template }"
-                        :frameHeight="'calc(100vh - 200px)'"
-                        :documentTitle="templateData.title || translate('Receipt Template')"
-                        @preview-request="onPreviewRequest"
-                        v-model="pdfContent"
-                    />
-                </div>
-
-                <div class="setting-save-action">
-                    <el-button
-                        @click="saveTemplate"
-                        type="primary"
-                        :disabled="saving"
-                        :loading="saving"
-                    >
-                        {{ translate("Save Template") }}
-                    </el-button>
-                    <el-button
-                        @click="downloadTestPdf"
-                        :disabled="downloading"
-                        :loading="downloading"
-                    >
-                        {{ translate("Test Download") }}
-                    </el-button>
-                </div>
-            </template>
-        </div>
-    </div>
+            <div class="setting-save-action">
+                <fct-button
+                    @click="saveTemplate"
+                    type="primary"
+                    :disabled="saving"
+                    :loading="saving"
+                >
+                    {{ translate("Save Template") }}
+                </fct-button>
+                <fct-button
+                    @click="downloadTestPdf"
+                    :disabled="downloading"
+                    :loading="downloading"
+                >
+                    {{ translate("Test Download") }}
+                </fct-button>
+            </div>
+        </template>
+    </SettingsPage>
 </template>

@@ -5,7 +5,6 @@ namespace Tests\Integration\Services;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
-use FluentCart\App\Models\ShippingClass;
 use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Modules\Shipping\ShippingModule;
 use Tests\Support\DatabaseTestCase;
@@ -50,27 +49,6 @@ class ShippingServiceTest extends DatabaseTestCase
     // =========================================================================
     // Spec 54-58: ShippingModule registration
     // =========================================================================
-
-    public function test_register_hooks_fluentcart_loaded_init(): void
-    {
-        // register() is idempotent but appends handlers — check hook exists after a fresh register()
-        ShippingModule::register();
-        $this->assertNotFalse(has_action('fluentcart_loaded'),
-            'fluentcart_loaded should have at least one handler');
-    }
-
-    public function test_register_wires_before_patch_checkout_data_filter(): void
-    {
-        ShippingModule::register();
-        $priority = has_filter('fluent_cart/checkout/before_patch_checkout_data');
-        $this->assertNotFalse($priority);
-    }
-
-    public function test_register_wires_cart_data_items_updated_action(): void
-    {
-        ShippingModule::register();
-        $this->assertNotFalse(has_action('fluent_cart/cart/cart_data_items_updated'));
-    }
 
     // =========================================================================
     // Spec 64-68: maybeRecalculateShippingCharges watch-key logic

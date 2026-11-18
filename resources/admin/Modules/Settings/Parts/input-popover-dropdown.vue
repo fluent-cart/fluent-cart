@@ -1,6 +1,6 @@
 <template>
   <div v-click-outside="onClickOutside">
-    <el-popover
+    <fct-popover
         ref="popoverRef"
         :placement="placement"
         :width="500"
@@ -21,7 +21,7 @@
           </ul>
         </div>
         <div class="el_pop_data_body">
-          <el-input v-model="searchQuery" class="sticky top-0 bg-white dark:bg-primary-600" :placeholder="translate('Search')" clearable/>
+          <fct-input v-model="searchQuery" class="sticky top-0 bg-white dark:bg-primary-600" :placeholder="translate('Search')" clearable/>
           <ul v-for="(item,current_index) in data" :key="current_index" v-show="activeIndex == current_index"
               :class="'el_pop_body_item_'+current_index">
             <li @click="insertShortcode(code)"
@@ -34,12 +34,12 @@
         </div>
       </div>
       <template #reference>
-        <el-button @click="visible = !visible" class="editor-add-shortcode" :type="btnType"
+        <fct-button @click="visible = !visible" class="editor-add-shortcode" :type="btnType"
                    :plain="plain" :size="btnSize">
           &#123;&#123;:&#125;&#125;
-        </el-button>
+        </fct-button>
       </template>
-    </el-popover>
+    </fct-popover>
   </div>
 </template>
 

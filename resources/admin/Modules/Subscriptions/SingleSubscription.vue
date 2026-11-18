@@ -51,6 +51,14 @@
               <LicensingUnavailable v-else/>
             </CardContainer>
 
+            <DynamicTemplates
+                v-if="subscription.id"
+                :key="subscription.id"
+                filter="single_subscription_page_main"
+                :widgets-query="{ subscription_id: subscription.id }"
+                :data="{ subscription }"
+            />
+
             <CardContainer v-if="subscription.activities && subscription.activities.length" class="overflow-hidden mb-0">
               <CardHeader :title="$t('Activity')" title_size="small" border_bottom/>
               <CardBody>
@@ -69,7 +77,7 @@
                 >
                 </CardHeader>
                 <CardBody>
-                  <el-skeleton :rows="3" :animated="true"/>
+                  <fct-skeleton :rows="3" :animated="true"/>
                 </CardBody>
               </CardContainer>
             </div>
@@ -166,6 +174,14 @@
                     }"
               />
 
+              <DynamicTemplates
+                  v-if="subscription.id"
+                  :key="subscription.id"
+                  filter="single_subscription_page"
+                  :widgets-query="{ subscription_id: subscription.id }"
+                  :data="{ subscription }"
+              />
+
             </div>
           </div>
         </div>
@@ -201,10 +217,12 @@ import CustomerPurchaseValue from "@/Modules/Customers/parts/CustomerPurchaseVal
 import OrderCustomerInformation from "@/Modules/Orders/OrderCustomerInformation.vue";
 import Activity from "@/Modules/Orders/Activity.vue";
 import Notify from "@/utils/Notify";
+import DynamicTemplates from "@/Bits/Components/DynamicTemplates/DynamicTemplates.vue";
 export default {
   name: 'SingleSubscription',
   components: {
     Activity,
+    DynamicTemplates,
     ChangeOrderCustomer,
     DynamicIcon,
     ConvertedTime,

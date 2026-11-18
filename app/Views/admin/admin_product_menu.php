@@ -19,6 +19,9 @@
             <?php foreach ($menu_items as $itemSlug => $menu_item): ?>
                 <li class="fct_menu_<?php echo esc_attr($itemSlug); ?> <?php echo ($active == $itemSlug) ? 'active-menu' : ''; ?>">
                     <a href="<?php echo esc_url($menu_item['link']); ?>">
+                        <?php if (!empty($menu_item['icon'])): ?>
+                            <span class="fct-admin-product-menu-icon" aria-hidden="true"><?php echo $menu_item['icon']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- inline SVG from the PHP filter, trusted like the label and link. ?></span>
+                        <?php endif; ?>
                         <?php echo esc_attr($menu_item['label']); ?>
                         <?php echo esc_html($active === $itemSlug); ?>
                     </a>

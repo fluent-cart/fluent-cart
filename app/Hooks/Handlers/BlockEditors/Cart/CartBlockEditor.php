@@ -144,6 +144,8 @@ class CartBlockEditor extends BlockEditor
         <section class="fct-cart-page" role="region"
                  aria-label="<?php esc_attr_e('Your Shopping Cart', 'fluent-cart'); ?>">
             <?php
+            CartRenderer::renderPageLoader();
+
             foreach ($block->inner_blocks as $innerBlock) {
                 echo $innerBlock->render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
             }

@@ -1,7 +1,11 @@
 @use "./scss/nav.scss";
-@config "./customer-profile.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./customer-profile.config.mjs";
 
-@tailwind utilities;
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+.fluent-cart-customer-profile-app {
+    @tailwind utilities source(none);
+}
 
 /* ─── Colour tokens ─────────────────────────────────────────
    The portal follows the storefront palette through its own scope, the same
@@ -174,14 +178,14 @@ body:not(.fluent-cart-no-colors) {
 }
 
 .fct_customer_profile_wrap {
-  @apply max-w-[1200px] !important;
+  @apply max-w-[1200px]!;
   * {
     @apply box-border;
   }
 }
 .fct-customer-root-container {
   ul {
-    @apply list-none p-0 m-0 leading-normal !important;
+    @apply list-none! p-0! m-0! leading-normal!;
   }
   button:hover,
   button:focus,
@@ -189,7 +193,7 @@ body:not(.fluent-cart-no-colors) {
   .button:hover,
   .button:focus,
   .button:active {
-    @apply shadow-none !important;
+    @apply shadow-none!;
   }
 }
 
@@ -197,7 +201,7 @@ body:not(.fluent-cart-no-colors) {
   .fct-license-key-wrap {
     .fct-copy-wrap {
       .el-button {
-        @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] rounded text-[var(--fct-customer-dashboard-text-color,#565865)] text-xs leading-4 py-[5px] px-2.5 #{!important};
+        @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)]! rounded! text-[var(--fct-customer-dashboard-text-color,#565865)]! text-xs! leading-4! py-[5px]! px-2.5!;
         &:hover {
           @apply shadow-none;
         }
@@ -243,14 +247,14 @@ body:not(.fluent-cart-no-colors) {
       &.is-text {
         &.update-payment-details,
         &.cancel-auto-renew{
-          @apply p-0 underline font-normal leading-5 #{!important};
+          @apply p-0! underline! font-normal! leading-5!;
         }
 
       }
     }
   }
   &.el-message-box{
-    @apply inline-block !important;
+    @apply inline-block!;
   }
 }
 
@@ -265,7 +269,7 @@ body:not(.fluent-cart-no-colors) {
     @apply bg-[var(--fct-customer-dashboard-chip-bg,#EAECF0)] text-[var(--fct-customer-dashboard-label-text-color,#98A2B3)];
 
     img {
-      @apply absolute inset-0 block object-cover w-full h-full !important;
+      @apply absolute! inset-0! block! object-cover! w-full! h-full!;
     }
 
     .fct-customer-dashboard-avatar-placeholder {
@@ -274,10 +278,10 @@ body:not(.fluent-cart-no-colors) {
   }
   &-content {
     h3 {
-      @apply m-0 mb-1 text-sm leading-5 font-medium text-[var(--fct-customer-dashboard-title-color,#2F3448)] !important;
+      @apply m-0! mb-1! text-sm! leading-5! font-medium! text-[var(--fct-customer-dashboard-title-color,#2F3448)]!;
     }
     p {
-      @apply m-0 text-xs leading-4 text-[var(--fct-customer-dashboard-secondary-text-color,#565865)] !important;
+      @apply m-0! text-xs! leading-4! text-[var(--fct-customer-dashboard-secondary-text-color,#565865)]!;
       // The email reads LTR on RTL pages.
       [dir="rtl"] & {
         direction: ltr;
@@ -360,12 +364,12 @@ body:not(.fluent-cart-no-colors) {
 
 #fct-customer-logout-button {
   a {
-    @apply outline-none no-underline;
+    @apply outline-hidden no-underline;
   }
 }
 
 .fct-customer-logout-btn {
-  @apply text-system-mid p-2.5 leading-none no-underline rounded gap-1.5 flex items-center justify-center text-sm font-medium bg-[var(--fct-customer-dashboard-logout-btn-bg-color)] text-[var(--fct-customer-dashboard-logout-btn-text-color)] hover:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] hover:text-[var(--fct-customer-dashboard-logout-btn-text-color)] focus:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] focus:text-[var(--fct-customer-dashboard-logout-btn-text-color)];
+  @apply p-2.5 leading-none no-underline rounded gap-1.5 flex items-center justify-center text-sm font-medium bg-[var(--fct-customer-dashboard-logout-btn-bg-color)] text-[var(--fct-customer-dashboard-logout-btn-text-color)] hover:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] hover:text-[var(--fct-customer-dashboard-logout-btn-text-color)] focus:bg-[var(--fct-customer-dashboard-logout-btn-hover-bg-color)] focus:text-[var(--fct-customer-dashboard-logout-btn-text-color)];
   svg{
     @apply w-4 h-4;
   }
@@ -499,11 +503,11 @@ body:not(.fluent-cart-no-colors) {
     border-radius: var(--fct-badge-radius, theme('borderRadius.full'));
 
     &.is-approved {
-      @apply bg-green-50 text-green-700;
+      @apply bg-success-100 text-success-800;
     }
 
     &.is-pending {
-      @apply bg-amber-50 text-amber-700;
+      @apply bg-warning-100 text-warning-dark;
     }
   }
 
@@ -531,8 +535,7 @@ body:not(.fluent-cart-no-colors) {
 
   /* Its own line, so it is never mistaken for the end of the review. */
   .fct-my-reviews-readmore {
-    @apply inline-block mt-2 bg-transparent border-0 p-0 shadow-none
-           text-sm font-semibold text-[var(--fct-customer-dashboard-link-color,#253241)] cursor-pointer;
+    @apply inline-block mt-2 bg-transparent border-0 p-0 shadow-none text-sm font-semibold text-[var(--fct-customer-dashboard-link-color,#253241)] cursor-pointer;
     text-decoration: none !important;
 
     &:hover {
@@ -561,8 +564,7 @@ body:not(.fluent-cart-no-colors) {
   }
 
   .fct-my-reviews-media-thumb {
-    @apply block rounded-lg overflow-hidden cursor-pointer
-           border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)];
+    @apply block rounded-lg overflow-hidden cursor-pointer border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] bg-[var(--fct-customer-dashboard-surface-muted,#F5F6F7)];
     width: 88px;
     height: 88px;
     object-fit: cover;

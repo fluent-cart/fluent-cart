@@ -1,7 +1,3 @@
-.fct-pdf-template-desc {
-    @apply text-sm text-system-mid dark:text-gray-400 mb-6 mt-0;
-}
-
 .fct-pdf-template-grid {
     @apply grid gap-5;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -11,8 +7,13 @@
     @apply border border-solid border-gray-outline rounded overflow-hidden transition-colors hover:border-gray-500 dark:border-dark-400;
 }
 
+// The preview is an icon and a name, so it stays short. The loading block uses the same height.
 .fct-pdf-template-preview {
-    @apply relative h-[280px] bg-gray-50 flex items-center justify-center dark:bg-dark-600;
+    @apply relative h-[160px] bg-gray-50 flex items-center justify-center dark:bg-dark-600;
+}
+
+.fct-pdf-template-skeleton {
+    @apply h-[160px] w-full rounded-none;
 }
 
 .fct-pdf-template-preview-placeholder {
@@ -22,16 +23,33 @@
     }
 }
 
-.fct-pdf-template-overlay {
-    @apply absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 transition-opacity dark:bg-dark-500;
-}
-
-.fct-pdf-template-card:hover .fct-pdf-template-overlay {
-    @apply opacity-100;
-}
-
 .fct-pdf-template-footer {
-    @apply px-4 py-2.5 text-xs flex items-center justify-between;
+    @apply px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-x-2 gap-y-3;
+}
+
+.fct-pdf-template-actions {
+    @apply flex w-full flex-wrap items-center gap-2;
+
+    // Element Plus adds its own left margin between buttons, on top of the gap.
+    .el-button + .el-button {
+        @apply ml-0;
+    }
+
+    // Delete ends the row, at the right of the card.
+    .fct-pdf-template-delete {
+        @apply ms-auto;
+    }
+
+    // Reset and Delete undo work: quiet red text with a soft red wash on hover, so they differ from Customize.
+    .el-button.fct-pdf-template-reset,
+    .el-button.fct-pdf-delete-btn {
+        @apply border-transparent bg-transparent text-red-600 hover:border-transparent hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-alpha-16;
+    }
+
+    // The icon alone needs less width than a labelled button.
+    .el-button.fct-pdf-delete-btn {
+        @apply px-2;
+    }
 }
 
 .fct-pdf-template-name-row {
@@ -50,9 +68,11 @@
     @apply bg-blue-50 text-blue-500 dark:text-blue-800;
 }
 
-.fct-pdf-delete-btn {
-    @apply p-1 !important;
+// An edited built-in template: amber, like the order bump cards, so it reads apart from the built-in blue.
+.fct-pdf-badge--customized {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
 }
+
 
 
 

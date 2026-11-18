@@ -69,7 +69,7 @@ return [
                 'no Pro licensing class was loaded'
             );
 
-            WP_CLI::log(
+            FcTest::note(
                 'Pro axis source state: configured_active='
                 . ($configuredActive ? 'yes' : 'no')
                 . ' runtime_loaded='

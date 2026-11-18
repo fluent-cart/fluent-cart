@@ -14,8 +14,6 @@ use lucatume\WPBrowser\TestCase\WPTestCase;
  * discarding every other rule on the attribute — `in:`, `numeric`, `min:` and
  * closures alike — so junk values sailed through. RequiredWhenRule carries the
  * same condition as a closure, which leaves the rule set untouched.
- *
- * See dev-docs/framework-update-2.12.6-qa.md finding 5.
  */
 class ValidatorConditionalRulesTest extends WPTestCase
 {

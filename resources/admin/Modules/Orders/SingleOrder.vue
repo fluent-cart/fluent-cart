@@ -44,14 +44,14 @@
                 </el-breadcrumb-item>
 
                 <el-breadcrumb-item>
-                  <el-tooltip
+                  <fct-tooltip
                       v-if="isOrderUuidTruncated"
                       placement="top"
-                      popper-class="fct-tooltip fct-tooltip-long"
+                      popper-class="fct-tooltip-long"
                       :content="orderUuid"
                   >
                     <span>#{{ orderUuidDisplay }}</span>
-                  </el-tooltip>
+                  </fct-tooltip>
                   <span v-else-if="orderUuid">#{{ orderUuidDisplay }}</span>
                   <span v-else>#{{ translateNumber(order_id) }}</span>
                 </el-breadcrumb-item>
@@ -75,37 +75,37 @@
             </div>
           </div>
           <div class="fct-btn-group sm">
-            <el-button
+            <fct-button
                 v-if="shouldShowRefund()"
                 @click="handlePaymentActions('refund')"
                 class="bulk-action-hide-only-mobile"
             >
               {{ translate("Refund") }}
-            </el-button>
-            <el-button
+            </fct-button>
+            <fct-button
                 v-if="!isEditingItem"
                 @click="enableItemEditing"
                 :disabled="shouldDisableEditing"
                 class="bulk-action-hide-only-mobile"
             >
               <template v-if="shouldDisableEditing">
-                <el-tooltip
+                <fct-tooltip
                     placement="top"
-                    popper-class="fct-tooltip fct-disabled-edit-order-tooltip"
+                    popper-class="fct-disabled-edit-order-tooltip"
                 >
                   <template #content>
                     {{ warningMessage }}
                   </template>
                   {{ translate("Edit") }}
-                </el-tooltip>
+                </fct-tooltip>
               </template>
               <template v-else>
                 {{ translate("Edit") }}
               </template>
-            </el-button>
-            <el-button v-else @click="disableItemEditing" class="bulk-action-hide-only-mobile">
+            </fct-button>
+            <fct-button v-else @click="disableItemEditing" class="bulk-action-hide-only-mobile">
               {{ translate("Disable Editing") }}
-            </el-button>
+            </fct-button>
             <order-bulk-actions
                 @reload="reloadOrder()"
                 @addItem="fetchBySearch"
@@ -152,10 +152,10 @@
                   <!-- Must match POST .../shipments (orders/manage_statuses). -->
                   <template v-if="canCreateShipment" #action>
                     <UserCan permission="orders/manage_statuses">
-                      <el-button size="small" @click="showShipmentForm = true">
+                      <fct-button size="small" @click="showShipmentForm = true">
                         <DynamicIcon name="Truck" class="w-4 h-4 mr-1"/>
                         {{ translate('Create shipment') }}
-                      </el-button>
+                      </fct-button>
                     </UserCan>
                   </template>
                 </Card.Header>
@@ -164,7 +164,7 @@
                       class="fct-browse-product-form-group pb-5"
                       v-if="isEditingItem"
                   >
-                    <el-input
+                    <fct-input
                         :placeholder="translate('Search products...')"
                         @keyup="fetchBySearch()"
                         v-model="searchQuery"
@@ -172,16 +172,16 @@
                       <template #prefix>
                         <DynamicIcon name="Search"/>
                       </template>
-                    </el-input>
+                    </fct-input>
 
-                    <el-button
+                    <fct-button
                         @click="handleBrowseProduct"
                         type="info"
                         soft
-                        class="el-button--x-small"
+                        size="x-small"
                     >
                       {{ translate("Browse") }}
-                    </el-button>
+                    </fct-button>
                   </div>
                   <!-- .fct-browse-product-form-group -->
 
@@ -366,15 +366,13 @@
                                     <span class="text-system-mid">·</span>
                                     <span v-if="product.coupon_discount > 0 || itemRefunded(product)" class="del">{{ formatNumber(itemStruckTotal(product)) }}</span>
                                     <span>{{ formatNumber(itemTotalLeft(product)) }}</span>
-                                    <el-tooltip
+                                    <fct-tooltip
                                         v-if="itemRefundedWithoutUnits(product)"
-                                        effect="dark"
                                         :content="translate('Part of the price was refunded. The customer kept the items.')"
                                         placement="top"
-                                        popper-class="fct-tooltip"
                                     >
                                       <el-icon class="text-system-dark dark:text-gray-300 opacity-75 cursor-help"><InfoFilled /></el-icon>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                   </template>
                                 </div>
 
@@ -407,15 +405,13 @@
                                     <span>x</span>
                                     <span v-if="itemUnitsRefunded(product)" class="del line-through opacity-60 text-xs mr-0.5">{{ translateNumber(product.quantity) }}</span>
                                     <span>{{ translateNumber(product.quantity - itemUnitsRefunded(product)) }}</span>
-                                    <el-tooltip
+                                    <fct-tooltip
                                         v-if="shouldShowUnitPriceRoundingTooltip(product)"
-                                        effect="dark"
                                         :content="translate('Order_Unit_Price')"
                                         placement="top"
-                                        popper-class="fct-tooltip"
                                     >
                                       <el-icon class="fct-unit-price-rounding-icon"><InfoFilled /></el-icon>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                   </div>
                                   <!-- .product-details-quantity -->
                                 </div>
@@ -435,15 +431,13 @@
                                       {{ formatNumber(itemStruckTotal(product)) }}
                                     </span></div>
                                     <span>{{ formatNumber(itemTotalLeft(product)) }}</span>
-                                    <el-tooltip
+                                    <fct-tooltip
                                         v-if="itemRefundedWithoutUnits(product)"
-                                        effect="dark"
                                         :content="translate('Part of the price was refunded. The customer kept the items.')"
                                         placement="top"
-                                        popper-class="fct-tooltip"
                                     >
                                       <el-icon class="text-system-dark dark:text-gray-300 opacity-75 cursor-help"><InfoFilled /></el-icon>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                   </template>
                                 </div>
                               </td>
@@ -670,7 +664,7 @@
                           <div class="fct-tax-simple-line" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                             <span style="display:flex;align-items:center;gap:6px;">
                               <span>{{ taxSummary.simpleLine.label }}</span>
-                              <el-popover v-if="taxSummary.simpleLine.hasDetails" placement="bottom-start" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
+                              <fct-popover v-if="taxSummary.simpleLine.hasDetails" placement="bottom-start" :width="420" trigger="click" :teleported="true" :popper-style="{ padding: '0', maxWidth: '92vw' }">
                                 <template #reference>
                                   <a href="javascript:void(0)" class="fct-tax-see-details">{{ translate('See details') }} &#9662;</a>
                                 </template>
@@ -679,7 +673,7 @@
                                     :order="order"
                                     :tax-breakdown-should-show="taxBreakdownShouldShow"
                                 /><!-- /fct-tax-sum-box (popover) -->
-                              </el-popover>
+                              </fct-popover>
                             </span>
                             <span>{{ taxSummary.simpleLine.value }}</span>
                           </div>
@@ -761,49 +755,30 @@
                     title_size="small"
                 >
                   <template #action>
-                    <el-dropdown
+                    <fct-dropdown
                         v-if="order.total_amount - order?.total_paid > 0 && order.status !== 'canceled' && markingOrderAsPaid=== false"
                         trigger="click"
                         class="fct-more-option-wrap"
-                        popper-class="fct-dropdown"
+                        :items="[
+                          {command: 'custom-payment-link', label: translate('Custom Payment Link'), tooltip: translate('Due amount is remaining, Get a custom payment link to send to the customer.')},
+                          {command: 'mark-order-paid', label: translate('Mark order as paid')},
+                          canSendPaymentReminder && {command: 'send-payment-reminder', label: translate('Send Payment Reminder'), disabled: sendingPaymentReminder},
+                        ].filter(Boolean)"
                         @command="handleCommand"
                     >
-                      <el-button size="small">
+                      <fct-button size="small">
                         {{ translate("Collect Payments") }}
                         <DynamicIcon name="ChevronDown"/>
-                      </el-button>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="custom-payment-link">
-                            {{ translate("Custom Payment Link") }}
-
-                            <el-tooltip
-                                effect="dark"
-                                :content="
-                                  translate(
-                                    'Due amount is remaining, Get a custom payment link to send to the customer.'
-                                  )
-                                "
-                                placement="top"
-                                popper-class="fct-tooltip"
-                            >
-                              <el-icon>
-                                <InfoFilled/>
-                              </el-icon>
-                            </el-tooltip>
-                          </el-dropdown-item>
-
-                          <el-dropdown-item command="mark-order-paid">
-                            {{ translate("Mark order as paid") }}
-                          </el-dropdown-item>
-
-                          <el-dropdown-item v-if="canSendPaymentReminder" command="send-payment-reminder"
-                                            :disabled="sendingPaymentReminder">
-                            {{ translate("Send Payment Reminder") }}
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
+                      </fct-button>
+                      <template #item="{item}">
+                        {{ item.label }}
+                        <fct-tooltip v-if="item.tooltip" :content="item.tooltip" placement="top">
+                          <el-icon>
+                            <InfoFilled/>
+                          </el-icon>
+                        </fct-tooltip>
                       </template>
-                    </el-dropdown>
+                    </fct-dropdown>
                   </template>
                 </Card.Header>
 
@@ -826,55 +801,49 @@
               </Card.Container>
 
               <!--              mark as paid dialogue-->
-              <el-dialog
+              <fct-dialog
                   :title="translate('Mark as paid')"
                   v-model="transactionMedium"
               >
                 <div>
-                  <el-form label-position="top">
-                    <el-form-item
-                        label-position="top"
+                  <fct-select
+                      v-if="openCharges.length"
+                      v-model="otherData.open_charge"
+                      :label="translate('Open payment')"
+                      :options="openChargeOptions"
+                  />
+                  <el-alert
+                      v-if="otherData.open_charge === 'separate'"
+                      type="warning"
+                      :closable="false"
+                      :title="translate('The open payment stays. If it is collected later, the order shows overpaid.')"
+                  />
+                  <template v-if="!confirmCharge">
+                    <fct-select
+                        v-model="otherData.payment_method"
                         :label="translate('Payment method')"
-                    >
-                      <el-select v-model="otherData.payment_method">
-                        <el-option
-                            v-for="method in paymentMethodOption"
-                            :key="method.value"
-                            :label="method.name"
-                            :value="method.value"
-                        />
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item
-                        label-position="top"
-                        :label="translate('Vendor charge id')"
-                    >
-                      <el-input v-model="otherData.vendor_charge_id"/>
-                    </el-form-item>
-                    <el-form-item
-                        label-position="top"
-                        :label="translate('Notes')"
-                    >
-                      <el-input
-                          :rows="2"
-                          type="textarea"
-                          :placeholder="
+                        :options="paymentMethodOption.map((method) => ({label: method.name, value: method.value}))"
+                    />
+                    <fct-input v-model="otherData.vendor_charge_id" :label="translate('Vendor charge id')"/>
+                  </template>
+                  <fct-input
+                      :label="translate('Notes')"
+                      :rows="2"
+                      type="textarea"
+                      :placeholder="
                           translate('Please enter the payment note...')
                         "
-                          v-model="otherData.mark_paid_note"
-                      >
-                      </el-input>
-                    </el-form-item>
-                  </el-form>
+                      v-model="otherData.mark_paid_note"
+                  />
                 </div>
 
                 <template #footer>
-                  <el-button plan type="primary" @click="markOrderAsPaid" :disabled="markingOrderAsPaid"
+                  <fct-button type="primary" @click="markOrderAsPaid" :disabled="markingOrderAsPaid"
                              v-loading="markingOrderAsPaid">
                     {{ translate("Mark Paid") }}
-                  </el-button>
+                  </fct-button>
                 </template>
-              </el-dialog>
+              </fct-dialog>
 
               <Card.Container v-if="order.licenses && canViewLicenses" class="overflow-hidden">
                 <Card.Header
@@ -893,6 +862,14 @@
                   <LicensingUnavailable v-else/>
                 </Card.Body>
               </Card.Container>
+
+              <DynamicTemplates
+                  v-if="order?.id"
+                  :key="order.id"
+                  filter="single_order_page_main"
+                  :widgets-query="{ order_id: order.id }"
+                  :data="{ order }"
+              />
 
               <Card.Container class="overflow-hidden mb-0">
                 <Card.Header
@@ -981,7 +958,7 @@
           </div>
           <!-- .fct-single-order -->
 
-          <el-dialog
+          <fct-dialog
               v-model="adjustQuantityModal"
               :title="translate('Adjust Quantity')"
               width="35%"
@@ -1012,18 +989,18 @@
 
             <template #footer>
               <div class="dialog-footer">
-                <el-button @click="adjustQuantityModal = false" type="info" soft>
+                <fct-button @click="adjustQuantityModal = false" type="info" soft>
                   {{ translate("Cancel") }}
-                </el-button>
-                <el-button
+                </fct-button>
+                <fct-button
                     type="primary"
                     @click="saveAdjustedProductQuantity(tmpAdjustedItem)"
                 >
                   {{ translate("Done") }}
-                </el-button>
+                </fct-button>
               </div>
             </template>
-          </el-dialog>
+          </fct-dialog>
 
           <!-- product modal -->
           <AddProductItemModal
@@ -1034,7 +1011,7 @@
               @update:searchQuery="updateSearchQuery"
           />
 
-          <el-dialog
+          <fct-dialog
               :append-to-body="true"
               width="40%"
               v-model="createProductModal"
@@ -1047,9 +1024,9 @@
                   @process_custom="processCustom"
               />
             </div>
-          </el-dialog>
+          </fct-dialog>
 
-          <el-dialog
+          <fct-dialog
               :append-to-body="true"
               v-model="showRefundModal"
               :title="translate('Refund Transaction')"
@@ -1072,15 +1049,12 @@
                 :is_subscription="isSubscription"
                 :subscription_status="subscriptionStatus"
             />
-          </el-dialog>
+          </fct-dialog>
 
-          <el-skeleton animated v-if="loading">
-            <el-skeleton-item></el-skeleton-item>
-            <el-skeleton-item></el-skeleton-item>
-            <el-skeleton-item></el-skeleton-item>
-          </el-skeleton>
+          <!-- The items never rendered (default slot while loading), so this is the 3-row default. -->
+          <fct-skeleton animated v-if="loading"/>
 
-          <el-dialog
+          <fct-dialog
               v-model="nextInvoiceModal"
               :title="translate('Custom payment link')"
           >
@@ -1089,7 +1063,7 @@
                 :order="order"
                 @reload="fetch"
             ></payment-link>
-          </el-dialog>
+          </fct-dialog>
         </div>
         <!-- .single-page-body -->
       </template>
@@ -1237,7 +1211,8 @@ export default {
       otherData: {
         payment_method: "offline_payment",
         mark_paid_note: "",
-        vendor_charge_id: ""
+        vendor_charge_id: "",
+        open_charge: ""
       },
       paymentMethodOption: [
         {name: "Others", value: "others"}
@@ -1300,6 +1275,28 @@ export default {
     },
   },
   computed: {
+    openCharges() {
+      return (this.order?.transactions || []).filter((transaction) => {
+        return transaction.transaction_type === 'charge'
+            && ['pending', 'failed'].includes(transaction.status)
+            && transaction.vendor_charge_id;
+      });
+    },
+    openChargeOptions() {
+      const options = this.openCharges.filter((transaction) => !transaction.subscription_id).map((transaction) => {
+        const gateway = this.paymentMethodOption.find((method) => method.value === transaction.payment_method);
+        return {
+          /* translators: %1$s: payment gateway name, %2$s: gateway payment reference */
+          label: translate('Confirm %1$s payment %2$s', gateway?.name || transaction.payment_method, transaction.vendor_charge_id),
+          value: String(transaction.id)
+        };
+      });
+      options.push({label: translate('Record a separate payment'), value: 'separate'});
+      return options;
+    },
+    confirmCharge() {
+      return this.openCharges.find((transaction) => String(transaction.id) === this.otherData.open_charge) || null;
+    },
     parentOrderId() {
       if (!this.order || !this.order.parent_id) {
         return null;
@@ -1486,13 +1483,24 @@ export default {
         return;
       }
       this.markingOrderAsPaid = true;
+      const {open_charge, ...payload} = this.otherData;
+      if (this.confirmCharge) {
+        payload.mark_paid_as = 'confirm';
+        payload.transaction_id = this.confirmCharge.id;
+        payload.payment_method = this.confirmCharge.payment_method;
+        payload.vendor_charge_id = this.confirmCharge.vendor_charge_id;
+      } else if (this.openCharges.length && open_charge === 'separate') {
+        payload.mark_paid_as = 'separate';
+      }
+
       Rest.post("orders/" + this.order_id + "/mark-as-paid", {
-        ...this.otherData,
+        ...payload,
         transaction_type: this.transactionType,
       })
           .then((response) => {
             this.markingOrderAsPaid = false;
             this.transactionMedium = false;
+            this.otherData.open_charge = '';
             Notify.success(response.message);
             this.fetch();
           })
@@ -1503,6 +1511,9 @@ export default {
             } else {
               Notify.error(errors.data?.message);
             }
+            this.transactionMedium = false;
+            this.otherData.open_charge = '';
+            this.fetch();
           });
     },
     handleCommand(command) {

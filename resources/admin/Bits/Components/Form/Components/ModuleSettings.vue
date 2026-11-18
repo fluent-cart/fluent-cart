@@ -1,5 +1,5 @@
 <script setup>
-import {defineModel, nextTick, onMounted, ref} from "vue";
+import {nextTick, onMounted, ref} from "vue";
 import translate from "@/utils/translator/Translator";
 import {upgradeUrl} from "@/Bits/common";
 import Badge from "@/Bits/Components/Badge.vue";
@@ -71,7 +71,7 @@ onMounted(() => {
     <div v-if="appReady" class="fct-content-card-list-item py-4 ps-6 pe-[80px]">
         <div class="fct-content-card-list-head">
             <div class="flex items-start gap-2 flex-row">
-                <h4 class="mb-0">{{ field.title }}</h4>
+                <h3 class="mb-0 text-sm">{{ field.title }}</h3>
                 <Badge size="small" :type="isActive === 'yes' ? 'active':'inactive'" :hide-icon="true">
                     {{ isActive === 'yes' ? translate('Active') : translate('Inactive') }}
                 </Badge>
@@ -84,7 +84,7 @@ onMounted(() => {
                 <div class="mt-3 space-y-2 fct-module-settings-option-wrap">
                     <template v-for="(setting, key) in field.settings" :key="key">
                         <div class="fct-module-settings-option">
-                            <el-checkbox
+                            <fct-choice
                                 v-model="model[key]"
                                 true-value="yes"
                                 false-value="no"
@@ -98,7 +98,7 @@ onMounted(() => {
                                     class="text-xs block"
                                 >
                                     {{ translate('This feature is only available in FluentCart Pro.') }}
-                                    <el-button
+                                    <fct-button
                                         size="small"
                                         tag="a"
                                         link
@@ -106,9 +106,9 @@ onMounted(() => {
                                         rel="noopener noreferrer"
                                     >
                                         {{ translate('Upgrade to Pro') }}
-                                    </el-button>
+                                    </fct-button>
                                 </span>
-                            </el-checkbox>
+                            </fct-choice>
                         </div>
                     </template>
                 </div>
@@ -117,7 +117,7 @@ onMounted(() => {
 
         <div class="fct-content-card-list-action">
             <div class="pe-4">
-                <el-switch active-value="yes" inactive-value="no" v-model="isActive" @change="(value)=>{
+                <fct-switch active-value="yes" inactive-value="no" v-model="isActive" @change="(value)=>{
         if(!model || typeof model !== 'object'){
           model = {}
         }
@@ -125,7 +125,7 @@ onMounted(() => {
           model.active = value;
         })
       }">
-                </el-switch>
+                </fct-switch>
             </div>
             <button v-if="false" aria-disabled="false" type="button" class="el-button el-button--x-small">
                 <span class="">{{ translate('Manage') }}</span>

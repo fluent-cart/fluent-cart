@@ -278,11 +278,11 @@ onMounted(() => {
           <Card.Header :title="translate('Tax Regions')" :text="translate('Manage tax rates for different regions')">
             <template #action>
               <div class="flex items-center justify-end gap-4">
-                <el-checkbox v-if="shouldShowCollectingFilter" v-model="showCollectingTaxOnly">
+                <fct-choice v-if="shouldShowCollectingFilter" v-model="showCollectingTaxOnly">
                   {{ translate('Collecting Tax') }}
-                </el-checkbox>
+                </fct-choice>
 
-                <el-input
+                <fct-input
                     v-model="searchQuery"
                     class="w-[200px]"
                     :placeholder="translate('Search regions...')"
@@ -292,12 +292,12 @@ onMounted(() => {
                   <template #prefix>
                     <DynamicIcon name="Search" class="w-4 h-4" />
                   </template>
-                </el-input>
+                </fct-input>
               </div>
             </template>
           </Card.Header>
           <Card.Body class="px-0 pb-0">
-            <div v-if="!loading && !isTaxEnabled" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div v-if="!loading && !isTaxEnabled" class="px-6 py-4 [border-bottom-width:1px] border-gray-200 dark:border-gray-700">
               <Alert
                   type="warning"
                   icon="AlertTriangle"
@@ -305,8 +305,8 @@ onMounted(() => {
               />
             </div>
             <TaxRatesLoader v-if="loading" />
-            <el-table v-else :data="filteredCountries" max-height="500" class="w-full compact-table fct-tax-rates-regions-table">
-              <el-table-column :label="translate('Region')" min-width="300">
+            <fct-table v-else :data="filteredCountries" max-height="500" class="w-full compact-table fct-tax-rates-regions-table">
+              <fct-table-column :label="translate('Region')" min-width="300">
                 <template #default="{ row }">
                     <RouteCell
                         v-if="row.isEU"
@@ -341,8 +341,8 @@ onMounted(() => {
                         
                     </RouteCell>
                 </template>
-              </el-table-column>
-              <el-table-column :label="translate('Collecting')" width="200">
+              </fct-table-column>
+              <fct-table-column :label="translate('Collecting')" width="200">
                 <template #default="{ row }">
                   <span v-if="!isTaxEnabled" class="text-gray-400 dark:text-gray-300">&mdash;</span>
                   <span v-else-if="row.collecting" class="text-success-500">
@@ -353,10 +353,10 @@ onMounted(() => {
                   </span>
                   <span v-else class="text-gray-400 dark:text-gray-300">&mdash;</span>
                 </template>
-              </el-table-column>
-              <el-table-column :label="translate('Enabled')" width="140" align="center">
+              </fct-table-column>
+              <fct-table-column :label="translate('Enabled')" width="140" align="center">
                 <template #default="{ row }">
-                  <el-switch
+                  <fct-switch
                       v-if="row.hasConfig"
                       :model-value="isTaxEnabled ? row.enabled : false"
                       :loading="!!savingCountryCodes[row.country_code]"
@@ -365,8 +365,8 @@ onMounted(() => {
                   />
                   <span v-else class="text-gray-400">&mdash;</span>
                 </template>
-              </el-table-column>
-            </el-table>
+              </fct-table-column>
+            </fct-table>
 
           </Card.Body>
         </Card.Container>

@@ -26,7 +26,7 @@ class AdvancedVariationRenderer
      * content, or a bare CSS named color; anything else returns '' and
      * the caller drops the style attribute entirely.
      */
-    protected function safeCssColor($color): string
+    public static function safeCssColor($color): string
     {
         $color = trim((string) $color);
         if ($color === '') {

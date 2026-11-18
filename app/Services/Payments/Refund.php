@@ -172,12 +172,12 @@ class Refund
     /**
      * @param Order $order
      *
-     * @return int Succeeded charges minus recorded refunds, in cents
+     * @return int Succeeded charges minus recorded and pending refunds, in cents
      */
     public static function netPaidAmount($order)
     {
-        // From the ledger, not the columns: OrderPaid's recountTotalPaid() can leave
-        // total_paid already net of refunds, so subtracting total_refund double counts.
+        // From the ledger, not the columns: orders recounted before recountTotalPaid() kept
+        // total_paid gross may store it net, so subtracting total_refund would double count.
         $orderPaid = (int) $order->transactions()
             ->where('status', Status::TRANSACTION_SUCCEEDED)
             ->sum('total');
@@ -186,7 +186,7 @@ class Refund
             ->where('status', Status::TRANSACTION_REFUNDED)
             ->sum('total');
 
-        return $orderPaid - $orderRefunded;
+        return $orderPaid - $orderRefunded - OrderTransaction::pendingRefundTotal($order->id);
     }
 
     /**
@@ -628,6 +628,7 @@ class Refund
 
         if ($status === Status::TRANSACTION_REFUNDED) {
             self::countRefund($createdRefund, $parentTransaction);
+            self::flagChargeOverflow($createdRefund, $parentTransaction);
         }
 
         return $createdRefund;
@@ -637,6 +638,7 @@ class Refund
     {
         if ($refund->status === Status::TRANSACTION_REFUNDED && $status === Status::TRANSACTION_REFUNDED) {
             self::countRefund($refund, $parentTransaction);
+            self::flagChargeOverflow($refund, $parentTransaction);
             return $refund;
         }
 
@@ -657,9 +659,49 @@ class Refund
 
         if ($status === Status::TRANSACTION_REFUNDED) {
             self::countRefund($refund, $parentTransaction);
+            self::flagChargeOverflow($refund, $parentTransaction);
         }
 
         return $refund;
+    }
+
+    /**
+     * The gateway already moved the money, so a refund above its charge is counted in full and only flagged.
+     * Excess another row already carries is left out, so the flags add up to refunded_total minus the charge
+     * total, and a redelivery of a row that was within the charge never takes a later row's flag.
+     */
+    private static function flagChargeOverflow(OrderTransaction $refund, OrderTransaction $parentTransaction)
+    {
+        $meta = is_array($refund->meta) ? $refund->meta : [];
+        if (isset($meta['exceeds_charge'])) {
+            return;
+        }
+
+        /** @var OrderTransaction $charge */
+        $charge = OrderTransaction::query()->findOrFail($parentTransaction->id);
+        $flaggedElsewhere = 0;
+        foreach ($charge->linkedRefunds() as $linked) {
+            if ((int) $linked->id !== (int) $refund->id) {
+                $flaggedElsewhere += (int) Arr::get(is_array($linked->meta) ? $linked->meta : [], 'exceeds_charge', 0);
+            }
+        }
+
+        $excess = min((int) $refund->total, (int) Arr::get($charge->meta, 'refunded_total', 0) - (int) $charge->total - $flaggedElsewhere);
+        if ($excess <= 0) {
+            return;
+        }
+
+        $meta['exceeds_charge'] = $excess;
+        $refund->meta = $meta;
+        $refund->save();
+
+        $order = Order::query()->findOrFail($charge->order_id);
+        $order->addLog(
+            __('Refund exceeds the charge', 'fluent-cart'),
+            /* translators: %1$s: payment gateway name, %2$s: formatted excess amount */
+            sprintf(__('%1$s reported a refund that takes this charge\'s refunds above the charge by %2$s. Check the earlier local refund.', 'fluent-cart'), PaymentHelper::getMethodAdminTitle($charge->payment_method), Helper::toDecimal($excess, true, $order->currency)),
+            'warning'
+        );
     }
 
     /**

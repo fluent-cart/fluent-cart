@@ -76,7 +76,7 @@ docs: update contribution guide
 npm test -- wp-cli                 # fast regression check on your real dev store, run after every change
 npm test -- codeception unit       # pure PHP, no WordPress
 npm test -- codeception functional # REST routes against a throwaway database
-npm test -- playwright             # end-to-end in a real browser
+npm test -- codeception integration # services and models against a throwaway database
 ```
 
 - Write unit tests when possible — put a test in the cheapest suite that can still catch the bug

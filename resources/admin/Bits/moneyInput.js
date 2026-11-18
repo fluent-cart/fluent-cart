@@ -97,6 +97,66 @@ export const normalizeTypingValue = (value, thousandSeparator = ',') => {
     return `${normalizedInteger}.${fractionDigits.slice(0, 2)}`;
 };
 
+// Apply edits to the authored text, excluding grouping inserted by the field.
+// Keep an authored separator until its following digits disambiguate it.
+export const editPriceValue = (value, displayed, typed, thousandSeparator, edit, cursor) => {
+    const ungroup = text => text.split(thousandSeparator).join('');
+    // Transposition moves existing mask characters; it cannot author a decimal.
+    if (edit?.inputType === 'insertTranspose') {
+        if (Number.isInteger(cursor)) cursor = ungroup(value.slice(0, cursor)).length;
+        value = ungroup(value);
+    }
+    let start = 0, end = displayed.length;
+    let useSelection = edit && (edit.inputType?.startsWith('insert') || ['deleteContentBackward', 'deleteContentForward'].includes(edit.inputType));
+    if (useSelection) {
+        start = edit.start;
+        end = edit.end;
+        if (start === end && edit.inputType === 'deleteContentBackward') start = Math.max(0, start - 1);
+        if (start === end && edit.inputType === 'deleteContentForward') end = Math.min(displayed.length, end + 1);
+        // Transposition and native replacements can change text outside the caret.
+        const insertEnd = value.length - (displayed.length - end);
+        useSelection = insertEnd >= start
+            && value.slice(0, start) === displayed.slice(0, start)
+            && value.slice(insertEnd) === displayed.slice(end);
+    }
+    if (!useSelection) {
+        start = 0;
+        end = displayed.length;
+        while (start < displayed.length && start < value.length && displayed[start] === value[start]) start++;
+        while (end > start && displayed.length - end < value.length - start && displayed[end - 1] === value[value.length - displayed.length + end - 1]) end--;
+    }
+    let from = ungroup(displayed.slice(0, start)).length;
+    let to = ungroup(displayed.slice(0, end)).length;
+    const insertEnd = value.length - (displayed.length - end);
+    const inserted = value.slice(start, insertEnd);
+    // Selecting only formatting must leave every digit intact. A collapsed
+    // caret beside grouping skips it to delete the adjacent digit instead.
+    const collapsedDelete = useSelection && edit.start === edit.end && ['deleteContentBackward', 'deleteContentForward'].includes(edit.inputType);
+    const skipGrouping = !inserted && start < end && from === to && collapsedDelete;
+    if (skipGrouping) {
+        if (edit?.inputType === 'deleteContentForward') to++;
+        else from = Math.max(0, from - 1);
+    }
+    const raw = sanitizeInput(typed.slice(0, from) + inserted + typed.slice(to));
+    let position = from + sanitizeInput(inserted).length;
+    // A native replacement can leave an unchanged suffix beyond the edited
+    // range while keeping its caret there; preserve that actual position.
+    if (Number.isInteger(cursor) && cursor >= 0 && cursor <= value.length && !skipGrouping) {
+        if (cursor <= start) position = ungroup(displayed.slice(0, cursor)).length;
+        else if (cursor <= insertEnd) position = from + sanitizeInput(value.slice(start, cursor)).length;
+        else position += ungroup(value.slice(insertEnd, cursor)).length;
+    }
+    const normalized = normalizeTypingValue(raw, thousandSeparator);
+    const decimalIndex = normalized.includes('.') ? Math.max(raw.lastIndexOf('.'), raw.lastIndexOf(',')) : raw.length;
+    const integer = raw.slice(0, decimalIndex).replace(/\D/g, '');
+    const zeros = integer.length - stripLeadingZeros(integer).length;
+    let caret = Math.max(0, raw.slice(0, Math.min(position, decimalIndex)).replace(/\D/g, '').length - zeros);
+    if (position > decimalIndex) {
+        caret += (integer ? 0 : 1) + 1 + Math.min(raw.slice(decimalIndex + 1, position).replace(/\D/g, '').length, normalized.split('.')[1].length);
+    }
+    return {normalized, typed: normalized.replace('.', raw[decimalIndex] || '.'), caret};
+};
+
 /**
  * @returns {number} the value as a float, or NaN when it is not numeric
  */

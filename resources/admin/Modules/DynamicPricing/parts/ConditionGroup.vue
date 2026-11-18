@@ -77,7 +77,7 @@ const removeCondition = (index) => {
         </table>
 
         <div class="fct-conditions-intro">
-            <el-popover
+            <fct-popover
                 ref="popoverRef"
                 placement="right"
                 width="auto"
@@ -99,12 +99,12 @@ const removeCondition = (index) => {
                 </div>
 
                 <template #reference>
-                    <el-button class="el-button--x-small">
+                    <fct-button size="x-small">
                         <DynamicIcon name="Plus"/>
                         {{ translate('Add') }}
-                    </el-button>
+                    </fct-button>
                 </template>
-            </el-popover>
+            </fct-popover>
 
             <span class="px-2">{{ translate('Add new properties') }}</span>
 

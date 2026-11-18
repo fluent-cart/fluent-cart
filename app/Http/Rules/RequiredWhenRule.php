@@ -27,8 +27,6 @@ use FluentCart\Framework\Support\Arr;
  * behaviour, with one deliberate exception: the wildcard in $otherField is
  * resolved for every row, where the framework's `/\.\d\./` matched only
  * single-digit indexes and quietly gave up from row 10 on.
- *
- * See dev-docs/framework-update-2.12.6-qa.md findings 5 and 10.
  */
 class RequiredWhenRule
 {

@@ -113,7 +113,7 @@ onUnmounted(() => {
 <template>
     <UserCan :permission="'reports/view'">
         <div class="fct-revenue-report-page">
-            <PageHeading :title="translate('Coupons')"></PageHeading>
+            <PageHeading><template #title><h2 class="page-title">{{ translate('Coupons') }}</h2></template></PageHeading>
 
             <CouponOverview :report-filter="reportFilter"/>
 
@@ -123,11 +123,11 @@ onUnmounted(() => {
                         <div class="fct-card-header-top">
                             <div class="fct-card-header-left flex-1">
                                 <div class="search-bar is-transparent">
-                                    <el-input :placeholder="translate('Search')" type="text" clearable v-model="search">
+                                    <fct-input :placeholder="translate('Search')" type="text" clearable v-model="search">
                                         <template #prefix>
                                             <DynamicIcon name="Search" />
                                         </template>
-                                    </el-input>
+                                    </fct-input>
                                 </div>
                                 <div class="text-xs text-system-light pt-1 dark:text-gray-300">
                                     {{ translate('Filter the rows below by coupon code or title') }}
@@ -136,23 +136,23 @@ onUnmounted(() => {
 
                             <div class="fct-card-header-actions">
                                 <div class="fct-btn-group sm">
-                                    <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+                                    <fct-tooltip :content="translate('Export CSV')" placement="top">
                                         <IconButton tag="button" :disabled="loading || !rows.length"
                                             :aria-label="translate('Export CSV')" @click="exportCsv">
                                             <DynamicIcon name="Download" />
                                         </IconButton>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="fct-card-body">
-                        <el-skeleton class="px-5 pb-5" v-if="loading" :rows="5" animated></el-skeleton>
+                        <fct-skeleton class="px-5 pb-5" v-if="loading" :rows="5" animated></fct-skeleton>
 
                         <template v-else>
-                            <el-table :data="filteredRows" class="w-full fct-coupon-report" show-summary :summary-method="summaryRow"
+                            <fct-table :data="filteredRows" class="w-full fct-coupon-report" show-summary :summary-method="summaryRow"
                                 :default-sort="{prop: 'orders', order: 'descending'}">
-                                <el-table-column :label="translate('Coupon')" min-width="180" fixed>
+                                <fct-table-column :label="translate('Coupon')" min-width="180" fixed>
                                     <template #default="scope">
                                         <div class="font-medium">{{ scope.row.code }}</div>
                                         <div v-if="scope.row.used_as && scope.row.used_as.length" class="text-xs text-system-light dark:text-gray-300">
@@ -163,42 +163,42 @@ onUnmounted(() => {
                                             {{ translate('Deleted coupon') }}
                                         </div>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column prop="orders" :label="translate('Orders')" min-width="110" sortable :sort-method="byNumber('orders')">
+                                <fct-table-column prop="orders" :label="translate('Orders')" min-width="110" sortable :sort-method="byNumber('orders')">
                                     <template #default="scope">{{ formatNumber(scope.row.orders) }}</template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column prop="new_orders" :label="translate('New Customers')" min-width="140" sortable :sort-method="byNumber('new_orders')">
+                                <fct-table-column prop="new_orders" :label="translate('New Customers')" min-width="140" sortable :sort-method="byNumber('new_orders')">
                                     <template #default="scope">{{ formatNumber(scope.row.new_orders) }}</template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column prop="returning_orders" :label="translate('Returning')" min-width="120" sortable :sort-method="byNumber('returning_orders')">
+                                <fct-table-column prop="returning_orders" :label="translate('Returning')" min-width="120" sortable :sort-method="byNumber('returning_orders')">
                                     <template #default="scope">{{ formatNumber(scope.row.returning_orders) }}</template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column v-for="column in metricColumns" :key="column.prop" :prop="column.prop"
+                                <fct-table-column v-for="column in metricColumns" :key="column.prop" :prop="column.prop"
                                     :label="column.label" min-width="140" sortable :sort-method="byNumber(column.prop)">
                                     <template #default="scope">
                                         <template v-if="column.percent">{{ scope.row[column.prop] }}%</template>
                                         <template v-else>{{ money(scope.row[column.prop]) }}</template>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
                                 <template #empty>
                                     <Empty icon="Empty/Order" has-dark :text="translate('No coupon orders in this period')" />
                                 </template>
-                            </el-table>
+                            </fct-table>
 
                             <p v-if="noCode.orders" class="px-4 pt-3 text-sm m-0">
                                 {{ translate('Discount with no code') }}:
                                 <strong>{{ money(noCode.discount) }}</strong>
                                 <!-- translators: %1$s: number of orders -->
                                 ({{ translate('%1$s orders', formatNumber(noCode.orders)) }})
-                                <el-tooltip effect="dark" placement="top" popper-class="fct-tooltip"
+                                <fct-tooltip placement="top"
                                     :content="translate('CouponRpt_Orders_Coupon')">
                                     <DynamicIcon class="text-gray-500 w-4 h-4 cursor-help inline-block align-middle" name="InformationFill" />
-                                </el-tooltip>
+                                </fct-tooltip>
                             </p>
 
                             <p class="px-4 py-3 text-xs text-gray-500 m-0">

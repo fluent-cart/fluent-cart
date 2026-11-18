@@ -1,36 +1,29 @@
 <script setup>
 import translate from "@/utils/translator/Translator";
 import * as Card from "@/Bits/Components/Card/Card.js";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 </script>
 
 <template>
   <Card.Body>
 
-    <el-row :gutter="15">
-      <el-col :lg="12">
-        <el-form-item :label="translate('From Name')" label-position="top">
-          <el-skeleton animated class="h-9 gap-2">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-full h-4"/>
-            </template>
-          </el-skeleton>
-          <br>
+    <div class="grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+        <Field :label="translate('From Name')">
+          <fct-skeleton animated class="h-9 gap-2">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
           <div>
             <div class="form-note">
               <p>{{ translate('Name that will be used to send emails') }}</p>
             </div>
           </div>
 
-        </el-form-item>
-      </el-col>
-      <el-col :lg="12">
-        <el-form-item :label="translate('From Email')" label-position="top">
-          <el-skeleton animated class="h-9">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-full h-4"/>
-            </template>
-          </el-skeleton>
+        </Field>
+        <Field :label="translate('From Email')">
+          <fct-skeleton animated class="h-9">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
           <div>
             <div class="form-note">
               <p>{{
@@ -39,31 +32,20 @@ import * as Card from "@/Bits/Components/Card/Card.js";
             </div>
           </div>
 
-        </el-form-item>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="15">
-      <el-col :lg="12">
-        <el-form-item :label="translate('Reply to name (Optional)')" label-position="top">
-          <el-skeleton animated class="h-9">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-full h-4"/>
-            </template>
-          </el-skeleton>
+        </Field>
+        <Field :label="translate('Reply to name (Optional)')">
+          <fct-skeleton animated class="h-9">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
           <div class="form-note">
             <p>{{ translate('Name that will be used for reply to attribute') }}</p>
           </div>
 
-        </el-form-item>
-      </el-col>
-      <el-col :lg="12">
-        <el-form-item :label="translate('Reply to email (Optional)')" label-position="top">
-          <el-skeleton animated class="h-9">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-full h-4"/>
-            </template>
-          </el-skeleton>
+        </Field>
+        <Field :label="translate('Reply to email (Optional)')">
+          <fct-skeleton animated class="h-9">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
           <div>
             <div class="form-note">
               <p>{{
@@ -71,18 +53,16 @@ import * as Card from "@/Bits/Components/Card/Card.js";
                 }}</p>
             </div>
           </div>
-        </el-form-item>
-      </el-col>
-    </el-row>
+        </Field>
+    </div>
 
-    <el-row :gutter="15">
-      <el-col>
+    <div>
         <div class="el-form-item__label">
           {{ translate('Email Footer') }}
         </div>
 
         <div class="h-[297px] w-full relative">
-          <el-skeleton animated :rows="7" />
+          <fct-skeleton animated :rows="7" />
         </div>
         <div class="mt-2 mb-2">
           <div class="form-note">
@@ -94,42 +74,25 @@ import * as Card from "@/Bits/Components/Card/Card.js";
 
         <div
             class="fct-powered-by-email-footer-checkbox mb-4 pb-4 border-[1px] border-l-0 border-t-0 border-r-0 border-solid border-gray-outline dark:border-dark-400">
-          <el-skeleton animated class="h-5">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-full h-4"/>
-            </template>
-          </el-skeleton>
+          <fct-skeleton animated class="h-5">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
         </div>
 
-      </el-col>
-    </el-row>
+    </div>
 
-    <el-row :gutter="15">
-      <el-col>
-        <el-form-item>
-
-          <el-row :gutter="15" class="w-full">
-            <el-col :lg="12">
-              <div class="setting-html-wrapper">
-                <span class="setting-label">{{ translate('Admin Email Address') }}</span>
-                <div class="form-note"><p>
-                  {{ translate('FluentCart will send admin notification to this email address.') }}</p></div>
-              </div>
-            </el-col>
-            <el-col :lg="12">
-              <div class="setting-fields-inner w-full">
-                <el-skeleton animated class="h-9">
-                  <template #template>
-                    <el-skeleton-item variant="p" class="w-full h-4"/>
-                  </template>
-                </el-skeleton>
-              </div>
-            </el-col>
-          </el-row>
-
-        </el-form-item>
-      </el-col>
-    </el-row>
+    <div class="mb-[18px] grid grid-cols-1 gap-x-[15px] min-[1200px]:grid-cols-2">
+        <div class="setting-html-wrapper">
+          <span class="setting-label">{{ translate('Admin Email Address') }}</span>
+          <div class="form-note"><p>
+            {{ translate('FluentCart will send admin notification to this email address.') }}</p></div>
+        </div>
+        <div class="setting-fields-inner w-full">
+          <fct-skeleton animated class="h-9">
+            <fct-skeleton variant="p" class="w-full h-4"/>
+          </fct-skeleton>
+        </div>
+    </div>
   </Card.Body>
 </template>
 

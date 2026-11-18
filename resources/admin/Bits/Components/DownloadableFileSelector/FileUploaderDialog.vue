@@ -126,14 +126,14 @@ const onSelectFile = (selected, hasIssue) => {
 <template>
 
   <div class="fct-driver-wrap">
-    <el-button class="fct-upload-btn" type="info" plain @click="dialogVisible = true" :disabled="isDisabled"
+    <fct-button class="fct-upload-btn" type="info" plain @click="dialogVisible = true" :disabled="isDisabled"
                :size="uploadBtnSize">
       <DynamicIcon :name="uploadBtnIcon" v-if="uploadBtnIcon"/>
       {{ uploadBtnText }}
 
-    </el-button>
+    </fct-button>
 
-    <el-dialog
+    <fct-dialog
         v-model="dialogVisible"
         :append-to-body="true"
         :title="translate('Storage Providers')"
@@ -212,14 +212,14 @@ const onSelectFile = (selected, hasIssue) => {
       </div>
 
       <div class="dialog-footer" v-if="storageDriverModel.drivers.length > 0">
-        <el-button @click="dialogVisible = false" type="info" soft>
+        <fct-button @click="dialogVisible = false" type="info" soft>
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button type="primary" @click="onConfirm" :disabled="!isFileSelected || hasSelectionIssue">
+        </fct-button>
+        <fct-button type="primary" @click="onConfirm" :disabled="!isFileSelected || hasSelectionIssue">
           {{ translate('Confirm') }}
-        </el-button>
+        </fct-button>
       </div>
 
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

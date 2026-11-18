@@ -1,9 +1,9 @@
 .fct-search-guide-dialog {
-  @apply w-[600px] !important;
+  @apply w-[600px]!;
 }
 
 .el-button.fct-search-guide-btn{
-  @apply text-xs dark:bg-transparent !important;
+  @apply text-xs! dark:bg-transparent!;
 }
 .fct-search-guide-wrap {
   @apply grid gap-6;

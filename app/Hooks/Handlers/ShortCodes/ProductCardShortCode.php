@@ -21,10 +21,11 @@ class ProductCardShortCode extends ShortCode
             if (App::request()->get('action') === 'elementor') {
                 return;
             }
-            if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/product-card')) {
-                AssetLoader::loadSingleProductAssets();
+            // A card and its Quick View, not the product page's reviews section.
+            if (has_shortcode(static::currentPostContent(), static::SHORT_CODE) || has_block('fluent-cart/product-card')) {
+                AssetLoader::loadSingleProductAssetsWithoutReviews();
             }
-        }, 10);
+        }, 20); // After the theme's styles: a theme's button reset must not outrank ours.
     }
 
     public function viewData(): ?array

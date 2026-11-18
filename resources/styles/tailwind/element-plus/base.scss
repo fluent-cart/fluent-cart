@@ -95,6 +95,25 @@
     @apply leading-[1.25rem];
 }
 
+// Same width as FluentCart's own empty-state graphic
+.el-empty {
+    --el-empty-image-width: 100px;
+}
+
+// Element Plus keys its dark empty colors to html.dark, a class the admin never sets
+.fluent_theme_dark .el-empty {
+    --el-empty-fill-color-0: theme('colors.dark.400');
+    --el-empty-fill-color-1: theme('colors.dark.400');
+    --el-empty-fill-color-2: theme('colors.dark.400');
+    --el-empty-fill-color-3: theme('colors.dark.400');
+    --el-empty-fill-color-4: theme('colors.dark.500');
+    --el-empty-fill-color-5: theme('colors.dark.500');
+    --el-empty-fill-color-6: theme('colors.dark.500');
+    --el-empty-fill-color-7: theme('colors.dark.600');
+    --el-empty-fill-color-8: theme('colors.dark.600');
+    --el-empty-fill-color-9: theme('colors.dark.600');
+}
+
 .single_address {
     h4{
       @apply m-0 mb-2 uppercase text-system-dark dark:text-gray-50;

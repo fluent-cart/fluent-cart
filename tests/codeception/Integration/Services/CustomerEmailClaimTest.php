@@ -16,7 +16,7 @@ use Tests\Support\Traits\BuildsEmailClaims;
 use Tests\Support\Traits\RequiresEmailVerification;
 
 /**
- * Case 6 of the customer identity binding fix (dev/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.4).
+ * Case 6 of the customer identity binding fix (dev-docs/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.4).
  *
  * Nothing binds a customer record to an account on an email match any more,
  * so the customer proves the address instead: a signed link is mailed to the

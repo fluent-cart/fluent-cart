@@ -69,69 +69,69 @@ onMounted(() => {
         </template>
       </TableFilterWrapper>
 
-      <el-skeleton class="px-5 pb-5" :loading="loading" :rows="skeletonRowCount" animated/>
+      <fct-skeleton v-if="loading" class="px-5 pb-5" :rows="skeletonRowCount" animated/>
       <div v-if="!loading" class="fct-all-customer-tables">
-        <el-table class="w-full" :data="tickets">
+        <fct-table class="w-full" :data="tickets">
 
-          <el-table-column min-width="250" :label="$t('ID')">
+          <fct-table-column min-width="250" :label="$t('ID')">
             <template #default="scope">
               <div class="truncate">
                 {{ scope.row.id }}
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column min-width="250" :label="$t('Title')">
+          <fct-table-column min-width="250" :label="$t('Title')">
             <template #default="scope">
               <div class="truncate">
                 {{ scope.row.title }}
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column min-width="250" :label="$t('Status')">
+          <fct-table-column min-width="250" :label="$t('Status')">
             <template #default="scope">
               <div class="truncate">
                 {{ scope.row.status }}
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column min-width="250" :label="$t('Content')">
+          <fct-table-column min-width="250" :label="$t('Content')">
             <template #default="scope">
               <div class="truncate" v-html="scope.row.content">
 
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column min-width="250" :label="$t('Agent')">
+          <fct-table-column min-width="250" :label="$t('Agent')">
             <template #default="scope">
               <div class="truncate">
                 {{ scope.row.agent === null ? '----' : scope.row.agent.full_name }}
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
-          <el-table-column min-width="250" :label="$t('Action')">
+          <fct-table-column min-width="250" :label="$t('Action')">
             <template #default="scope">
               <div class="">
-                <el-button @click="evt => {
+                <fct-button @click="evt => {
                   router.push({name: 'view_tickets', params: {id: scope.row.id}})
 
                 }">
                   View
-                </el-button>
+                </fct-button>
               </div>
             </template>
-          </el-table-column>
+          </fct-table-column>
 
 
           <template #empty>
             <Empty icon="Empty/ListView"
                    :text="$t('We could not find any customers matching your search.')"/>
           </template>
-        </el-table>
+        </fct-table>
       </div>
 
       <Pagination

@@ -343,7 +343,7 @@ onUnmounted(() => {
       <Card.Header :title="translate('Needs Attention')" title_size="small" border_bottom/>
       <Card.Body>
         <ul class="list-none m-0 p-0">
-          <li v-for="item in attention" :key="item.key" class="flex items-start gap-2 py-2 text-sm border-b border-gray-divider dark:border-dark-500 last:border-b-0">
+          <li v-for="item in attention" :key="item.key" class="flex items-start gap-2 py-2 text-sm [border-bottom-width:1px] border-gray-divider dark:border-dark-500 last:border-b-0">
             <DynamicIcon name="InformationFill" class="w-4 h-4 mt-0.5 text-warning-500 shrink-0" aria-hidden="true"/>
             <span class="flex-1 text-system-dark dark:text-gray-50">{{ item.text }}</span>
             <router-link :to="{name: item.route}" class="fct-text-link text-xs whitespace-nowrap">{{ translate('View report') }}</router-link>

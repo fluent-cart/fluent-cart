@@ -9,7 +9,7 @@
 
     <ul class="table-filter-bulks-actions">
       <li>
-        <el-dropdown trigger="click">
+        <fct-dropdown trigger="click" :items="[{label: 'No available action'}]">
           <div class="bulk-more-action">
             <button>
               <el-icon>
@@ -18,17 +18,13 @@
               Bulk Actions
             </button>
           </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item>
-                <el-icon>
-                  <User/>
-                </el-icon>
-                No available action
-              </el-dropdown-item>
-            </el-dropdown-menu>
+          <template #item="{item}">
+            <el-icon>
+              <User/>
+            </el-icon>
+            {{ item.label }}
           </template>
-        </el-dropdown>
+        </fct-dropdown>
       </li>
       <li v-if="selections.length === 1">
         <div class="bulk-delete">

@@ -9,13 +9,13 @@
         }
     }
     &-item__label {
-        @apply inline-block text-system-dark font-medium dark:text-gray-50 #{!important};
+        @apply inline-block! text-system-dark! font-medium! dark:text-gray-50!;
         svg{
             @apply text-system-mid;
         }
     }
     &-item.is-error .el-input__wrapper {
-       @apply shadow-none border-red-500 hover:shadow-none !important;
+       @apply shadow-none! border-red-500! hover:shadow-none!;
     }
     &--label-top{
         .el-form-item{
@@ -31,7 +31,7 @@
         @apply transition-none min-h-9 py-[2px] px-3 rounded border border-solid border-gray-outline shadow-none hover:shadow-none dark:border-dark-400 dark:bg-dark-600;
         &.is-hovering,
         &.is-focused {
-            @apply shadow-none #{!important};
+            @apply shadow-none!;
         }
         &.is-focused{
             @apply border-primary-500 dark:border-gray-300;
@@ -52,7 +52,7 @@
         }
     }
     input {
-        @apply border-0 p-0 bg-transparent shadow-none focus:shadow-none focus:outline-none focus:border-0 min-h-[11px];
+        @apply border-0 p-0 bg-transparent shadow-none focus:shadow-none focus:outline-hidden focus:border-0 min-h-[11px];
     }
     &-dropdown__item {
         @apply flex items-center px-3;
@@ -65,7 +65,7 @@
     }
     .el-input.is-focus .el-input__wrapper,
     .el-input__wrapper.is-focus {
-        @apply shadow-none #{!important};
+        @apply shadow-none!;
     }
     &:focus:not(.el-select--disabled) .el-input__wrapper,
     &:hover:not(.el-select--disabled) .el-input__wrapper{
@@ -110,9 +110,9 @@
         }
     }
     &__inner{
-        @apply h-auto min-h-[auto] leading-none bg-transparent text-system-dark dark:text-gray-50 dark:bg-transparent #{!important};
+        @apply h-auto! min-h-[auto]! leading-none! bg-transparent! text-system-dark! dark:text-gray-50! dark:bg-transparent!;
         &::placeholder{
-            @apply text-gray-400 text-[13px] font-light #{!important};
+            @apply text-gray-400! text-[13px]! font-light!;
         }
     }
     &--x-small {
@@ -120,10 +120,10 @@
             @apply py-[3px] px-2 text-xs rounded-sm min-h-7;
         }
         .el-input-group__append{
-            @apply h-[28px] px-2.5 #{!important};
+            @apply h-[28px]! px-2.5!;
         }
         .el-input-group__prepend{
-            @apply h-[28px] px-2.5 #{!important};
+            @apply h-[28px]! px-2.5!;
         }
     }
     &--small {
@@ -131,10 +131,10 @@
             @apply px-2.5 min-h-8 rounded-sm; // 32px
         }
         .el-input-group__append{
-            @apply h-9 #{!important};
+            @apply h-9!;
         }
         .el-input-group__prepend{
-            @apply h-9 #{!important};
+            @apply h-9!;
         }
     }
     &--medium {
@@ -164,7 +164,7 @@
         &__decrease,
         &__increase{
             @apply bg-gray-25 text-system-mid hover:text-system-dark dark:text-gray-300 dark:bg-dark-600 dark:hover:text-gray-50;
-            @apply dark:border-dark-400 #{!important};
+            @apply dark:border-dark-400!;
         }
         .el-input.is-disabled .el-input__wrapper{
             @apply bg-gray-25 border-gray-divider dark:border-dark-400 dark:bg-dark-600;
@@ -172,7 +172,7 @@
     }
     &.is-disabled {
         .el-input__wrapper{
-            @apply shadow-none bg-gray-50 border-gray-outline dark:bg-primary-500 dark:border-dark-400 #{!important};
+            @apply shadow-none! bg-gray-50! border-gray-outline! dark:bg-primary-500! dark:border-dark-400!;
         }
     }
     &__prefix{
@@ -236,11 +236,11 @@
     &__inner{
         @apply rounded-xs w-4 h-4 border-gray-outline transition-none hover:border-primary-500 dark:bg-dark-600 dark:border-dark-400;
         &::after{
-            @apply border-[1.5px];
+            @apply [border-width:1.5px];
         }
     }
     &__original{
-        @apply opacity-0 #{!important};
+        @apply opacity-0!;
     }
 }
 
@@ -333,8 +333,8 @@
             @apply border-primary-500 dark:border-dark-300;
             .el-radio__inner{
                 @apply dark:border-dark-50;
-                &::after{
-                    @apply dark:bg-dark-50;
+                .fluent_theme_dark &::after {
+                    @apply bg-dark-50;
                 }
             }
         }
@@ -363,7 +363,7 @@
         }
     }
     &__inner{
-        @apply border-[1.5px] w-4 h-4 border-gray-outline dark:bg-transparent dark:border-dark-300;
+        @apply [border-width:1.5px] w-4 h-4 border-gray-outline dark:bg-transparent dark:border-dark-300;
         &::after{
            @apply w-2 h-2 opacity-0;
            transform: translate(-50%,-50%) scale(0.7);
@@ -377,8 +377,11 @@
             .el-radio__inner{
                 @apply bg-white border-primary-500 dark:bg-dark-600 dark:border-dark-200;
                 &::after{
-                    @apply bg-primary-500 opacity-100 dark:bg-dark-200;
+                    @apply bg-primary-500 opacity-100;
                     transform: translate(-50%,-50%) scale(1);
+                }
+                .fluent_theme_dark &::after {
+                    @apply bg-dark-200;
                 }
             }
             + .el-radio__label{
@@ -459,7 +462,7 @@
 // input group
 .el-input-group{
     .el-button{
-        @apply bg-[inherit] border-0 rounded-none hover:bg-[inherit] dark:bg-[inherit] dark:border-[inherit] dark:hover:bg-[inherit] dark:hover:border-[inherit] #{!important};
+        @apply bg-[inherit]! border-0! rounded-none! hover:bg-[inherit]! dark:bg-[inherit]! dark:border-[inherit]! dark:hover:bg-[inherit]! dark:hover:border-[inherit]!;
     }
     .el-input-group{
         &__prepend{
@@ -476,7 +479,7 @@
         .el-input-group__prepend .el-select {
             @apply w-[90px];
             .el-select__wrapper{
-                @apply shadow-none border-0 #{!important};
+                @apply shadow-none! border-0!;
             }
         }
         >.el-input__wrapper{
@@ -487,7 +490,7 @@
         .el-input-group__append .el-select {
             @apply w-[90px];
             .el-select__wrapper{
-                @apply shadow-none border-0 #{!important};
+                @apply shadow-none! border-0!;
             }
         }
         >.el-input__wrapper{
@@ -497,7 +500,7 @@
     &.el-input-group--prepend .el-input-group__prepend .el-select {
         @apply w-[90px];
         .el-select__wrapper{
-            @apply shadow-none border-0 #{!important};
+            @apply shadow-none! border-0!;
         }
     }
 }
@@ -505,11 +508,11 @@
 // RTL: the append sits on the left and the prepend on the right, so mirror borders and radii
 [dir="rtl"] .el-input-group {
     .el-input-group__append {
-        @apply border-l border-r-0 rounded-tl rounded-bl rounded-tr-none rounded-br-none;
+        @apply [border-left-width:1px] border-r-0 rounded-tl rounded-bl rounded-tr-none rounded-br-none;
         box-shadow: 0 1px 0 0 var(--el-input-border-color) inset, 0 -1px 0 0 var(--el-input-border-color) inset, 1px 0 0 0 var(--el-input-border-color) inset;
     }
     .el-input-group__prepend {
-        @apply border-r border-l-0 rounded-tr rounded-br rounded-tl-none rounded-bl-none;
+        @apply [border-right-width:1px] border-l-0 rounded-tr rounded-br rounded-tl-none rounded-bl-none;
         box-shadow: 0 1px 0 0 var(--el-input-border-color) inset, 0 -1px 0 0 var(--el-input-border-color) inset, -1px 0 0 0 var(--el-input-border-color) inset;
     }
     &.el-input-group--append > .el-input__wrapper {
@@ -597,7 +600,7 @@
     .el-input__wrapper{
         @apply bg-gray-50 cursor-not-allowed dark:bg-primary-500;
         &.is-focus{
-            @apply border-gray-outline dark:border-dark-400 #{!important};
+            @apply border-gray-outline! dark:border-dark-400!;
         }
         .el-input__inner{
             @apply cursor-not-allowed;
@@ -610,7 +613,7 @@
         @apply p-2.5;
     }
     .el-input-group__append {
-        @apply px-0 rounded-tr-[6px] rounded-br-[6px] #{!important};
+        @apply px-0! rounded-tr-[6px]! rounded-br-[6px]!;
     }
 }
 
@@ -694,7 +697,7 @@
 
 .is-error{
     .el-select__wrapper{
-        @apply border-red-500 #{!important};
+        @apply border-red-500!;
     }
 }
 .el-input-number.is-controls-right {

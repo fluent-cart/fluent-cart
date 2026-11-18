@@ -98,7 +98,7 @@ const confirmChange = () => {
 const updateVariationType = (newType) => {
   // Capture the type the server currently has BEFORE the model mutates it, so a
   // rejected switch can roll the dropdown back. Read from detail (not
-  // selectedVariationType) because el-select has already pushed newType into
+  // selectedVariationType) because the select has already pushed newType into
   // selectedVariationType via v-model by the time we get here.
   const previousType = props.product.detail.variation_type;
   selectedVariationType.value = newType;
@@ -118,25 +118,22 @@ const updateVariationType = (newType) => {
       <Card.Header :title="$t('Pricing')" border_bottom>
         <template #action>
           <div class="w-[150px] fct-select-gray">
-            <el-select
+            <!-- Once the product is on Advanced Variations, every other type is
+                 disabled: switching back to Simple / Simple Variations is not
+                 allowed (advanced is terminal; the backend rejects it too). -->
+            <fct-select
                 size="small"
                 :class="productEditModel.hasValidationError('detail.variation_type') ? 'is-error' : ''"
                 v-if="product.detail"
                 v-model="selectedVariationType"
                 :placeholder="$t('Select Variation')"
+                :options="Object.entries(appVars.variation_types).map(([value, label]) => ({
+                    label,
+                    value,
+                    disabled: product?.detail?.variation_type === 'advanced_variations' && value !== 'advanced_variations'
+                }))"
                 @change="handleVariationChange"
-            >
-              <!-- Once the product is on Advanced Variations, every other type is
-                   disabled: switching back to Simple / Simple Variations is not
-                   allowed (advanced is terminal; the backend rejects it too). -->
-              <el-option
-                  v-for="(label, value) in appVars.variation_types"
-                  :key="value"
-                  :label="label"
-                  :value="value"
-                  :disabled="product?.detail?.variation_type === 'advanced_variations' && value !== 'advanced_variations'"
-              />
-            </el-select>
+            />
           </div>
         </template>
       </Card.Header>

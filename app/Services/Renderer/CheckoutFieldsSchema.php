@@ -345,6 +345,8 @@ class CheckoutFieldsSchema
             $fields = $formattedFields;
         }
 
+        $fields = self::applyAddressFieldOrder($fields, $type);
+
         return apply_filters('fluent_cart/fields/address_base_fields', $fields, [
             'config'       => $config,
             'scope'        => $scope,
@@ -352,6 +354,49 @@ class CheckoutFieldsSchema
         ]);
     }
 
+
+    // Fields missing from the saved order keep their relative place after it.
+    public static function applyAddressFieldOrder($fields, $type)
+    {
+        $order = self::getAddressFieldOrder($type . '_address');
+        if (!$order) {
+            return $fields;
+        }
+
+        $sorted = [];
+        foreach ($order as $key) {
+            if (is_string($key) && isset($fields[$key])) {
+                $sorted[$key] = $fields[$key];
+            }
+        }
+
+        return $sorted + $fields;
+    }
+
+    // Each section's order has its own WP option (unique name, so no duplicate rows),
+    // owned by the save-field-order endpoint.
+    public static function addressFieldOrderKey($section)
+    {
+        return 'fluent_cart_checkout_' . $section . '_order';
+    }
+
+    public static function getAddressFieldOrder($section)
+    {
+        $order = get_option(self::addressFieldOrderKey($section), []);
+        return is_array($order) ? $order : [];
+    }
+
+    // Keeps only known field keys of each address section, once each.
+    public static function sanitizeAddressFieldOrder($order, $settings)
+    {
+        $clean = [];
+        foreach (['billing_address', 'shipping_address'] as $section) {
+            $keys = array_filter((array)Arr::get($order, $section, []), 'is_string');
+            $clean[$section] = array_values(array_intersect(array_unique($keys), array_keys(Arr::get($settings, $section, []))));
+        }
+
+        return $clean;
+    }
 
     private static function getRequirementType($config, $key)
     {

@@ -43,6 +43,7 @@ class SquareAddon extends AbstractPaymentGateway
             'slug'         => 'square',
             'description'  => 'Pay securely with Square - Credit and Debit Cards, Apple Pay, Google Pay, and Cash App Pay',
             'logo'         => Vite::getAssetUrl('images/payment-methods/square-logo.svg'),
+            'logo_light'   => Vite::getAssetUrl('images/payment-methods/square-logo-light.svg'),
             'icon'         => Vite::getAssetUrl('images/payment-methods/square-logo.svg'),
             'brand_color'  => '#3e4348',
             'status'       => false,

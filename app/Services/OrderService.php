@@ -223,7 +223,7 @@ class OrderService
             throw new \Exception(sprintf(
                 /* translators: %s: product title */
                 esc_html__('[%s] is out of stock.', 'fluent-cart'),
-                esc_html(Arr::get($product, 'title'))
+                esc_html(Arr::get($product, 'title') ?: Arr::get($currentVariation, 'product.post_title'))
             ));
         }
     }
@@ -243,7 +243,7 @@ class OrderService
             $note = sprintf(
                 /* translators: %s: product title */
                 esc_html__('[%1$s] is out of stock. Only %2$s left.', 'fluent-cart'),
-                esc_html(Arr::get($product, 'title')),
+                esc_html(Arr::get($product, 'title') ?: Arr::get($currentVariation, 'product.post_title')),
                 esc_html(Arr::get($currentVariation, 'available'))
             );
             throw new \Exception(esc_html($note));

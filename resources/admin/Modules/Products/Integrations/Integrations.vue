@@ -7,33 +7,21 @@
                         v-if="hasActiveModules"
                         class="integration-actions"
                     >
-                        <el-dropdown
+                        <fct-dropdown
                             @command="add"
                             trigger="click"
-                            popper-class="fct-dropdown"
+                            :items="integrationItems"
                         >
-                            <el-button type="info" plain size="small">
+                            <fct-button type="info" plain size="small">
                                 {{ $t("Add Integration") }}
                                 <DynamicIcon name="ChevronDown"/>
-                            </el-button>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <template
-                                        v-for="( integration, integration_name ) in available_integrations"
-                                        :key="integration_name"
-                                    >
-                                        <el-dropdown-item :command="integration_name">
-                                            {{ integration.title }}
-                                        </el-dropdown-item>
-                                    </template>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
+                            </fct-button>
+                        </fct-dropdown>
                     </div>
                 </template>
             </CardHeader>
             <CardBody class="px-0 pb-0 pt-4">
-                <el-skeleton class="px-5 pb-5" :loading="loading" animated :rows="6"/>
+                <fct-skeleton v-if="loading" class="px-5 pb-5" animated :rows="6"/>
 
                 <template v-if="!loading">
 
@@ -47,25 +35,25 @@
                             }}
                         </p>
 
-                        <el-button tag="a" type="primary" :href="all_module_config_url">
+                        <fct-button tag="a" type="primary" :href="all_module_config_url">
                           {{ $t("Configure Modules") }}
-                        </el-button>
+                        </fct-button>
                     </div>
 
                     <div v-else class="fct-integrations-table-wrap">
-                        <el-table v-loading="loading" :data="feeds">
-                            <el-table-column :label="$t('Status')" :width="90">
+                        <fct-table :loading="loading" :data="feeds">
+                            <fct-table-column :label="$t('Status')" :width="90">
                                 <template #default="scope">
-                                    <el-switch
+                                    <fct-switch
                                         active-value="yes"
                                         inactive-value="no"
                                         @change="handleActive(scope.row)"
                                         v-model="scope.row.enabled"
                                     />
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="160" :label="$t('Integration')">
+                            <fct-table-column :width="160" :label="$t('Integration')">
                                 <template #default="scope">
                                     <div class="fct-integration-logo-wrap">
                                         <img
@@ -80,17 +68,17 @@
                                         </span>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :min-width="150" :label="$t('Title')">
+                            <fct-table-column :min-width="150" :label="$t('Title')">
                                 <template #default="scope">
                                     <a class="fct-action-link-btn" @click.prevent="edit(scope.row)" href="#">
                                         {{ scope.row.name }}
                                     </a>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :min-width="150" :label="$t('Triggers')">
+                            <fct-table-column :min-width="150" :label="$t('Triggers')">
                                 <template #default="scope">
                                     <div class="fct-event-triggers">
                                         <el-tag
@@ -100,10 +88,10 @@
                                             {{ Str.headline(event) }}
                                         </el-tag>
 
-                                        <el-popover
+                                        <fct-popover
                                             v-if="(scope.row.feed.event_trigger || []).length > 2"
                                             placement="bottom"
-                                            width="300"
+                                            :width="300"
                                             trigger="hover"
                                         >
                                             <template #reference>
@@ -121,19 +109,17 @@
                                                     {{ Str.headline(event) }}
                                                 </el-tag>
                                             </div>
-                                        </el-popover>
+                                        </fct-popover>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="90">
+                            <fct-table-column :width="90">
                                 <template #default="scope">
                                     <div class="fct-btn-group sm">
-                                        <el-tooltip
-                                            effect="dark"
+                                        <fct-tooltip
                                             :content="$t('Edit')"
                                             placement="top"
-                                            popper-class="fct-tooltip"
                                         >
                                             <IconButton
                                                 tag="button"
@@ -143,26 +129,24 @@
                                             >
                                                 <DynamicIcon name="Edit"/>
                                             </IconButton>
-                                        </el-tooltip>
+                                        </fct-tooltip>
 
-                                        <el-tooltip
-                                            effect="dark"
+                                        <fct-tooltip
                                             :content="$t('Delete')"
                                             placement="top"
-                                            popper-class="fct-tooltip"
                                         >
                                             <IconButton
                                                 tag="button"
                                                 size="x-small"
-                                                @click="remove(scope.row.id, scope)"
+                                                @click="remove(scope.row.id, scope.index)"
                                                 hover="danger"
                                             >
                                                 <DynamicIcon name="Delete"/>
                                             </IconButton>
-                                        </el-tooltip>
+                                        </fct-tooltip>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
                             <template #empty>
                                 <Empty
@@ -170,7 +154,7 @@
                                     :text="$t('No Integrations Available.')"
                                 />
                             </template>
-                        </el-table>
+                        </fct-table>
                     </div>
 
                     <div class="fct-integration-table-footer">
@@ -216,13 +200,12 @@ export default {
     props: ['product', 'product_id'],
     data() {
         return {
-            product_id: this.product_id,
             selectedIntegrationType: '',
             integrationLists: [],
             showIntegrationDialog: false,
             feeds: [],
             available_integrations: {},
-            all_module_config_url: {},
+            all_module_config_url: "",
             totalActiveModules: 0,
             loading: false
         }
@@ -230,6 +213,12 @@ export default {
     computed: {
         Str() {
             return Str
+        },
+        integrationItems() {
+            return Object.keys(this.available_integrations).map(name => ({
+                command: name,
+                label: this.available_integrations[name].title
+            }));
         },
         hasActiveModules() {
             return Object.values(this.available_integrations).some(integration => integration.enabled);
@@ -311,8 +300,7 @@ export default {
                     this.handleError(error.responseJSON.data.message);
                 });
         },
-        remove(id, scope) {
-            let $index = scope.$index;
+        remove(id, $index) {
             let data = {
                 integration_id: id,
             };

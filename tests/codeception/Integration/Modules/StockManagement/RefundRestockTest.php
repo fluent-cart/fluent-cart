@@ -17,6 +17,7 @@ use FluentCart\App\Services\Payments\RefundPlanner;
 use FluentCart\App\Services\ShipmentService;
 use FluentCart\Framework\Support\Arr;
 use Tests\Support\DatabaseTestCase;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Doubles\FakeRefundGateway;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -173,16 +174,13 @@ class RefundRestockTest extends DatabaseTestCase
         $shipment = $this->ship($item, 2);
         $this->refund($txn, $item, 1, 1, true);
 
-        $breakMetaWrite = function ($query) {
-            return preg_match('/^\s*(update|insert)\b.*fct_order_meta/is', $query) ? 'SELECT * FROM fct_missing_table' : $query;
-        };
-        add_filter('query', $breakMetaWrite);
+        $breakMetaWrite = FailingQueries::matching('/^\s*(update|insert)\b.*fct_order_meta/is');
         try {
             $result = ShipmentService::deleteShipment(Shipment::find($shipment->id));
         } catch (\Throwable $e) {
             $result = $e;
         } finally {
-            remove_filter('query', $breakMetaWrite);
+            $breakMetaWrite->remove();
         }
 
         $this->assertInstanceOf(\WP_Error::class, $result);

@@ -23,8 +23,9 @@ const onChange = (val) => {
 </script>
 
 <template>
-  <el-select
+  <fct-select
     :model-value="modelValue"
+    :options="options"
     multiple
     filterable
     allow-create
@@ -36,12 +37,5 @@ const onChange = (val) => {
     :placeholder="$t('Select or type...')"
     :disabled="disabled"
     @update:model-value="onChange"
-  >
-    <el-option
-      v-for="cat in options"
-      :key="cat.value"
-      :label="cat.label"
-      :value="cat.value"
-    />
-  </el-select>
+  />
 </template>

@@ -16,7 +16,7 @@
         }
     }
     input {
-        @apply rounded-tl rounded-bl border-0 bg-transparent w-full text-left py-0 pr-1 pl-3 m-0 focus:outline-none focus:shadow-none text-[13px] text-system-dark font-normal dark:bg-transparent dark:text-gray-50;
+        @apply rounded-tl rounded-bl border-0 bg-transparent w-full text-left py-0 pr-1 pl-3 m-0 focus:outline-hidden focus:shadow-none text-[13px] text-system-dark font-normal dark:bg-transparent dark:text-gray-50;
 
         // Hide Arrows From Input Number
         &::-webkit-outer-spin-button,

@@ -2,42 +2,36 @@
   <div class="filters-wrap">
     <div class="fct-btn-group">
       <div ref="sorting_popover_wrapper">
-        <el-popover :visible="sortingVisible" placement="bottom-start" width="240" popper-class="filter-popover">
+        <fct-popover :visible="sortingVisible" placement="bottom-start" width="240" popper-class="filter-popover">
           <div class="filter-popover-item">
             <h3 class="filter-popover-title">{{ $t('Sort By') }}</h3>
             <div :style="`${table.sortableColumns.length > 8 ? 'max-height: 125px; overflow: auto;' : ''}`">
-              <el-radio-group @change="storeColumns()" class="fct-radios-blocks" v-model="table.sort.sortBy">
-                <el-radio v-for="column in table.sortableColumns" :key="column.value" :value="column.value"
-                          :label="column.label"/>
-              </el-radio-group>
+              <fct-choice type="radio" @change="storeColumns()" class="fct-radios-blocks" v-model="table.sort.sortBy"
+                          :options="table.sortableColumns"/>
             </div>
             <hr/>
-            <el-radio-group size="small" v-model="table.sort.sortType">
-              <el-radio-button value="ASC">{{ $t('Ascending') }}</el-radio-button>
-              <el-radio-button value="DESC">{{ $t('Descending') }}</el-radio-button>
-            </el-radio-group>
+            <fct-choice type="radio" button size="small" v-model="table.sort.sortType"
+                        :options="[{value: 'ASC', label: $t('Ascending')}, {value: 'DESC', label: $t('Descending')}]"/>
             <div class="filter-btn-wrap">
-              <el-button @click="applySort" type="primary">
+              <fct-button @click="applySort" type="primary">
                 {{ $t('Apply') }}
-              </el-button>
+              </fct-button>
             </div>
           </div>
           <template #reference>
               <span>
-                <el-tooltip
-                    effect="dark"
+                <fct-tooltip
                     :content="$t('Sort')"
                     placement="top"
-                    popper-class="fct-tooltip"
                 >
                   <IconButton tag="button"
                               @click="sortingVisible = !sortingVisible">
                     <DynamicIcon name="ArrowUpDown"/>
                   </IconButton>
-                </el-tooltip>
+                </fct-tooltip>
               </span>
           </template>
-        </el-popover>
+        </fct-popover>
       </div>
     </div>
   </div>

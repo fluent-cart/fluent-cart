@@ -1,4 +1,5 @@
-@config "./single-product.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./single-product.config.mjs";
 /* Review photos open in the product gallery's lightbox; reviews also render
    on pages that never load the gallery styles (the standalone block, the
    order-review page), so the skin travels with them. */
@@ -1357,7 +1358,7 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
         /* The caret is drawn by ::before at right:10px and is 8px wide, so
            the text needs to stop clear of it. A symmetric px-2.5 let the
            longest option — Highest Rating — run underneath the arrow. */
-        @apply h-auto text-sm cursor-pointer shadow-none leading-none ps-2.5 pe-7 border border-solid focus:outline-none;
+        @apply h-auto text-sm cursor-pointer shadow-none leading-none ps-2.5 pe-7 border border-solid focus:outline-hidden;
         padding-top: var(--fct-input-padding-y, theme('spacing.2'));
         padding-bottom: var(--fct-input-padding-y, theme('spacing.2'));
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT'));
@@ -2519,10 +2520,12 @@ body.fluent-cart-custom:not(.fluent-cart-no-colors) {
         transition: border-color 0.2s;
         box-sizing: border-box;
         font-family: inherit;
+        box-shadow: none;
 
         &:focus {
             outline: none;
             border-color: var(--fct-review-input-focus-border, #1f2937);
+            box-shadow: none;
         }
 
         &:focus-visible {

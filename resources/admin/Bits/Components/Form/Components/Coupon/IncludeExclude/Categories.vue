@@ -26,26 +26,16 @@ onMounted(() => {
 <template>
     <div class="fct-multiple-select-group">
         <div class="input-prepend">
-            <el-select
+            <fct-select
                 v-model="isExcludeOrIncludeCategories"
                 :placeholder="$t('Select')"
                 filterable
                 clearable
-            >
-                <el-option
-                    :disabled="excluded_categories.length > 0"
-                    :label="$t('Include')"
-                    value="include"
-                />
-                <el-option
-                    :disabled="included_categories.length > 0"
-                    :label="$t('Exclude')"
-                    value="exclude"
-                />
-            </el-select>
+                :options="[{label: $t('Include'), value: 'include', disabled: excluded_categories.length > 0}, {label: $t('Exclude'), value: 'exclude', disabled: included_categories.length > 0}]"
+            />
         </div>
         <div class="input-append">
-            <el-select
+            <fct-select
                 v-if="isExcludeOrIncludeCategories === 'exclude'"
                 v-model="value['excluded_categories']"
                 multiple
@@ -53,16 +43,10 @@ onMounted(() => {
                 filterable
                 remote
                 :reserve-keyword="false"
-            >
-                <el-option
-                    v-for="category in categories"
-                    :key="category.term_id"
-                    :label="category.name"
-                    :value="category.term_id"
-                ></el-option>
-            </el-select>
+                :options="categories.map(category => ({label: category.name, value: category.term_id}))"
+            />
 
-            <el-select
+            <fct-select
                 v-else
                 v-model="value['included_categories']"
                 multiple
@@ -70,14 +54,8 @@ onMounted(() => {
                 filterable
                 remote
                 :reserve-keyword="false"
-            >
-                <el-option
-                    v-for="category in categories"
-                    :key="category.term_id"
-                    :label="category.name"
-                    :value="category.term_id">
-                </el-option>
-            </el-select>
+                :options="categories.map(category => ({label: category.name, value: category.term_id}))"
+            />
         </div>
     </div>
 </template>

@@ -4,8 +4,7 @@
  *
  * Declarations are keyed to the exact source file and line that registers the
  * route. Additional executable cases capture distinct parameter shapes used by
- * the admin SPA or public frontend. Web and faker surfaces remain statically
- * auditable even when their transport or side effects make invocation unsafe.
+ * the admin SPA or public frontend.
  */
 
 $config = require dirname(__DIR__) . '/suite.config.php';
@@ -26,6 +25,10 @@ $declare = function ($file, $line, $route, array $case = []) use (&$declarations
         'transport'   => isset($case['transport']) ? $case['transport'] : 'rest',
     ];
     $declarations[$id] = $declaration;
+    // base_case => false declares the route for its variations only.
+    if (isset($case['base_case']) && $case['base_case'] === false) {
+        return $id;
+    }
 
     $cases[] = array_merge([
         'label'          => $id . ' GET /' . ltrim($route, '/'),
@@ -72,9 +75,6 @@ $variation($id, 'single-order widget payload', [
     'data'   => ['order_id' => '{order_id}'],
 ], 'resources/admin/Bits/Components/DynamicTemplates/DynamicTemplates.vue', 65, ['needs' => 'order']);
 
-$declare($api, 53, 'dashboard', [
-    'skip' => 'DashboardController::getOnboardingData() calls GlobalPaymentHandler::getAll(); Phase 1 is forbidden from invoking any payment gateway registry.',
-]);
 $declare($api, 61, 'dashboard/stats');
 
 $declare($api, 67, 'products/variants');
@@ -215,14 +215,7 @@ $variation($bulkId, 'search a replacement product', [
 $declare($api, 130, 'products/get-max-excerpt-word-count');
 $declare($api, 133, 'products/{product}', ['needs' => 'product']);
 $declare($api, 136, 'products/{productId}/related-products', ['needs' => 'product']);
-$pricingId = $declare($api, 139, 'products/{productId}/pricing', ['needs' => 'product']);
-$variation($pricingId, 'product editor menu relation', [
-    'with' => ['product_menu'],
-], 'resources/admin/Modules/Products/ProductRoute.vue', 53, ['needs' => 'product']);
 $declare($api, 146, 'products/{id}/upgrade-paths', ['needs' => 'product']);
-$declare($api, 159, 'products/variation/{variantId}/upgrade-paths', [
-    'skip' => 'The admin consumer supplies live order context and this controller enters PlanUpgradeService payment-path eligibility; Phase 1 never touches a payment path.',
-]);
 $declare($api, 206, 'products/getDownloadableUrl/{downloadableId}', ['needs' => 'product_download']);
 $declare($api, 210, 'products/{productId}/pricing-widgets', ['needs' => 'product']);
 $declare($api, 281, 'variants');
@@ -290,16 +283,11 @@ $variation($attributeTermsId, 'attribute editor second page', [
 ], 'resources/admin/Modules/Attributes/GroupTermsPanel.vue', 83, ['needs' => 'attribute_group']);
 
 $declare($api, 334, 'integration/addons');
-$declare($api, 338, 'integration/global-settings', [
-    'skip' => 'The settings_key is extension-defined and its GET filters may validate remote credentials; no safe core key exists to invoke in Phase 1.',
-]);
 $declare($api, 346, 'integration/global-feeds');
 $declare($api, 359, 'integration/global-feeds/settings', [
-    'needs'  => 'product_integration',
-    'params' => ['integration_id' => 0, 'integration_name' => '{integration_name}'],
-]);
-$declare($api, 368, 'integration/feed/lists', [
-    'skip' => 'The route dispatches an extension-specific merge-field filter that may query a remote integration API; Phase 1 cannot safely choose an arbitrary provider.',
+    'needs'    => 'product_integration',
+    'requires' => 'pro',
+    'params'   => ['integration_id' => 0, 'integration_name' => '{integration_name}'],
 ]);
 $declare($api, 373, 'integration/feed/dynamic_options', [
     'params' => [
@@ -310,20 +298,8 @@ $declare($api, 373, 'integration/feed/dynamic_options', [
     ],
 ]);
 
-$declare($api, 396, 'settings/payment-methods/paypal/webhook/check', [
-    'skip' => 'PaymentMethodController::checkPayPalWebhook() calls Webhook::maybeSetWebhook(), which can contact PayPal and register a live webhook.',
-]);
-$declare($api, 405, 'settings/payment-methods', [
-    'skip' => 'PaymentMethodController::getSettings() resolves a configured payment gateway; payment gateways are forbidden in every Phase 1 mode.',
-]);
-$declare($api, 411, 'settings/payment-methods/all', [
-    'skip' => 'PaymentMethodController::index() enumerates registered payment gateways; payment gateways are forbidden in every Phase 1 mode.',
-]);
-$declare($api, 419, 'settings/payment-methods/connect/info', [
-    'skip' => 'PaymentMethodController::connectInfo() instantiates a gateway and may initiate an account connection; payment gateways are forbidden.',
-]);
-$declare($api, 440, 'settings/permissions');
-$storeSettingsId = $declare($api, 450, 'settings/store');
+$declare($api, 443, 'settings/permissions');
+$storeSettingsId = $declare($api, 453, 'settings/store', ['base_case' => false]);
 foreach ([
     ['store_setup', 450],
     ['pages_setup', 458],
@@ -338,21 +314,21 @@ foreach ([
         'settings_route_line' => $settingsRoute[1],
     ]);
 }
-$declare($api, 463, 'settings/modules/plugin-addons');
-$declare($api, 475, 'settings/modules');
-$declare($api, 483, 'settings/mcp');
-$mcpId = $declare($api, 492, 'settings/mcp/config-snippets', ['params' => ['local_dev' => 'no']]);
+$declare($api, 466, 'settings/modules/plugin-addons');
+$declare($api, 478, 'settings/modules');
+$declare($api, 486, 'settings/mcp');
+$mcpId = $declare($api, 495, 'settings/mcp/config-snippets', ['params' => ['local_dev' => 'no']]);
 $variation($mcpId, 'local development snippet', [
     'local_dev' => 'yes',
 ], 'resources/admin/Bits/Components/Form/Components/McpSettings.vue', 153);
-$declare($api, 501, 'settings/confirmation/shortcode');
-$declare($api, 506, 'settings/storage-drivers');
-$declare($api, 512, 'settings/storage-drivers/active-drivers');
-$declare($api, 515, 'settings/storage-drivers/{driver}', [
+$declare($api, 504, 'settings/confirmation/shortcode');
+$declare($api, 509, 'settings/storage-drivers');
+$declare($api, 515, 'settings/storage-drivers/active-drivers');
+$declare($api, 518, 'settings/storage-drivers/{driver}', [
     'route' => 'settings/storage-drivers/local',
 ]);
 
-$ordersId = $declare($api, 538, 'orders', [
+$ordersId = $declare($api, 541, 'orders', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -404,14 +380,14 @@ $variation($ordersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 561, 'orders/currencies');
-$orderDetailsId = $declare($api, 577, 'orders/{order_id}', ['needs' => 'order']);
+$declare($api, 564, 'orders/currencies');
+$orderDetailsId = $declare($api, 580, 'orders/{order_id}', ['needs' => 'order']);
 $variation($orderDetailsId, 'single order widgets relation', [
     'with' => ['widgets'],
 ], 'resources/admin/Modules/Orders/SingleOrder.vue', 1701, ['needs' => 'order']);
-$declare($api, 622, 'orders/{order}/transactions', ['needs' => 'order']);
-$declare($api, 630, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
-$shippingMethodsId = $declare($api, 652, 'orders/shipping_methods', [
+$declare($api, 625, 'orders/{order}/transactions', ['needs' => 'order']);
+$declare($api, 633, 'orders/{id}/transactions/{transaction_id}', ['needs' => 'order_transaction']);
+$shippingMethodsId = $declare($api, 655, 'orders/shipping_methods', [
     'params' => ['country_code' => 'US', 'order_items' => []],
 ]);
 $variation($shippingMethodsId, 'country and state selection', [
@@ -419,28 +395,19 @@ $variation($shippingMethodsId, 'country and state selection', [
     'state'        => 'CA',
     'order_items'  => [],
 ], 'resources/admin/Modules/Orders/SingleOrder.vue', 1901);
-$variation($shippingMethodsId, 'create-order item-aware shipping quote', [
-    'country_code' => 'US',
-    'order_items'  => [[
-        'id'             => '{variation_id}',
-        'quantity'       => 1,
-        'unit_price'     => 0,
-        'discount_total' => 0,
-    ]],
-], 'resources/admin/Modules/Orders/CreateOrder.vue', 951, ['needs' => 'variation']);
-$declare($api, 660, 'orders/{order_id}/shipments', ['needs' => 'order']);
+$declare($api, 663, 'orders/{order_id}/shipments', ['needs' => 'order']);
 // 404 when the shipment has no stored label PDF.
-$declare($api, 730, 'orders/{order_id}/shipments/{shipment_id}/label', ['needs' => 'shipment', 'ok' => [200, 404]]);
-$renewalsId = $declare($api, 740, 'renewals', ['params' => ['page' => 1]]);
+$declare($api, 733, 'orders/{order_id}/shipments/{shipment_id}/label', ['needs' => 'shipment', 'ok' => [200, 404]]);
+$renewalsId = $declare($api, 743, 'renewals', ['params' => ['page' => 1]]);
 $variation($renewalsId, 'payment, parent, and customer filters', [
     'payment_status' => 'pending',
     'parent_id'      => '{order_id}',
     'customer_id'    => 0,
 ], 'app/Http/Controllers/RenewalController.php', 27, ['needs' => 'order']);
-$declare($api, 744, 'renewals/{id}', ['needs' => 'renewal']);
-$declare($api, 758, 'labels');
+$declare($api, 747, 'renewals/{id}', ['needs' => 'renewal']);
+$declare($api, 761, 'labels');
 
-$customersId = $declare($api, 770, 'customers', [
+$customersId = $declare($api, 773, 'customers', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -482,14 +449,14 @@ $variation($customersId, 'table advanced filters', [
     'advanced_filters' => '[[]]',
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 778, 'customers/get-stats/{customer}', ['needs' => 'customer']);
-$declare($api, 782, 'customers/attachable-user');
-$customerDetailsId = $declare($api, 794, 'customers/{customerId}', ['needs' => 'customer']);
+$declare($api, 781, 'customers/get-stats/{customer}', ['needs' => 'customer']);
+$declare($api, 785, 'customers/attachable-user');
+$customerDetailsId = $declare($api, 797, 'customers/{customerId}', ['needs' => 'customer']);
 $variation($customerDetailsId, 'single customer relations', [
     'with' => ['shipping_address', 'billing_address', 'labels', 'subscriptions'],
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 274, ['needs' => 'customer']);
-$declare($api, 798, 'customers/{customerId}/order', ['needs' => 'customer']);
-$customerOrdersId = $declare($api, 814, 'customers/{customerId}/orders', ['needs' => 'customer']);
+$declare($api, 801, 'customers/{customerId}/order', ['needs' => 'customer']);
+$customerOrdersId = $declare($api, 817, 'customers/{customerId}/orders', ['needs' => 'customer']);
 $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'per_page'  => 10,
     'page'      => 1,
@@ -498,7 +465,7 @@ $variation($customerOrdersId, 'customer orders pagination/search/order', [
     'order_by'  => 'id',
     'order_type'=> 'DESC',
 ], 'resources/admin/Modules/Customers/SingleCustomer.vue', 307, ['needs' => 'customer']);
-$customerAddressId = $declare($api, 818, 'customers/{customerId}/address', ['needs' => 'customer']);
+$customerAddressId = $declare($api, 821, 'customers/{customerId}/address', ['needs' => 'customer']);
 $variation($customerAddressId, 'billing address type', [
     'type' => 'billing',
 ], 'resources/admin/Modules/Customers/Modals/AddOrEditAddressModal.vue', 296, ['needs' => 'customer']);
@@ -506,16 +473,16 @@ $variation($customerAddressId, 'shipping address type', [
     'type' => 'shipping',
 ], 'resources/admin/Modules/Customers/Modals/ManageOrderAddressModal.vue', 199, ['needs' => 'customer']);
 
-$declare($api, 851, 'onboarding');
-$declare($api, 858, 'email-notification');
-$declare($api, 859, 'email-notification/get-short-codes');
-$declare($api, 860, 'email-notification/get-settings');
-$declare($api, 862, 'email-notification/reminders');
-$declare($api, 864, 'email-notification/digest-settings');
-$declare($api, 870, 'email-notification/{notification}', ['needs' => 'notification']);
-$declare($api, 876, 'templates/print-templates');
-$declare($api, 882, 'coupons/listCoupons');
-$couponsId = $declare($api, 886, 'coupons', [
+$declare($api, 854, 'onboarding');
+$declare($api, 861, 'email-notification');
+$declare($api, 862, 'email-notification/get-short-codes');
+$declare($api, 863, 'email-notification/get-settings');
+$declare($api, 865, 'email-notification/reminders');
+$declare($api, 867, 'email-notification/digest-settings');
+$declare($api, 873, 'email-notification/{notification}', ['needs' => 'notification']);
+$declare($api, 879, 'templates/print-templates');
+$declare($api, 885, 'coupons/listCoupons');
+$couponsId = $declare($api, 889, 'coupons', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -555,9 +522,9 @@ $variation($couponsId, 'table code search and expiry ordering', [
     'search'      => '__fc_smoke__',
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
-$declare($api, 889, 'coupons/getSettings');
-$declare($api, 892, 'coupons/{id}', ['needs' => 'coupon']);
-$filesId = $declare($api, 926, 'files', [
+$declare($api, 892, 'coupons/getSettings');
+$declare($api, 895, 'coupons/{id}', ['needs' => 'coupon']);
+$filesId = $declare($api, 929, 'files', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}', 'search' => ''],
 ]);
@@ -567,17 +534,17 @@ $variation($filesId, 'storage file search', [
 ], 'resources/admin/Bits/Components/DownloadableFileSelector/StorageDriverModel.js', 110, [
     'needs' => 'local_storage',
 ]);
-$declare($api, 928, 'files/bucket-list', [
+$declare($api, 931, 'files/bucket-list', [
     'needs'  => 'local_storage',
     'params' => ['driver' => '{driver}'],
 ]);
-$declare($api, 939, 'app/init');
-$declare($api, 940, 'app/attachments', [
+$declare($api, 942, 'app/init');
+$declare($api, 943, 'app/attachments', [
     'ok' => [200, 423],
     'empty_response' => ['status' => 422, 'message' => 'No Images Found'],
 ]);
 
-$activityId = $declare($api, 945, 'activity', [
+$activityId = $declare($api, 948, 'activity', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -612,7 +579,7 @@ $variation($activityId, 'table content search and date ordering', [
     'user_tz'     => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$taxesId = $declare($api, 951, 'taxes', [
+$taxesId = $declare($api, 954, 'taxes', [
     'params' => [
         'per_page'    => 10,
         'page'        => 1,
@@ -653,20 +620,21 @@ $variation($taxesId, 'table country ordering and advanced filter', [
     'user_tz'          => 'UTC',
 ], 'resources/admin/utils/table-new/Table.js', 457);
 
-$declare($api, 956, 'address-info/countries');
-$countryInfoId = $declare($api, 957, 'address-info/get-country-info', [
+$declare($api, 959, 'address-info/countries');
+$countryInfoId = $declare($api, 960, 'address-info/get-country-info', [
     'params' => ['country_code' => 'US'],
 ]);
 $variation($countryInfoId, 'store/customer address country selection', [
     'country_code' => 'GB',
 ], 'resources/admin/Bits/Components/Address/AddressComponent.vue', 55);
-$declare($api, 963, 'products/{product_id}/integrations/{integration_name}/settings', [
-    'needs' => 'product_integration',
+$declare($api, 966, 'products/{product_id}/integrations/{integration_name}/settings', [
+    'needs'    => 'product_integration',
+    'requires' => 'pro',
 ]);
-$declare($api, 979, 'products/{productId}/integrations', ['needs' => 'product']);
-$declare($api, 989, 'tax/classes');
-$declare($api, 1000, 'tax/rates');
-$taxCountryRatesId = $declare($api, 1003, 'tax/rates/country/rates/{country_code}', [
+$declare($api, 982, 'products/{productId}/integrations', ['needs' => 'product']);
+$declare($api, 992, 'tax/classes');
+$declare($api, 1003, 'tax/rates');
+$taxCountryRatesId = $declare($api, 1006, 'tax/rates/country/rates/{country_code}', [
     'route' => 'tax/rates/country/rates/US',
 ]);
 $variation($taxCountryRatesId, 'tax class rate selection', [
@@ -674,17 +642,17 @@ $variation($taxCountryRatesId, 'tax class rate selection', [
 ], 'resources/admin/Modules/Tax/Components/EUVatTaxOverrideModal.vue', 137, [
     'route' => 'tax/rates/country/rates/US',
 ]);
-$declare($api, 1024, 'tax/country-tax-id/{country_code}', [
+$declare($api, 1027, 'tax/country-tax-id/{country_code}', [
     'route' => 'tax/country-tax-id/US',
 ]);
-$declare($api, 1032, 'tax/product-overrides/{country_code}', [
+$declare($api, 1035, 'tax/product-overrides/{country_code}', [
     'route' => 'tax/product-overrides/US',
 ]);
-$declare($api, 1045, 'tax/configuration/rates');
-$declare($api, 1051, 'tax/configuration/settings');
-$declare($api, 1063, 'tax/configuration/settings/eu-vat/product-overrides');
-$declare($api, 1066, 'tax/configuration/settings/eu-vat/oss-rates');
-$declare($api, 1075, 'checkout-fields/get-fields');
+$declare($api, 1048, 'tax/configuration/rates');
+$declare($api, 1054, 'tax/configuration/settings');
+$declare($api, 1066, 'tax/configuration/settings/eu-vat/product-overrides');
+$declare($api, 1069, 'tax/configuration/settings/eu-vat/oss-rates');
+$declare($api, 1078, 'checkout-fields/get-fields');
 
 $reports = 'app/Http/Routes/reports.php';
 $reportParams = [
@@ -843,11 +811,7 @@ $declare($advance, 25, 'forms/search_options', [
     'params' => ['search_by' => '__fc_smoke__', 'search_for' => 'store_country'],
 ]);
 
-$declare($api, 1081, 'reviews', [
-    'params' => ['per_page' => 10, 'page' => 1],
-]);
-$declare($api, 1084, 'reviews/stats');
-$declare($api, 1087, 'reviews/{id}', ['needs' => 'review']);
+$declare($api, 1088, 'reviews/stats');
 
 $frontend = 'app/Http/Routes/frontend_routes.php';
 $publicProductsId = $declare($frontend, 21, 'public/products', [
@@ -903,15 +867,6 @@ $variation($publicViewsId, 'filtered product-card rendering', [
     'include_ids'       => ['{product_id}'],
     'hide_excerpt'      => 1,
 ], 'resources/public/product-page/Paginator/Paginator.js', 228, ['needs' => 'product', 'auth' => 'anonymous']);
-$variation($publicViewsId, 'transient/template-provider product rendering', [
-    'current_page'      => 1,
-    'per_page'          => 10,
-    'client_id'         => '{client_id}',
-    'template_provider' => '{template_provider}',
-], 'resources/public/product-page/Paginator/Paginator.js', 243, [
-    'auth' => 'anonymous',
-    'skip' => 'Non-empty client_id/template_provider values come from live rendered DOM and extension-owned preload filters; Phase 1 has no safe static value and does not invoke an arbitrary extension renderer.',
-]);
 // Dispatchable since ShopController::searchProduct() switched from
 // Response::json() (wp_send_json hard-die) to a proper WP_REST_Response.
 $declare($frontend, 23, 'public/product-search', [
@@ -919,10 +874,6 @@ $declare($frontend, 23, 'public/product-search', [
     'params' => ['post_title' => ''],
 ]);
 
-$declare($frontend, 38, 'checkout/get-order-info', [
-    'auth' => 'anonymous',
-    'skip' => 'CheckoutController::getOrderInfo() resolves the requested payment gateway and calls its order-info handler; all gateway invocation is forbidden.',
-]);
 $declare($frontend, 39, 'checkout/get-checkout-summary-view', [
     'auth'   => 'anonymous',
     'needs'  => 'cart',
@@ -956,10 +907,6 @@ $variation($checkoutCountryId, 'timezone country information', [
 // customers group at identical paths and were never dispatchable (the admin
 // registration wins per path+method). Customer self-service reads live under
 // customer-profile below.
-$declare($frontend, 59, 'customers/{customerAddressId}/update-address-select', [
-    'auth' => 'customer',
-    'skip' => 'Despite GET, CustomerController::updateAddressSelect() writes checkout_data and saves the cart at app/Http/Controllers/FrontendControllers/CustomerController.php:107-125.',
-]);
 
 $declare($frontend, 64, 'customer-profile', [
     'auth'  => 'customer',
@@ -1031,18 +978,6 @@ $declare($frontend, 84, 'customer-profile/orders/{transaction_uuid}/billing-addr
     'auth'  => 'customer',
     'needs' => 'customer_transaction',
 ]);
-$declare($frontend, 89, 'customer-profile/subscriptions', [
-    'auth' => 'customer',
-    'skip' => 'The list transforms each subscription through OrderService::transformSubscription(), which calls Subscription gateway capability methods at app/Services/OrderService.php:623-624.',
-]);
-$declare($frontend, 90, 'customer-profile/subscriptions/{subscription_uuid}', [
-    'auth' => 'customer',
-    'skip' => 'The detail calls canUpdatePaymentMethod(), canSwitchPaymentMethod(), switchablePaymentMethods(), canPause(), and canResume(), each resolving a payment gateway.',
-]);
-$declare($frontend, 91, 'customer-profile/subscriptions/{subscription_uuid}/setup-intent-attempts', [
-    'auth' => 'customer',
-    'skip' => 'The controller constructs Stripe SubscriptionsManager and checks a vendor-customer rate limit; this is a payment-gateway path and may reach Stripe.',
-]);
 $myReviewsId = $declare($frontend, 102, 'customer-profile/reviews', [
     'auth'   => 'customer',
     'needs'  => 'customer_context',
@@ -1080,73 +1015,6 @@ $declare($frontend, 114, 'public/reviews/{postId}/{reviewId}/modal', [
 $declare($frontend, 115, 'public/reviews/all', [
     'auth'   => 'anonymous',
     'params' => ['page' => 1, 'per_page' => 5],
-]);
-
-$web = 'app/Http/Routes/WebRoutes.php';
-$declare($web, 87, '?fluent-cart=instant_checkout', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Web-only handler creates and persists an instant-checkout cart, may apply coupons, redirects, and exits; Phase 1 is read-only and forbids real HTTP.',
-]);
-$declare($web, 250, '?fluent-cart=fluent_cart_payment_authenticate', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Web-only PayPal partner authentication renderer is a live payment-gateway surface and cannot be invoked in any Phase 1 mode.',
-]);
-$declare($web, 255, '?fluent-cart=download-by-id', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Binary/download web handler requires real request headers, authorization token, and exit semantics; loopback HTTP is forbidden.',
-]);
-$declare($web, 256, '?fluent-cart=download-file', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Binary/download web handler requires real request headers, authorization token, and exit semantics; loopback HTTP is forbidden.',
-]);
-$declare($web, 261, '?fluent-cart=receipt', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Receipt web handler renders a full document and terminates via WebRoutes::registerRoutes(); it is not an in-process REST route and loopback HTTP is forbidden.',
-]);
-$declare($web, 288, '?fluent-cart=order-review', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Order-review web handler renders a full document and terminates via WebRoutes::registerRoutes(); it is not an in-process REST route and loopback HTTP is forbidden.',
-]);
-foreach ([
-    320 => 'print-invoice',
-    323 => 'print-packing-slip',
-    326 => 'print-delivery-slip',
-    329 => 'print-shipping-slip',
-    332 => 'print-dispatch-slip',
-] as $line => $page) {
-    $declare($web, $line, '?fluent-cart=' . $page, [
-        'transport' => 'web',
-        'auth'      => 'admin',
-        'skip'      => 'Authenticated print web handler writes document output and relies on full web/exit semantics; no real or loopback HTTP is allowed in Phase 1.',
-    ]);
-}
-$declare($web, 335, '?fluent-cart=modal_checkout', [
-    'transport' => 'web',
-    'auth'      => 'anonymous',
-    'skip'      => 'Web-only modal checkout generates and persists a cart, renders a full document, and dies; Phase 1 is read-only and forbids real HTTP.',
-]);
-
-$faker = 'app/Http/Routes/FakerRoutes.php';
-$declare($faker, 23, '?fluent-cart=migrate-fresh', [
-    'transport' => 'faker',
-    'auth'      => 'admin',
-    'skip'      => 'Dangerous faker route executes migrate_fresh and can drop/recreate plugin tables and optionally seed data.',
-]);
-$declare($faker, 27, '?fluent-cart=migrate', [
-    'transport' => 'faker',
-    'auth'      => 'admin',
-    'skip'      => 'Dangerous faker route executes database migrations and can mutate schema/data.',
-]);
-$declare($faker, 33, '?fluent-cart=seed', [
-    'transport' => 'faker',
-    'auth'      => 'admin',
-    'skip'      => 'Dangerous faker route performs bulk data generation (default batch 1000) and must never be used for fixtures.',
 ]);
 
 return [

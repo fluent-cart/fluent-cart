@@ -9,17 +9,26 @@ use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Modules\Data\ProductQuery;
 use FluentCart\App\Modules\Templating\AssetLoader;
 use FluentCart\App\Modules\Templating\Bricks\BricksHelper;
+use FluentCart\App\Modules\Templating\Bricks\LayoutCardControls;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
+use FluentCart\App\Services\Renderer\ProductCardRender;
 use FluentCart\App\Services\Renderer\RenderHelper;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
 use FluentCart\Api\Taxonomy;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
 use FluentCart\App\Services\Renderer\ProductFilterRender;
+use FluentCart\App\Services\Filter\ShopAttributeFilter;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductsCollection extends Custom_Render_Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
+    /** Parts of core's Classic layout the Classic card adds, each with its own settings. */
+    const CLASSIC_PARTS = ['rating', 'swatches', 'quick_view'];
+
     public $category = 'fluent-cart';
     public $name = 'fct-products';
     public $icon = 'ti-archive fluent-cart-element-icon';
@@ -31,6 +40,17 @@ class ProductsCollection extends Custom_Render_Element
         AssetLoader::loadProductArchiveAssets();
         
         do_action('fluent_cart/advanced_variation/enqueue_assets');
+
+        if ($this->needsLayoutAssets()) {
+            ProductCardLayoutPresets::enqueueAssets();
+        }
+    }
+
+    /** The stagger's height rules live in the layout stylesheet, so a Fields card with Masonry needs it too. */
+    private function needsLayoutAssets(): bool
+    {
+        // The builder switches layouts without a page load.
+        return $this->selectedCardLayout() || !empty($this->settings['layoutMasonry']) || (function_exists('bricks_is_builder') && bricks_is_builder());
     }
 
     public function get_label()
@@ -48,6 +68,7 @@ class ProductsCollection extends Custom_Render_Element
         $this->control_groups['fields'] = [
             'title' => esc_html__('Fields', 'fluent-cart'),
             'tab'   => 'content',
+            'required' => LayoutCardControls::classicOnly(),
         ];
 
         $this->control_groups['display'] = [
@@ -70,6 +91,7 @@ class ProductsCollection extends Custom_Render_Element
             'tab'   => 'widgets',
         ];
 
+        // The badge groups show for every layout, each with the layout's own copy of the settings.
         $this->control_groups['sale_badge'] = [
             'title' => esc_html__('Sale Badge', 'fluent-cart'),
             'tab'   => 'content',
@@ -89,11 +111,51 @@ class ProductsCollection extends Custom_Render_Element
             'title' => esc_html__('Sold Out Badge', 'fluent-cart'),
             'tab'   => 'style',
         ];
+
+        // The Classic Fields card shows Rating and Quick View through their Fields tags.
+        $this->control_groups += LayoutCardControls::partGroups(self::CLASSIC_PARTS);
     }
 
     public function set_controls()
     {
+        $this->controls['cardLayout'] = [
+            'tab'         => 'content',
+            'group'       => 'display',
+            'label'       => esc_html__('Card Layout', 'fluent-cart'),
+            'type'        => 'select',
+            'options'     => LayoutCardControls::layoutOptions(),
+            'placeholder' => esc_html__('Classic', 'fluent-cart'),
+            'description' => esc_html__('Classic is this element\'s own card, built from Card Elements, or from the Fields group when Card Elements is empty. A layout builds the whole card, with its own badges, swatches and Quick View.', 'fluent-cart'),
+            'rerender'    => true,
+        ];
+
+        $this->controls['layoutPriceFormat'] = [
+            'tab'         => 'content',
+            'group'       => 'display',
+            'label'       => esc_html__('Price Format', 'fluent-cart'),
+            'type'        => 'select',
+            'options'     => [
+                'starts_from' => esc_html__('Starts From', 'fluent-cart'),
+                'range'       => esc_html__('Range', 'fluent-cart'),
+            ],
+            'placeholder' => esc_html__('Starts From', 'fluent-cart'),
+            'required'    => LayoutCardControls::layoutOnly(),
+            'rerender'    => true,
+        ];
+
+        $this->controls += LayoutCardControls::classicElementsControl('display') + LayoutCardControls::elementsControls('display');
+
         // LAYOUT
+        // A switch on every card, the Fields card included, as in Gutenberg; Masonry is not a layout any more.
+        $this->controls['layoutMasonry'] = [
+            'tab'         => 'content',
+            'group'       => 'display',
+            'label'       => esc_html__('Masonry grid', 'fluent-cart'),
+            'type'        => 'checkbox',
+            'description' => esc_html__('Staggers the cards, each image keeping its own height.', 'fluent-cart'),
+            'rerender'    => true,
+        ];
+
         $this->controls['viewMode'] = [
             'tab'         => 'content',
             'group'       => 'display',
@@ -105,7 +167,7 @@ class ProductsCollection extends Custom_Render_Element
             ],
             'placeholder' => esc_html__('Grid', 'fluent-cart'),
             'rerender'    => true,
-        ];
+        ] + $this->notGridOnlyCondition();
 
         $this->controls['showViewSwitcher'] = [
             'tab'     => 'content',
@@ -114,7 +176,7 @@ class ProductsCollection extends Custom_Render_Element
             'type'    => 'checkbox',
             'inline'  => true,
             'default' => true,
-        ];
+        ] + $this->notGridOnlyCondition();
 
         $this->controls['paginationType'] = [
             'tab'         => 'content',
@@ -381,6 +443,64 @@ class ProductsCollection extends Custom_Render_Element
             ],
         ];
 
+        $attributeGroups = [];
+        foreach (ShopAttributeFilter::groupOptions() as $group) {
+            $attributeGroups[$group['id']] = $group['title'];
+        }
+
+        if ($attributeGroups) {
+            $this->controls['attributeFilters'] = [
+                'tab'      => 'content',
+                'group'    => 'filter',
+                'label'    => esc_html__('Attribute Filters', 'fluent-cart'),
+                'type'     => 'checkbox',
+                'inline'   => true,
+                'required' => ['enableFilter', '=', true],
+            ];
+
+            $this->controls['attributeFilterGroups'] = [
+                'tab'         => 'content',
+                'group'       => 'filter',
+                'label'       => esc_html__('Attributes', 'fluent-cart'),
+                'type'        => 'select',
+                'options'     => $attributeGroups,
+                'multiple'    => true,
+                'searchable'  => true,
+                // Bricks cannot cap a multi-select, so the picker states what filterConfig() keeps.
+                /* translators: %d: how many attribute filters one Products element can show */
+                'description' => sprintf(esc_html__('Up to %d attributes. The storefront shows the first ones you pick.', 'fluent-cart'), ShopAttributeFilter::maxGroups()),
+                'required'    => [
+                    ['enableFilter', '=', true],
+                    ['attributeFilters', '=', true],
+                ],
+            ];
+
+            $this->controls['attributeFilterShowCount'] = [
+                'tab'      => 'content',
+                'group'    => 'filter',
+                'label'    => esc_html__('Show counts', 'fluent-cart'),
+                'type'     => 'checkbox',
+                'inline'   => true,
+                'required' => [
+                    ['enableFilter', '=', true],
+                    ['attributeFilters', '=', true],
+                ],
+            ];
+
+            $this->controls['attributeFilterShowEmpty'] = [
+                'tab'         => 'content',
+                'group'       => 'filter',
+                'label'       => esc_html__('Show empty', 'fluent-cart'),
+                'type'        => 'checkbox',
+                'inline'      => true,
+                'description' => esc_html__('Display attribute values even if no product uses them.', 'fluent-cart'),
+                'required'    => [
+                    ['enableFilter', '=', true],
+                    ['attributeFilters', '=', true],
+                ],
+            ];
+        }
+
         // DEFAULT FILTER
         $this->controls['defaultFilterEnabled'] = [
             'tab'         => 'content',
@@ -454,6 +574,10 @@ class ProductsCollection extends Custom_Render_Element
                 'id'            => Helpers::generate_random_id(false),
             ],
             [
+                'dynamicData' => '{fct_product_rating}',
+                'id'          => Helpers::generate_random_id(false),
+            ],
+            [
                 'dynamicData' => '{fct_product_excerpt}',
                 'tag'         => 'p',
                 'id'          => Helpers::generate_random_id(false),
@@ -465,7 +589,12 @@ class ProductsCollection extends Custom_Render_Element
             [
                 'dynamicData' => '{fct_product_button}',
                 'id'          => Helpers::generate_random_id(false),
-            ]
+            ],
+            // On the image; the Quick View group places it.
+            [
+                'dynamicData' => '{fct_product_quick_view}',
+                'id'          => Helpers::generate_random_id(false),
+            ],
         ];
 
         $this->controls = array_replace_recursive($this->controls, $fields);
@@ -676,6 +805,9 @@ class ProductsCollection extends Custom_Render_Element
             ],
             'required' => ['showSoldOutBadge', '=', true],
         ];
+
+        $this->controls = LayoutCardControls::layoutBadgeControls($this->controls, ['sale_badge', 'sale_badge_style', 'sold_out_badge', 'sold_out_badge_style']);
+        $this->controls += LayoutCardControls::partControls(self::CLASSIC_PARTS);
     }
 
     public function render()
@@ -684,8 +816,13 @@ class ProductsCollection extends Custom_Render_Element
 
         $this->setBricksQuery();
 
-        $viewMode = Arr::get($settings, 'viewMode', 'grid');
-        $showViewSwitcher = !empty($settings['showViewSwitcher']);
+        $cardLayout = $this->selectedCardLayout();
+        // A grid-only layout (Floating) is always a grid, with no Grid/List switch.
+        $isGridOnly = ProductCardLayoutPresets::isGridOnly($cardLayout);
+        $viewMode = $isGridOnly ? 'grid' : Arr::get($settings, 'viewMode', 'grid');
+        // The switcher area also holds the filter toggle and sort menu, which a grid-only layout keeps;
+        // its own control is hidden there, so a saved "off" must not remove them.
+        $showViewSwitcher = $isGridOnly || !empty($settings['showViewSwitcher']);
         $paginationType = Arr::get($settings, 'paginationType', 'numbers');
         $isMainQuery = Arr::get($settings, 'is_main_query', false) && $this->is_frontend;
         $perPage = (int)Arr::get($settings, 'posts_per_page', 10);
@@ -719,6 +856,11 @@ class ProductsCollection extends Custom_Render_Element
         );
         
         $filters = $this->getFilters($settings);
+        $layoutOptions = $cardLayout ? LayoutCardControls::cardOptions($settings, true, $cardLayout) : [];
+        if ($cardLayout && !empty($settings['layoutMasonry'])) {
+            $layoutOptions['masonry'] = true;
+        }
+        $priceFormat = Arr::get($settings, 'layoutPriceFormat') === 'range' ? 'range' : 'starts_from';
 
         $wrapperClass = 'fct-products-wrapper-inner ' . ($viewMode === 'list' ? 'mode-list' : 'mode-grid') . (!$enableFilter ? ' fct-full-container-width' : '');
 
@@ -756,6 +898,16 @@ class ProductsCollection extends Custom_Render_Element
             $wrapperAttributes['data-on-sale'] = '1';
         }
 
+        // Layout cards carry no Bricks template provider, so AJAX pages render them through core.
+        if ($cardLayout) {
+            $wrapperAttributes['data-card-layout'] = $cardLayout;
+            $wrapperAttributes['data-price-format'] = $priceFormat;
+            // Paginator.js sends these back, so later pages keep them.
+            if ($layoutOptions) {
+                $wrapperAttributes['data-layout-options'] = wp_json_encode($layoutOptions);
+            }
+        }
+
         $productWrapperClasses = [
             'fct-products-wrapper',
             'fct-brick-products-wrapper',
@@ -767,6 +919,7 @@ class ProductsCollection extends Custom_Render_Element
 
         $rendererConfig = [
             'view_mode' => $viewMode,
+            'grid_only' => $isGridOnly,
             'enable_wildcard_filter' => !empty($settings['wildcardFilter']),
             'custom_filters'  => [
                 'enabled' => $enableFilter,
@@ -822,7 +975,7 @@ class ProductsCollection extends Custom_Render_Element
                             data-fluent-cart-shop-app-product-list
                             class="fct-products-container"
                         >
-                            <?php $this->renderProducts($products); ?>
+                            <?php $this->renderProducts($products, $cardLayout, $priceFormat, $layoutOptions); ?>
                         </div>
 
                         <div class="fluent-cart-product-loader loader-hidden" data-fluent-cart-product-loader>
@@ -858,8 +1011,8 @@ class ProductsCollection extends Custom_Render_Element
     private function storeSettingsTransient($settings)
     {
         $uuid = 'fc_bx_collection_' . $this->uid;
-        if (!get_transient($uuid)) {
-            // save the settings as transient
+        // Rewrite on change, or AJAX pages keep the old fields and settings for 48 hours.
+        if (get_transient($uuid) !== $settings) {
             set_transient($uuid, $settings, 48 * HOUR_IN_SECONDS);
         }
     }
@@ -957,8 +1110,22 @@ class ProductsCollection extends Custom_Render_Element
      * Render product loop.
      */
 
-    private function renderProducts($products) {
+    private function renderProducts($products, $cardLayout = '', $priceFormat = 'starts_from', array $layoutOptions = []) {
         ProductDataSetup::setProductsCache($products);
+
+        if ($cardLayout) {
+            ProductCardLayoutPresets::enqueueAssets();
+            foreach ($products as $product) {
+                (new ProductCardRender($product, [
+                    'card_layout'         => $cardLayout,
+                    'layout_price_format' => $priceFormat,
+                    'layout_options'      => $layoutOptions,
+                ]))->render();
+            }
+            $this->end_iteration();
+
+            return;
+        }
 
         $postIndex = 1;
 
@@ -1054,6 +1221,15 @@ class ProductsCollection extends Custom_Render_Element
             'enabled'     => !empty($settings['priceRange']),
         ];
 
+        // Same entries the Products block saves, so the sidebar and the attr_<id> query need nothing else.
+        if (!empty($settings['attributeFilters']) && !empty($settings['attributeFilterGroups'])) {
+            $filters = array_merge($filters, ShopAttributeFilter::filterConfig(
+                array_map('intval', (array) $settings['attributeFilterGroups']),
+                !empty($settings['attributeFilterShowCount']),
+                !empty($settings['attributeFilterShowEmpty'])
+            ));
+        }
+
         return $filters;
     }
 
@@ -1082,6 +1258,27 @@ class ProductsCollection extends Custom_Render_Element
             'product-brands'     => 'showEmptyBrands',
         ];
         return Arr::get($map, $taxonomy, '');
+    }
+
+    /** Shown only while the card layout is not a grid-only one (Floating), which has no list view or switch. */
+    private function notGridOnlyCondition(): array
+    {
+        $conditions = [];
+        foreach (ProductCardLayoutPresets::gridOnlyLayouts() as $layout) {
+            $conditions[] = ['cardLayout', '!=', $layout];
+        }
+
+        return $conditions ? ['required' => $conditions] : [];
+    }
+
+    /** The saved layout when core can render it, else '' for the Classic (Fields) card. */
+    private function selectedCardLayout()
+    {
+        $settings = (array) $this->settings;
+        $layout = LayoutCardControls::selected(Arr::get($settings, 'cardLayout', ''));
+
+        // Classic draws core's Classic layout from its Card Elements list; without one, the Fields card.
+        return $layout ?: LayoutCardControls::classicListSelected($settings);
     }
 
     private function setBricksQuery()

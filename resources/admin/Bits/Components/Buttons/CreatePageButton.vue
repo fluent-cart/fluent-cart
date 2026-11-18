@@ -61,7 +61,7 @@ const createPage = () => {
     <DynamicIcon name="Plus"/>
   </IconButton>
 
-  <el-dialog
+  <fct-dialog
       v-model="showPageCreationModal"
       :title="
       /* translators: %s - page name */
@@ -71,19 +71,17 @@ const createPage = () => {
       center
       :append-to-body="true"
   >
-    <el-form require-asterisk-position="right" label-position="top"
-             @submit.prevent="createPage">
-      <el-form-item :label="translate('Page Name')" required>
-        <el-input v-model="pageName"
-                  :placeholder="translate('Page Name')"/>
-      </el-form-item>
-    </el-form>
+    <!-- novalidate: the required mark is visual only, as on the el-form-item it replaced. -->
+    <form novalidate @submit.prevent="createPage">
+      <fct-input v-model="pageName" :label="translate('Page Name')" required
+                 :placeholder="translate('Page Name')"/>
+    </form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="showPageCreationModal = false" type="info" soft>{{ translate('Cancel') }}</el-button>
-        <el-button type="primary" @click="createPage">{{ translate('Create Page') }}</el-button>
+        <fct-button @click="showPageCreationModal = false" type="info" soft>{{ translate('Cancel') }}</fct-button>
+        <fct-button type="primary" @click="createPage">{{ translate('Create Page') }}</fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 
 </template>

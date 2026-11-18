@@ -294,9 +294,13 @@ class CheckoutRenderer
                 <div class="fct_checkout_inner">
                     <div class="fct_checkout_form">
                         <div class="fct_checkout_form_items">
+                            <?php do_action('fluent_cart/before_customer_details', ['cart' => $this->cart]); ?>
+
                             <?php $this->renderNameFields(); ?>
 
                             <?php $this->renderCreateAccountField(); ?>
+
+                            <?php do_action('fluent_cart/after_customer_details', ['cart' => $this->cart]); ?>
 
                             <?php do_action('fluent_cart/before_billing_fields', ['cart' => $this->cart]); ?>
 
@@ -328,7 +332,9 @@ class CheckoutRenderer
                                 <?php esc_html_e('Order Summary', 'fluent-cart'); ?>
                             </span>
 
+                            <?php do_action('fluent_cart/before_order_summary', ['cart' => $this->cart]); ?>
                             <?php (new CartSummaryRender($this->cart))->render(); ?>
+                            <?php do_action('fluent_cart/after_order_summary', ['cart' => $this->cart]); ?>
                             <?php $this->renderOrderNoteField(); ?>
                             <?php do_action('fluent_cart/after_order_notes', ['cart' => $this->cart]); ?>
                         </div>
@@ -644,7 +650,7 @@ class CheckoutRenderer
             $field['wrapper_atts']['data-fluent-cart-checkout-page-form-input-wrapper'] = '';
         }
 
-        $billingFields = $this->maybeRearrangeAddressFields($billingFields);
+        $billingFields = $this->maybeRearrangeAddressFields($billingFields, 'billing');
 
 
         $billingFields = apply_filters('fluent_cart/checkout_renderer/billing_fields', $billingFields, [
@@ -732,7 +738,7 @@ class CheckoutRenderer
             $field['wrapper_atts']['data-fluent-cart-checkout-page-form-input-wrapper'] = '';
         }
 
-        $shippingFields = $this->maybeRearrangeAddressFields($shippingFields);
+        $shippingFields = $this->maybeRearrangeAddressFields($shippingFields, 'shipping');
 
         $title = __('Shipping Address', 'fluent-cart');
         if (!empty($section_title)) {
@@ -833,7 +839,8 @@ class CheckoutRenderer
      * One pending carrier rate source, quoted for the same address as the shown
      * list: its rows to append, and the key of the list they belong to.
      *
-     * @return array ['rates_key' => string, 'view' => string, 'rate_ids' => string[]]
+     * @return array ['rates_key' => string, 'view' => string, 'rate_ids' => string[],
+     *                'list_ids' => string[]|null (the whole list's rate ids; null = unknown)]
      */
     public function getRateSourceFragment(string $carrier, string $source): array
     {
@@ -848,6 +855,7 @@ class CheckoutRenderer
             'rates_key' => AddressHelper::rateSourceState()['key'],
             'view'      => ob_get_clean(),
             'rate_ids'  => array_map('strval', array_column($rates, 'id')),
+            'list_ids'  => Arr::get(AddressHelper::rateSourceState(), 'ids'),
         ];
     }
 
@@ -1020,9 +1028,11 @@ class CheckoutRenderer
         ]);
 
         $wrapperClass = $methodStyle === 'logo' ? 'fct_payment_method_logo' : 'fct_payment_method';
+        // Rendered open, so a fragment refresh does not collapse it until JS runs.
+        $activeClass = $route === Arr::get($config, 'selected_id', '') ? ' active' : '';
 
         $wrapperAttributes = [
-            'class' => $wrapperClass . ' ' . 'fct_payment_method_wrapper fct_payment_method_' . $route,
+            'class' => $wrapperClass . ' ' . 'fct_payment_method_wrapper fct_payment_method_' . $route . $activeClass,
             'tabindex' => '0',
             'role' => 'presentation'
         ];
@@ -1059,7 +1069,8 @@ class CheckoutRenderer
                         <?php echo wp_kses_post($method->getMeta('instructions')); ?>
                     </div>
                 <?php endif; ?>
-                <div class="fluent-cart-checkout_embed_payment_wrapper">
+                <?php $skeleton = $method->getCheckoutSkeleton(); ?>
+                <div class="fluent-cart-checkout_embed_payment_wrapper<?php echo esc_attr(($skeleton ? ' fct-has-skeleton' : '') . $activeClass); ?>">
                     <?php
                     $pmContext = [
                         'route' => $route,
@@ -1081,13 +1092,21 @@ class CheckoutRenderer
                             ]
                         ); ?>
                     </div>
+                    <?php if ($skeleton): ?>
+                        <div class="fct-payment-skeleton" aria-hidden="true"><?php echo wp_kses_post($skeleton); ?></div>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php
     }
 
-    private function maybeRearrangeAddressFields($fields)
+    private function maybeRearrangeAddressFields($fields, $type = 'billing')
     {
+        // A store-chosen order stays as is; city and postcode share a row only when adjacent.
+        if (CheckoutFieldsSchema::getAddressFieldOrder($type . '_address')) {
+            return $this->mergeAdjacentCityPostcode($fields);
+        }
+
         if (isset($fields['city']) && isset($fields['postcode'])) {
             $cityField = $fields['city'];
             $postcodeField = $fields['postcode'];
@@ -1115,6 +1134,40 @@ class CheckoutRenderer
         }
 
         return $fields;
+    }
+
+    private function mergeAdjacentCityPostcode($fields)
+    {
+        $keys = array_keys($fields);
+        $cityAt = array_search('city', $keys, true);
+        $postcodeAt = array_search('postcode', $keys, true);
+        if ($cityAt === false || $postcodeAt === false || abs($cityAt - $postcodeAt) !== 1) {
+            return $fields;
+        }
+
+        $first = $keys[min($cityAt, $postcodeAt)];
+        $second = $keys[max($cityAt, $postcodeAt)];
+
+        $merged = [];
+        foreach ($fields as $key => $field) {
+            if ($key === $second) {
+                continue;
+            }
+            if ($key === $first) {
+                $merged['city_postal'] = [
+                    'type'          => 'sub_section',
+                    'wrapper_class' => 'fct_2_columns fct_checkout_city_postcode',
+                    'fields'        => [
+                        $first  => $fields[$first],
+                        $second => $fields[$second],
+                    ],
+                ];
+                continue;
+            }
+            $merged[$key] = $field;
+        }
+
+        return $merged;
     }
 
 

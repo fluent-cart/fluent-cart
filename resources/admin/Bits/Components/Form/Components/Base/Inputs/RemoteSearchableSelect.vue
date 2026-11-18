@@ -1,5 +1,4 @@
 <script setup>
-import {defineModel} from 'vue';
 import {ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
@@ -8,10 +7,6 @@ const props = defineProps({
   field: {
     type: Object
   },
-
-  key: {
-    type: String
-  }
 })
 const searching = ref(false)
 
@@ -44,8 +39,9 @@ const getSelectOptions = (data) => {
 
 <template>
 
-  <el-select
+  <fct-select
       v-model="model"
+      :options="options"
       filterable
       remote
       :placeholder="field.placeholder ?? translate('Please enter a keyword')"
@@ -54,9 +50,7 @@ const getSelectOptions = (data) => {
       }"
       :loading="searching"
       :multiple="field.multiple"
-  >
-    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value"/>
-  </el-select>
+  />
 </template>
 
 <style scoped>

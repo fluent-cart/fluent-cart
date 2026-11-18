@@ -121,10 +121,11 @@ onMounted(() => {
     <div class="mb-2 text-sm text-gray-500">
       {{ translate('Define weight ranges and their shipping costs. Set max to 0 for unlimited.') }}
     </div>
-    <el-table :data="tiers" size="small" class="w-full">
-      <el-table-column :label="translate('Min Weight (%s)', weightUnit)" min-width="120">
+    <fct-table :data="tiers" size="small" class="w-full">
+      <fct-table-column :label="translate('Min Weight (%s)', weightUnit)" min-width="120">
         <template #default="scope">
-          <el-input-number
+          <fct-input
+              type="number"
               v-model="scope.row.min"
               :min="0"
               :precision="2"
@@ -133,16 +134,17 @@ onMounted(() => {
               controls-position="right"
               @change="onTierChange"
               class="w-full"
-              :class="{ 'is-error': tierOverlapError(scope.$index) }"
+              :class="{ 'is-error': tierOverlapError(scope.index) }"
           />
-          <p v-if="tierOverlapError(scope.$index)" style="color: var(--el-color-danger); font-size: 12px; line-height: 1.2; margin: 4px 0 0;">
-            {{ tierOverlapError(scope.$index) }}
+          <p v-if="tierOverlapError(scope.index)" style="color: var(--el-color-danger); font-size: 12px; line-height: 1.2; margin: 4px 0 0;">
+            {{ tierOverlapError(scope.index) }}
           </p>
         </template>
-      </el-table-column>
-      <el-table-column :label="translate('Max Weight (%s)', weightUnit)" min-width="120">
+      </fct-table-column>
+      <fct-table-column :label="translate('Max Weight (%s)', weightUnit)" min-width="120">
         <template #default="scope">
-          <el-input-number
+          <fct-input
+              type="number"
               v-model="scope.row.max"
               :min="0"
               :precision="2"
@@ -151,16 +153,17 @@ onMounted(() => {
               controls-position="right"
               @change="onTierChange"
               class="w-full"
-              :class="{ 'is-error': tierMaxError(scope.$index) }"
+              :class="{ 'is-error': tierMaxError(scope.index) }"
           />
-          <p v-if="tierMaxError(scope.$index)" style="color: var(--el-color-danger); font-size: 12px; line-height: 1.2; margin: 4px 0 0;">
-            {{ tierMaxError(scope.$index) }}
+          <p v-if="tierMaxError(scope.index)" style="color: var(--el-color-danger); font-size: 12px; line-height: 1.2; margin: 4px 0 0;">
+            {{ tierMaxError(scope.index) }}
           </p>
         </template>
-      </el-table-column>
-      <el-table-column :label="translate('Cost')" min-width="120">
+      </fct-table-column>
+      <fct-table-column :label="translate('Cost')" min-width="120">
         <template #default="scope">
-          <el-input-number
+          <fct-input
+              type="number"
               v-model="scope.row.cost"
               :min="0"
               :precision="2"
@@ -171,27 +174,27 @@ onMounted(() => {
               class="w-full"
           />
         </template>
-      </el-table-column>
-      <el-table-column :label="translate('Actions')" width="60" align="center">
+      </fct-table-column>
+      <fct-table-column :label="translate('Actions')" width="60" align="center">
         <template #default="scope">
-          <el-button
+          <fct-button
               v-if="tiers.length > 1"
               type="danger"
               text
               size="small"
               :aria-label="translate('Remove tier')"
-              @click="removeTier(scope.$index)"
+              @click="removeTier(scope.index)"
           >
             <DynamicIcon name="Delete" class="w-3 h-3"/>
-          </el-button>
+          </fct-button>
         </template>
-      </el-table-column>
-    </el-table>
+      </fct-table-column>
+    </fct-table>
     <div class="mt-2 flex items-center gap-2">
-      <el-button size="small" @click="addTier" :disabled="isAddTierDisabled">
+      <fct-button size="small" @click="addTier" :disabled="isAddTierDisabled">
         <DynamicIcon name="Plus" class="w-3 h-3 me-1"/>
         {{ translate('Add Tier') }}
-      </el-button>
+      </fct-button>
       <span v-if="hasUnlimitedTier" class="text-xs text-gray-400">
         {{ translate('Last tier has unlimited range (max = 0). Set a max value to add more tiers.') }}
       </span>

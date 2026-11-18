@@ -9,7 +9,7 @@
     }
 
     &:focus-visible {
-      @apply outline outline-2 -outline-offset-2 outline-primary-500 dark:outline-gray-50;
+      @apply outline-solid outline-2 -outline-offset-2 outline-primary-500 dark:outline-gray-50;
     }
   }
 

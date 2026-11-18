@@ -4,7 +4,10 @@ namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\App\App;
 use FluentCart\App\Modules\PaymentMethods\Cod\Cod;
+use FluentCart\App\Modules\PaymentMethods\Core\AbstractPaymentGateway;
 use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons\AddonGatewaySettings;
+use FluentCart\App\Modules\PaymentMethods\PromoGateways\Pro\PromoGatewaySettings;
 use FluentCart\App\Modules\PaymentMethods\PayPalGateway\PayPal;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Stripe;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\Connect\ConnectConfig;
@@ -132,10 +135,40 @@ class GlobalPaymentHandler
                 ];
             }
 
+            // The page then hides the activation toggle and Save: there is nothing to configure yet.
+            if (self::isPlaceholder($methodInstance)) {
+                $result['is_placeholder'] = true;
+            }
+
+            $result['can_test_connection'] = self::canTestConnection($methodInstance);
+
             return $result;
         } else {
             throw new \Exception(esc_html__('No valid payment method found!', 'fluent-cart'));
         }
+    }
+
+    /**
+     * A stand-in registered while its add-on or FluentCart Pro is missing (see PromoGatewaysHandler, AddonGatewaysHandler).
+     */
+    public static function isPlaceholder($methodInstance): bool
+    {
+        return $methodInstance->settings instanceof AddonGatewaySettings
+            || $methodInstance->settings instanceof PromoGatewaySettings;
+    }
+
+    /**
+     * True when the gateway overrides AbstractPaymentGateway::testConnection().
+     *
+     * @phpstan-assert-if-true AbstractPaymentGateway $methodInstance
+     */
+    public static function canTestConnection($methodInstance): bool
+    {
+        if (!$methodInstance instanceof AbstractPaymentGateway || self::isPlaceholder($methodInstance)) {
+            return false;
+        }
+
+        return (new \ReflectionMethod($methodInstance, 'testConnection'))->getDeclaringClass()->getName() !== AbstractPaymentGateway::class;
     }
 
     /**

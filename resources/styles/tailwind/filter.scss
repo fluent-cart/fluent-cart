@@ -65,7 +65,7 @@
         }
     }
     .el-button{
-        @apply text-system-mid border-r-0 border-t-0 border-b-0 rounded-tl-none rounded-bl-none dark:text-gray-50 #{!important};
+        @apply text-system-mid! border-r-0! border-t-0! border-b-0! rounded-tl-none! rounded-bl-none! dark:text-gray-50!;
     }
     .el-select__wrapper{
         @apply min-h-9.5 border-0 shadow-none rounded-tr-none rounded-br-none;
@@ -166,7 +166,7 @@
         }
         .el-input__inner{
             &::placeholder{
-                @apply text-system-dark-light #{!important};
+                @apply text-system-dark-light!;
             }
         }
     }
@@ -227,7 +227,7 @@
             @apply py-2.5 px-2 min-h-11 flex items-center gap-1;
         }
         .fct-filter-back-button{
-            @apply w-6.5 h-6.5 flex-shrink-0 p-0 border-0 rounded-full flex items-center justify-center bg-transparent cursor-pointer text-system-mid focus:outline-none focus:shadow-none hover:bg-gray-25 dark:text-gray-300 dark:hover:bg-dark-500;
+            @apply w-6.5 h-6.5 flex-shrink-0 p-0 border-0 rounded-full flex items-center justify-center bg-transparent cursor-pointer text-system-mid focus:outline-hidden focus:shadow-none hover:bg-gray-25 dark:text-gray-300 dark:hover:bg-dark-500;
             svg{
                 @apply w-4.5 h-4.5;
             }
@@ -237,7 +237,7 @@
         @apply m-0;
     }
     ul{
-        @apply p-0 m-0 list-none grid gap-1 !important;
+        @apply p-0! m-0! list-none! grid! gap-1!;
     }
     .fct-filter-dropdown-list-item{
         .icon svg{
@@ -284,7 +284,7 @@
 .fct-applied-filters-wrap {
     @apply flex items-center gap-2 justify-between;
     .reset-filters-btn{
-        @apply whitespace-nowrap bg-transparent p-1 leading-[20px] border-0 p-0 cursor-pointer text-sm text-primary-500 hover:underline dark:text-gray-50;
+        @apply whitespace-nowrap bg-transparent leading-[20px] border-0 p-0 cursor-pointer text-sm text-primary-500 hover:underline dark:text-gray-50;
     }
 }
 
@@ -399,7 +399,7 @@
 }
 
 .fct-product-chip:focus-visible {
-    @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-300 rounded;
+    @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-300 rounded;
 }
 
 .fct-product-chips__measure {
@@ -489,9 +489,9 @@
     .el-select {
         @apply w-[150px];
         .el-select__wrapper {
-            @apply m-0 border pl-0.5 border-solid border-gray-outline rounded-sm rounded-md dark:border-dark-400 !important;
+            @apply m-0! border! pl-0.5! border-solid! border-gray-outline! rounded-sm! rounded-md! dark:border-dark-400!;
             &.is-focused {
-                @apply border-primary-500 dark:border-gray-300 !important;
+                @apply border-primary-500! dark:border-gray-300!;
             }
         }
         .el-select__selection:hover {
@@ -569,4 +569,9 @@
   .fct-filter-dropdown-count {
     @apply inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-medium bg-blue-500 text-white;
   }
+}
+
+/* Advanced filter operators: options with a description take two lines */
+.fct-filter-operator-dropdown .el-select-dropdown__item:has(.fct-operator-description) {
+  height: auto;
 }

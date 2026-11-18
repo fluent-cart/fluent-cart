@@ -253,7 +253,7 @@ const getTermLabel = (termValue) => {
     <!--    </el-select>-->
 
     <div class="pt-1.5 text-end">
-      <el-button text @click="toggleInputView" size="small">
+      <fct-button text @click="toggleInputView" size="small">
         <span class="relative w-3 h-3">
           <Animation :visible="showInput" fade>
             <DynamicIcon name="Cross" class="absolute justify-center inset-0 w-full he-full"/>
@@ -266,13 +266,13 @@ const getTermLabel = (termValue) => {
           /* translators: %s - taxonomy label */
           translate('Add %s', props.taxonomy.labels.singular_name)
         }}
-      </el-button>
+      </fct-button>
     </div>
 
     <Animation :visible="showInput" accordion>
       <div class="fct-term-add-input-wrap">
-        <el-input v-model="termName" ref="inputRef" @keydown.enter="onEnter"/>
-        <el-button type="info" plain @click="addTerms" class="el-button--x-small">{{ translate('Add') }}</el-button>
+        <fct-input v-model="termName" ref="inputRef" @keydown.enter="onEnter"/>
+        <fct-button type="info" plain @click="addTerms" size="x-small">{{ translate('Add') }}</fct-button>
       </div>
     </Animation>
   </div>

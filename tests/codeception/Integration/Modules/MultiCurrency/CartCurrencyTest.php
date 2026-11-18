@@ -27,8 +27,9 @@ use Tests\Support\RateFixture;
 
 /**
  * A cart is priced in one currency at one locked rate; checkout stamps the
- * order from that lock. dev-docs/multi-currency/plan.md §9.1, §11.6.
- * Base USD, GBP at 0.79 — the plan's worked example: $49.80 -> £39.34.
+ * order from that lock. dev-docs/multi-currency/05-storefront-cart-checkout.md.
+ * Base USD, GBP at 0.79 — the worked example in 04-conversion-engine.md:
+ * $49.80 -> £39.34.
  */
 class CartCurrencyTest extends DatabaseTestCase
 {

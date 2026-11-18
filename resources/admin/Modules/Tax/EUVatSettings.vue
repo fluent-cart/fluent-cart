@@ -61,7 +61,6 @@ onMounted(fetchSettings)
                     />
                     <EUVatTaxOverridesCard
                         :countries="countries"
-                        class="mt-5"
                     />
                 </template>
             </div>

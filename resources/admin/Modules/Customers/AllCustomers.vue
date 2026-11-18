@@ -89,28 +89,25 @@ onUnmounted(() => {
     <PageHeading :title="translate('Customers')">
       <template #action>
         <UserCan permission="customers/export">
-          <el-dropdown trigger="click" popper-class="fct-dropdown" placement="bottom-end">
-            <el-button>
+          <fct-dropdown
+              trigger="click"
+              placement="bottom-end"
+              :items="[{command: 'export', label: translate('Export Customers'), icon: 'Download'}]"
+              @command="isExportDialogVisible = true"
+          >
+            <fct-button>
               {{ translate('More actions') }}
               <el-icon>
                 <ArrowDown/>
               </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="isExportDialogVisible = true">
-                  <DynamicIcon name="Download"/>
-                  {{ translate('Export Customers') }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+            </fct-button>
+          </fct-dropdown>
         </UserCan>
 
         <UserCan permission="customers/manage">
-          <el-button type="primary" @click="customerModalInfos.showModal = true">
+          <fct-button type="primary" @click="customerModalInfos.showModal = true">
             {{ translate("Add Customer") }}
-          </el-button>
+          </fct-button>
         </UserCan>
       </template>
     </PageHeading>

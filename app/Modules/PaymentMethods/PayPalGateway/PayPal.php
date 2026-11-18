@@ -23,9 +23,7 @@ class PayPal extends AbstractPaymentGateway
 
     private $methodSlug = 'paypal';
 
-    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'card_update', 'multi_currency', 'switch_payment_method' => [
-        'supported_gateways' => ['stripe', 'paypal'],
-    ], 'dispute_handler', 'subscriptions', 'resume_subscription', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
+    public array $supportedFeatures = ['payment', 'refund', 'webhook', 'custom_payment', 'multi_currency', 'dispute_handler', 'subscriptions', 'resume_subscription', 'system_subscription', 'manual_subscription', 'verify_vendor_ids'];
 
     private $vaultUserIdToken = '';
 
@@ -124,6 +122,10 @@ class PayPal extends AbstractPaymentGateway
                     }
 
                     $paymentArgs['vault_on_success'] = true;
+                } else if (\FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::flagSystemConversion($paymentInstance, $this)) {
+                    // Manual sub paying its renewal invoice: the disclosure shown at
+                    // checkout and PayPal's approval UI are the consent.
+                    $paymentArgs['vault_on_success'] = true;
                 }
 
                 return (new Processor())->handleSinglePayment($paymentInstance, $paymentArgs);
@@ -202,6 +204,27 @@ class PayPal extends AbstractPaymentGateway
     public function supportsSetupWithoutCharge(): bool
     {
         return $this->settings->get('checkout_mode') === 'paypal_pro';
+    }
+
+    public function canUpdateSubscriptionPaymentMethod(Subscription $subscription): bool
+    {
+        if (in_array($subscription->status, [Status::SUBSCRIPTION_CANCELED, Status::SUBSCRIPTION_EXPIRED, Status::SUBSCRIPTION_COMPLETED], true)) {
+            return false;
+        }
+
+        // An update recreates the PayPal subscription, which is free only while paid days are left.
+        return $subscription->hasPaidDaysLeft();
+    }
+
+    public function canSwitchSubscriptionPaymentMethod(Subscription $subscription, bool $requirePaidDays = true): bool
+    {
+        return !in_array($subscription->status, [Status::SUBSCRIPTION_CANCELED, Status::SUBSCRIPTION_EXPIRED, Status::SUBSCRIPTION_COMPLETED], true)
+            && (!$requirePaidDays || $subscription->hasPaidDaysLeft());
+    }
+
+    public function getSwitchableSubscriptionPaymentMethods(Subscription $subscription): array
+    {
+        return ['stripe'];
     }
 
     /**
@@ -928,7 +951,7 @@ class PayPal extends AbstractPaymentGateway
             return 'https://www.sandbox.paypal.com/billing/subscriptions/' . Arr::get($data, 'vendor_subscription_id');
         }
 
-        return 'https://www.paypal.com/billing/subscriptions' . Arr::get($data, 'vendor_subscription_id');
+        return 'https://www.paypal.com/billing/subscriptions/' . Arr::get($data, 'vendor_subscription_id');
     }
 
     public static function beforeSettingsUpdate($data, $oldSettings): array
@@ -1102,6 +1125,33 @@ class PayPal extends AbstractPaymentGateway
         return $this->methodSlug;
     }
 
+    public function testConnection(string $mode)
+    {
+        /** @var PayPalSettingsBase $settings */
+        $settings = $this->settings;
+        $clientId = $settings->getPublicKey($mode);
+        $clientSecret = $settings->getApiKey($mode);
+
+        if (!$clientId || !$clientSecret) {
+            return new \WP_Error('missing_credentials', $mode === 'live'
+                ? __('No live credentials are saved.', 'fluent-cart')
+                : __('No sandbox credentials are saved.', 'fluent-cart'));
+        }
+
+        // The sandbox and live hosts each reject the other mode's credentials.
+        $result = API::validateCredentials($clientId, $clientSecret, $mode, false);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        return [
+            'message' => $mode === 'live'
+                ? __('PayPal accepted the live credentials.', 'fluent-cart')
+                : __('PayPal accepted the sandbox credentials.', 'fluent-cart')
+        ];
+    }
+
     public static function validateSettings($data): array
     {
         $mode = Arr::get($data, 'payment_mode', 'test');
@@ -1163,6 +1213,17 @@ class PayPal extends AbstractPaymentGateway
     public function getEnqueueVersion()
     {
         return null;
+    }
+
+    public function getCheckoutSkeleton(): string
+    {
+        if (!$this->hasCheckoutScripts) {
+            return '';
+        }
+
+        // Smart Buttons render as two pills (PayPal, then card).
+        return '<span class="fct-payment-skeleton__bar fct-payment-skeleton__bar--pill"></span>'
+            . '<span class="fct-payment-skeleton__bar fct-payment-skeleton__bar--pill"></span>';
     }
 
     public function getEnqueueScriptSrc($hasSubscription = false): array
@@ -1296,6 +1357,11 @@ class PayPal extends AbstractPaymentGateway
             if ($totalPrice <= 0) {
                 $paymentDetails['mode'] = 'setup';
             }
+        } elseif (!$renderAsSubscription
+            && $totalPrice > 0
+            && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutCanConvertToSystem($this)
+        ) {
+            $systemConsent = __('Your PayPal account will be saved securely and charged automatically on each renewal date. You can cancel any time from your account.', 'fluent-cart');
         }
 
         $this->checkCurrencySupport();
@@ -1334,7 +1400,7 @@ class PayPal extends AbstractPaymentGateway
     public static function getPaypalSupportedCurrency(): array
     {
         return [
-            'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY', 'NZD', 'CHF', 'HKD', 'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN', 'MYR', 'BRL', 'PHP', 'TWD', 'THB'
+            'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'JPY', 'NZD', 'CHF', 'HKD', 'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN', 'MYR', 'BRL', 'PHP', 'TWD', 'THB', 'CNY', 'RUB'
         ];
     }
 

@@ -64,12 +64,12 @@
       <Preview :query="data.query[0]" :columns="queryState.data.columns" :queryState="queryState" is-first/>
 
       <div class="fct-apply-filter-footer" v-if="typeof onApply === 'function'">
-        <el-button type="primary" @click="evt => {
+        <fct-button type="primary" @click="evt => {
 
             onApply();
           }">
           {{ $t('Apply') }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
   </div>

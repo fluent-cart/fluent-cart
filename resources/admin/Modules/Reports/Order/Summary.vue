@@ -128,8 +128,9 @@ const formatAmount = (summary) => {
       <div class="summary-item-inner">
         <div class="value">
           <div class="summary-checkbox" v-if="card.checkable">
-            <el-checkbox
+            <fct-choice
                 :model-value="checkBoxFilter.data.order.includes(card.key)"
+                :aria-label="card.title"
                 @change="() => onCheckBoxChange(card.key)"
             />
           </div><!-- summary-checkbox -->
@@ -149,12 +150,11 @@ const formatAmount = (summary) => {
 
         <div class="title">
           {{ card.title }}
-          <el-tooltip :content="card.content" placement="top"
-                      popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+          <fct-tooltip :content="card.content" placement="top" :trigger="['hover', 'focus']">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help focus-visible:outline-2 focus-visible:outline-offset-2" :aria-label="translate('About this metric')">
               <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div><!-- title -->
         <div v-if="card.sub" class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ card.sub }}</div>
 

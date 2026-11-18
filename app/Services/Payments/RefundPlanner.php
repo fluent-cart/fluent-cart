@@ -159,7 +159,7 @@ class RefundPlanner
 
             // Plan-change prorate credit sits at order level, so line totals can exceed what was paid.
             // netAmount() drops MoR VAT (Paddle reverse-charge keeps total_paid gross).
-            $netOrderPaidAmount = max(0, $order->netAmount((int) $order->total_paid) - (int) $order->total_refund);
+            $netOrderPaidAmount = max(0, $order->netAmount((int) $order->total_paid) - (int) $order->total_refund - OrderTransaction::pendingRefundTotal($order->id));
             if ($refundAmount > $netOrderPaidAmount) {
                 $excess = $refundAmount - $netOrderPaidAmount;
                 $refundAmount = $netOrderPaidAmount;

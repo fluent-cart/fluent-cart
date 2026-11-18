@@ -5,6 +5,7 @@
  */
 
 use FluentCart\App\Http\Controllers\ModuleSettingsController;
+use FluentCart\Framework\Support\Arr;
 
 $addons = function () {
     $data = (new ModuleSettingsController())->getPluginAddons()->get_data();
@@ -40,6 +41,18 @@ return [
                     $key . ' settings_route must start with /settings/, got ' . var_export($addon['settings_route'], true)
                 );
             }
+        },
+    ],
+    [
+        'id'            => 'addon-settings-route-autofill-no-gear',
+        'name'          => 'Address Autofill shows no gear: its on/off switch is on the Features & addon page itself',
+        'kind'          => 'behavior',
+        'known_failure' => false,
+        'run'           => function () use ($addons) {
+            $autofill = Arr::get($addons(), 'address-autofill-for-fluent-cart', []);
+
+            FcTest::assert(!empty($autofill), 'Address Autofill is in the addon list');
+            FcTest::assertSame('', Arr::get($autofill, 'redirect_url', '') . Arr::get($autofill, 'settings_route', ''), 'Address Autofill has no settings target, so the list shows no gear');
         },
     ],
 ];

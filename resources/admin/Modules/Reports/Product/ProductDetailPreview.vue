@@ -16,7 +16,7 @@ const open = computed({
 </script>
 
 <template>
-  <el-drawer v-model="open" size="760px" :title="product ? product.product_title : ''" class="fct-product-detail-drawer">
+  <fct-dialog drawer append-to="#fct_admin_app_wrapper" v-model="open" width="760px" :title="product ? product.product_title : ''" class="fct-product-detail-drawer">
     <ProReportPreview
         :title="translate('See what drives each product')"
         :text="translate('ProductRpt_Open_Product')"
@@ -29,5 +29,5 @@ const open = computed({
           :rows="[[translate('Product A'), '40', '40%'], [translate('Product B'), '20', '20%']]"
       />
     </ProReportPreview>
-  </el-drawer>
+  </fct-dialog>
 </template>

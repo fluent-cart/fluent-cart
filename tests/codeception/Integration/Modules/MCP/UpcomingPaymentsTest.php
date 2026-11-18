@@ -121,7 +121,7 @@ class UpcomingPaymentsTest extends DatabaseTestCase
         $this->assertSame(3 * Helper::toCent(50), $res['data']['totals']['total_expected']['amount_cents']);
     }
 
-    public function test_at_risk_discounts_past_due_by_success_rate(): void
+    public function test_at_risk_is_the_full_amount_the_overdue_plans_owe(): void
     {
         // Renewal history: 3 succeeded + 1 failed -> success rate 0.75.
         $txn = new OrderTransactionFactory();
@@ -152,7 +152,55 @@ class UpcomingPaymentsTest extends DatabaseTestCase
         $this->assertSame(0.75, $atRisk['historical_success_rate']);
         $this->assertSame(Helper::toCent(100), $atRisk['from_past_due_expected']['amount_cents'], 'one $100 charge in the window');
         $this->assertSame(1, $atRisk['past_due_subscriptions']);
-        // 100 * (1 - 0.75) = 25.
-        $this->assertSame(Helper::toCent(25), $atRisk['amount']['amount_cents']);
+        // The store-wide rate covers healthy renewals too. Applied to plans that already
+        // missed a payment it left almost nothing at risk (100 * 0.25 here, near 0 on a real store).
+        $this->assertSame(Helper::toCent(100), $atRisk['amount']['amount_cents']);
+    }
+
+    public function test_expiring_and_failing_plans_are_projected_and_at_risk_like_past_due(): void
+    {
+        // The installments report counts all three statuses as overdue
+        foreach (['past_due', 'expiring', 'failing'] as $status) {
+            $this->sub([
+                'status'            => $status,
+                'recurring_total'   => Helper::toCent(100),
+                'bill_times'        => 0,
+                'next_billing_date' => '2026-07-15 00:00:00',
+            ]);
+        }
+
+        $res = PaymentScheduleTools::getUpcomingPayments([
+            'currency'  => 'USD',
+            'date_from' => '2026-07-01',
+            'date_to'   => '2026-07-31',
+            'bucket'    => 'month',
+        ]);
+
+        $this->assertSame(3, $res['data']['at_risk']['past_due_subscriptions']);
+        $this->assertSame(Helper::toCent(300), $res['data']['at_risk']['from_past_due_expected']['amount_cents']);
+        $this->assertSame(Helper::toCent(300), $res['data']['totals']['total_expected']['amount_cents'], 'An overdue plan is still expected to bill');
+    }
+
+    public function test_a_billing_schedule_steps_as_the_renewal_engine_does(): void
+    {
+        // Every 2 weeks on a weekly base slug: Jul 1, 15, 29. The slug alone would bill 5 times.
+        $this->sub([
+            'status'            => 'active',
+            'recurring_total'   => Helper::toCent(10),
+            'billing_interval'  => 'weekly',
+            'bill_times'        => 0,
+            'next_billing_date' => '2026-07-01 00:00:00',
+            'config'            => ['currency' => 'USD', 'billing_schedule' => ['period' => 'week', 'interval' => 2]],
+        ]);
+
+        $res = PaymentScheduleTools::getUpcomingPayments([
+            'product_id' => self::PID,
+            'currency'   => 'USD',
+            'date_from'  => '2026-07-01T00:00:00Z',
+            'date_to'    => '2026-07-31T23:59:59Z',
+            'bucket'     => 'day',
+        ]);
+
+        $this->assertSame(['2026-07-01', '2026-07-15', '2026-07-29'], array_keys($this->bucketByPeriod($res['data']['schedule'])));
     }
 }

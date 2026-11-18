@@ -422,6 +422,9 @@ $router->prefix('settings/')
         $router->post('payment-methods/disconnect', [PaymentMethodController::class, 'disconnect'])->meta([
             'permissions' => 'is_super_admin'
         ]);
+        $router->post('payment-methods/test-connection', [PaymentMethodController::class, 'testConnection'])->meta([
+            'permissions' => 'is_super_admin'
+        ]);
 
         $router->post('payment-methods/design', [PaymentMethodController::class, 'saveDesign'])->meta([
             'permissions' => 'is_super_admin'
@@ -492,7 +495,7 @@ $router->prefix('settings/')
         $router->get('mcp/config-snippets', [McpSettingsController::class, 'getConfigSnippets'])->meta([
             'permissions' => 'is_super_admin'
         ]);
-
+        $router->post('mcp/enable-hub', [McpSettingsController::class, 'enableHub'])->meta(['permissions' => 'is_super_admin']);
 
         $router->post('confirmation', [SettingsController::class, 'saveConfirmation'])->meta([
             'permissions' => 'is_super_admin'
@@ -650,7 +653,7 @@ $router->prefix('orders')->withPolicy('OrderPolicy')->group(function (Router $ro
     ]);
 
     $router->get('/shipping_methods', [OrderController::class, 'getShippingMethods'])->meta([
-        'permissions' => 'orders/manage'
+        'permissions' => ['orders/create', 'orders/manage']
     ]);
 
     $router->put('/{order}/sync-statuses', [OrderController::class, 'syncOrderStatuses'])->meta([
@@ -1074,6 +1077,7 @@ $router->prefix('tax')->withPolicy('StoreSettingsPolicy')->group(function (Route
 $router->prefix('checkout-fields')->withPolicy('StoreSensitivePolicy')->group(function (Router $router) {
     $router->get('get-fields', [CheckoutFieldsController::class, 'getFields']);
     $router->post('save-fields', [CheckoutFieldsController::class, 'saveFields']);
+    $router->post('save-field-order', [CheckoutFieldsController::class, 'saveFieldOrder']);
 });
 
 // Product Reviews routes

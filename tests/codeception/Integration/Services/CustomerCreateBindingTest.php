@@ -10,7 +10,7 @@ use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\WPUserFactory;
 
 /**
- * Case 5 of the customer identity binding fix (dev/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.2).
+ * Case 5 of the customer identity binding fix (dev-docs/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.2).
  *
  * CustomerResource::create() is shared by the admin screen, the MCP tools, the
  * User API and guest checkout. It looked the WordPress user up by the submitted

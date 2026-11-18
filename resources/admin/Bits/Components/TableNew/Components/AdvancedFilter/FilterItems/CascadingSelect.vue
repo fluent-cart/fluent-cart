@@ -126,7 +126,7 @@ onMounted(() => {
 
 <template>
   <div class="flex items-center gap-2" style="flex-wrap: nowrap; min-width: 0">
-    <el-select
+    <fct-select
         v-model="selectedGroupId"
         :loading="groupLoading"
         :placeholder="translate('Select attribute')"
@@ -134,17 +134,11 @@ onMounted(() => {
         clearable
         size="small"
         style="width: 160px; flex-shrink: 0"
-    >
-      <el-option
-          v-for="group in groupOptions"
-          :key="group.id"
-          :value="group.id"
-          :label="group.title"
-      />
-    </el-select>
+        :options="groupOptions.map(group => ({value: group.id, label: group.title}))"
+    />
 
     <div v-if="selectedGroupId" class="terms-group" style="flex: 1; min-width: 0; display: flex; align-items: stretch">
-      <el-select
+      <fct-select
           v-model="selectedTermIds"
           :loading="termLoading"
           :placeholder="translate('Select terms')"
@@ -152,26 +146,18 @@ onMounted(() => {
           filterable
           size="small"
           style="flex: 1; min-width: 0"
-      >
-        <el-option
-            v-for="term in termOptions"
-            :key="term.id"
-            :value="term.id"
-            :label="term.title"
-        />
-      </el-select>
+          :options="termOptions.map(term => ({value: term.id, label: term.title}))"
+      />
 
-      <el-select
+      <fct-select
           v-if="showMatch"
           v-model="match"
           :disabled="selectedTermIds.length < 2"
           size="small"
           class="match-select"
           style="width: 80px; flex-shrink: 0"
-      >
-        <el-option value="any" label="OR" />
-        <el-option value="all" label="AND" />
-      </el-select>
+          :options="[{value: 'any', label: 'OR'}, {value: 'all', label: 'AND'}]"
+      />
     </div>
   </div>
 </template>

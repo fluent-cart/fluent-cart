@@ -80,12 +80,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-button @click="handleToggleModal(true)">
+  <fct-button @click="handleToggleModal(true)">
     <DynamicIcon name="Stars" class="hidden lg:inline"/>
     {{ $t('Add Dummy Product') }}
-  </el-button>
+  </fct-button>
 
-  <el-dialog
+  <fct-dialog
       v-model="showModal"
       :title="$t('Create Dummy Product')"
       :append-to-body="true"
@@ -111,32 +111,31 @@ onMounted(() => {
           }}
         </div>
       </div>
-      <el-progress :percentage="percentage" striped-flow :stroke-width="6" striped :show-text="false"/>
+      <fct-progress :percentage="percentage" striped-flow :stroke-width="6" striped :show-text="false"/>
     </div>
 
     <div v-else class="fct-form-group">
       <label class="required">
         {{ $t('Product Category') }}
       </label>
-      <el-select v-model="selectedCategoryIndex" clearable :placeholder="$t('Select a Product Category')">
-        <el-option v-for="(info, key) in dummyProductInfo"
-                   :key="key"
-                   :label="info.title"
-                   :value="key"
-        />
-      </el-select>
+      <fct-select
+          v-model="selectedCategoryIndex"
+          :options="Object.entries(dummyProductInfo || {}).map(([key, info]) => ({label: info.title, value: key}))"
+          clearable
+          :placeholder="$t('Select a Product Category')"
+      />
     </div>
 
     <template v-if="!inserting" #footer>
       <div class="dialog-footer">
-        <el-button @click="handleToggleModal(false)">{{ $t('Cancel') }}</el-button>
-        <el-button type="primary" @click="()=>{
+        <fct-button @click="handleToggleModal(false)">{{ $t('Cancel') }}</fct-button>
+        <fct-button type="primary" @click="()=>{
           createDummyProduct()
         }" :disabled="!selectedCategoryIndex">
           {{ $t('Create Products') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
 
-  </el-dialog>
+  </fct-dialog>
 </template>

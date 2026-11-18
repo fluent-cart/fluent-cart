@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-button
+        <fct-button
             v-if="updateMethod"
             @click="showUpdatePaymentModal"
             text
@@ -8,45 +8,39 @@
             :aria-label="buttonText"
         >
             {{buttonText}}
-        </el-button>
+        </fct-button>
 
-        <el-button
+        <fct-button
             v-else @click="showUpdatePaymentModal"
             text
             class="underline-link-button"
             :aria-label="translate('Reactivate')"
         >
             {{ translate('Reactivate') }}
-        </el-button>
+        </fct-button>
 
-        <el-dialog
+        <fct-dialog
             v-model="updatePaymentModal"
             :title="translate('Update Payment')"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="update-payment-title"
             aria-describedby="update-payment-description"
         >
             <h2 id="update-payment-title" class="sr-only">{{ translate('Update Payment') }}</h2>
 
             <div class="fct-update-payment-method">
                 <div class="fct-update-payment-method-header">
-                    <label id="payment-methods-label" class="sr-only">
-                        {{ translate('Select payment method') }}
-                    </label>
-
-                    <el-radio-group class="fct-update-payment-method-radio" v-model="selectedPaymentMethod" role="radiogroup" aria-labelledby="payment-methods-label">
-                        <el-radio
-                            v-for="(option, index) in filteredPaymentMethods"
-                            :value="option.slug"
-                            :key="option.slug"
-                            border
-                            :aria-label="`${option.title} payment method`"
-                        >
-                            <img :src="option.logo" :alt="`${option.title} logo`" :class="option.slug" :title="option.title"/>
-                            {{ option.title }}
-                        </el-radio>
-                    </el-radio-group>
+                    <fct-choice
+                        type="radio"
+                        border
+                        class="fct-update-payment-method-radio"
+                        v-model="selectedPaymentMethod"
+                        :aria-label="translate('Select payment method')"
+                        :options="filteredPaymentMethods.map((option) => ({label: option.title, value: option.slug, logo: option.logo, ariaLabel: `${option.title} payment method`}))"
+                    >
+                        <template #option="{option}">
+                            <img :src="option.logo" :alt="`${option.label} logo`" :class="option.value" :title="option.label"/>
+                            {{ option.label }}
+                        </template>
+                    </fct-choice>
                 </div>
 
                 <div id="update-payment-description" class="sr-only">
@@ -65,15 +59,15 @@
                         </div>
                         <div v-if="subscription.card_update_url && !['stripe', 'paypal'].includes(selectedPaymentMethod)" class="fct-update-payment-method-redirect">
                             <p>{{ translate('You will be redirected to complete the update.') }}</p>
-                            <el-button type="primary" @click="openCardUpdateUrl">
+                            <fct-button type="primary" @click="openCardUpdateUrl">
                                 {{ translate('Continue') }}
-                            </el-button>
+                            </fct-button>
                         </div>
                     </div>
                 </div>
             </div>
 
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 

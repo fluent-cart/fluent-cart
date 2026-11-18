@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\MCP\Tools;
 
+use FluentCart\Api\Taxonomy;
 use FluentCart\App\App;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
@@ -34,8 +35,8 @@ class ProductTools
     {
         return [
             'fluent-cart/list-products' => [
-                'label'       => __('List Products', 'fluent-cart'),
-                'description' => __('Find and filter products. Compact rows: title, status, price range, variation count, fulfillment, stock status. Use get-product for full detail and per-variation stock. Price filters are in store currency, not cents. For conditions these flat filters cannot express (OR groups, order/variation counts, available stock quantity, taxonomy terms) pass advanced_filters — call get-search-schema entity=products first (Pro).', 'fluent-cart'),
+                'label'       => 'List Products',
+                'description' => 'Find and filter products. Compact rows: title, status, price range, variation count, fulfillment, stock status. Use get-product for full detail and per-variation stock. Price filters are in store currency, not cents. For conditions these flat filters cannot express (OR groups, order/variation counts, available stock quantity, taxonomy terms) pass advanced_filters — call get-search-schema entity=products first (Pro).',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -62,8 +63,8 @@ class ProductTools
             ],
 
             'fluent-cart/get-product' => [
-                'label'       => __('Get Product', 'fluent-cart'),
-                'description' => __('Full detail for one product: description, variations with SKU/price/stock/subscription terms, categories and tags. Add include[] for sales (lifetime units + revenue, tax excluded, net of discounts and refunds) and downloads. Identify by product_id.', 'fluent-cart'),
+                'label'       => 'Get Product',
+                'description' => 'Full detail for one product: description, variations, categories and tags. Variations carry SKU, price, stock and subscription terms. Add include[] for sales (lifetime units + revenue, tax excluded, net of discounts and refunds) and downloads. Identify by product_id.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -84,8 +85,8 @@ class ProductTools
             ],
 
             'fluent-cart/get-inventory' => [
-                'label'       => __('Get Inventory Status', 'fluent-cart'),
-                'description' => __('Stock-managed variations that need attention: out-of-stock, or at/below a threshold. Answers "what do I need to restock?" — this is inventory health, not sales. Shows available vs committed vs on-hold.', 'fluent-cart'),
+                'label'       => 'Get Inventory Status',
+                'description' => 'Stock-managed variations that need attention: out-of-stock, or at/below a threshold. Answers "what do I need to restock?" — this is inventory health, not sales. Shows available vs committed vs on-hold.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -165,9 +166,10 @@ class ProductTools
         }
 
         if (!empty($params['category'])) {
-            $cat = sanitize_text_field($params['category']);
-            $query->whereHas('categories', function ($q) use ($cat) {
-                $q->where('slug', $cat);
+            // An unknown category matches nothing instead of every product
+            $termIds = Taxonomy::getTermIdsBySlugs((string) Arr::get($params, 'category', ''), 'product-categories') ?: [0];
+            $query->whereHas('wpTerms', function ($q) use ($termIds) {
+                $q->where('taxonomy', 'product-categories')->whereIn('term_id', $termIds);
             });
         }
 
@@ -194,8 +196,7 @@ class ProductTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: number of matching products */
-                _n('%d product found.', '%d products found.', $total, 'fluent-cart'),
+                $total === 1 ? '%d product found.' : '%d products found.',
                 $total
             ),
             ['products' => $rows],
@@ -234,7 +235,7 @@ class ProductTools
     public static function getProduct($params = [])
     {
         if (empty($params['product_id'])) {
-            return MCPHelper::error('missing_identifier', __('product_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'product_id is required.');
         }
 
         // post_type is pinned by the model's global scope; filtering by ID only.
@@ -244,7 +245,7 @@ class ProductTools
             ->first();
 
         if (!$product) {
-            return MCPHelper::error('product_not_found', __('No product found for the given product_id.', 'fluent-cart'));
+            return MCPHelper::error('product_not_found', 'No product found for the given product_id.');
         }
 
         $include = isset($params['include']) ? (array) $params['include'] : [];
@@ -275,8 +276,7 @@ class ProductTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: product title, 2: product status */
-                __('Product "%1$s" — %2$s', 'fluent-cart'),
+                'Product "%1$s" — %2$s',
                 $product->post_title,
                 $product->post_status
             ),
@@ -428,8 +428,7 @@ class ProductTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: number of variations needing attention */
-                _n('%d variation needs attention.', '%d variations need attention.', $total, 'fluent-cart'),
+                $total === 1 ? '%d variation needs attention.' : '%d variations need attention.',
                 $total
             ),
             ['variations' => $rows],

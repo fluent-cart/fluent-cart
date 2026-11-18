@@ -154,11 +154,4 @@ class BlockEditorHelperTest extends WPTestCase
     // =========================================================================
     // Spec 114: getThemePrefScheme caches in static var (subsequent calls return same value)
     // =========================================================================
-
-    public function test_get_theme_pref_scheme_caches_in_static(): void
-    {
-        $first = BlockEditorHelper::getThemePrefScheme();
-        $second = BlockEditorHelper::getThemePrefScheme();
-        $this->assertSame($first, $second);
-    }
 }

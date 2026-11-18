@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Storefront side of multi-currency (dev-docs/multi-currency/plan.md §5
- * Phase 3). Everything here is inert until multi-currency is enabled with at
+ * Storefront side of multi-currency (dev-docs/multi-currency/01-architecture.md,
+ * "Boot"). Everything here is inert until multi-currency is enabled with at
  * least one currency.
  */
 class MultiCurrencyModule
@@ -147,8 +147,8 @@ class MultiCurrencyModule
 
     /**
      * Pages rendered in a non-base currency must not be served from a page
-     * cache to a visitor in another currency (plan §12.7). Base-currency
-     * visitors keep full caching.
+     * cache to a visitor in another currency. Base-currency visitors keep
+     * full caching (dev-docs/multi-currency/05-storefront-cart-checkout.md, "Display").
      */
     public function preventCaching()
     {

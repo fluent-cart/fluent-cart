@@ -10,6 +10,7 @@ use FluentCart\App\Models\ProductDetail;
 use FluentCart\App\Models\ProductMeta;
 use FluentCart\App\Models\ProductVariation;
 use PHPUnit\Framework\Assert;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Factory\ProductFactory;
 use Tests\Support\Factory\ProductTermFactory;
 use Tests\Support\FunctionalTester;
@@ -622,8 +623,6 @@ class UpdateProductCest
      * ProductDetailResource read the absent key as "clear it", so changing one
      * variant's price silently wiped the product's Default Variant — invisible
      * until the next reload.
-     *
-     * See dev-docs/framework-update-2.12.6-qa.md.
      */
     public function updatingAProductWithoutMentioningTheDefaultVariantKeepsIt(FunctionalTester $I): void
     {
@@ -1171,15 +1170,253 @@ class UpdateProductCest
             ['sku' => '0'],
         ]);
 
-        $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+        [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+
+        // Validation rejects the pair before any write, so the admin sees why.
+        Assert::assertSame(422, $status, 'two variants with one sku must be a validation error. Body: ' . wp_json_encode($body));
+        Assert::assertStringContainsString('The SKU must be unique.', wp_json_encode($body), 'the rejection must say what is wrong');
 
         $variants = ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->get();
-        // The single CASE-WHEN UPDATE statement is atomic, so a real duplicate-key
-        // rejection at the database layer must leave both pre-existing, distinct
-        // skus exactly as they were — not just "different from each other" (which
-        // a partial write, e.g. one sku becoming "0" and the other staying null,
-        // would also satisfy without proving the invariant this test is for).
+        // Both pre-existing, distinct skus stay exactly as they were — not just
+        // "different from each other" (which a partial write, e.g. one sku
+        // becoming "0" and the other staying null, would also satisfy).
         Assert::assertSame('SM-SKU-231F', $variants[0]->sku, 'a rejected duplicate-sku save must leave the first variant\'s sku untouched');
         Assert::assertSame('LG-SKU-231F', $variants[1]->sku, 'a rejected duplicate-sku save must leave the second variant\'s sku untouched');
+    }
+
+    public function adminUsingAnotherProductsSkuIsRejected(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $factory->createWithVariants([['variation_title' => 'Taken', 'sku' => 'TAKEN-SKU-1']], ['post_title' => 'SkuOwner']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'Small', 'sku' => 'SM-SKU-OTHER'],
+                ['variation_title' => 'Large', 'sku' => 'LG-SKU-OTHER'],
+            ],
+            ['post_title' => 'SkuTaker']
+        );
+
+        $payload = $this->buildUpdatePayload($product, [], [
+            ['sku' => 'TAKEN-SKU-1'],
+            [],
+        ]);
+
+        [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+
+        Assert::assertSame(422, $status, 'a sku another product uses must be a validation error. Body: ' . wp_json_encode($body));
+        Assert::assertStringContainsString('The SKU must be unique.', wp_json_encode($body), 'the rejection must say what is wrong');
+        Assert::assertSame(
+            'SM-SKU-OTHER',
+            ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->value('sku'),
+            'a rejected save must leave the variant\'s sku untouched'
+        );
+    }
+
+    public function adminSaveWhoseVariantWriteFailsIsNotReportedAsSaved(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'Small', 'sku' => 'SM-SKU-WRITE'],
+                ['variation_title' => 'Large', 'sku' => 'LG-SKU-WRITE'],
+            ],
+            ['post_title' => 'FailedVariantWrite']
+        );
+
+        $payload = $this->buildUpdatePayload($product, [], [
+            ['variation_title' => 'Small renamed'],
+            [],
+        ]);
+
+        $announced = 0;
+        $countAnnouncements = function () use (&$announced) {
+            $announced++;
+        };
+        add_action('fluent_cart/product/variants_updated', $countAnnouncements);
+        $failVariantUpdate = FailingQueries::matching('/^update `[^`]*fct_product_variations`/i', 1);
+
+        try {
+            [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+        } finally {
+            $failVariantUpdate->remove();
+            remove_action('fluent_cart/product/variants_updated', $countAnnouncements);
+        }
+
+        Assert::assertSame(1, $failVariantUpdate->hits(), 'the variant batch write must be the query that failed');
+        Assert::assertSame(500, $status, 'a failed variant write must not be reported as saved. Body: ' . wp_json_encode($body));
+        Assert::assertStringContainsString('could not be saved', wp_json_encode($body), 'the response must say that the save failed');
+        Assert::assertSame(0, $announced, 'variants_updated must not fire for a write that did not happen');
+        Assert::assertSame(
+            'Small',
+            ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->value('variation_title'),
+            'the stored variant must be unchanged'
+        );
+    }
+
+    public function adminSavingManySkusLooksThemUpInOneQuery(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'One', 'sku' => 'OLD-SKU-1'],
+                ['variation_title' => 'Two', 'sku' => 'OLD-SKU-2'],
+                ['variation_title' => 'Three', 'sku' => 'OLD-SKU-3'],
+                ['variation_title' => 'Four', 'sku' => 'OLD-SKU-4'],
+                ['variation_title' => 'Five', 'sku' => 'OLD-SKU-5'],
+            ],
+            ['post_title' => 'ManySkus']
+        );
+
+        $payload = $this->buildUpdatePayload($product, [], [
+            ['sku' => 'NEW-SKU-1'],
+            ['sku' => 'NEW-SKU-2'],
+            ['sku' => 'NEW-SKU-3'],
+            ['sku' => 'NEW-SKU-4'],
+            ['sku' => 'NEW-SKU-5'],
+        ]);
+
+        $lookups = 0;
+        $countSkuLookups = function ($query) use (&$lookups) {
+            if (preg_match('/^select\b.*fct_product_variations`\s+where\s+`sku`/is', $query)) {
+                $lookups++;
+            }
+
+            return $query;
+        };
+        add_filter('query', $countSkuLookups);
+
+        try {
+            [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+        } finally {
+            remove_filter('query', $countSkuLookups);
+        }
+
+        Assert::assertSame(200, $status, 'five distinct new skus must save. Body: ' . wp_json_encode($body));
+        Assert::assertSame(1, $lookups, 'the uniqueness check must read the stored skus once, not once per variant');
+        Assert::assertSame(
+            ['NEW-SKU-1', 'NEW-SKU-2', 'NEW-SKU-3', 'NEW-SKU-4', 'NEW-SKU-5'],
+            ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->pluck('sku')->toArray(),
+            'every new sku must be stored'
+        );
+    }
+
+    public function adminSavingTwoSkusThatDifferOnlyByCaseIsRejected(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'Small', 'sku' => 'SM-SKU-CASE'],
+                ['variation_title' => 'Large', 'sku' => 'LG-SKU-CASE'],
+            ],
+            ['post_title' => 'SkuCase']
+        );
+
+        $payload = $this->buildUpdatePayload($product, [], [
+            ['sku' => 'NEW-ABC'],
+            ['sku' => 'new-abc'],
+        ]);
+
+        [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+
+        // The sku_unique index ignores case, so the database would refuse this pair.
+        Assert::assertSame(422, $status, 'two skus that differ only by case must be a validation error. Body: ' . wp_json_encode($body));
+        Assert::assertStringContainsString('The SKU must be unique.', wp_json_encode($body), 'the rejection must say what is wrong');
+        Assert::assertSame(
+            ['SM-SKU-CASE', 'LG-SKU-CASE'],
+            ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->pluck('sku')->toArray(),
+            'a rejected save must leave both stored skus untouched'
+        );
+    }
+
+    public function adminUsingAStoredSkuInAnotherCaseAndAccentIsRejected(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $factory->createWithVariants([['variation_title' => 'Taken', 'sku' => 'CAFÉ-1']], ['post_title' => 'AccentSkuOwner']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'Small', 'sku' => 'SM-SKU-ACCENT'],
+                ['variation_title' => 'Large', 'sku' => 'LG-SKU-ACCENT'],
+            ],
+            ['post_title' => 'AccentSkuTaker']
+        );
+
+        // The database compares skus by the column collation, which ignores case and accents.
+        foreach (['café-1', 'cafe-1'] as $sku) {
+            $payload = $this->buildUpdatePayload($product, [], [
+                ['sku' => $sku],
+                [],
+            ]);
+
+            [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/pricing', $payload);
+
+            Assert::assertSame(422, $status, $sku . ' equals a stored sku for the database and must be a validation error. Body: ' . wp_json_encode($body));
+            Assert::assertStringContainsString('The SKU must be unique.', wp_json_encode($body), 'the rejection must say what is wrong');
+            Assert::assertSame(
+                'SM-SKU-ACCENT',
+                ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->value('sku'),
+                'a rejected save must leave the stored sku untouched'
+            );
+        }
+    }
+
+    public function bulkUpdateWhoseVariantWriteFailsReportsTheProductAsAnError(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $factory = (new ProductFactory())->withDetailAttributes(['variation_type' => 'simple_variations']);
+        $product = $factory->createWithVariants(
+            [
+                ['variation_title' => 'Small', 'sku' => 'SM-SKU-BULKFAIL'],
+                ['variation_title' => 'Large', 'sku' => 'LG-SKU-BULKFAIL'],
+            ],
+            ['post_title' => 'BulkFailedVariantWrite']
+        );
+        $variants = ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->get();
+
+        $failVariantUpdate = FailingQueries::matching('/^update `[^`]*fct_product_variations`/i', 1);
+
+        try {
+            [$status, $body] = $I->post('/fluent-cart/v2/products/bulk-update', [
+                'products' => [[
+                    'ID'          => (int) $product->ID,
+                    'post_title'  => 'BulkFailedVariantWrite renamed',
+                    'post_status' => 'publish',
+                    'detail'      => ['variation_type' => 'simple_variations', 'fulfillment_type' => 'digital'],
+                    'variants'    => [
+                        [
+                            'id'              => (int) $variants[0]->id,
+                            'variation_title' => 'Small renamed',
+                            'sku'             => 'SM-SKU-BULKFAIL',
+                            'item_price'      => 1000,
+                            'other_info'      => ['payment_type' => 'onetime'],
+                        ],
+                        [
+                            'id'              => (int) $variants[1]->id,
+                            'variation_title' => 'Large',
+                            'sku'             => 'LG-SKU-BULKFAIL',
+                            'item_price'      => 2000,
+                            'other_info'      => ['payment_type' => 'onetime'],
+                        ],
+                    ],
+                ]],
+            ]);
+        } finally {
+            $failVariantUpdate->remove();
+        }
+
+        Assert::assertSame(1, $failVariantUpdate->hits(), 'the variant batch write must be the query that failed');
+        Assert::assertSame([], (array) ($body['updated'] ?? null), 'a product whose variants were not saved must not be listed as updated. Body: ' . wp_json_encode($body));
+        Assert::assertSame((string) $product->ID, (string) ($body['errors'][0]['post_id'] ?? ''), 'the product must be listed as an error. Body: ' . wp_json_encode($body));
+        Assert::assertSame('The product variations could not be saved.', $body['errors'][0]['message'] ?? '', 'the error must say that the variations were not saved');
+        Assert::assertSame(
+            'Small',
+            ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index', 'ASC')->value('variation_title'),
+            'the stored variant must be unchanged'
+        );
+        Assert::assertSame('BulkFailedVariantWrite', get_post($product->ID)->post_title, 'the later title write must not happen after the variant write failed');
     }
 }

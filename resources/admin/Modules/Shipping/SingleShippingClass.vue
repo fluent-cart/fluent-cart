@@ -12,7 +12,7 @@
             {{ translate("Shipping Classes") }}
           </el-breadcrumb-item>
           <el-breadcrumb-item>
-            {{ isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class') }}
+            <span role="heading" aria-level="1">{{ isEdit ? translate('Edit Shipping Class') : translate('Add Shipping Class') }}</span>
           </el-breadcrumb-item>
           <el-breadcrumb-item v-if="isEdit">
             {{ classForm.name }}
@@ -39,34 +39,38 @@
           <CardBody>
             <el-form :model="classForm" :rules="rules" ref="classFormRef" label-position="top">
               <el-form-item :label="translate('Class Name')" prop="name">
-                <el-input v-model="classForm.name" :placeholder="translate('Enter class name')"></el-input>
+                <fct-input v-model="classForm.name" :placeholder="translate('Enter class name')"/>
               </el-form-item>
 
               <el-form-item :label="translate('Description')">
-                <el-input v-model="classForm.description" type="textarea" :rows="2" :placeholder="translate('Enter description (optional)')"></el-input>
+                <fct-input v-model="classForm.description" type="textarea" :rows="2" :placeholder="translate('Enter description (optional)')"/>
               </el-form-item>
 
               <el-form-item :label="translate('Cost')" prop="cost">
-                <el-input-number v-model="classForm.cost" :precision="2" :min="0" :step="1" class="w-full max-w-[200px]"></el-input-number>
+                <fct-input type="number" v-model="classForm.cost" :precision="2" :min="0" :step="1" class="w-full max-w-[200px]"/>
                 <div class="form-help-text w-full">
                   {{ translate('Additional cost for products in this shipping class') }}
                 </div>
               </el-form-item>
 
               <el-form-item :label="translate('Cost Type')" prop="type">
-                <el-select v-model="classForm.type" style="width: 100%">
-                  <el-option :label="translate('Fixed Amount')" value="fixed"></el-option>
-                  <el-option :label="translate('Percentage')" value="percentage"></el-option>
-                </el-select>
+                <fct-select
+                    v-model="classForm.type"
+                    style="width: 100%"
+                    :options="[
+                      {label: translate('Fixed Amount'), value: 'fixed'},
+                      {label: translate('Percentage'), value: 'percentage'},
+                    ]"
+                />
                 <div class="form-help-text">
                   {{ translate('How this cost should be applied to the shipping rate') }}
                 </div>
               </el-form-item>
 
               <el-form-item prop="per_item">
-                <el-checkbox v-model="classForm.per_item" :true-value="1" :false-value="0">
+                <fct-choice v-model="classForm.per_item" :true-value="1" :false-value="0">
                   <LabelHint :title="translate('Apply to quantity')" :content="translate('Ship_Check_Box')"/>
-                </el-checkbox>
+                </fct-choice>
               </el-form-item>
             </el-form>
           </CardBody>

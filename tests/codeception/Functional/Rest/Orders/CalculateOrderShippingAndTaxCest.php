@@ -224,4 +224,19 @@ class CalculateOrderShippingAndTaxCest
         Assert::assertSame($taxRowsBefore, $taxRowsAfter, 'preview tax request must NOT create any fct_order_tax_rate row');
     }
 
+    public function unavailableMethodsCannotProduceAShippingQuote(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $zone = (new ShippingZoneFactory())->create(['region' => 'US']);
+        $method = (new ShippingMethodFactory())->create(['zone_id' => $zone->id, 'is_enabled' => 0]);
+        foreach ([$method->id, 999999] as $methodId) {
+            [$status, $body] = $I->post('/fluent-cart/v2/orders/calculate-shipping', [
+                'shipping_id' => $methodId,
+                'order_items' => [],
+            ]);
+            Assert::assertSame(422, $status, 'Disabled or missing methods must not return a quote.');
+            Assert::assertArrayNotHasKey('shipping_charge', $body, 'Unavailable methods return no shipping charge.');
+        }
+    }
+
 }

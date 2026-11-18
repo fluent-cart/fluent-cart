@@ -2,10 +2,13 @@
 namespace FluentCart\App\Modules\Templating\Bricks\Elements;
 
 use Bricks\Element;
+use FluentCart\App\Modules\Templating\Bricks\BricksLoader;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class ProductTitle extends Element {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name     = 'fct-product-title';
     public $icon     = 'ti-text fluent-cart-element-icon';
@@ -16,6 +19,38 @@ class ProductTitle extends Element {
     }
 
     public function set_controls() {
+        // The product, as the other single-product elements pick it.
+        $this->controls['queryType'] = [
+            'tab'     => 'content',
+            'type'    => 'select',
+            'label'   => esc_html__( 'Query Type', 'fluent-cart' ),
+            'options' => [
+                'default' => esc_html__( 'Default', 'fluent-cart' ),
+                'custom'  => esc_html__( 'Custom', 'fluent-cart' ),
+            ],
+            'default' => 'default',
+            'inline'  => true,
+        ];
+
+        $this->controls['productId'] = [
+            'tab'         => 'content',
+            'type'        => 'select',
+            'label'       => esc_html__( 'Product', 'fluent-cart' ),
+            'options'     => BricksLoader::getProductOptions(),
+            'placeholder' => esc_html__( 'Select a product', 'fluent-cart' ),
+            'searchable'  => true,
+            'rerender'    => true,
+            'required'    => [ 'queryType', '=', 'custom' ],
+        ];
+
+        $this->controls['manualProductId'] = [
+            'tab'         => 'content',
+            'type'        => 'text',
+            'label'       => esc_html__( 'Manual Product ID', 'fluent-cart' ),
+            'description' => esc_html__( 'Use this if the product is not available in dropdown.', 'fluent-cart' ),
+            'required'    => [ [ 'queryType', '=', 'custom' ], [ 'productId', '=', '' ] ],
+        ];
+
         $this->controls['tag'] = [
             'tab'         => 'content',
             'label'       => esc_html__( 'HTML tag', 'fluent-cart' ),
@@ -72,7 +107,14 @@ class ProductTitle extends Element {
     public function render()
     {
         $settings = $this->settings;
-        $post = get_post($this->post_id);
+        $postId = $this->post_id;
+        if (($settings['queryType'] ?? 'default') === 'custom') {
+            $postId = !empty($settings['productId']) ? \intval($settings['productId']) : \intval($settings['manualProductId'] ?? 0);
+        }
+        $post = get_post($postId);
+        if (!$post) {
+            return;
+        }
 
         $prefix = !empty($settings['prefix']) ? $settings['prefix'] : false;
         $suffix = !empty($settings['suffix']) ? $settings['suffix'] : false;
@@ -84,7 +126,7 @@ class ProductTitle extends Element {
             echo "<" . esc_html($this->tag) . " " . $this->render_attributes('_root') . ">";
         ?>
             <?php if ($linkToProduct) : ?>
-                <a href="<?php echo esc_url(get_the_permalink($this->post_id)); ?>">
+                <a href="<?php echo esc_url(get_the_permalink($post)); ?>">
             <?php endif; ?>
 
             <?php if ($prefix) : ?>

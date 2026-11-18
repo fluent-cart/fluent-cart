@@ -1,5 +1,5 @@
 <script setup>
-import {defineModel, nextTick, onMounted, ref, watch, computed} from "vue";
+import {nextTick, onMounted, ref, watch, computed} from "vue";
 import translate from "@/utils/translator/Translator";
 import Badge from "@/Bits/Components/Badge.vue";
 import Rest from "@/utils/http/Rest";
@@ -194,7 +194,7 @@ const verifyKeys = async () => {
     <div v-if="appReady" class="fct-content-card-list-item py-4 ps-6 pe-[80px]">
         <div class="fct-content-card-list-head">
             <div class="flex items-start gap-2 flex-row">
-                <h4 class="mb-0">{{ field.title }}</h4>
+                <h3 class="mb-0 text-sm">{{ field.title }}</h3>
                 <Badge size="small" :type="isActive === 'yes' ? 'active':'inactive'" :hide-icon="true">
                     {{ isActive === 'yes' ? translate('Active') : translate('Inactive') }}
                 </Badge>
@@ -206,16 +206,16 @@ const verifyKeys = async () => {
 
         <div class="fct-content-card-list-action">
             <div class="pe-4">
-                <el-switch active-value="yes" inactive-value="no" v-model="isActive" @change="updateActive">
-                </el-switch>
+                <fct-switch active-value="yes" inactive-value="no" v-model="isActive" @change="updateActive">
+                </fct-switch>
             </div>
         </div>
 
-        <div v-if="isActive === 'yes'" class="fct-turnstile-settings mt-6 border-t border-gray-200 dark:border-gray-700">
+        <div v-if="isActive === 'yes'" class="fct-turnstile-settings mt-6 [border-top-width:1px] border-gray-200 dark:border-gray-700">
             <div class="space-y-4 max-w-[600px] p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div>
                     <label class="block text-sm font-medium mb-2">{{ translate('Turnstile Site Key') }}</label>
-                    <el-input
+                    <fct-input
                         v-model="siteKey"
                         @input="updateSiteKey"
                         :placeholder="translate('Enter your Turnstile Site Key')"
@@ -228,7 +228,7 @@ const verifyKeys = async () => {
 
                 <div>
                     <label class="block text-sm font-medium mb-2">{{ translate('Turnstile Secret Key') }}</label>
-                    <el-input
+                    <fct-input
                         v-model="secretKey"
                         @input="updateSecretKey"
                         :placeholder="translate('Enter your Turnstile Secret Key')"
@@ -241,7 +241,7 @@ const verifyKeys = async () => {
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <el-button
+                    <fct-button
                         :disabled="!canVerify"
                         :loading="verifying"
                         @click="verifyKeys"
@@ -249,7 +249,7 @@ const verifyKeys = async () => {
                         size="small"
                     >
                         {{ translate('Verify Keys') }}
-                    </el-button>
+                    </fct-button>
                     <span v-if="verifyResult" :class="verifyResult.success ? 'text-green-600' : 'text-red-600'" class="text-sm">
                         {{ verifyResult.message }}
                     </span>

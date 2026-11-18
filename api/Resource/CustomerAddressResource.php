@@ -223,21 +223,25 @@ class CustomerAddressResource extends BaseResourceApi
         $address->refresh();
 
         if ($address) {
+            $orderAddress = null;
             if (!empty($orderId = Arr::get($params, 'order_id', null))) {
-                OrderAddressResource::update($data, $orderId);
+                $orderUpdate = OrderAddressResource::update($data, $orderId);
+                $orderAddress = is_array($orderUpdate) ? Arr::get($orderUpdate, 'data') : null;
             }
 
-            if ($addressType === 'billing') {
-                return static::makeSuccessResponse(
-                    $address,
-                    __('Billing address updated successfully!', 'fluent-cart')
-                );
-            }
-
-            return static::makeSuccessResponse(
+            $response = static::makeSuccessResponse(
                 $address,
-                __('Shipping address updated successfully!', 'fluent-cart')
+                $addressType === 'billing'
+                    ? __('Billing address updated successfully!', 'fluent-cart')
+                    : __('Shipping address updated successfully!', 'fluent-cart')
             );
+
+            // The admin order card shows the order's copy, so hand it back.
+            if ($orderAddress) {
+                $response['order_address'] = $orderAddress;
+            }
+
+            return $response;
         }
 
         if ($addressType === 'billing') {

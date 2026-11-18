@@ -3,7 +3,7 @@
     <tr class="fct-inventory-row fct-inventory-parent-row">
         <td width="50">
             <div class="fct-inventory-row-selection">
-                <el-checkbox
+                <fct-choice
                     :model-value="isAllChildrenSelected()"
                     :indeterminate="isSomeChildrenSelected()"
                     @change="toggleAllChildren"
@@ -79,7 +79,7 @@
         <td></td>
         <td>
             <div class="fct-inventory-variant-item">
-                <el-checkbox
+                <fct-choice
                     :model-value="isRowSelected(child)"
                     @change="toggleRowSelection(child)"
                 />
@@ -109,7 +109,7 @@
         </td>
         <td v-if="inventoryTable?.isColumnVisible('sku')">{{ child.sku }}</td>
         <td>
-            <el-input
+            <fct-input
                 v-model="child.total_stock"
                 class="el-input--x-small input-with-total-stock fct-input-group"
                 readonly
@@ -121,7 +121,7 @@
                         @save="$emit('stock-save', $event)"
                     />
                 </template>
-            </el-input>
+            </fct-input>
         </td>
         <td v-if="inventoryTable?.isColumnVisible('available')">
             {{ child.available }}
@@ -166,7 +166,7 @@
 </template>
 
 <script setup>
-import { defineOptions, ref, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import InventoryStockAdjuster from './InventoryStockAdjuster.vue';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
@@ -188,10 +188,6 @@ const props = defineProps({
     },
     inventoryTable: Object,
     navigateToProduct: {
-        type: Function,
-        required: true
-    },
-    getPlaceholderImage: {
         type: Function,
         required: true
     },

@@ -382,9 +382,11 @@ export default class AddressService {
 
         if (isHidden) {
             this.formWrapper.querySelector(id).style.display = 'none';
+            this.formWrapper.querySelector(id).hidden = true;
 
         } else {
             this.formWrapper.querySelector(id).style.display = 'block';
+            this.formWrapper.querySelector(id).hidden = false;
             this.syncStateLabel(this.formWrapper.querySelector(id), response);
 
             if (type === 'billing' && this.billingStateSelect !== null) {
@@ -550,8 +552,10 @@ export default class AddressService {
         // }
         if (hide) {
             this.formWrapper.querySelector(id).style.display = 'none';
+            this.formWrapper.querySelector(id).hidden = true;
         } else {
             this.formWrapper.querySelector(id).style.display = 'block';
+            this.formWrapper.querySelector(id).hidden = false;
         }
     }
 

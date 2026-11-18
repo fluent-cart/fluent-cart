@@ -1,6 +1,7 @@
 <template>
-  <el-select
+  <fct-select
       v-model="modelValue"
+      :options="currencies"
       :placeholder="$t('Select Currency')"
       filterable
       clearable
@@ -11,13 +12,7 @@
     <template #label="{ label }">
       <el-tag disable-transitions>{{ label }}</el-tag>
     </template>
-    <el-option
-        v-for="(currency, index) in currencies"
-        :key="index"
-        :label="currency.label"
-        :value="currency.value"
-    />
-  </el-select>
+  </fct-select>
 </template>
 
 <script setup>

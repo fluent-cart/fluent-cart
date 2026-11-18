@@ -68,13 +68,14 @@ npm test                              # menu: pick the module to run
 npm test -- wp-cli                    # fast regression check on your real dev store (~22s)
 npm test -- codeception unit          # pure PHP, no WordPress
 npm test -- codeception functional    # REST routes against a throwaway database
+npm test -- codeception integration   # services and models against a throwaway database
+npm test -- codeception integration-pro  # the same, with FluentCart Pro loaded
 npm test -- js                        # Vitest
-npm test -- playwright admin/orders   # one Playwright suite in a real browser
 npm test -- --help                    # every module and argument
 ```
 
 `tests/README.md` is the map: what each module runs against, where a new test
-goes, and the one-time setup for the Codeception and Playwright `.env` files.
+goes, and the one-time setup for the Codeception `.env` file.
 
 > `codeception integration`, `codeception functional` and `codeception integration-pro`
 > **install WordPress into `TEST_DB_NAME` and drop its tables** on every run. Point

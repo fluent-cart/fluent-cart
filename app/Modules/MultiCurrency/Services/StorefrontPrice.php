@@ -11,7 +11,8 @@ if (!defined('ABSPATH')) {
 /**
  * Catalogue prices for display. Product prices are stored once, in the base
  * currency; every storefront read that shows one goes through here so the
- * shown price equals the price the cart will charge (plan §12.2).
+ * shown price equals the price the cart will charge
+ * (dev-docs/multi-currency/05-storefront-cart-checkout.md, "Display").
  * Identity whenever the visitor is in the base currency.
  */
 class StorefrontPrice

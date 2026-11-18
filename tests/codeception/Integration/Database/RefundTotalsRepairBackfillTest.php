@@ -7,6 +7,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\Database\DataBackfills;
+use FluentCart\Framework\Support\Arr;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -214,8 +215,10 @@ class RefundTotalsRepairBackfillTest extends DatabaseTestCase
         $other = new \wpdb(DB_USER, DB_PASSWORD, DB_NAME, DB_HOST);
         $other->get_var($other->prepare('SELECT GET_LOCK(%s, %d)', 'fct_refund_' . $order->id, 0));
 
-        DataBackfills::processPending();
+        $waiting = DataBackfills::processPending();
 
+        $this->assertSame('running', $waiting['status'], 'a busy order is a wait, not a failure');
+        $this->assertArrayNotHasKey(self::SLUG, (array) Arr::get(fluent_cart_get_option('_db_migrations', [], false), 'backfill_failures', []));
         $this->assertSame([10000, 10000], $this->refundTotals($items));
         $this->assertContains(self::SLUG, DataBackfills::getPending());
 

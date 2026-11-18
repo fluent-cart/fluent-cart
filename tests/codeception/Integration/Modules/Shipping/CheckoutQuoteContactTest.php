@@ -139,6 +139,37 @@ class CheckoutQuoteContactTest extends DatabaseTestCase
         $this->assertFalse($this->requoted($before, ['billing_address_1' => '1 Main St']), 'zone-only stores get no extra re-quote');
     }
 
+    public function test_a_carrier_that_builds_its_request_re_quotes_on_any_form_change(): void
+    {
+        $before = ['billing_country' => 'US', 'billing_state' => 'NY', 'billing_postcode' => '10001', 'billing_city' => 'New York', 'billing_email' => 'a@example.com'];
+
+        $this->assertFalse($this->requoted($before, ['billing_email' => 'b@example.com']), 'no carrier builds a request yet');
+
+        SourcedStubCarrier::$requestFields = ['billing_email'];
+        $this->assertTrue($this->requoted($before, ['billing_email' => 'b@example.com']));
+        $this->assertFalse($this->requoted($before, []), 'an unchanged form does not re-quote');
+    }
+
+    public function test_a_tax_id_change_re_quotes_for_a_request_carrier(): void
+    {
+        SourcedStubCarrier::$requestFields = ['fct_billing_tax_id'];
+        $form = ['billing_country' => 'US', 'billing_state' => 'NY', 'billing_postcode' => '10001', 'billing_city' => 'New York'];
+        $cart = new class {
+            public $checkout_data = [];
+
+            public function requireShipping(): bool
+            {
+                return true;
+            }
+        };
+        $cart->checkout_data = ['form_data' => $form, 'tax_data' => ['vat_number' => 'DE1']];
+
+        $fillData = ['cart_data' => [], 'checkout_data' => ['form_data' => $form, 'tax_data' => ['vat_number' => 'DE2']]];
+        $out = (new ShippingModule())->maybeRecalculateShippingCharges($fillData, ['changes' => ['fct_billing_tax_id' => 'DE2'], 'cart' => $cart]);
+
+        $this->assertTrue(!empty($out['hook_changes']['shipping']), 'the VAT number lives in tax_data, outside form_data');
+    }
+
     private function requoted(array $before, array $changes): bool
     {
         $cart = new class {

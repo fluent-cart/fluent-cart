@@ -1,9 +1,9 @@
 /*====== table ======*/
 .el-table {
-    @apply w-full rounded-bl rounded-br #{!important};
+    @apply w-full! rounded-bl! rounded-br!;
     th{
         &.el-table__cell{
-            @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] text-sm font-medium pt-2.5 pb-2.5 border-0 #{!important};
+            @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)]! text-sm! font-medium! pt-2.5! pb-2.5! border-0!;
         }
         &.el-table-column--selection{
             @apply inline-flex items-center ;
@@ -24,7 +24,7 @@
     }
     td{
         &.el-table__cell{
-            @apply text-sm text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-normal py-3.5 border-x-0 border-t-0 #{!important};
+            @apply text-sm! text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! font-normal! py-3.5! border-x-0! border-t-0!;
         }
         &:first-child{
             .cell{
@@ -40,16 +40,16 @@
     
     td.el-table__cell, 
     th.el-table__cell.is-leaf{
-        @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] #{!important};
+        @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)]!;
     }
 
     &.is-scrolling-right {
         th.el-table-fixed-column--right{
-            @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)] #{!important};
+            @apply bg-[var(--fct-customer-dashboard-surface-alt,#F9FAFB)]!;
         }
     }
     .link{
-        @apply text-[var(--fct-customer-dashboard-title-color,#2F3448)] no-underline hover:underline hover:text-[var(--fct-customer-dashboard-link-color,#253241)] #{!important};
+        @apply text-[var(--fct-customer-dashboard-title-color,#2F3448)]! no-underline! hover:underline! hover:text-[var(--fct-customer-dashboard-link-color,#253241)]!;
     }
     .text {
         @apply text-[var(--fct-customer-dashboard-text-color,#565865)];
@@ -57,12 +57,12 @@
     tr{
         .el-table-fixed-column--right{
             .cell{
-                @apply ps-4.5 #{!important};
+                @apply ps-4.5!;
             }
         }
         &:last-child{
             td{
-                @apply border-0 #{!important};
+                @apply border-0!;
             }
         }
     }
@@ -70,10 +70,10 @@
     .el-table__body tr.hover-row.el-table__row--striped.current-row>td.el-table__cell, 
     .el-table__body tr.hover-row.el-table__row--striped>td.el-table__cell, 
     .el-table__body tr.hover-row>td.el-table__cell{
-        @apply bg-transparent #{!important};
+        @apply bg-transparent!;
     }
     &.el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell{
-        @apply bg-transparent #{!important};
+        @apply bg-transparent!;
     }
     a{
         @apply no-underline hover:underline;
@@ -89,13 +89,13 @@
 
 .el-table td.el-table__cell,
 .el-table th.el-table__cell.is-leaf{
-    @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] #{!important};
+    @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)]!;
 }
 
 .el-table--border .el-table__inner-wrapper::after, 
 .el-table--border::after, .el-table--border::before, 
 .el-table__inner-wrapper::before{
-    @apply hidden #{!important};
+    @apply hidden!;
 }
 
 
@@ -103,19 +103,19 @@
     @apply border border-solid border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] overflow-hidden dark:border-primary-500;
     border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     table{
-        @apply border-0 w-full !important;
+        @apply border-0! w-full!;
     }
     .fct-customer-payment-meta-info{
         @apply items-end;
     }
     .el-table {
-        @apply dark:bg-none #{!important};
+        @apply dark:bg-none!;
         tr {
-            @apply dark:bg-primary-700 dark:border-primary-500 #{!important};
+            @apply dark:bg-primary-700! dark:border-primary-500!;
             td {
-                @apply dark:border-primary-500 dark:text-gray-50 #{!important};
+                @apply dark:border-primary-500! dark:text-gray-50!;
                 a {
-                    @apply dark:text-gray-50 #{!important};
+                    @apply dark:text-gray-50!;
                 }
             }
         }
@@ -129,7 +129,7 @@
     .el-table{
         th{
             &.el-table__cell{
-                @apply border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)] rounded-none #{!important};
+                @apply border! border-solid! border-x-0! border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)]! rounded-none!;
             }
         }
     }
@@ -139,7 +139,7 @@
 }
 
 table {
-    @apply border-0 !important;
+    @apply border-0!;
 }
 
 .fct-activated-sites-table.scrollable {

@@ -50,10 +50,10 @@ const removeGroup = (index) => {
             <p>
                 {{ translate('To get started, add some conditions for this dynamic price') }}
             </p>
-            <el-button @click="addGroup">
+            <fct-button @click="addGroup">
                 <DynamicIcon name="Plus"/>
                 {{ translate('Add Conditions') }}
-            </el-button>
+            </fct-button>
         </div>
 
         <!--

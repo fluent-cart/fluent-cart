@@ -1,19 +1,17 @@
 <template>
   <div class="fct-advance-filters-wrap">
-    <el-tooltip
-        effect="dark"
+    <fct-tooltip
         :content="$t('Advanced Filters')"
         placement="top"
-        popper-class="fct-tooltip"
     >
       <IconButton tag="button"
                   @click="dialogVisible = true"
       >
         <DynamicIcon name="AdvancedFilter"/>
       </IconButton>
-    </el-tooltip>
+    </fct-tooltip>
 
-    <el-dialog
+    <fct-dialog
         class="fct-advanced-filter-dialog"
         v-model="dialogVisible"
         :title="$t('Advanced Filters')"
@@ -23,7 +21,7 @@
         dialogVisible = false;
         table.fetch()
       }"/>
-    </el-dialog>
+    </fct-dialog>
   </div>
 
 </template>

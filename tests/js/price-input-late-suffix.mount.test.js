@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick, ref} from 'vue';
 import ElementPlus from 'element-plus';
+import {registerFctComponents} from '@/Bits/Components/Fct';
 
 /**
  * PriceInput mounted for real, through the in-memory renderer, to catch
@@ -40,7 +41,7 @@ const mountHost = (currency) => {
         },
     });
     const root = new FakeNode('div');
-    renderer.createApp(Host).use(ElementPlus).mount(root);
+    renderer.createApp(Host).use(ElementPlus).use({install: registerFctComponents}).mount(root);
     return root;
 };
 

@@ -89,7 +89,8 @@ defineExpose({
 </script>
 
 <template>
-  <el-drawer
+  <fct-dialog
+      drawer
       :title="translate('Add Upgrade Path')"
       v-model="showModal"
       @closed="()=>{
@@ -103,19 +104,14 @@ defineExpose({
     <div class="fct-upgrade-path-drawer-content">
       <div class="fct-form-group">
         <label>{{ translate('From Plan') }}</label>
-        <el-select v-model="form.from_variant"
+        <fct-select v-model="form.from_variant"
                    :placeholder="translate('Select')"
-                   popper-class="fct-variation-select">
-          <el-option
-              v-for="variant in pathOptions"
-              :key="variant.id"
-              :label="variant.variation_title"
-              :value="variant.id"
-              :disabled="form.to_variants.includes(variant.id)"
-          >
-            <VariationSelector :variant="variant"/>
-          </el-option>
-        </el-select>
+                   popper-class="fct-variation-select"
+                   :options="pathOptions.map(variant => ({label: variant.variation_title, value: variant.id, disabled: form.to_variants.includes(variant.id), variant}))">
+          <template #option="{option}">
+            <VariationSelector :variant="option.variant"/>
+          </template>
+        </fct-select>
 
         <ValidationError
             v-if="validationErrors.hasOwnProperty('from_variant')"
@@ -127,22 +123,17 @@ defineExpose({
       <div class="fct-form-group">
         <label>{{ translate('To Plan(s)') }}</label>
 
-        <el-select :disabled="!form.from_variant"
+        <fct-select :disabled="!form.from_variant"
                    v-model="form.to_variants"
                    multiple
                    :placeholder="translate('Select')"
                    clearable
-                   popper-class="fct-variation-select">
-          <el-option
-              v-for="variant in getVariantOption()"
-              :key="variant.id"
-              :label="variant.variation_title"
-              :value="variant.id"
-              :disabled="variant.id == form.from_variant"
-          >
-            <VariationSelector :variant="variant"/>
-          </el-option>
-        </el-select>
+                   popper-class="fct-variation-select"
+                   :options="getVariantOption().map(variant => ({label: variant.variation_title, value: variant.id, disabled: variant.id == form.from_variant, variant}))">
+          <template #option="{option}">
+            <VariationSelector :variant="option.variant"/>
+          </template>
+        </fct-select>
 
         <ValidationError
             v-if="validationErrors.hasOwnProperty('to_variants')"
@@ -152,14 +143,14 @@ defineExpose({
       </div>
 
       <div class="fct-form-group">
-        <el-checkbox true-value="1" false-value="0" v-model="form.is_prorate">{{ translate('Prorate') }}</el-checkbox>
+        <fct-choice true-value="1" false-value="0" v-model="form.is_prorate">{{ translate('Prorate') }}</fct-choice>
       </div>
 
       <div class="fct-form-group">
         <label>{{ translate('Discount Amount') }}</label>
-        <el-input v-model="form.discount_amount" type="number" :min="0" @input="handleDiscountInput">
+        <fct-input v-model="form.discount_amount" type="number" :controls="false" :min="0" @input="handleDiscountInput">
           <template #prepend>{{ currentCurrencySign }}</template>
-        </el-input>
+        </fct-input>
         <ValidationError
             v-if="validationErrors.hasOwnProperty('discount_amount')"
             :validation-errors="validationErrors"
@@ -169,15 +160,15 @@ defineExpose({
     </div>
 
     <template #footer>
-      <el-button @click="showModal = false">
+      <fct-button @click="showModal = false">
         {{ translate('Cancel') }}
-      </el-button>
+      </fct-button>
 
-      <el-button @click="savePath" type="primary">
+      <fct-button @click="savePath" type="primary">
         {{ translate('Save') }}
-      </el-button>
+      </fct-button>
     </template>
 
-  </el-drawer>
+  </fct-dialog>
 </template>
 

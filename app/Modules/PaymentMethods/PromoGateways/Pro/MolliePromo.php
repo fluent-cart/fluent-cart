@@ -25,6 +25,7 @@ class MolliePromo extends AbstractPaymentGateway
             'slug' => 'mollie',
             'description' => __('Pay securely with Mollie - Credit Card, PayPal, SEPA, and more.', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/mollie-logo.svg"),
+            'logo_light' => Vite::getAssetUrl("images/payment-methods/mollie-logo-light.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/mollie-icon.svg"),
             'brand_color' => '#7c3aed',
             'status' => false,

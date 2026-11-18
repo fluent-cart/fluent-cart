@@ -219,7 +219,7 @@
 }
 
 .fct-upload-btn{
-    @apply bg-white border-dashed text-system-dark dark:bg-dark-600 dark:text-white !important;
+    @apply bg-white! border-dashed! text-system-dark! dark:bg-dark-600! dark:text-white!;
     .icon svg{
         @apply w-5 h-5;
     }

@@ -42,7 +42,7 @@ class IntegrationController extends Controller
             }
         }
 
-        $integrationFeed = json_decode(Arr::get($requestData, 'integration'), true);
+        $integrationFeed = Arr::get($requestData, 'integration');
 
         $integrationFeedData = IntegrationHelper::validateAndFormatIntegrationFeedSettings($integrationFeed, [
             'provider'       => $provider,

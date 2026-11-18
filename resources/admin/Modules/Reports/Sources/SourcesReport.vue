@@ -343,7 +343,7 @@ onUnmounted(() => {
 <template>
     <UserCan :permission="'reports/view'">
         <div class="fct-revenue-report-page">
-            <PageHeading :title="translate('Order Sources')"></PageHeading>
+            <PageHeading><template #title><h2 class="page-title">{{ translate('Order Sources') }}</h2></template></PageHeading>
 
             <SourceChannels :report-filter="reportFilter"/>
 
@@ -361,12 +361,12 @@ onUnmounted(() => {
                             -->
                             <div v-if="!sourceFilterModel.isUsingAdvanceFilter()" class="fct-card-header-left flex-1">
                                 <div class="search-bar is-transparent">
-                                    <el-input :placeholder="translate('Search')" ref="search-input" type="text"
+                                    <fct-input :placeholder="translate('Search')" ref="search-input" type="text"
                                         clearable v-model="search">
                                         <template #prefix>
                                             <DynamicIcon name="Search" />
                                         </template>
-                                    </el-input>
+                                    </fct-input>
                                 </div>
                                 <div class="text-xs text-system-light pt-1 dark:text-gray-300">
                                     {{ translate('Filter the rows below by name') }}
@@ -375,24 +375,23 @@ onUnmounted(() => {
                             <div v-else class="flex-1"></div>
 
                             <div class="fct-card-header-actions">
-                                <el-select v-model="groupBy" size="small" style="width: 230px"
-                                    :aria-label="translate('Group by')" @change="onGroupChange">
+                                <fct-select v-model="groupBy" size="small" style="width: 230px"
+                                    :aria-label="translate('Group by')" @change="onGroupChange"
+                                    :options="groupOptions.map(option => ({label: optionLabel(option), value: option.value, disabled: option.pro && !hasPro}))">
                                     <template #prefix>{{ translate('Group by') }}</template>
-                                    <el-option v-for="option in groupOptions" :key="option.value"
-                                        :label="optionLabel(option)" :value="option.value" :disabled="option.pro && !hasPro" />
-                                </el-select>
+                                </fct-select>
 
                                 <div class="px-2">
-                                    <el-tooltip effect="dark" placement="top" popper-class="fct-tooltip"
+                                    <fct-tooltip placement="top"
                                         :content="translate('SourceRpt_Add_None')">
-                                        <el-switch v-model="includeNone" size="small" :active-text="translate('Include (none)')"
+                                        <fct-switch v-model="includeNone" size="small" :active-text="translate('Include (none)')"
                                             @change="reload" />
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                 </div>
 
                                 <div v-if="sourceFilterModel.isAdvanceFilterEnabled()"
                                     class="fct-advanced-filter-toggle-wrapper">
-                                    <el-switch class="fct-advanced-filter-toggle"
+                                    <fct-switch class="fct-advanced-filter-toggle"
                                         @change="(filterType) => { onFilterTypeChanged(filterType) }"
                                         active-value="advanced" inactive-value="simple"
                                         v-model="sourceFilterModel.data.filterType"
@@ -400,17 +399,17 @@ onUnmounted(() => {
                                 </div>
 
                                 <div class="w-[130px]">
-                                    <el-switch v-model="isNet" :active-text="translate('Net')"
+                                    <fct-switch v-model="isNet" :active-text="translate('Net')"
                                         :inactive-text="translate('Gross')" />
                                 </div>
 
                                 <div class="fct-btn-group sm">
-                                    <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+                                    <fct-tooltip :content="translate('Export CSV')" placement="top">
                                         <IconButton tag="button" :disabled="loading || !sourceReportData.length"
                                             :aria-label="translate('Export CSV')" @click="exportCsv">
                                             <DynamicIcon name="Download" />
                                         </IconButton>
-                                    </el-tooltip>
+                                    </fct-tooltip>
                                 </div>
                             </div>
                         </div>
@@ -418,15 +417,15 @@ onUnmounted(() => {
                         <AdvancedFilter :table="sourceFilterModel" :show-save-view="false" />
                     </div>
                     <div class="fct-card-body">
-                        <el-skeleton class="px-5 pb-5" v-if="loading" :rows="5" animated></el-skeleton>
+                        <fct-skeleton class="px-5 pb-5" v-if="loading" :rows="5" animated></fct-skeleton>
 
                         <template v-else>
                             <div v-if="isTimeGroup && chartRows.length" ref="chartRef" class="fct-chart-wrap px-4 pt-4" style="height: 300px"></div>
 
                             <!-- A reload remounts the table: the current sort comes back as its default, so the arrow matches the order -->
-                            <el-table :data="sourceReportData" class="w-full fct-source-report" show-summary :summary-method="summaryRow"
+                            <fct-table :data="sourceReportData" class="w-full fct-source-report" show-summary :summary-method="summaryRow"
                                 :default-sort="sort.prop ? sort : undefined" @sort-change="onSort">
-                                <el-table-column v-for="field in groupFields" :key="field" :label="utmLabels[field]" min-width="170">
+                                <fct-table-column v-for="field in groupFields" :key="field" :label="utmLabels[field]" min-width="170">
                                     <template #default="scope">
                                         <span v-if="scope.row.is_none" class="unknown">{{ translate('(none)') }}</span>
                                         <!-- Plain text that underlines on hover or focus: a click filters the table by this name -->
@@ -438,15 +437,15 @@ onUnmounted(() => {
                                         <span v-else-if="scope.row[field]">{{ scope.row[field] }}</span>
                                         <span v-else class="unknown">{{ translate('(not set)') }}</span>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column v-if="!groupFields.length" :label="activeGroup.column" min-width="200">
+                                <fct-table-column v-if="!groupFields.length" :label="activeGroup.column" min-width="200">
                                     <template #default="scope">
                                         <span :class="{unknown: scope.row.is_none || scope.row.is_unset}">{{ scope.row.label }}</span>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column prop="orders" :label="translate('Orders')" min-width="130" sortable="custom">
+                                <fct-table-column prop="orders" :label="translate('Orders')" min-width="130" sortable="custom">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
                                             {{ formatNumber(scope.row.orders) }}
@@ -456,9 +455,9 @@ onUnmounted(() => {
                                                 :has-currency="false" />
                                         </div>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
-                                <el-table-column v-for="column in metricColumns" :key="column.prop" :prop="column.prop"
+                                <fct-table-column v-for="column in metricColumns" :key="column.prop" :prop="column.prop"
                                     :label="column.label" min-width="140" sortable="custom">
                                     <template #default="scope">
                                         <div class="inline-flex items-center gap-2">
@@ -469,12 +468,12 @@ onUnmounted(() => {
                                                 :amount="fluctuations[scope.row.utm_key]['previous_' + column.fluctuation] || 0" />
                                         </div>
                                     </template>
-                                </el-table-column>
+                                </fct-table-column>
 
                                 <template #empty>
                                     <Empty icon="Empty/Order" has-dark :text="translate('No data available')" />
                                 </template>
-                            </el-table>
+                            </fct-table>
 
                             <Pagination v-if="pagination.total > 10" :pagination="pagination" :hide_on_single="false"
                                 @fetch="getSourceReport"/>
@@ -491,6 +490,8 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
 .fct-source-report {
     .unknown {
         @apply text-neutral-900 italic;

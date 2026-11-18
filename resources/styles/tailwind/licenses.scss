@@ -50,7 +50,7 @@
             @apply text-xs text-system-mid leading-4 font-normal dark:text-gray-300;
         }
         .licenses-icon{
-            @apply w-10 h-10 rounded-[10px] bg-white dark:bg-primary-500 border-0 flex items-center justify-center #{!important};
+            @apply w-10! h-10! rounded-[10px]! bg-white! dark:bg-primary-500! border-0! flex! items-center! justify-center!;
             box-shadow: 0px 1px 2px 0px #3333330A, 
                         0px 2px 4px 0px #3333330A,
                         0px 4px 8px -2px #3333330F,
@@ -165,7 +165,7 @@
                 @apply -mt-[1px];
             }
             .el-input__inner{
-                @apply text-[15px] text-system-dark text-left m-0 dark:text-gray-300 #{!important};
+                @apply text-[15px]! text-system-dark! text-left! m-0! dark:text-gray-300!;
             }
         }
     }
@@ -244,7 +244,7 @@
     .inline-action-button {
         @apply flex items-center gap-1;
         a {
-            @apply text-primary-500 hover:underline focus:shadow-none focus:outline-none dark:text-gray-50 #{!important};
+            @apply text-primary-500! hover:underline! focus:shadow-none! focus:outline-hidden! dark:text-gray-50!;
         }
     }
     .separator{
@@ -299,7 +299,7 @@
         @apply flex flex-wrap flex-col items-start gap-5;
         .fct-license-box-content {
             @apply w-full;
-            h3 {
+            h2 {
                 @apply m-0 mb-1.5 text-sm font-medium text-system-dark dark:text-gray-50 leading-5;
             }
             .el-input {
@@ -328,7 +328,7 @@
                 .icon {
                     @apply mb-4;
                 }
-                h3 {
+                h2 {
                     @apply text-base mb-1;
                 }
                 > p {

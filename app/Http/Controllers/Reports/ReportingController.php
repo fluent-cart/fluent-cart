@@ -46,14 +46,15 @@ class ReportingController extends Controller
         }
 
         // Every currency with orders in range, most orders first — the picker
-        // shows them all and defaults to the first (multi-currency plan §13).
+        // shows them all and defaults to the first
+        // (dev-docs/multi-currency/07-reports.md, "Two modes").
         $currencyWithSign = [];
         foreach ($currencyCodes as $code) {
             $currencyWithSign[$code] = CurrenciesHelper::getCurrencySign($code) ?: $code;
         }
 
         // With more than one currency, offer every order converted to the
-        // base currency at its own frozen rate (multi-currency plan §2.4 Tier B)
+        // base currency at its own frozen rate (dev-docs/multi-currency/07-reports.md)
         $excludedOrders = 0;
         if (count($currencyCodes) > 1) {
             $currencyWithSign[ReportCurrency::ALL] = CurrenciesHelper::getCurrencySign($baseCurrency) ?: $baseCurrency;

@@ -18,7 +18,8 @@ use Tests\Support\Factory\ProductFactory;
 use Tests\Support\RateFixture;
 
 /**
- * An upgrade path is priced in the order's currency (plan decision #10).
+ * An upgrade path is priced in the order's currency
+ * (dev-docs/multi-currency/06-orders-subscriptions.md, "Plan upgrades").
  * When that currency cannot be quoted — no current rate and no trusted
  * snapshot — the path is offered as unavailable, never priced in the base
  * currency and labelled with the order's. Base USD; the target plan costs

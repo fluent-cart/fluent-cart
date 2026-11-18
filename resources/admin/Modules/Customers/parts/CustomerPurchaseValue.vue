@@ -1,6 +1,6 @@
 <template>
   <span class="text" v-if="Object.keys(parsedValue).length">
-    <el-popover
+    <fct-popover
         placement="bottom"
         trigger="hover"
         popper-class="fct-popover"
@@ -22,7 +22,7 @@
           <span v-html="formatNumber(val.value, true, false, val.currency)"></span>
         </div>
       </div>
-    </el-popover>
+    </fct-popover>
 
     <span v-else>
       <span v-html="formatNumber(firstValue.value, true, false, firstValue.currency)"></span>

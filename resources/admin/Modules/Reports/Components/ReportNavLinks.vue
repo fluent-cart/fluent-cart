@@ -15,11 +15,11 @@
         }"
     >
       <div class="fct-settings-nav-collapse-button-wrapper">
-        <el-tooltip
+        <fct-tooltip
             :content="translate('Toggle reports')"
             :placement="tooltipPlacement"
         >
-          <el-button
+          <fct-button
               @click="toggleCollapse"
           >
             <DynamicIcon name="Window" />
@@ -27,8 +27,8 @@
             <span class="fct-menu-collapse-button-text">
                 {{ translate('Reports') }}
               </span>
-          </el-button>
-        </el-tooltip>
+          </fct-button>
+        </fct-tooltip>
       </div>
 
       <ul

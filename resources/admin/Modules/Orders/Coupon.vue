@@ -23,15 +23,15 @@
               :placeholder="$t('Enter coupon code')"
           />
 
-          <el-button
+          <fct-button
               @click="applyCoupon"
               :disabled="busy || applying"
               type="info"
               soft
-              class="el-button--x-small"
+              size="x-small"
           >
             {{ $t("Apply") }}
-          </el-button>
+          </fct-button>
         </div>
         <el-alert
             v-if="!hasCoupon && shouldManageCoupon"
@@ -66,9 +66,9 @@
           <DynamicIcon name="Delete"/>
         </IconButton>
 
-        <el-popconfirm
+        <fct-popover
             v-if="action === 'edit_order'"
-            icon="InfoFilled"
+            confirm
             icon-color="#626AEF"
             :title="translate('Are you sure to cancel this coupon? This action is not recoverable')"
             @confirm="cancelCoupon(coupon.id, coupon)"
@@ -87,7 +87,7 @@
               <DynamicIcon name="Delete"/>
             </IconButton>
           </template>
-        </el-popconfirm>
+        </fct-popover>
       </div>
     </td>
     <td></td>

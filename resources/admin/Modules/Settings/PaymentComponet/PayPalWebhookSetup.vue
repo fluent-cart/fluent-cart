@@ -7,13 +7,13 @@
         Configure PayPal webhooks to receive real-time payment notifications
       </p>
       <br>
-      <el-button :loading="isLoading"
+      <fct-button :loading="isLoading"
                  @click="setupWebhook"
                  :disabled="isLoading"
                  class="setup-button" size="small"
       >
         <span>Setup Webhook</span>
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

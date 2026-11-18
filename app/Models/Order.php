@@ -52,7 +52,7 @@ class Order extends Model
             }
 
             // Every order carries a currency snapshot (config.fx + rate).
-            // dev-docs/multi-currency/plan.md §9.
+            // dev-docs/multi-currency/06-orders-subscriptions.md.
             CurrencySnapshot::applyToNewOrder($model);
 
             if ($model->payment_status === 'paid' || apply_filters('fluent_cart/create_receipt_number_on_order_create', false)) {
@@ -695,6 +695,11 @@ class Order extends Model
                 'taxable_amount' => isset($displayBase) ? (int) $displayBase : $taxableAmount,
                 'inclusive'      => $lineInclusive === null ? ((int) $this->tax_behavior === 2) : (bool) $lineInclusive,
             ];
+            if (isset($displayBase)) {
+                // Net of this rate's tax, so the breakdown can use it without item data.
+                $displayTaxLines[count($displayTaxLines) - 1]['net_taxable_amount'] = (int) $displayBase;
+                $displayTaxLines[count($displayTaxLines) - 1]['currency'] = $this->currency;
+            }
             unset($displayBase);
         }
 
@@ -726,12 +731,16 @@ class Order extends Model
                 /* translators: %1$s: tax rate name e.g. "VAT" */
                 $displayLabel = sprintf(__('%1$s on shipping', 'fluent-cart'), $rateName);
             }
-            $displayLines[] = [
+            $displayLine = [
                 'label'        => $displayLabel,
                 'shipping_tax' => $shippingTax,
                 'rate_id'      => (int) $orderTaxRate->tax_rate_id,
                 'rate_percent' => $ratePercent,
             ];
+            if (isset($meta['shipping_taxable_amount'])) {
+                $displayLine['shipping_taxable_amount'] = (int) $meta['shipping_taxable_amount'];
+            }
+            $displayLines[] = $displayLine;
         }
         return $displayLines;
     }
@@ -1088,10 +1097,19 @@ class Order extends Model
 
     public function recountTotalPaid()
     {
-        $totalPaid = $this->getTotalPaidAmount();
-        $totalRefunded = $this->getTotalRefundAmount();
+        $successStatuses = Status::getTransactionSuccessStatuses();
 
-        $this->total_paid = ($totalPaid - $totalRefunded) < 0 ? 0 : $totalPaid - $totalRefunded;
+        $totalPaid = $this->transactions()
+            ->whereIn('status', $successStatuses)
+            ->sum('total');
+
+        // total_paid stays gross: refunds live in total_refund and reports subtract them.
+        $this->total_paid = (int) apply_filters(
+            'fluentcart_order_transaction_paid_total',
+            (int) $totalPaid,
+            $this,
+            $successStatuses
+        );
         $this->save();
         return $this;
     }

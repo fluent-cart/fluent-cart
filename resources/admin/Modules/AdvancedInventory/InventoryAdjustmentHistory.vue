@@ -1,5 +1,6 @@
 <template>
-    <el-drawer
+    <fct-dialog
+        drawer
         v-model="drawerVisible"
         :title="translate('Stock Adjustment History')"
         @close="handleClose"
@@ -99,11 +100,11 @@
         <div v-else class="fct-timeline-loading">
             <p>{{ translate('Loading adjustment history...') }}</p>
         </div>
-    </el-drawer>
+    </fct-dialog>
 </template>
 
 <script setup>
-import { defineOptions, ref } from 'vue';
+import { ref } from 'vue';
 import translate from '@/utils/translator/Translator';
 import ConvertedTime from '@/Bits/Components/ConvertedTime.vue';
 import Empty from "@/Bits/Components/Table/Empty.vue";

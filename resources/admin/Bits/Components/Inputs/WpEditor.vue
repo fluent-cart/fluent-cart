@@ -289,9 +289,9 @@ watch(plainContent, async (newContent, oldContent) => {
 <template>
 
 
-  <el-dialog v-model="showPreviewModal" :title="$t('Preview')">
+  <fct-dialog v-model="showPreviewModal" :title="$t('Preview')">
     <div v-html="previewContent"></div>
-  </el-dialog>
+  </fct-dialog>
 
 
   <div class="relative w-full">
@@ -312,17 +312,15 @@ watch(plainContent, async (newContent, oldContent) => {
       </div>
 
       <div class="flex gap-2 items-center ml-auto">
-        <el-tooltip
+        <fct-tooltip
             v-if="editor !== null"
-            effect="dark"
             :content="$t('Preview Template')"
             placement="top"
-            popper-class="fct-tooltip"
         >
           <IconButton bg="white" @click.prevent="showPreview" tag="button" size="small">
             <DynamicIcon name="Eye"/>
           </IconButton>
-        </el-tooltip>
+        </fct-tooltip>
         <slot name="reset_template"></slot>
       </div>
     </div>
@@ -347,20 +345,19 @@ watch(plainContent, async (newContent, oldContent) => {
             </div>
           </div>
           <div v-if="uploadingState.uploadingFile">
-            <el-progress
+            <fct-progress
                 :text-inside="true"
                 :stroke-width="20"
                 :percentage="uploadingState.uploadProgress"
-            >
-            </el-progress>
+            />
 
-            <el-button @click="evt => {
+            <fct-button @click="evt => {
           cancelUploading();
         }">
               <el-icon>
                 <CircleClose/>
               </el-icon>
-            </el-button>
+            </fct-button>
           </div>
         </div>
 

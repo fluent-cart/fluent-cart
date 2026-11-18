@@ -14,6 +14,7 @@ use FluentCart\App\Modules\PaymentMethods\Core\PaymentGatewayInterface;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Models\Concerns\CanUpdateBatch;
 use FluentCart\App\Models\Concerns\HasActivity;
+use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\Payments\PaymentHelper;
 use FluentCart\App\Services\Payments\SubscriptionHelper;
 use FluentCart\App\Services\TemplateService;
@@ -607,6 +608,69 @@ class Subscription extends Model
         fluent_cart_add_log($title, $description, $type, $logData);
     }
 
+    /**
+     * Cancel the vendor subscription this row was moved off. On failure the
+     * switch stands and the admin gets an error log with the dashboard link.
+     *
+     * @return true|\WP_Error
+     */
+    public function cancelReplacedVendorSubscription(string $paymentMethod, string $vendorSubscriptionId, string $reason = '')
+    {
+        $mode = $this->order ? $this->order->mode : '';
+        $gateway = App::gateway($paymentMethod);
+
+        if ($gateway instanceof PaymentGatewayInterface && $gateway->has('subscriptions')) {
+            $result = $gateway->subscriptions->cancel($vendorSubscriptionId, [
+                'reason'          => $reason,
+                'mode'            => $mode,
+                'effective_from'  => 'immediately',
+                'subscription_id' => $this->id,
+            ]);
+        } else {
+            $result = new \WP_Error('gateway_unavailable', __('The payment gateway is not available.', 'fluent-cart'));
+        }
+
+        if (!is_wp_error($result)) {
+            return true;
+        }
+
+        $url = apply_filters('fluent_cart/subscription/url_' . $paymentMethod, '', [
+            'vendor_subscription_id' => $vendorSubscriptionId,
+            'payment_mode'           => $mode,
+            'subscription'           => $this,
+        ]);
+        $link = $url ? sprintf('<a href="%1$s" target="_blank" rel="noopener">%1$s</a>', esc_url($url)) : '';
+
+        $this->addLog(
+            __('Old subscription was not cancelled', 'fluent-cart'),
+            sprintf(
+                /* translators: 1: gateway, 2: vendor subscription id, 3: dashboard link, 4: error */
+                __('Cancel %1$s subscription %2$s at the gateway to stop double billing. %3$s Error: %4$s', 'fluent-cart'),
+                $paymentMethod,
+                $vendorSubscriptionId,
+                $link,
+                $result->get_error_message()
+            ),
+            'error'
+        );
+
+        return $result;
+    }
+
+    public function lockPaymentMethodSwitch(): bool
+    {
+        global $wpdb;
+
+        return (bool)$wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 5)', 'fc_sub_switch_' . $this->id));
+    }
+
+    public function unlockPaymentMethodSwitch(): void
+    {
+        global $wpdb;
+
+        $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', 'fc_sub_switch_' . $this->id));
+    }
+
     public function getDownloads()
     {
         if (!$this->variation_id || $this->status !== Status::SUBSCRIPTION_ACTIVE) {
@@ -744,39 +808,50 @@ class Subscription extends Model
     }
 
     /**
-     * The `switch_payment_method` entry of `supportedFeatures`, or [] when the
-     * gateway does not declare one.
+     * Days a new vendor subscription must trial so its first charge lands on the
+     * current next_billing_date. 0 means no paid days are left.
      *
-     * Unlike the flat feature flags this is a KEYED entry carrying config
-     * (`supported_gateways`), so `has()` cannot answer it — it needs the raw
-     * `supportedFeatures` property, which only AbstractPaymentGateway carries.
-     * An interface-only gateway therefore reports no switch support rather
-     * than triggering an undefined-property read.
-     *
-     * @return array
+     * @return int
      */
-    private function switchPaymentConfig(): array
+    public function paymentMethodChangeTrialDays()
     {
-        $gateway = $this->resolveGateway();
-
-        if (!$gateway instanceof AbstractPaymentGateway) {
-            return [];
+        if (!$this->next_billing_date) {
+            return 0;
         }
 
-        return (array) Arr::get($gateway->supportedFeatures, 'switch_payment_method', []);
+        $now = DateTime::gmtNow()->getTimestamp();
+        $nextBillingTimestamp = DateTime::anyTimeToGmt($this->next_billing_date)->getTimestamp();
+
+        if ($nextBillingTimestamp <= $now) {
+            return 0;
+        }
+
+        return (int) SubscriptionHelper::checkTrailDaysLoopHole($this, (int) ceil(($nextBillingTimestamp - $now) / 86400));
+    }
+
+    public function hasPaidDaysLeft()
+    {
+        return $this->paymentMethodChangeTrialDays() > 0;
     }
 
     public function canUpdatePaymentMethod()
     {
-        $gateway = $this->resolveGateway();
-        if (!$gateway || !$gateway->has('card_update')) {
+        // Manual invoices have no saved payment method to replace.
+        if ($this->isManual()) {
             return false;
         }
 
-        return in_array($this->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING, Status::SUBSCRIPTION_PAUSED, Status::SUBSCRIPTION_INTENDED, Status::SUBSCRIPTION_PAST_DUE, Status::SUBSCRIPTION_FAILING, Status::SUBSCRIPTION_EXPIRING]); // past_due, is fallback for existing subscriptions, on new subscriptions update it will be expiring
+        // PayPal updates create a vendor subscription alongside the store's billing.
+        if ($this->current_payment_method === 'paypal' && $this->usesRenewalEngine()) {
+            return false;
+        }
+
+        $gateway = $this->resolveGateway();
+
+        return $gateway instanceof AbstractPaymentGateway && $gateway->canUpdateSubscriptionPaymentMethod($this);
     }
 
-    public function canSwitchPaymentMethod()
+    public function canSwitchPaymentMethod($requirePaidDays = true)
     {
         // Switching moves the subscription onto ANOTHER gateway's vendor subscription
         // (see PayPal SubscriptionManager::switchPaymentMethod — it creates a live
@@ -787,11 +862,9 @@ class Subscription extends Model
             return false;
         }
 
-        if (!$this->switchPaymentConfig()) {
-            return false;
-        }
+        $gateway = $this->resolveGateway();
 
-        return in_array($this->status, [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING, Status::SUBSCRIPTION_PAUSED]);
+        return $gateway instanceof AbstractPaymentGateway && $gateway->canSwitchSubscriptionPaymentMethod($this, (bool) $requirePaidDays);
     }
 
     public function switchablePaymentMethods()
@@ -800,7 +873,9 @@ class Subscription extends Model
             return [];
         }
 
-        return Arr::get($this->switchPaymentConfig(), 'supported_gateways', []);
+        $gateway = $this->resolveGateway();
+
+        return $gateway instanceof AbstractPaymentGateway ? $gateway->getSwitchableSubscriptionPaymentMethods($this) : [];
     }
 
     public function canPause()
@@ -1030,6 +1105,23 @@ class Subscription extends Model
             $query->whereNotIn('status', [Status::SUBSCRIPTION_PENDING, Status::SUBSCRIPTION_INTENDED])
                 ->orWhere('bill_count', '>', 0)
                 ->orWhere('config', 'LIKE', '%"reactivation_order_id":%');
+        });
+    }
+
+    /**
+     * Subscriptions whose parent order matches the store's order mode. With the mode guard
+     * on, a test-mode store never touches live subscriptions (and the reverse).
+     */
+    public function scopeInStoreMode($query)
+    {
+        if (!SubscriptionHelper::isModeGuardEnabled()) {
+            return $query;
+        }
+
+        $storeMode = (new StoreSettings())->get('order_mode');
+
+        return $query->whereHas('order', function ($query) use ($storeMode) {
+            $query->where('mode', $storeMode);
         });
     }
 
@@ -1601,6 +1693,7 @@ class Subscription extends Model
             // Exclude store-billed (manual/system) subscriptions — their expiry is
             // handled by the invoice-based overdue flow
             $subscriptions = Subscription::query()
+                ->inStoreMode()
                 ->whereIn('status', [
                     Status::SUBSCRIPTION_ACTIVE,
                     Status::SUBSCRIPTION_TRIALING,

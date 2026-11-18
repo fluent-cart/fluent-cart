@@ -23,19 +23,19 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
        :class="productDownloadableModel.hasVariationOption(product) ? 'px-6 py-3 border border-solid border-gray-divider border-x-0 border-b-0 dark:border-dark-400' : ''">
 
     <div class="text-end" v-if="productDownloadableModel.hasVariationOption(product)">
-      <el-button text type="primary" @click="()=>{
+      <fct-button text type="primary" @click="()=>{
             productDownloadableModel.openAddModal()
           }">
         <DynamicIcon name="Plus"/>
         {{ $t('Add') }}
-      </el-button>
+      </fct-button>
     </div>
     <div v-else class="px-6 py-3">
       {{ $t('No pricing added yet') }}
     </div>
   </div>
 
-  <el-drawer v-model="productDownloadableModel.data.addModal.isModalOpen" :size="drawerSize" @close="() => {
+  <fct-dialog drawer v-model="productDownloadableModel.data.addModal.isModalOpen" :width="drawerSize" @close="() => {
       productDownloadableModel.clearInsertableFile();
     }" @open="() => {
       productDownloadableModel.addDummyInsertableFile();
@@ -51,7 +51,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
       <template v-if="productDownloadableModel.insertableFiles.length">
         <div v-for="(file, index) of productDownloadableModel.insertableFiles"
              class="fct-product-download-form-box">
-          <el-button
+          <fct-button
               v-if="productDownloadableModel.insertableFiles.length > 1"
               @click="productDownloadableModel.deleteInsertableFile(index)"
               size="small"
@@ -59,7 +59,7 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
               class="absolute end-2 top-2 p-0 border-none hover:text-red-500"
           >
             <DynamicIcon name="Delete"/>
-          </el-button>
+          </fct-button>
           <SingleFileForm
               :product="product"
               :file="file"
@@ -118,8 +118,8 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
 
     <template #footer>
       <div>
-        <el-button @click="productDownloadableModel.data.addModal.isModalOpen = false">{{$t('Cancel')}}</el-button>
-        <el-button
+        <fct-button @click="productDownloadableModel.data.addModal.isModalOpen = false">{{$t('Cancel')}}</fct-button>
+        <fct-button
             type="primary"
             @click="()=>{
               productDownloadableModel.attachInsertableFiles(product.ID);
@@ -127,10 +127,10 @@ const drawerSize = computed(() => (window.innerWidth <= 768 ? "90%" : "34%"));
             :loading="productDownloadableModel.data.saving"
         >
           {{$t('Save Asset')}}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-drawer>
+  </fct-dialog>
 
 </template>
 

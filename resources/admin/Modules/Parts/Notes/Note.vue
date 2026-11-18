@@ -21,16 +21,14 @@
       </Card.Header>
       <Card.Body :class="noteNeedsCollapse ? 'pb-0' : ''">
         <div class="fct-admin-sidebar-item">
-          <el-skeleton v-if="loading" animated>
-            <template #template>
-              <el-skeleton-item variant="p" />
-            </template>
-          </el-skeleton>
+          <fct-skeleton v-if="loading" animated>
+            <fct-skeleton variant="p"/>
+          </fct-skeleton>
           <template v-else>
             <span class="whitespace-pre-line">{{
                 noteCopy ? noteTextToDisplay : $t("No notes")
               }}</span>
-            <el-button
+            <fct-button
                 class="fct-show-more-button"
                 v-if="noteNeedsCollapse"
                 @click="toggleNoteText"
@@ -43,12 +41,12 @@
               <template v-else >{{ $t("Show more") }}
                 <DynamicIcon name="ChevronDown" />
               </template>
-            </el-button>
+            </fct-button>
           </template>
         </div>
       </Card.Body>
     </Card.Container>
-    <el-dialog
+    <fct-dialog
         :append-to-body="true"
         width="45%"
         v-model="noteModalIsOpen"
@@ -61,7 +59,7 @@
             @close-modal="noteModalIsOpen = false"
         />
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

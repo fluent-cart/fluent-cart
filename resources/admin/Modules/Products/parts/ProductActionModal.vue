@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <fct-dialog
       v-model="visible"
       :title="modalTitle"
       :append-to-body="true"
@@ -41,34 +41,28 @@
 
       <!-- Options Wrapper (Duplicate Only) -->
       <div v-if="isDuplicateAction" class="options-wrapper">
-        <el-checkbox
-            v-model="options.importDownloadableFiles"
-            :label="translate('Import Downloadable Files')"
-            size="large"
-        />
+        <fct-choice v-model="options.importDownloadableFiles" size="large">
+          {{ translate('Import Downloadable Files') }}
+        </fct-choice>
 
-        <el-checkbox
-            v-model="options.importLicenseSettings"
-            :label="translate('Import License Settings')"
-            size="large"
-        />
+        <fct-choice v-model="options.importLicenseSettings" size="large">
+          {{ translate('Import License Settings') }}
+        </fct-choice>
 
         <template v-if="showStockManagement === 'yes'">
           <template v-if="isProActive">
-            <el-checkbox
-                v-model="options.importStockManagement"
-                :label="translate('Import Stock Management')"
-                size="large"
-            />
+            <fct-choice v-model="options.importStockManagement" size="large">
+              {{ translate('Import Stock Management') }}
+            </fct-choice>
           </template>
           <template v-else>
-            <el-checkbox
+            <fct-choice
                 :disabled="true"
                 size="large"
             >
               {{ translate('Import Stock Management') }}
               <DynamicIcon name="Crown" class="w-4 h-4 text-warning-500" />
-            </el-checkbox>
+            </fct-choice>
           </template>
         </template>
       </div>
@@ -97,7 +91,7 @@
 
       <!-- Progress Section (Bulk Actions Only) -->
       <div v-if="isBulk && isProcessing" class="progress-section">
-        <el-progress
+        <fct-progress
             :percentage="progressPercentage"
             :status="progressStatus"
         />
@@ -128,10 +122,10 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose" :disabled="isProcessing">
+        <fct-button @click="handleClose" :disabled="isProcessing">
           {{ isProcessing || showResults ? translate('Close') : translate('Cancel') }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             v-if="!showResults"
             :type="isDeleteAction ? 'danger' : 'primary'"
             :loading="loading || isProcessing"
@@ -140,10 +134,10 @@
         >
           <i v-if="isDeleteAction" class="el-icon-delete"></i>
           {{ actionButtonText }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>

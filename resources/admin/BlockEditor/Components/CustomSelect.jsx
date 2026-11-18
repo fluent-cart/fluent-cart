@@ -8,7 +8,8 @@ function CustomSelect({
                           defaultValue = [],
                           onChange,
                           customKeys = { key: 'value', label: 'label' },
-                          isMulti = false
+                          isMulti = false,
+                          emptyText = ''
                       }) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,8 +53,11 @@ function CustomSelect({
     };
 
     const toggleOption = (option) => {
-        setIsOpen(false);
-        inputRef.current?.blur(); // 👈 remove focus from input
+        // Multi-select stays open so several options can be picked in one go.
+        if (!isMulti) {
+            setIsOpen(false);
+            inputRef.current?.blur(); // 👈 remove focus from input
+        }
         if (isMulti) {
             const exists = selected.some(sel => sel[customKeys.key] === option[customKeys.key]);
             const updated = exists
@@ -187,7 +191,7 @@ function CustomSelect({
                         // setIsOpen(true)
                     }}
 
-                    placeholder={isMulti && selected.length ? '' : blocktranslate('Select...')}
+                    placeholder={isMulti && selected.length ? '' : (emptyText || blocktranslate('Select...'))}
                 />
             </div>
             {isOpen && (

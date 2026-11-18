@@ -11,6 +11,8 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class ProductShortDescription extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name = 'fct-product-short-description';
     public $icon = 'ti-paragraph fluent-cart-element-icon';

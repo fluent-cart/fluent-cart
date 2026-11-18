@@ -327,7 +327,7 @@ class OrderItemResource extends BaseResourceApi
 
                     // An order in another currency prices the line at the order's own
                     // frozen rate and pricing rules, from the stored base price
-                    // (multi-currency plan §9.1).
+                    // (dev-docs/multi-currency/06-orders-subscriptions.md).
                     $orderQuote = static::orderCurrencyQuote($order);
                     if ($orderQuote) {
                         $baseVariation = ProductVariation::query()->find($variationId);

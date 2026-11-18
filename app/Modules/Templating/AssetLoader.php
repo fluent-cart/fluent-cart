@@ -269,30 +269,82 @@ class AssetLoader
         return apply_filters('fluent_cart/review/js_vars', $reviewVars);
     }
 
+    /** The single product page's scripts and styles, its reviews section's included. For what shows reviews. */
     public static function loadSingleProductAssets()
     {
         self::markFrontendAssetsRequired();
-        static $isLoaded = false;
-        if ($isLoaded) {
+        self::loadSingleProductBundle(true);
+    }
+
+    /**
+     * The single product bundle without its reviews section: gallery, zoom, buy section and buttons.
+     * For product parts and cards (their Quick View opens the buy section), which show no reviews.
+     */
+    public static function loadSingleProductAssetsWithoutReviews()
+    {
+        self::markFrontendAssetsRequired();
+        self::loadSingleProductBundle(false);
+    }
+
+    /**
+     * The handles stay the bundle's own, so a page that needs the reviews section after the rest is
+     * loaded adds only the review files. Each part checks the queue, not a flag, so it follows resets.
+     */
+    private static function loadSingleProductBundle(bool $withReviews)
+    {
+        $prefix = 'fluent-cart-single-product-page';
+        if (!wp_script_is($prefix . '_1', 'enqueued')) {
+            self::loadProductCardAssets();
+            $singlePageScripts = [
+                [
+                    'source'       => 'public/single-product/xzoom/xzoom.js',
+                    'dependencies' => [],
+                    'inFooter'     => true,
+                ],
+                [
+                    'source'       => 'public/single-product/SingleProduct.js',
+                    'dependencies' => [],
+                    'inFooter'     => true
+                ],
+            ];
+            $localizeData = [
+                'fluentcart_review_vars' => static::reviewJsVars(),
+                'fluentcart_single_product_vars' => [
+                    'trans'                      => TransStrings::singleProductPageString(),
+                    'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
+                    // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
+                    'out_of_stock_button_text'   => apply_filters('fluent_cart/product/out_of_stock_text', __('Not Available', 'fluent-cart'), []),
+
+                    'buy_now_button_text'        => apply_filters('fluent_cart/product/buy_now_button_text', __('Buy Now', 'fluent-cart'), []),
+                    'in_stock_status'            => Helper::IN_STOCK,
+                    'out_of_stock_status'        => Helper::OUT_OF_STOCK,
+                    'enable_image_zoom'          => (new StoreSettings())->get('enable_image_zoom_in_single_product'),
+                    'enable_image_zoom_in_modal' => (new StoreSettings())->get('enable_image_zoom_in_modal')
+                ]
+            ];
+            Vite::enqueueAllScripts($singlePageScripts, $prefix, $localizeData);
+
+            // Files other loaders also queue use those loaders' handles, so WordPress prints each once.
+            $singlePageStyles = [
+                ['source' => 'public/single-product/single-product.scss', 'handle' => 'fluentcart-single-product-css', 'media' => 'all'],
+                ['source' => 'public/single-product/similar-product.scss', 'handle' => 'fluentcart-similar-product-css', 'media' => 'all'],
+                ['source' => 'public/product-card/style/product-card.scss', 'handle' => 'fluentcart-product-card-page-css', 'media' => 'all'],
+                ['source' => 'public/single-product/xzoom/xzoom.css', 'handle' => 'fluentcart-zoom-css', 'media' => 'all'],
+                ['source' => 'public/buttons/add-to-cart/style/style.scss', 'handle' => 'fluentcart-add-to-cart-btn-css', 'media' => 'all'],
+                ['source' => 'public/buttons/direct-checkout/style/style.scss', 'handle' => 'fluentcart-direct-checkout-btn-css', 'media' => 'all'],
+            ];
+            Vite::enqueueAllStyles($singlePageStyles, $prefix);
+        }
+
+        if (!$withReviews || wp_script_is($prefix . '_2', 'enqueued')) {
             return;
         }
-        self::loadProductCardAssets();
-        $isLoaded = true;
-        $singlePageScripts = [
-            [
-                'source'       => 'public/single-product/xzoom/xzoom.js',
-                'dependencies' => [],
-                'inFooter'     => true,
-            ],
-            [
-                'source'       => 'public/single-product/SingleProduct.js',
-                'dependencies' => [],
-                'inFooter'     => true
-            ],
+        Vite::enqueueAllScripts([
             [
                 'source'       => 'public/single-product/Reviews.js',
                 'dependencies' => [],
-                'inFooter'     => true
+                'inFooter'     => true,
+                'handle'       => $prefix . '_2',
             ],
             [
                 'source'       => 'public/single-product/ReviewForm.js',
@@ -303,47 +355,14 @@ class AssetLoader
                 // the second one.
                 'handle'       => self::REVIEW_FORM_SCRIPT_HANDLE,
             ]
-        ];
-        $localizeData = [
-            'fluentcart_review_vars' => static::reviewJsVars(),
-            'fluentcart_single_product_vars' => [
-                'trans'                      => TransStrings::singleProductPageString(),
-                'cart_button_text'           => apply_filters('fluent_cart/product/add_to_cart_text', __('Add To Cart', 'fluent-cart'), []),
-                // App::storeSettings()->get('cart_button_text', __('Add to Cart', 'fluent-cart')),
-                'out_of_stock_button_text'   => apply_filters('fluent_cart/product/out_of_stock_text', __('Not Available', 'fluent-cart'), []),
-
-                'buy_now_button_text'        => apply_filters('fluent_cart/product/buy_now_button_text', __('Buy Now', 'fluent-cart'), []),
-                'in_stock_status'            => Helper::IN_STOCK,
-                'out_of_stock_status'        => Helper::OUT_OF_STOCK,
-                'enable_image_zoom'          => (new StoreSettings())->get('enable_image_zoom_in_single_product'),
-                'enable_image_zoom_in_modal' => (new StoreSettings())->get('enable_image_zoom_in_modal')
-            ]
-        ];
-        Vite::enqueueAllScripts($singlePageScripts, 'fluent-cart-single-product-page', $localizeData);
-
-        $singlePageStyles = [
-            'public/single-product/single-product.scss',
-            'public/single-product/similar-product.scss',
-            'public/single-product/reviews.scss',
-            'public/product-card/style/product-card.scss',
-            'public/single-product/xzoom/xzoom.css',
-            'public/buttons/add-to-cart/style/style.scss',
-            'public/buttons/direct-checkout/style/style.scss'
-        ];
-
-        Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-single-product-page');
-
-
+        ], $prefix);
+        Vite::enqueueAllStyles([['source' => 'public/single-product/reviews.scss', 'handle' => $prefix . '_2', 'media' => 'all']], $prefix);
     }
 
     public static function loadAddToCartCss()
     {
         self::markFrontendAssetsRequired();
-        $singlePageStyles = [
-            'public/buttons/add-to-cart/style/style.scss',
-        ];
-
-        Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-add-to-cart');
+        Vite::enqueueStyle('fluentcart-add-to-cart-btn-css', 'public/buttons/add-to-cart/style/style.scss');
     }
 
     public static function loadModalCheckoutAssets()
@@ -372,15 +391,11 @@ class AssetLoader
     public static function loadProductCardAssets()
     {
         self::markFrontendAssetsRequired();
-        static $isLoaded = false;
-        if ($isLoaded) {
+        // The queue, not a static flag, so it follows a reset queue.
+        if (wp_script_is('fluent-cart-product-card-js', 'enqueued')) {
             return;
         }
-        $isLoaded = true;
-        $singlePageStyles = [
-            'public/product-card/style/product-card.scss',
-        ];
-        Vite::enqueueAllStyles($singlePageStyles, 'fluent-cart-product-card-page');
+        Vite::enqueueStyle('fluentcart-product-card-page-css', 'public/product-card/style/product-card.scss');
         Vite::enqueueStyle(
             'fluent-cart-sold-out-badge',
             'admin/BlockEditor/SoldOutBadge/style/sold-out-badge-block-editor.scss'
@@ -534,7 +549,7 @@ class AssetLoader
         Vite::enqueueScript(
             'fluentcart-customer-js',
             'public/customer-profile/Start.js',
-            ['wp-i18n']
+            ['wp-i18n', 'wp-hooks']
         )->with(CustomerProfileHandler::getLocalizationData());
 
         /**
@@ -760,6 +775,9 @@ class AssetLoader
                     'billing'  => array_merge([], ...array_values(AddressHelper::quoteContactFields(false))),
                     'shipping' => array_merge([], ...array_values(AddressHelper::quoteContactFields(true))),
                 ] : [],
+                // A carrier that builds its own request may quote from any of these; saving one re-quotes.
+                'shipping_quote_form_fields'                   => $cart->requireShipping() && AddressHelper::carriersBuildRequests()
+                    ? array_keys(AddressHelper::quoteFormFields()) : [],
 
             ],
             'fluentcart_checkout_info' => [
@@ -804,7 +822,7 @@ class AssetLoader
         $isLoaded = true;
         // Enqueue frontend styles for the product info block
         Vite::enqueueStyle(
-            'fluentcart-single-product',
+            'fluentcart-single-product-css',
             'public/single-product/single-product.scss'
         );
 

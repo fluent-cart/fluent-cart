@@ -9,6 +9,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderMeta;
 use FluentCart\App\Models\OrderTransaction;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
@@ -67,7 +68,7 @@ class DataBackfills
             'order_address_index' => [
                 'title' => __('Order Address Index', 'fluent-cart'),
             ],
-            // 2026-09-27 — multi-currency (dev-docs/multi-currency/plan.md §10).
+            // 2026-09-27 — multi-currency (dev-docs/multi-currency/02-database-schema.md, "Data backfills").
             // Orders that predate currency snapshots get one: legacy_base when
             // in the base currency, legacy_unknown otherwise — never a guessed
             // rate. Remove after one or two releases once installs have upgraded.
@@ -93,6 +94,12 @@ class DataBackfills
             'refund_totals_repair' => [
                 'title' => 'Refund Totals Repair',
             ],
+            // 2026-11-11 — the WooCommerce and EDD migrators imported simple products
+            // with an empty variation title, so the product editor could not save them.
+            // Remove after one or two releases.
+            'simple_variation_title' => [
+                'title' => __('Simple Product Variation Title', 'fluent-cart'),
+            ],
         ];
     }
 
@@ -102,8 +109,21 @@ class DataBackfills
     public static function getPending()
     {
         $option = (array)fluent_cart_get_option('_db_migrations', [], false);
-        $doneSlugs = array_keys(array_filter((array)Arr::get($option, 'backfills', [])));
+        $failures = (array)Arr::get($option, 'backfill_failures', []);
+        $doneSlugs = [];
 
+        foreach ((array)Arr::get($option, 'backfills', []) as $slug => $state) {
+            if (!$state) {
+                continue;
+            }
+
+            // a retired backfill gets fresh tries once the plugin version changes
+            if ($state === 'failed' && Arr::get($failures, $slug . '.version') !== FLUENTCART_VERSION) {
+                continue;
+            }
+
+            $doneSlugs[] = $slug;
+        }
 
         return array_values(array_diff(array_keys(self::getRegistry()), $doneSlugs));
     }
@@ -114,19 +134,43 @@ class DataBackfills
     }
 
     /**
-     * Run pending backfills within this request's budget. Called from the
-     * data-backfills/run REST endpoint — the admin app re-calls while the
-     * returned status is 'running'.
-     *
-     * @return array ['status' => completed|running|locked, 'completed' => [], 'pending' => []]
-     */
-    /**
      * How many times the order-address index DDL may be retried before the slug
      * retires. Small on purpose: the only failures worth retrying are transient locks,
      * and each retry is an immediate re-post from the browser driver, not a page load.
      */
     const ORDER_ADDRESS_INDEX_MAX_ATTEMPTS = 3;
 
+    /**
+     * Failures in a row before a backfill is retired until the next plugin version.
+     */
+    const BACKFILL_MAX_FAILURES = 3;
+
+    /**
+     * What the running backfill's keyset loop did in this call: whether it
+     * moved the cursor, and the last id it reached.
+     */
+    private static $chunkProgress = ['advanced' => false, 'last_id' => null];
+
+    /**
+     * When the running processPending() call stops starting new work, as a
+     * microtime. Null outside a call.
+     */
+    private static $deadline = null;
+
+    /**
+     * Run pending backfills within this request's budget. Called from the
+     * data-backfills/run REST endpoint — the admin app re-calls while the
+     * returned status is 'running'.
+     *
+     * One time budget covers the whole call: after the batch that passes it,
+     * no further batch and no further backfill starts.
+     *
+     * A backfill that throws keeps its cursor and returns 'stalled': the admin
+     * app stops, and the next page load retries from the cursor. Later backfills
+     * wait behind it until it passes or is retired.
+     *
+     * @return array ['status' => completed|running|stalled|locked, 'completed' => [], 'pending' => []]
+     */
     public static function processPending()
     {
         $pending = self::getPending();
@@ -141,27 +185,149 @@ class DataBackfills
         }
 
         $completedNow = [];
+        $stalled = false;
+        self::$deadline = microtime(true) + max(0, (int)apply_filters('fluent_cart/data_backfills/max_seconds', 15));
 
         try {
             foreach ($pending as $slug) {
-                if (!self::runBackfill($slug)) {
+                self::$chunkProgress = ['advanced' => false, 'last_id' => null];
+
+                try {
+                    $finished = self::runBackfill($slug);
+                } catch (\Throwable $e) {
+                    if (self::recordFailure($slug, $e->getMessage())) {
+                        if (self::deadlinePassed()) {
+                            break;
+                        }
+
+                        continue; // retired — later backfills no longer wait behind it
+                    }
+
+                    $stalled = true;
+                    break;
+                }
+
+                self::clearFailure($slug);
+
+                if (!$finished) {
                     break; // request budget spent — the next call resumes from the cursor
                 }
 
                 self::markCompleted($slug);
                 $completedNow[] = $slug;
+
+                if (self::deadlinePassed()) {
+                    break;
+                }
             }
         } finally {
+            self::$deadline = null;
             self::releaseBackfillLock();
         }
 
         $stillPending = self::getPending();
 
+        if ($stalled) {
+            $status = 'stalled';
+        } else {
+            $status = $stillPending ? 'running' : 'completed';
+        }
+
         return [
-            'status'    => $stillPending ? 'running' : 'completed',
+            'status'    => $status,
             'completed' => $completedNow,
             'pending'   => $stillPending,
         ];
+    }
+
+    private static function deadlinePassed()
+    {
+        return self::$deadline !== null && microtime(true) >= self::$deadline;
+    }
+
+    /**
+     * Count a failed call against the backfill. A call that moved the cursor
+     * before failing, or the first failure on a new plugin version, starts the
+     * count again.
+     *
+     * @param string $slug
+     * @param string $error
+     * @return bool true when the backfill reached the cap and was retired
+     */
+    private static function recordFailure($slug, $error)
+    {
+        $option = (array)fluent_cart_get_option('_db_migrations', [], false);
+        $backfills = (array)Arr::get($option, 'backfills', []);
+        $failures = (array)Arr::get($option, 'backfill_failures', []);
+        $previous = (array)Arr::get($failures, $slug, []);
+
+        $continues = !Arr::get(self::$chunkProgress, 'advanced') && Arr::get($previous, 'version') === FLUENTCART_VERSION;
+        $count = $continues ? (int)Arr::get($previous, 'count', 0) + 1 : 1;
+        $error = mb_substr((string)$error, 0, 500);
+        $retired = $count >= self::BACKFILL_MAX_FAILURES;
+
+        $failures[$slug] = [
+            'count'   => $count,
+            'error'   => $error,
+            'version' => FLUENTCART_VERSION,
+        ];
+
+        if ($retired) {
+            $backfills[$slug] = 'failed';
+        } else {
+            unset($backfills[$slug]);
+        }
+
+        $option['backfills'] = $backfills;
+        $option['backfill_failures'] = $failures;
+
+        fluent_cart_update_option('_db_migrations', $option);
+
+        if (!$retired) {
+            return false;
+        }
+
+        $title = Arr::get(self::getRegistry(), $slug . '.title', $slug);
+        $lastId = Arr::get(self::$chunkProgress, 'last_id');
+
+        fluent_cart_add_log(
+            /* translators: 1: data backfill title */
+            sprintf(__('%1$s failed', 'fluent-cart'), $title),
+            sprintf(
+                /* translators: 1: data backfill slug, 2: number of failed attempts, 3: last processed row id, 4: error message */
+                __('Data backfill "%1$s" failed %2$d times in a row and was stopped until the next plugin update. Last processed id: %3$s. Error: %4$s', 'fluent-cart'),
+                $slug,
+                $count,
+                $lastId === null ? '-' : $lastId,
+                $error
+            ),
+            'warning',
+            [
+                'module_name' => 'activity',
+                'module_id'   => 0
+            ]
+        );
+
+        return true;
+    }
+
+    private static function clearFailure($slug)
+    {
+        $option = (array)fluent_cart_get_option('_db_migrations', [], false);
+        $failures = (array)Arr::get($option, 'backfill_failures', []);
+
+        if (!isset($failures[$slug])) {
+            return;
+        }
+
+        unset($failures[$slug]);
+        $option['backfill_failures'] = $failures;
+
+        if (Arr::get($option, 'backfills.' . $slug) === 'failed') {
+            unset($option['backfills'][$slug]);
+        }
+
+        fluent_cart_update_option('_db_migrations', $option);
     }
 
     /**
@@ -195,6 +361,10 @@ class DataBackfills
 
         if ($slug === 'refund_totals_repair') {
             return self::repairRefundTotals();
+        }
+
+        if ($slug === 'simple_variation_title') {
+            return self::fillSimpleVariationTitles();
         }
 
         // registered slug without a runner — mark done so it can't wedge the
@@ -527,11 +697,13 @@ class DataBackfills
 
             // cursor after every chunk — a timeout resumes here, never from id 0
             fluent_cart_update_option('_fluent_cart_installment_repair_cursor', $lastId);
+            self::$chunkProgress = ['advanced' => true, 'last_id' => $lastId];
             $chunksProcessed++;
 
             // chunks bound the scan, repairs bound the heavy per-row work
             $budgetSpent = $chunksProcessed >= $maxChunksPerRun
-                || count($repairedRows) >= $maxRepairsPerRun;
+                || count($repairedRows) >= $maxRepairsPerRun
+                || self::deadlinePassed();
 
             if ($subscriptions->count() >= $chunkSize && $budgetSpent) {
                 self::mergeRepairReport($repairedRows, $offsetIds, $underCollectedIds, $anomalousIds);
@@ -641,9 +813,12 @@ class DataBackfills
 
             // cursor after every chunk — a timeout resumes here, never from id 0
             fluent_cart_update_option('_fluent_cart_completed_billing_date_cursor', $lastId);
+            self::$chunkProgress = ['advanced' => true, 'last_id' => $lastId];
             $chunksProcessed++;
 
-            if ($rows->count() >= $chunkSize && $chunksProcessed >= $maxChunksPerRun) {
+            $budgetSpent = $chunksProcessed >= $maxChunksPerRun || self::deadlinePassed();
+
+            if ($rows->count() >= $chunkSize && $budgetSpent) {
                 self::mergeClearedBillingDateReport($clearedIds);
 
                 return false;
@@ -677,7 +852,7 @@ class DataBackfills
     /**
      * Give every order that predates currency snapshots a config.fx block.
      * Idempotent: only rows without one are selected. Amounts and the rate
-     * column are never touched (plan §10).
+     * column are never touched.
      *
      * @return bool true when done; false = budget spent, more remains
      */
@@ -1041,6 +1216,45 @@ class DataBackfills
     }
 
     /**
+     * A simple product's variation title is its product title. variation_title is
+     * VARCHAR(192), so a longer product title is cut to fit.
+     *
+     * @return bool true when done; false = budget spent or a write failed, more remains
+     */
+    private static function fillSimpleVariationTitles()
+    {
+        return self::runKeysetChunks('simple_variation_title', '_fluent_cart_simple_variation_title_cursor', function ($lastId, $chunkSize) {
+            return ProductVariation::query()
+                ->select(['id'])
+                ->where('id', '>', $lastId)
+                ->whereRaw("TRIM(variation_title) = ''")
+                ->orderBy('id', 'ASC')
+                ->limit($chunkSize)
+                ->get();
+        }, function ($rows) {
+            global $wpdb;
+
+            $variations = $wpdb->prefix . Migrations\ProductVariationMigrator::$tableName;
+            $details    = $wpdb->prefix . Migrations\ProductDetailsMigrator::$tableName;
+            $ids        = array_map('intval', $rows->pluck('id')->toArray());
+            $idList     = implode(',', array_fill(0, count($ids), '%d'));
+
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names and %d placeholders are fixed above
+            return $wpdb->query($wpdb->prepare(
+                "UPDATE {$variations} v
+                INNER JOIN {$details} d ON d.post_id = v.post_id
+                INNER JOIN {$wpdb->posts} p ON p.ID = v.post_id
+                SET v.variation_title = LEFT(p.post_title, 192)
+                WHERE v.id IN ({$idList})
+                AND d.variation_type = %s
+                AND TRIM(v.variation_title) = %s
+                AND TRIM(p.post_title) <> %s",
+                array_merge($ids, ['simple', '', ''])
+            )) !== false;
+        });
+    }
+
+    /**
      * Write a backfill snapshot in one statement. The chunk was read without
      * a lock, and a cancel or gateway update can commit in between: JSON_SET
      * changes only the fx key, so other config keys survive, and updated_at
@@ -1090,12 +1304,15 @@ class DataBackfills
      * @param string $slug
      * @param string $cursorKey fct_meta option holding the last processed id
      * @param callable $fetch fn(int $lastId, int $chunkSize): Collection ordered by id
-     * @param callable $apply fn(Collection $rows): mixed — false when the chunk's write failed
+     * @param callable $apply fn(Collection $rows): mixed — false keeps the cursor on this chunk
      * @param array $defaultBudget chunk_size / max_chunks_per_run
-     * @return bool true when done; false = budget spent or a write failed, more remains
+     * @return bool true when done; false = budget spent or the chunk has to wait, more remains
+     * @throws \RuntimeException when a chunk's write failed with a database error
      */
     private static function runKeysetChunks($slug, $cursorKey, callable $fetch, callable $apply, array $defaultBudget = [])
     {
+        global $wpdb;
+
         $budget = apply_filters('fluent_cart/data_backfills/chunk_budget', wp_parse_args($defaultBudget, [
             'chunk_size'         => 500,
             'max_chunks_per_run' => 10,
@@ -1105,6 +1322,7 @@ class DataBackfills
         $maxChunksPerRun = max(1, (int)Arr::get($budget, 'max_chunks_per_run', 10));
         $chunksProcessed = 0;
         $lastId = (int)fluent_cart_get_option($cursorKey, 0, false);
+        self::$chunkProgress['last_id'] = $lastId;
 
         do {
             $rows = $fetch($lastId, $chunkSize);
@@ -1113,16 +1331,24 @@ class DataBackfills
                 break;
             }
 
-            // A failed write keeps the cursor, so the next run retries these rows
+            // The cursor stays on this chunk, so the next run retries these rows
             if ($apply($rows) === false) {
+                // no database error means the chunk is only waiting (a row locked elsewhere)
+                if ($wpdb->last_error) {
+                    throw new \RuntimeException($wpdb->last_error);
+                }
+
                 return false;
             }
 
             $lastId = (int)$rows->last()->id;
             fluent_cart_update_option($cursorKey, $lastId);
+            self::$chunkProgress = ['advanced' => true, 'last_id' => $lastId];
             $chunksProcessed++;
 
-            if ($rows->count() >= $chunkSize && $chunksProcessed >= $maxChunksPerRun) {
+            $budgetSpent = $chunksProcessed >= $maxChunksPerRun || self::deadlinePassed();
+
+            if ($rows->count() >= $chunkSize && $budgetSpent) {
                 return false;
             }
         } while ($rows->count() >= $chunkSize);

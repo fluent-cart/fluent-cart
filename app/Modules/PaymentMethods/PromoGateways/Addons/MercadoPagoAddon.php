@@ -43,6 +43,7 @@ class MercadoPagoAddon extends AbstractPaymentGateway
             'slug' => 'mercado_pago',
             'description' => __('Pay securely with Mercado Pago - Cards, Pix, Boleto, OXXO, and more', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/mercado-pago-logo.svg"),
+            'logo_light' => Vite::getAssetUrl("images/payment-methods/mercado-pago-logo-light.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/mercado-pago-logo.svg"),
             'brand_color' => '#009EE3',
             'status' => false,

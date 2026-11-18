@@ -113,7 +113,7 @@ function saveCrossBorderMethod() {
 </script>
 
 <template>
-    <el-dialog
+    <fct-dialog
         :model-value="modelValue"
         :title="translate('Collect across the EU')"
         width="760px"
@@ -123,7 +123,7 @@ function saveCrossBorderMethod() {
         @update:model-value="emit('update:modelValue', $event)"
     >
         <div class="fct-modal-body">
-            <el-form label-position="top">
+            <div>
                 <el-radio-group v-model="form.method" class="fct-cross-border-radios">
                     <!-- OSS Option -->
                     <div class="fct-radio-option" :class="{ 'is-active': form.method === 'oss' }" @click="form.method = 'oss'">
@@ -133,32 +133,20 @@ function saveCrossBorderMethod() {
 
                         <Animation accordion :visible="form.method === 'oss'">
                             <div class="fct-radio-option-fields">
-                                <el-form-item :label="translate('Country of OSS registration')">
-                                    <el-select
-                                        v-model="form.oss_country"
-                                        :placeholder="translate('Select country')"
-                                        filterable
-                                        class="w-full"
-                                    >
-                                        <el-option
-                                            v-for="country in countries"
-                                            :key="country.value"
-                                            :label="country.label"
-                                            :value="country.value"
-                                        />
-                                    </el-select>
-                                </el-form-item>
-                                <el-form-item :label="translate('VAT number')">
-                                    <el-input
-                                        v-model="form.oss_vat"
-                                        :placeholder="translate('e.g. DE999999999')"
-                                    />
-                                    <div class="form-note">
-                                        <p>
-                                            {{ translate('Shown on VAT invoice') }}
-                                        </p>
-                                    </div>
-                                </el-form-item>
+                                <fct-select
+                                    :label="translate('Country of OSS registration')"
+                                    v-model="form.oss_country"
+                                    :placeholder="translate('Select country')"
+                                    filterable
+                                    class="w-full"
+                                    :options="countries"
+                                />
+                                <fct-input
+                                    :label="translate('VAT number')"
+                                    v-model="form.oss_vat"
+                                    :placeholder="translate('e.g. DE999999999')"
+                                    :help="translate('Shown on VAT invoice')"
+                                />
                             </div>
                         </Animation>
                     </div>
@@ -174,32 +162,20 @@ function saveCrossBorderMethod() {
                                 <p class="fct-radio-option-fields-desc">
                                     {{ translate('Tax_Applies_Micro') }}
                                 </p>
-                                <el-form-item :label="translate('Country of registration')">
-                                    <el-select
-                                        v-model="form.home_country"
-                                        :placeholder="translate('Select country')"
-                                        filterable
-                                        class="w-full"
-                                    >
-                                        <el-option
-                                            v-for="country in countries"
-                                            :key="country.value"
-                                            :label="country.label"
-                                            :value="country.value"
-                                        />
-                                    </el-select>
-                                </el-form-item>
-                                <el-form-item :label="translate('VAT number')">
-                                    <el-input
-                                        v-model="form.home_vat"
-                                        :placeholder="translate('e.g. DE999999999')"
-                                    />
-                                    <div class="form-note">
-                                        <p>
-                                            {{ translate('Shown on VAT invoice') }}
-                                        </p>
-                                    </div>
-                                </el-form-item>
+                                <fct-select
+                                    :label="translate('Country of registration')"
+                                    v-model="form.home_country"
+                                    :placeholder="translate('Select country')"
+                                    filterable
+                                    class="w-full"
+                                    :options="countries"
+                                />
+                                <fct-input
+                                    :label="translate('VAT number')"
+                                    v-model="form.home_vat"
+                                    :placeholder="translate('e.g. DE999999999')"
+                                    :help="translate('Shown on VAT invoice')"
+                                />
 
                                 <div v-if="!initialRegistrations.length" class="fct-info-box mt-3">
                                     <DynamicIcon name="InformationFill" class="w-4 h-4 text-blue-500 flex-shrink-0" />
@@ -226,18 +202,18 @@ function saveCrossBorderMethod() {
                         </Animation>
                     </div>
                 </el-radio-group>
-            </el-form>
+            </div>
         </div>
 
         <template #footer>
-            <el-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</el-button>
-            <el-button
+            <fct-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</fct-button>
+            <fct-button
                 type="primary"
                 @click="saveCrossBorderMethod"
                 :loading="loading"
             >
                 {{ translate('Collect VAT') }}
-            </el-button>
+            </fct-button>
         </template>
-    </el-dialog>
+    </fct-dialog>
 </template>

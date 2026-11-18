@@ -65,7 +65,7 @@
 - [x] 48. recountTotalPaidAndRefund() sets payment_status='partially_refunded' when paid > refunded > 0
 - [x] 49. syncOrderAfterRefund('full', amount) sets payment_status='refunded' and adds to total_refund
 - [x] 50. syncOrderAfterRefund('partial', amount) sets payment_status='partially_refunded'
-- [x] 51. recountTotalPaid() sets total_paid = (paid - refunded), clamped to 0 minimum
+- [x] 51. recountTotalPaid() sets total_paid = sum of succeeded/authorized charges, without subtracting refunds
 - [x] 52. updateRefundedItems() with 1 item adds refundedAmount to that item's refund_total
 - [x] 53. updateRefundedItems() with multiple items distributes refund proportionally based on remaining (line_total - refund_total)
 - [x] 54. updateRefundedItems() with 0 item_ids distributes across all order items

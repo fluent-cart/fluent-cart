@@ -6,8 +6,8 @@
         }
     }
     &__nav-wrap{
-        &::after{
-            @apply dark:bg-dark-500;
+        .fluent_theme_dark &::after {
+          @apply bg-dark-500;
         }
     }
     &__active-bar{
@@ -32,7 +32,7 @@
         }
         &__item{
             @apply relative text-left justify-start rounded py-2 px-3 h-auto mb-1 transition-all duration-200 hover:bg-gray-50 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:text-white;
-            @apply text-left justify-start #{!important};
+            @apply text-left! justify-start!;
             &.is-active{
                 @apply font-semibold text-system-dark bg-white dark:bg-dark-400 dark:text-gray-50;
                 box-shadow: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
@@ -49,7 +49,7 @@
             }
         }
         &__header{
-            @apply w-[224px] p-5 mr-0 #{!important};
+            @apply w-[224px]! p-5! mr-0!;
         }
         &__content{
             @apply bg-white p-5 dark:bg-dark-600;
@@ -65,7 +65,10 @@
     .el-tabs__nav-wrap{
         @apply px-7;
         &::after{
-            @apply h-[1px] bg-gray-divider dark:bg-dark-400;
+            @apply h-[1px] bg-gray-divider;
+        }
+        .fluent_theme_dark &::after {
+          @apply bg-dark-400;
         }
     }
     .el-tabs__item{
@@ -94,10 +97,16 @@
             @apply visible;
         }
         &::-webkit-scrollbar-thumb {
-            @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+            @apply bg-gray-200 rounded-[6px] invisible;
+        }
+        .fluent_theme_dark &::-webkit-scrollbar-thumb {
+          @apply bg-dark-400;
         }
         &::-webkit-scrollbar-thumb:hover {
-            @apply bg-gray-200 dark:bg-dark-500;
+            @apply bg-gray-200;
+        }
+        .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+          @apply bg-dark-500;
         }
         &::-webkit-scrollbar {
             @apply h-[3px];
@@ -113,9 +122,9 @@
             @apply gap-2;
         }
         .el-tabs__item{
-            @apply h-auto py-2 px-3 bg-transparent rounded text-xs border border-solid border-transparent leading-[1.4] text-system-mid hover:text-system-dark dark:text-gray-300 #{!important};
+            @apply h-auto! py-2! px-3! bg-transparent! rounded! text-xs! border! border-solid! border-transparent! leading-[1.4]! text-system-mid! hover:text-system-dark! dark:text-gray-300!;
             &.is-active{
-                @apply bg-white text-system-dark border-gray-outline dark:bg-dark-500 dark:text-gray-50 dark:border-dark-400 #{!important};
+                @apply bg-white! text-system-dark! border-gray-outline! dark:bg-dark-500! dark:text-gray-50! dark:border-dark-400!;
             }
         }
         &.el-tabs--card{
@@ -135,7 +144,7 @@
 /*===== fc file tabs =====*/
 .fct-file-tabs{
     .el-tabs__header{
-        @apply p-0 w-full !important;
+        @apply p-0! w-full!;
     }
     .el-tabs__item.is-active{
         @apply shadow-none dark:bg-transparent;

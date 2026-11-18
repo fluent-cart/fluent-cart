@@ -228,6 +228,12 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
+        if (!$subscription->canUpdatePaymentMethod()) {
+            return $this->sendError([
+                'message' => __('Could not update payment method', 'fluent-cart')
+            ]);
+        }
+
         if (App::gateway()->has($method)) {
             try {
                 App::gateway($method)->subscriptions->cardUpdate($data, $subscription->id);
@@ -277,6 +283,18 @@ class CustomerSubscriptionController extends BaseFrontendController
         if (empty($subscription)) {
             return $this->sendError([
                 'message' => __('Subscription not found', 'fluent-cart')
+            ]);
+        }
+
+        if ($reason === 'update_payment_method' && $method === $subscription->current_payment_method) {
+            $allowed = $subscription->canUpdatePaymentMethod();
+        } else {
+            $allowed = in_array($method, $subscription->switchablePaymentMethods(), true);
+        }
+
+        if (!$allowed) {
+            return $this->sendError([
+                'message' => __('Could not get or create plan', 'fluent-cart')
             ]);
         }
 
@@ -394,7 +412,7 @@ class CustomerSubscriptionController extends BaseFrontendController
             ]);
         }
 
-        if (!$subscription->canSwitchPaymentMethod()) {
+        if (!$subscription->canSwitchPaymentMethod(false)) {
             return $this->sendError([
                 'message' => __('This subscription cannot be moved to another payment gateway. Update the payment method on file instead.', 'fluent-cart')
             ]);

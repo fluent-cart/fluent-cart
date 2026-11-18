@@ -248,6 +248,7 @@
 - [ ] 176. CartController::updateCart() updates cart data via CartResource::update()
 - [ ] 177. CartController::updateCart() returns error response when CartResource::update() returns WP_Error
 - [x] 177a. CartResource::update() creates the device cart only after the item is valid; a missing or unknown item_id from a cookie-less client is rejected and persists no cart row, while a valid item still creates the cart _(SCAN-07, CartUpdateRejectedItemTest)_
+- [x] 177b. Place-order re-prices a cart line whose catalog price changed since it was added (same `fluent_cart/cart/item_price` filter), refuses that attempt with 423 + reload and creates no order; the next attempt charges the current price. Skips every cart with `checkout_data.is_locked = yes` (also early-installment carts with no order yet), renewals, custom items, order-bump (promotion) and price-locked lines. A line counts as stale when its unit price, base signup fee, `manage_setup_fee`, `trial_days`, `repeat_interval` or `times` differs from the line built now; the stale line is replaced at its own index and keeps its own `other_info` extras but never the old billing terms (a subscription turned one-time loses `repeat_interval`, `times`, etc.), so a second line for the same variation is fixed and checkout cannot loop on 423 _(SCAN-05, PlaceOrderCurrentPriceTest)_
 
 ## Service: RateLimiter
 

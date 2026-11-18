@@ -21,7 +21,7 @@ const isSubscription = () => props.variant?.other_info?.payment_type === 'subscr
 
 <template>
   <template v-if="variant && isSubscription()">
-    <el-input
+    <fct-input
         class="fct-bulk-input"
         :class="{ 'is-error': hasError }"
         v-model="variant.other_info.trial_days"

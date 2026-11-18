@@ -84,7 +84,7 @@ foreach ($definitions as $definition) {
     $cases[$id] = $definition;
 }
 
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     'Pure-function inventory: total=%d selected=%d Phase12=%d Phase13=%d Phase22=%d Phase24=%d Phase30=%d',
     count($definitions),
     count($cases),
@@ -105,7 +105,7 @@ foreach ($cases as $case) {
     FcTest::case($case['name'], $case['run']);
 }
 
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     'Pure-function safety guards: outbound_http=%d mail=%d cron=%d action_scheduler=%d',
     count(FcTest::externalCalls()),
     count(FcTest::sentMails()),

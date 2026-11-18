@@ -7,6 +7,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\App;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Support\Arr;
@@ -364,7 +365,11 @@ class InnerBlocks
             return '';
         }
 
+        // Card blocks (title, price, swatches) then reuse these models instead of re-querying each.
+        ProductDataSetup::setProductsCache($products);
+
         $blockContext = $block->context;
+        $blockContext['fluent-cart/product-card-loop'] = true;
 
         $innerBlocksContent  = '<div class="fct-product-carousel-wrapper">';
         $innerBlocksContent .= '<div class="swiper fct-product-carousel"

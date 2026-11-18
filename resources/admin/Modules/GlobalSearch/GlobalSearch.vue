@@ -322,7 +322,7 @@ onUnmounted(() => {
     </div>
   </teleport>
 
-  <el-dialog
+  <fct-dialog
       v-model="showSearchModal"
       @opened="onModalOpened"
       @closed="onModalClosed"
@@ -336,7 +336,7 @@ onUnmounted(() => {
           {{ selectedTag.title }}
           <DynamicIcon name="Cross" class="searched-item-remove" @click="handleRemoveTag"/>
         </div>
-        <el-input
+        <fct-input
             class="mousetrap"
             :placeholder="translate('Search for %1$s', currentPlaceholder)"
             autofocus
@@ -436,5 +436,5 @@ onUnmounted(() => {
       </ul>
     </div>
 
-  </el-dialog>
+  </fct-dialog>
 </template>

@@ -18,7 +18,7 @@
                             </label>
 
                             <transition name="fade-slide">
-                              <el-input
+                              <fct-input
                                   id="purchase-search-input"
                                   v-if="showSearch"
                                   v-model="search"

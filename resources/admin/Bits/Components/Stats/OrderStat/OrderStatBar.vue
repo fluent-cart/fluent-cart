@@ -52,9 +52,9 @@
           </div>
 
           <div class="flex justify-end mt-2">
-            <el-button text class="underline-link-button"
+            <fct-button text class="underline-link-button"
                      @click="router.push({name: 'reports_orders'})">{{ translate('See Full Report') }}
-            </el-button>
+            </fct-button>
           </div>
         </div>
         <!-- .fct-order-stats-body -->

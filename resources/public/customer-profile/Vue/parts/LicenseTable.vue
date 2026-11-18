@@ -92,7 +92,7 @@ const router = useRouter();
                 <Badge :type="license.status" :hide-icon="true" :aria-label="$t('License status: %s', license.status)">
                   {{ getStatusText(license.status) }}
                 </Badge>
-                <el-button
+                <fct-button
                     v-if="license.renewal_url"
                     link
                     tag="a"
@@ -104,7 +104,7 @@ const router = useRouter();
                     $t('Renew license: %s', license.title)"
                 >
                   {{ translate('Renew License') }}
-                </el-button>
+                </fct-button>
                 <div class="text-meta" v-if="license.status !== 'expired'">
                   {{ license.subtitle }}
                 </div>
@@ -119,9 +119,9 @@ const router = useRouter();
       </div>
 
       <!-- Desktop View -->
-        <el-table class="license-only-desktop" :data="licenses" :show-header="showTableHeader" role="grid"
+        <fct-table class="license-only-desktop" :data="licenses" :show-header="showTableHeader"
       :aria-label="$t('Licenses table')">
-            <el-table-column :label="translate('Items')" :width="itemsColumnWidth">
+            <fct-table-column :label="translate('Items')" :width="itemsColumnWidth">
                 <template #default="scope">
                     <div class="fct-customer-orders-items fct-customer-license-orders-items cursor-pointer"
                          @click="router.push({
@@ -151,7 +151,7 @@ const router = useRouter();
 
 
                             <div class="fct-btn-group pt-1" v-if="scope.row.renewal_url">
-                                <el-button
+                                <fct-button
                                     link
                                     tag="a"
                                     :href="scope.row.renewal_url"
@@ -162,7 +162,7 @@ const router = useRouter();
                                     $t('Renew license: %s', scope.row.title)"
                                 >
                                     {{ translate('Renew License') }}
-                                </el-button>
+                                </fct-button>
                             </div>
                         </div>
 
@@ -170,9 +170,9 @@ const router = useRouter();
                 </template>
 
 
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :width="400" :label="translate('License Info')" align="right" class-name="license-info-column">
+            <fct-table-column :width="400" :label="translate('License Info')" align="right" class-name="license-info-column">
                 <template #default="scope">
                     <div class="fct-customer-payment-meta-info">
                         <template v-if="scope.row.status !== 'disabled' && !is_simple">
@@ -193,8 +193,8 @@ const router = useRouter();
                                     :tooltip_text="translate('Copy Key')"/>
                     </div>
                 </template>
-            </el-table-column>
-        </el-table>
+            </fct-table-column>
+        </fct-table>
     </div>
 </template>
 

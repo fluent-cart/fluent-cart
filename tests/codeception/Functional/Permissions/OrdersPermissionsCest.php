@@ -24,7 +24,7 @@ use Tests\Support\FunctionalTester;
  *   POST   /orders                                           orders/create
  *   POST   /orders/calculate-shipping                        orders/create + orders/manage
  *   POST   /orders/calculate-tax                             orders/create + orders/manage (any)
- *   GET    /orders/shipping_methods                          orders/manage
+ *   GET    /orders/shipping_methods                          orders/create OR orders/manage
  *   POST   /orders/do-bulk-action                            orders/delete
  *   POST   /orders/{order}/mark-as-paid                      orders/manage
  *   POST   /orders/{order}/generate-missing-licenses         orders/manage
@@ -482,7 +482,7 @@ class OrdersPermissionsCest
      *   "Worker without the \"delete orders\" permission cannot run a bulk action that deletes orders."
      *
      * Every action POST /orders/do-bulk-action accepts deletes orders, so the route
-     * declares orders/delete (FC-SEC-01). The worker role holds neither orders/manage
+     * declares orders/delete. The worker role holds neither orders/manage
      * nor orders/delete, so the denial stands either way.
      */
     public function workerWithoutDeleteOrdersPermissionCannotRunBulkAction(FunctionalTester $I): void
@@ -802,7 +802,7 @@ class OrdersPermissionsCest
      * Spec: Cases/Functional/orders.md [109]
      *   "Accountant without the \"delete orders\" permission cannot run a bulk action that deletes orders."
      *
-     * See the worker case above: the route gate is orders/delete (FC-SEC-01) and the
+     * See the worker case above: the route gate is orders/delete and the
      * accountant role holds neither that nor orders/manage.
      */
     public function accountantWithoutDeleteOrdersPermissionCannotRunBulkAction(FunctionalTester $I): void

@@ -4,7 +4,9 @@ namespace FluentCart\App\Services;
 
 use FluentCart\Api\Resource\CouponResource;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Models\ProductVariation;
+use FluentCart\App\Models\ShippingMethod;
 use FluentCart\App\Modules\MultiCurrency\Services\BaseCurrency;
 use FluentCart\App\Modules\MultiCurrency\Services\CartCurrency;
 use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
@@ -111,7 +113,7 @@ class AdminOrderPricing
         if (!self::fitsInCents(Arr::get($data, 'shipping_total'))) {
             return self::amountError(__('Amount is too large.', 'fluent-cart'));
         }
-        $shippingTotal = static::shippingCents(Arr::get($data, 'shipping_total'));
+        $shippingTotal = Arr::get($data, 'shipping_method_id') ? 0 : static::shippingCents(Arr::get($data, 'shipping_total'));
         if ($shippingTotal % $unit !== 0) {
             return self::amountError(__('Shipping must be in whole units of the order currency.', 'fluent-cart'));
         }
@@ -122,6 +124,9 @@ class AdminOrderPricing
         $items = [];
         $lineShipping = 0;
         foreach ($orderItems as $index => $item) {
+            if (Arr::get($data, 'shipping_method_id')) {
+                $item['shipping_charge'] = 0;
+            }
             $item = self::priceLine((array) $item, $quote, $unit, $variations);
             if (is_wp_error($item)) {
                 return $item;
@@ -200,18 +205,75 @@ class AdminOrderPricing
             $manualDiscountTotal += (int) $item['manual_discount'];
         }
 
+        $shipping = [];
+        $methodId = (int) Arr::get($data, 'shipping_method_id', 0);
+        if ($methodId > 0) {
+            $shipping = self::priceShippingMethod($methodId, $items, $quote);
+            if (is_wp_error($shipping)) {
+                return $shipping;
+            }
+            $shippingTotal = $shipping['total'];
+            $items = $shipping['items'];
+            $shipping = $shipping['method'];
+        }
         $total = max(0, $subtotal - $couponDiscountTotal - $manualDiscountTotal + $shippingTotal);
+        if (!self::fitsInCents($total)) {
+            return self::amountError(__('Amount is too large.', 'fluent-cart'));
+        }
+        $revisionTotals = [$shippingTotal, $subtotal, $couponDiscountTotal, $manualDiscountTotal, $total];
+        if ($shipping) {
+            $revisionTotals[] = $shipping;
+        }
 
         return [
             'quote'                 => $quote,
-            'quote_revision'        => self::revision($quote, $items, [$shippingTotal, $subtotal, $couponDiscountTotal, $manualDiscountTotal, $total]),
+            'quote_revision'        => self::revision($quote, $items, $revisionTotals),
             'items'                 => $items,
             'applied_coupons'       => $appliedCoupons,
             'shipping_total'        => $shippingTotal,
+            'shipping'              => $shipping,
             'subtotal'              => $subtotal,
             'coupon_discount_total' => $couponDiscountTotal,
             'manual_discount_total' => $manualDiscountTotal,
             'total'                 => $total,
+        ];
+    }
+
+    /** @return array|\WP_Error */
+    private static function priceShippingMethod(int $methodId, array $items, array $quote)
+    {
+        $method = ShippingMethod::query()->where('is_enabled', 1)->find($methodId);
+        if (!$method) {
+            return self::amountError(__('The selected shipping method is unavailable.', 'fluent-cart'));
+        }
+
+        $shippingItems = $items;
+        foreach ($shippingItems as &$item) {
+            $item['discount_total'] = (int) Arr::get($item, 'discount_total', 0) + (int) Arr::get($item, 'manual_discount', 0);
+            $item['line_total'] = max(0, (int) Arr::get($item, 'subtotal', 0) - $item['discount_total']);
+        }
+        unset($item);
+
+        $calculated = CurrencyContext::withCurrency($quote['currency'], function () use ($method, $shippingItems, $quote) {
+            return CartCurrency::withQuote($quote, function () use ($method, $shippingItems) {
+                if (!CartHelper::shippingMethodCoversItems($method, $shippingItems)) {
+                    return self::amountError(__('The selected shipping method does not cover this order.', 'fluent-cart'));
+                }
+                return CartHelper::calculateShippingMethodCharge($method, $shippingItems, 'items');
+            });
+        });
+        if (is_wp_error($calculated)) {
+            return $calculated;
+        }
+
+        foreach ($calculated['items'] as $index => $item) {
+            $items[$index]['shipping_charge'] = (int) Arr::get($item, 'shipping_charge', 0);
+        }
+
+        return [
+            'total' => (int) $calculated['shipping_amount'],
+            'items' => $items,
+            'method' => ['id' => (int) $method->id, 'title' => $method->title],
         ];
     }
 
@@ -448,6 +510,8 @@ class AdminOrderPricing
             'other_info' => $variation->other_info,
         ], $quote);
         $item['other_info'] = $priced['other_info'];
+        $item['post_id'] = (int) $variation->post_id;
+        $item['fulfillment_type'] = $variation->fulfillment_type;
 
         $shippingCharge = Arr::get($item, 'shipping_charge', 0);
         $item['shipping_charge'] = self::typedAmount($shippingCharge === null || $shippingCharge === '' ? 0 : $shippingCharge, $unit);

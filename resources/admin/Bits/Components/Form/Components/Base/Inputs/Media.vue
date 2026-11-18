@@ -1,5 +1,4 @@
 <script setup>
-import {defineModel} from "vue";
 import MediaInput from "@/Bits/Components/Inputs/MediaInput.vue";
 
 const model = defineModel();

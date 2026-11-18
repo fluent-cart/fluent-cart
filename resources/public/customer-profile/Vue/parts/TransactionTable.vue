@@ -1,49 +1,49 @@
 <template>
   <div>
-    <el-table :data="transactions" :aria-label="$t('Transactions Table')">
-      <el-table-column label="#" :width="150">
+    <fct-table :data="transactions" :aria-label="$t('Transactions Table')">
+      <fct-table-column label="#" :width="150">
         <template #default="scope">
           <span class="text truncate fct-ltr-isolate" :aria-label="$t('Invoice Number') + ' ' + scope.row.invoice_no">#{{ scope.row.invoice_no }}</span>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="$t('Date')" :width="120">
+      <fct-table-column :label="$t('Date')" :width="120">
         <template #default="scope">
           <time class="text truncate" :datetime="scope.row.created_at">
             {{ recentDateText(scope.row.created_at) || dateTimeI18(scope.row.created_at, 'date') }}
           </time>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="$t('Amount')" width="90">
+      <fct-table-column :label="$t('Amount')" width="90">
         <template #default="scope">
           <span class="text" v-html="formatNumber(scope.row.total, true, false, scope.row.currency)" :aria-label="$t('Amount')"></span>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="$t('Status')" :width="110">
+      <fct-table-column :label="$t('Status')" :width="110">
         <template #default="scope">
           <Badge :type="scope.row.status" size="small" :aria-label="$t('Status') + ': ' + scope.row.status">
             {{ getStatusText(scope.row.status) }}
           </Badge>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="$t('Type')" :width="100">
+      <fct-table-column :label="$t('Type')" :width="100">
         <template #default="scope">
           <Badge :type="scope.row.order_type" size="small" :aria-label="$t('Order Type') + ': ' + scope.row.order_type">
             {{ getStatusText(scope.row.order_type) }}
           </Badge>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :label="$t('Payment Method')" :min-width="160">
+      <fct-table-column :label="$t('Payment Method')" :min-width="160">
         <template #default="scope">
           <TransactionPaymentMethod :transaction="scope.row"/>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column :width="135">
+      <fct-table-column :width="135">
         <template #default="scope">
           <div class="flex items-center gap-2 justify-between">
             <a v-if="scope.row.show_pay_now" :href="scope.row.custom_checkout_url"
@@ -59,40 +59,32 @@
               {{ $t('Receipt') }}
             </a>
 
-            <el-dropdown
+            <fct-dropdown
                 trigger="click"
                 class="fct-more-option-wrap"
-                popper-class="fct-dropdown"
+                :items="[
+                  ...(scope.row.receipt_view_url ? [{command: 'view_receipt', label: translate('View Receipt')}] : []),
+                  {command: 'edit_billing_address', label: translate('Edit Billing Address')}
+                ]"
                 @command="command => handleTransactionCommand(command, scope.row)"
-                :aria-label="$t('More Actions')"
             >
                 <span class="more-btn w-4 h-4 flex items-center justify-center cursor-pointer" aria-haspopup="true"
                 :aria-label="$t('More Actions')">
                   <DynamicIcon name="More" class="w-1" aria-hidden="true"/>
                 </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="scope.row.receipt_view_url" command="view_receipt">{{ translate('View Receipt') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="edit_billing_address">{{ translate('Edit Billing Address') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            </fct-dropdown>
           </div>
         </template>
-      </el-table-column>
-    </el-table>
+      </fct-table-column>
+    </fct-table>
 
-    <el-dialog
+    <fct-dialog
         v-model="isEditingBillingAddressModal"
         :title="translate('Edit Billing Address')"
         :append-to-body="true"
         modal-class="fct-transaction-billing-address-modal"
         @open="fetchBillingAddress"
         class="fluent-cart-customer-profile-app fct-customer-root-container"
-         aria-modal="true"
-         role="dialog"
     >
       <div class="fct-customer-dashboard-add-address-form-wrap">
         <div class="fct-compact-form">
@@ -119,15 +111,15 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="handleCloseModal">
+          <fct-button @click="handleCloseModal">
             {{ translate('Cancel') }}
-          </el-button>
-          <el-button type="primary" :loading="updatingAddress" @click="updateBillingAddress">
+          </fct-button>
+          <fct-button type="primary" :loading="updatingAddress" @click="updateBillingAddress">
             {{ translate('Update Address') }}
-          </el-button>
+          </fct-button>
         </div>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 <script type="text/babel">

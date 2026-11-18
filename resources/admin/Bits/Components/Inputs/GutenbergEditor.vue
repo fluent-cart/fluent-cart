@@ -160,10 +160,10 @@ onBeforeUnmount(() => {
     />
   </div>
   <div class="iframe-controls">
-    <el-button @click="openDialog">{{ translate('Show Content Editor') }}</el-button>
+    <fct-button @click="openDialog">{{ translate('Show Content Editor') }}</fct-button>
   </div>
 
-  <el-dialog
+  <fct-dialog
       :append-to-body="true"
       :show-close="false"
       modal-class="fct-custom-gutenberg-editor-dialog"
@@ -182,10 +182,10 @@ onBeforeUnmount(() => {
           </el-breadcrumb-item>
           <el-breadcrumb-item>Editor</el-breadcrumb-item>
         </el-breadcrumb>
-        <el-button v-if="!editorIframeLoading" class="fct-custom-gutenberg-editor-close-btn" @click="closeDialog">
+        <fct-button v-if="!editorIframeLoading" class="fct-custom-gutenberg-editor-close-btn" @click="closeDialog">
           <DynamicIcon name="Cross"/>
           {{ translate('Close') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
 
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
           :style="{ visibility: editorIframeLoading ? 'hidden' : 'visible' }"
       />
     </div>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <style lang="scss" scoped>

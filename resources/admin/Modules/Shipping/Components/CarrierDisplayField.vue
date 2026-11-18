@@ -17,11 +17,11 @@
       </div>
     </div>
     <div class="fct-carrier-strip__actions">
-      <el-button v-if="working" size="small" disabled>
+      <fct-button v-if="working" size="small" disabled>
         <span class="fct-carrier-spin" aria-hidden="true"></span>{{ working.button || translate('Please wait') }}
-      </el-button>
+      </fct-button>
       <template v-else>
-        <el-button
+        <fct-button
             v-for="action in (field.actions || [])"
             :key="action.action"
             size="small"
@@ -32,14 +32,14 @@
             @click="onAction(action)"
         >
           {{ action.label }}
-        </el-button>
+        </fct-button>
       </template>
       <div v-if="confirmAction" class="fct-carrier-pop" role="dialog" :aria-labelledby="popTitleId" @keydown.esc="confirming = null">
         <div :id="popTitleId" class="fct-carrier-pop__title">{{ confirmAction.confirm.title }}</div>
         <div class="fct-carrier-pop__text">{{ confirmAction.confirm.text }}</div>
         <div class="fct-carrier-pop__actions">
-          <el-button size="small" @click="confirming = null">{{ translate('Cancel') }}</el-button>
-          <el-button size="small" type="danger" @click="run(confirmAction)">{{ confirmAction.confirm.button }}</el-button>
+          <fct-button size="small" @click="confirming = null">{{ translate('Cancel') }}</fct-button>
+          <fct-button size="small" type="danger" @click="run(confirmAction)">{{ confirmAction.confirm.button }}</fct-button>
         </div>
       </div>
     </div>
@@ -84,9 +84,9 @@
     <Animation :visible="manualOpen" accordion>
     <div :id="manualBodyId" class="fct-carrier-man__body">
       <div class="fct-carrier-urlrow">
-        <el-input :model-value="shown ? url : maskedUrl" readonly :aria-label="translate('Webhook URL')"/>
-        <el-button @click="shown = !shown">{{ shown ? translate('Hide') : translate('Show') }}</el-button>
-        <el-button @click="copy">{{ translate('Copy') }}</el-button>
+        <fct-input :model-value="shown ? url : maskedUrl" readonly :aria-label="translate('Webhook URL')"/>
+        <fct-button @click="shown = !shown">{{ shown ? translate('Hide') : translate('Show') }}</fct-button>
+        <fct-button @click="copy">{{ translate('Copy') }}</fct-button>
       </div>
       <ol>
         <li v-for="(step, index) in (field.steps || [])" :key="index">

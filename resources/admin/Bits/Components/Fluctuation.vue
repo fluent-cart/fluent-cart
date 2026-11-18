@@ -113,7 +113,7 @@ const icon = computed(() => props.fluctuation < 0 ? 'CaretDown' : 'CaretUp');
     <div v-if="hasComparison" class="percentage" :class="percentageClass">
         <DynamicIcon class="w-2" :name="icon" v-if="fluctuation !== 0" />
 
-        <el-tooltip effect="dark" :placement="placement" popper-class="fct-tooltip">
+        <fct-tooltip :placement="placement">
             <template #content>
                 <span>{{ tooltip }}</span>
             </template>
@@ -121,6 +121,6 @@ const icon = computed(() => props.fluctuation < 0 ? 'CaretDown' : 'CaretUp');
                 <span dir="ltr">{{ fluctuationDisplay }}%</span>
                 <template v-if="fluctuationSuffix">{{ fluctuationSuffix }}</template>
             </span>
-        </el-tooltip>
+        </fct-tooltip>
     </div>
 </template>

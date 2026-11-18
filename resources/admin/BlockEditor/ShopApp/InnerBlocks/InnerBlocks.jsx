@@ -53,6 +53,7 @@ const componentsMap = {
 
 blockEditorData.blocks.forEach(block => {
     const Component = componentsMap[block.component];
+    const isCardElement = (blockEditorData.card_elements || []).includes(block.component);
 
     const parent = [];
     //merge block.parent and Component.parent if exists
@@ -69,7 +70,8 @@ blockEditorData.blocks.forEach(block => {
         title: block.title,
         name: block.slug,
         icon: block.icon || null,
-        parent: parent.length > 0 ? parent : null,
+        parent: isCardElement ? undefined : (parent.length > 0 ? parent : null),
+        ancestor: isCardElement ? [...parent, 'fluent-cart/product-card'] : undefined,
         edit: Component?.edit || (() => blocktranslate("No edit found")),
         save: Component?.save || (() => null),
         supports: Component?.supports || {},

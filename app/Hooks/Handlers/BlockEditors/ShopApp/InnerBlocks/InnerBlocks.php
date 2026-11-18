@@ -11,6 +11,7 @@ use FluentCart\App\Models\Product;
 use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Modules\Templating\TemplateLoader;
 use FluentCart\App\Services\TemplateService;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
 use FluentCart\App\Services\Renderer\ShopAppRenderer;
 use FluentCart\App\Services\Translations\TransStrings;
 use FluentCart\Framework\Pagination\CursorPaginator;
@@ -24,6 +25,8 @@ class InnerBlocks
     public static $parentBlock = 'fluent-cart/products';
 
     public array $blocks = [];
+
+    private const CARD_ELEMENTS = ['ProductTitleBlock', 'ProductPriceBlock', 'ProductImageBlock', 'ProductButtonBlock'];
 
     public static function textBlockSupport(): array
     {
@@ -79,6 +82,8 @@ class InnerBlocks
         $blocks = $self->getInnerBlocks();
 
         foreach ($blocks as $block) {
+            $parents = array_merge($block['parent'] ?? [], [static::$parentBlock]);
+            $isCardElement = in_array($block['component'], self::CARD_ELEMENTS, true);
 
             register_block_type($block['slug'], [
                     'apiVersion'      => 3,
@@ -86,13 +91,17 @@ class InnerBlocks
                     'version'         => 3,
                     'title'           => $block['title'],
                     'category'        => 'fluent-cart',
-                    'parent'          => array_merge($block['parent'] ?? [], [static::$parentBlock]),
+                    'parent'          => $isCardElement ? [] : $parents,
+                    // Only card containers set the current product; the Products root also holds filters.
+                    'ancestor'        => $isCardElement ? array_merge($block['parent'] ?? [], ['fluent-cart/product-card']) : [],
                     'render_callback' => $block['callback'],
                     'supports'        => Arr::get($block, 'supports', []),
                     'attributes'      => Arr::get($block, 'attributes', []),
                     'uses_context'    => Arr::get($block, 'uses_context', []),
             ]);
         }
+
+        add_filter('render_block_context', [$self, 'hideViewSwitcherContext'], 10, 3);
 
         add_action('enqueue_block_editor_assets', function () use ($self) {
             $self->enqueueScripts();
@@ -139,7 +148,6 @@ class InnerBlocks
                                 'fluent-cart/shopapp-product-loop',
                                 'fluent-cart/shopapp-product-image',
                                 'fluent-cart/product-info',
-                            'core/columns'
                         ],
                         'component' => 'ProductPriceBlock',
                         'icon'      => 'editor-code',
@@ -263,6 +271,7 @@ class InnerBlocks
                             'fluent-cart/view_mode',
                             'fluent-cart/enable_filter',
                             'fluent-cart/default_filters',
+                            'fluent-cart/hide_view_switcher',
                         ]
                 ],
                 [
@@ -592,20 +601,63 @@ class InnerBlocks
         return $innerBlocksContent;
     }
 
+    // Saved pages and patterns keep their Floating card, so the frontend hides the switch from the card itself.
+    // A grid-only layout also shows the grid, so a block saved in list view is not left without a way back.
+    public function hideViewSwitcherContext($context, $parsedBlock, $parentBlock)
+    {
+        if ($parentBlock instanceof \WP_Block && $parentBlock->name === static::$parentBlock) {
+            $gridOnly = $this->firstCardIsGridOnly($parentBlock->parsed_block['innerBlocks'] ?? []) === true;
+            $context['fluent-cart/hide_view_switcher'] = $gridOnly;
+            if ($gridOnly) {
+                $context['fluent-cart/view_mode'] = 'grid';
+            }
+        }
+        return $context;
+    }
+
+    // Follows the card the editor's Layout panel does: the first current Product Card straight in the first
+    // product loop. Null when there is no such loop.
+    private function firstCardIsGridOnly(array $blocks): ?bool
+    {
+        foreach ($blocks as $block) {
+            $name = $block['blockName'] ?? '';
+            // A nested Products block keeps its own switch.
+            if ($name === static::$parentBlock) {
+                continue;
+            }
+            if ($name === 'fluent-cart/shopapp-product-loop') {
+                foreach ($block['innerBlocks'] ?? [] as $card) {
+                    $attributes = $card['attrs'] ?? [];
+                    if (($card['blockName'] ?? '') === 'fluent-cart/product-card' && Arr::get($attributes, 'template_version') === 1) {
+                        return ProductCardLayoutPresets::isGridOnly((string) Arr::get($attributes, 'card_layout', ''));
+                    }
+                }
+                return false;
+            }
+            $found = $this->firstCardIsGridOnly($block['innerBlocks'] ?? []);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+        return null;
+    }
+
     public function renderFilterViewSwitcher($attributes, $content, $block)
     {
-
         $viewMode = Arr::get($block->context, 'fluent-cart/view_mode', 'grid');
         $enableFilter = Arr::get($block->context, 'fluent-cart/enable_filter', false);
         $allProducts = $this->getInitialProducts($block);
         ob_start();
         (new ShopAppRenderer($allProducts, [
                 'view_mode' => $viewMode,
+                // A grid-only layout keeps only the filter toggle here.
+                'grid_only' => (bool) Arr::get($block->context, 'fluent-cart/hide_view_switcher'),
                 'custom_filters' => [
                     'enabled' => $enableFilter
                 ]
         ]))->renderViewSwitcherButton();
-        return ob_get_clean();
+        $html = ob_get_clean();
+        return trim($html) === '' ? '' : $html;
     }
 
     public function renderFilterSearchBox($attributes, $content, $block): string
@@ -901,9 +953,12 @@ class InnerBlocks
 
         $innerBlocksContent = '';
         $blockContext = $block->context;
+        $blockContext['fluent-cart/product-card-loop'] = true;
 
         foreach ($products as $key => $product) {
             setup_postdata($product->ID);
+            $blockContext['postId'] = (int) $product->ID;
+            $blockContext['postType'] = $product->post_type;
             if ($block instanceof \WP_Block && !empty($block->inner_blocks)) {
 
 
@@ -950,7 +1005,8 @@ class InnerBlocks
         $ff = Arr::get($block->context, 'fluent-cart/filters', []);
         $paginator = Arr::get($block->context, 'fluent-cart/paginator', 'scroll');
         $productBoxSize = Arr::get($block->context, 'fluent-cart/product_box_grid_size', 4);
-        $perPage = ShopResource::clampPerPage(Arr::get($block->context, 'fluent-cart/per_page', 10));
+        // Same size getInitialProducts() fetches with, so the script's next pages match the first.
+        $perPage = ShopResource::clampPerPage(Arr::get(App::request()->all(), 'per_page', Arr::get($block->context, 'fluent-cart/per_page', 10)));
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by', 'id');
         $liveFilter = Arr::get($block->context, 'fluent-cart/live_filter', true);
@@ -980,7 +1036,7 @@ class InnerBlocks
         );
 
         Vite::enqueueStyle(
-                'fluentcart-single-product-page-css',
+                'fluentcart-single-product-css',
                 'public/single-product/single-product.scss',
         );
 
@@ -990,7 +1046,7 @@ class InnerBlocks
         );
 
         Vite::enqueueStyle(
-                'fluentcart-similar-product-page-css',
+                'fluentcart-similar-product-css',
                 'public/single-product/similar-product.scss',
         );
 
@@ -998,6 +1054,8 @@ class InnerBlocks
                 'fluentcart-product-card-page-css',
                 'public/product-card/style/product-card.scss',
         );
+
+        Vite::enqueueStyle('fluentcart-card-layouts', 'public/product-card/style/card-layouts.scss');
 
         Vite::enqueueStyle(
                 'fluent-cart-sold-out-badge',
@@ -1098,6 +1156,8 @@ class InnerBlocks
         return [
                 $this->getLocalizationKey()      => [
                         'blocks' => Arr::except($this->getInnerBlocks(), ['callback']),
+                        'card_presets' => ProductCardLayoutPresets::all(),
+                        'card_elements' => self::CARD_ELEMENTS,
                 ],
                 'fluentcart_single_product_vars' => [
                         'trans'                      => TransStrings::singleProductPageString(),
@@ -1212,10 +1272,6 @@ class InnerBlocks
             return '';
         }
 
-        $currentPage = Arr::get(App::request()->all(), 'current_page', 1);
-        $perPage = $products->perPage();
-        $total = $allProducts['total'];
-
         $page = Arr::get($block->context, 'fluent-cart/per_page', 10);
         $orderType = Arr::get($block->context, 'fluent-cart/order_type', 'DESC');
         $orderBy = Arr::get($block->context, 'fluent-cart/order_by','ID');
@@ -1229,103 +1285,6 @@ class InnerBlocks
             ]
         ]))->renderPerPageSelector();
         return ob_get_clean();
-
-        $lastPage = $total / $perPage;
-
-        if ($total % $perPage > 0) {
-            $lastPage++;
-        }
-
-        $lastPage = intval($lastPage);
-
-        $paginator = [
-                'currentPage' => $currentPage,
-                'lastPage'    => $lastPage
-        ];
-
-
-        $html = $this->renderPaginatorItems($paginator);
-        return $html;
-    }
-
-    private function renderPaginatorItems($paginator, $paginationJump = 3)
-    {
-        if (!$paginator || !isset($paginator['lastPage'], $paginator['currentPage'])) {
-            return '';
-        }
-
-        $totalPages = (int)$paginator['lastPage'];
-        $currentPage = (int)$paginator['currentPage'];
-        $jumpSize = (int)$paginationJump;
-
-        $svgLeft = '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12.9168 15.8333L7.7906 10.7071C7.40008 10.3166 7.40008 9.68342 7.7906 9.29289L12.9168 4.16667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        $svgRight = '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M7.91667 4.16666L13.0429 9.29289C13.4334 9.68341 13.4334 10.3166 13.0429 10.7071L7.91667 15.8333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
-        $html = '';
-
-        // Helper to build button
-        $createButton = function ($label, $page, $isActive = false, $isArrow = false) {
-            $classes = [];
-            if ($isActive) $classes[] = 'active';
-            if ($isArrow) $classes[] = 'arrow';
-
-            $classAttr = 'pager-number ';
-            if ($classes) {
-                $classAttr .= implode(' ', $classes);
-            }
-            return '<li class="' . esc_attr($classAttr) . '" data-fluent-cart-shop-app-paginator-item data-page="' . $page . '">' . $label . '</li>';
-        };
-
-        // ← Previous
-        if ($currentPage > 1) {
-            $html .= $createButton($svgLeft, $currentPage - 1, false, true);
-        }
-
-        // First page
-        $html .= $createButton('1', 1, $currentPage == '1');
-
-        // « Jump back
-        if ($currentPage > $jumpSize + 1) {
-            $jumpBack = max(2, $currentPage - $jumpSize);
-            $html .= $createButton('«', $jumpBack, false, true);
-        }
-
-        // Pages before current
-        for ($i = $currentPage - 2; $i < $currentPage; $i++) {
-            if ($i > 1) {
-                $html .= $createButton($i, $i);
-            }
-        }
-
-        // Current page
-        if ($currentPage !== 1 && $currentPage !== $totalPages) {
-            $html .= $createButton($currentPage, $currentPage, true);
-        }
-
-        // Pages after current
-        for ($i = $currentPage + 1; $i <= $currentPage + 2; $i++) {
-            if ($i < $totalPages) {
-                $html .= $createButton($i, $i);
-            }
-        }
-
-        // » Jump forward
-        if ($currentPage < $totalPages - $jumpSize) {
-            $jumpForward = min($totalPages - 1, $currentPage + $jumpSize);
-            $html .= $createButton('»', $jumpForward, false, true);
-        }
-
-        // Last page
-        if ($totalPages > 1) {
-            $html .= $createButton($totalPages, $totalPages, $currentPage === $totalPages);
-        }
-
-        // → Next
-        if ($currentPage < $totalPages) {
-            $html .= $createButton($svgRight, $currentPage + 1, false, true);
-        }
-
-        return '<ul class="fct-shop-paginator-pager" data-fluent-cart-shop-app-paginator-items-wrapper>' . $html . '</ul>';
     }
 
     public function getInitialProducts($block = null)

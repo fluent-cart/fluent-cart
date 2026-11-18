@@ -1,8 +1,8 @@
 <template>
   <div class="fct-customer-dashboard-table">
-    <el-table :data="Object.values(downloads)" :show-header="showTableHeader" role="grid"
+    <fct-table :data="Object.values(downloads)" :show-header="showTableHeader"
       :aria-label="$t('Downloads table')">
-      <el-table-column :label="$t('File Name')">
+      <fct-table-column :label="$t('File Name')">
         <template #default="scope">
           <div class="fct-customer-downloads-file-info">
             <!-- translators: %s is the file name -->
@@ -10,9 +10,9 @@
             <div v-if="scope.row.file_size" class="text" role="status" :aria-label="`${translate('File size: %s', readableFileSize(scope.row?.file_size))}`">{{ readableFileSize(scope.row?.file_size) }}</div>
           </div>
         </template>
-      </el-table-column>
+      </fct-table-column>
 
-      <el-table-column align="right">
+      <fct-table-column align="right">
         <template #default="scope">
           <a
               target="_blank"
@@ -26,8 +26,8 @@
             {{ _x('Download', 'Button action') }}
           </a>
         </template>
-      </el-table-column>
-    </el-table>
+      </fct-table-column>
+    </fct-table>
   </div>
 </template>
 

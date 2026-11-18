@@ -1,6 +1,6 @@
 <template>
   <div class="fct-filter-dropdown-header">
-    <div v-if="filter.data.activeFilter != null" class="fct-filter-back-wrapper">
+    <div v-if="filter.openFilter" class="fct-filter-back-wrapper">
       <button class="fct-filter-back-button" @click="filter.selectActiveFilter(null)">
         <DynamicIcon name="ArrowLeft"/>
       </button>
@@ -11,7 +11,7 @@
     </div>
 
     <div v-else class="fct-filter-dropdown-search-input">
-      <el-input
+      <fct-input
           v-model="filter.data.searchQuery"
           :placeholder="$t('Search Filter...')"
           clearable

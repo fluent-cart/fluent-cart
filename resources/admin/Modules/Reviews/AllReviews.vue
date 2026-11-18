@@ -3,20 +3,20 @@
     <div class="fct-all-reviews-page fct-layout-width">
       <PageHeading :title="translate('Reviews')">
         <template #action>
-          <el-button
+          <fct-button
               type="primary"
               :loading="addingReview"
               :disabled="addingReview"
               @click="showAddReviewModal = true"
           >
             {{ translate('Add Review') }}
-          </el-button>
+          </fct-button>
         </template>
       </PageHeading>
 
       <div v-if="productFilter" class="fct-product-filter-banner">
         <span>{{ translate('Showing reviews for:') }} <strong>{{ productFilter }}</strong></span>
-        <el-button size="small" text :disabled="reviewTable.isLoading()" @click="clearProductFilter">{{ translate('Clear filter') }}</el-button>
+        <fct-button size="small" text :disabled="reviewTable.isLoading()" @click="clearProductFilter">{{ translate('Clear filter') }}</fct-button>
       </div>
 
       <div class="fct-all-reviews-wrap">
@@ -24,22 +24,23 @@
           <transition name="slide-fade">
             <div v-if="selectedReviews.length > 0" class="bulk-actions-bar">
               <div class="bulk-left flex items-center gap-2">
-                <el-select
+                <fct-select
                     size="small"
                     class="bulk-select min-w-[180px]"
                     :placeholder="translate('Select Bulk Action')"
                     :disabled="reviewTable.isLoading() || bulkActionLoading"
                     v-model="selectedBulkAction"
-                >
-                  <el-option :label="translate('Approve')" value="approve"/>
-                  <el-option :label="_x('Pending', 'Review status')" value="pending"/>
-                  <el-option :label="translate('Mark as Spam')" value="spam"/>
-                  <el-option :label="translate('Move to Trash')" value="trash"/>
-                  <el-option :label="translate('Delete Permanently')" value="delete"/>
-                  <el-option :label="translate('Reply')" value="reply"/>
-                </el-select>
+                    :options="[
+                      {label: translate('Approve'), value: 'approve'},
+                      {label: _x('Pending', 'Review status'), value: 'pending'},
+                      {label: translate('Mark as Spam'), value: 'spam'},
+                      {label: translate('Move to Trash'), value: 'trash'},
+                      {label: translate('Delete Permanently'), value: 'delete'},
+                      {label: translate('Reply'), value: 'reply'}
+                    ]"
+                />
 
-                <el-button
+                <fct-button
                     size="small"
                     :type="selectedBulkAction === 'delete' ? 'danger' : 'primary'"
                     :disabled="!selectedBulkAction || bulkActionLoading || reviewTable.isLoading()"
@@ -47,7 +48,7 @@
                     @click="handleBulkConfirm"
                 >
                   {{ bulkProgress ? translate('Processing %1$s of %2$s', bulkProgress.current, bulkProgress.total) : translate('Confirm') }}
-                </el-button>
+                </fct-button>
               </div>
 
               <div class="bulk-right">
@@ -60,7 +61,7 @@
             <div class="mb-1 text-xs text-gray-500">
               {{ translate('Processing batch %1$s of %2$s', bulkProgress.current, bulkProgress.total) }}
             </div>
-            <el-progress
+            <fct-progress
                 :percentage="Math.round((bulkProgress.current / bulkProgress.total) * 100)"
                 :show-text="false"
                 :stroke-width="6"
@@ -74,15 +75,15 @@
           />
 
           <template v-else>
-            <el-table
+            <fct-table
                 ref="reviewTableEl"
                 :data="reviewTable.getTableData()"
                 class="w-full compact-table"
                 @selection-change="handleSelectionChange"
             >
-              <el-table-column type="selection" :width="45"/>
+              <fct-table-column type="selection" :width="45"/>
 
-              <el-table-column :label="translate('ID')" width="300">
+              <fct-table-column :label="translate('ID')" width="300">
                 <template #default="scope">
                   <RouteCell
                       class="hover:no-underline"
@@ -105,9 +106,9 @@
                     </div>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('reviewer')"
                   :label="translate('Reviewer')"
                   :width="220"
@@ -126,9 +127,9 @@
                     </div>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('rating')"
                   :label="translate('Rating')"
                   :width="120"
@@ -144,9 +145,9 @@
                     <StarRating :rating="scope.row.rating" size="small"/>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('content')"
                   :label="translate('Review')"
                   :min-width="200"
@@ -165,9 +166,9 @@
                     </div>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('status')"
                   :label="translate('Status')"
                   :width="120"
@@ -183,9 +184,9 @@
                     <Badge :status="scope.row.status" kind="review" size="small"/>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('date')"
                   :label="translate('Date')"
                   :width="140"
@@ -201,74 +202,35 @@
                     <ConvertedTime :date-time="scope.row.created_at"/>
                   </RouteCell>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
-              <el-table-column
+              <fct-table-column
                   v-if="reviewTable.isColumnVisible('actions')"
                   :label="translate('Actions')"
                   :width="90"
                   align="right"
               >
                 <template #default="scope">
-                  <el-dropdown
+                  <fct-dropdown
                       trigger="click"
                       class="fct-more-option-wrap"
-                      popper-class="fct-dropdown"
-                      @command="handleCommand"
                       placement="bottom-end"
+                      :items="[
+                        ...(scope.row.id ? [{command: 'view', label: translate('View'), icon: 'Eye', href: router.resolve({name: 'view_review', params: {review_id: scope.row.id}}).href}] : []),
+                        ...(scope.row.status !== 'approved' ? [{command: 'approve', label: translate('Approve')}] : []),
+                        ...(scope.row.status !== 'pending' ? [{command: 'pending', label: _x('Pending', 'Review status')}] : []),
+                        ...(scope.row.status !== 'spam' ? [{command: 'spam', label: translate('Spam')}] : []),
+                        ...(scope.row.status !== 'trash' ? [{command: 'trash', label: translate('Trash')}] : []),
+                        {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true}
+                      ]"
+                      @command="(action) => handleCommand({action, review: scope.row})"
                   >
                     <span class="more-btn me-2" :aria-label="translate('Review actions')">
                       <DynamicIcon name="More"/>
                     </span>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item class="item-link" v-if="scope.row.id">
-                          <router-link
-                              :to="{
-                                name: 'view_review',
-                                params: { review_id: scope.row.id }
-                              }"
-                          >
-                            <DynamicIcon name="Eye"/>
-                            {{ translate("View") }}
-                          </router-link>
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            v-if="scope.row.status !== 'approved'"
-                            :command="{ action: 'approve', review: scope.row }"
-                        >
-                          {{ translate("Approve") }}
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            v-if="scope.row.status !== 'pending'"
-                            :command="{ action: 'pending', review: scope.row }"
-                        >
-                          {{ _x('Pending', 'Review status') }}
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            v-if="scope.row.status !== 'spam'"
-                            :command="{ action: 'spam', review: scope.row }"
-                        >
-                          {{ translate("Spam") }}
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            v-if="scope.row.status !== 'trash'"
-                            :command="{ action: 'trash', review: scope.row }"
-                        >
-                          {{ translate("Trash") }}
-                        </el-dropdown-item>
-                        <el-dropdown-item
-                            :command="{ action: 'delete', review: scope.row }"
-                            class="item-destructive"
-                        >
-                          <DynamicIcon name="Delete"/>
-                          {{ translate("Delete") }}
-                        </el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
+                  </fct-dropdown>
                 </template>
-              </el-table-column>
+              </fct-table-column>
 
               <template #empty>
                 <Empty
@@ -277,7 +239,7 @@
                     :text="translate('No reviews found.')"
                 />
               </template>
-            </el-table>
+            </fct-table>
           </template>
 
           <template #mobile>
@@ -294,20 +256,20 @@
           @created="reviewTable.fetch()"
       />
 
-      <el-dialog v-model="showBulkReplyDialog" :title="translate('Reply to %s reviews', selectedReviews.length)" width="500px" :aria-label="translate('Bulk reply to reviews')">
-        <el-input
+      <fct-dialog v-model="showBulkReplyDialog" :title="translate('Reply to %s reviews', selectedReviews.length)" width="500px">
+        <fct-input
             v-model="bulkReplyContent"
             type="textarea"
             :rows="4"
             :placeholder="translate('Write your reply...')"
         />
         <template #footer>
-          <el-button :disabled="bulkReplyLoading" @click="showBulkReplyDialog = false">{{ translate('Cancel') }}</el-button>
-          <el-button type="primary" :loading="bulkReplyLoading" :disabled="bulkReplyLoading" @click="submitBulkReply">
+          <fct-button :disabled="bulkReplyLoading" @click="showBulkReplyDialog = false">{{ translate('Cancel') }}</fct-button>
+          <fct-button type="primary" :loading="bulkReplyLoading" :disabled="bulkReplyLoading" @click="submitBulkReply">
             {{ bulkProgress ? translate('Processing %1$s of %2$s', bulkProgress.current, bulkProgress.total) : translate('Send Reply') }}
-          </el-button>
+          </fct-button>
         </template>
-      </el-dialog>
+      </fct-dialog>
     </div>
   </UserCan>
 </template>

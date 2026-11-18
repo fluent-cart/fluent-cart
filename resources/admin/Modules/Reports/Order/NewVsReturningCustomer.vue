@@ -63,9 +63,8 @@ const exportCsv = () => {
     <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h5 class="fct-card-header-title is-small">{{ translate("New vs. Returning Customers") }}</h5>
-          <el-tooltip
-              popper-class="fct-tooltip"
+          <h2 class="fct-card-header-title is-small">{{ translate("New vs. Returning Customers") }}</h2>
+          <fct-tooltip
               :content="translate('OrderRpt_New_Customer')"
               placement="top"
               :trigger="['hover', 'focus']"
@@ -73,46 +72,46 @@ const exportCsv = () => {
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/>
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
       <template #action>
         <div class="flex items-center gap-3">
-          <el-checkbox v-model="isCheckedPercentage">{{ translate("Show Percentages") }}</el-checkbox>
+          <fct-choice v-model="isCheckedPercentage">{{ translate("Show Percentages") }}</fct-choice>
           <div class="fct-btn-group sm">
-            <el-tooltip effect="dark" :content="translate('Export CSV')" placement="top" popper-class="fct-tooltip">
+            <fct-tooltip :content="translate('Export CSV')" placement="top">
               <IconButton tag="button" :disabled="dataLoader || !(tableData || []).length" :aria-label="translate('Export CSV')" @click="exportCsv">
                 <DynamicIcon name="Download"/>
               </IconButton>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </div>
       </template>
     </Card.Header>
     <Card.Body class="px-0 pb-0">
-      <el-skeleton v-if="dataLoader" animated :rows="3" class="p-3"/>
+      <fct-skeleton v-if="dataLoader" animated :rows="3" class="p-3"/>
 
-      <el-table v-else :data="tableData">
-        <el-table-column :label="translate('Type')" min-width="170">
+      <fct-table v-else :data="tableData">
+        <fct-table-column :label="translate('Type')" min-width="170">
           <template #default="{row}">{{ customerTypeLabel(row.customer_type) }}</template>
-        </el-table-column>
-        <el-table-column :label="translate('Customers')" min-width="120">
+        </fct-table-column>
+        <fct-table-column :label="translate('Customers')" min-width="120">
           <template #default="{row}">{{ isCheckedPercentage ? share(row, 'customer_count') : formatNumber(row.customer_count) }}</template>
-        </el-table-column>
-        <el-table-column :label="translate('Orders')" min-width="120">
+        </fct-table-column>
+        <fct-table-column :label="translate('Orders')" min-width="120">
           <template #default="{row}">{{ isCheckedPercentage ? share(row, 'order_count') : formatNumber(row.order_count) }}</template>
-        </el-table-column>
-        <el-table-column :label="translate('Net Sales')" min-width="140">
+        </fct-table-column>
+        <fct-table-column :label="translate('Net Sales')" min-width="140">
           <template #default="{row}">{{ isCheckedPercentage ? share(row, 'net_sales') : money(row.net_sales) }}</template>
-        </el-table-column>
-        <el-table-column :label="translate('Average Order (Net)')" min-width="160">
+        </fct-table-column>
+        <fct-table-column :label="translate('Average Order (Net)')" min-width="160">
           <template #default="{row}">{{ money(row.average_net) }}</template>
-        </el-table-column>
+        </fct-table-column>
 
         <template #empty>
           <el-empty :description="translate('No data available')"/>
         </template>
-      </el-table>
+      </fct-table>
     </Card.Body>
   </Card.Container>
 </template>

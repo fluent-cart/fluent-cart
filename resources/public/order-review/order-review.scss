@@ -1,4 +1,5 @@
-@config "../../styles/tailwind/scales.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../styles/tailwind/scales.config.mjs";
 
 /**
  * The public "review your order" page (?fluent-cart=order-review).

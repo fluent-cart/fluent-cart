@@ -433,7 +433,7 @@ const saveDrafts = () => {
                         <DynamicIcon name="Edit"/>
                     </button>
                 </div>
-                <el-button
+                <fct-button
                     v-if="drafts.length"
                     size="small"
                     type="primary"
@@ -443,7 +443,7 @@ const saveDrafts = () => {
                 >
                     {{ translate('Save') }}
                     <template v-if="validDrafts.length"> ({{ validDrafts.length }})</template>
-                </el-button>
+                </fct-button>
             </div>
             <div class="fct-attr-panel-chips">
                 <span class="fct-attr-meta-chip">{{ total }} {{ translate('Terms') }}</span>
@@ -499,10 +499,10 @@ const saveDrafts = () => {
                         >
                             <template #actions>
                                 <div class="fct-term-edit-actions">
-                                    <el-button size="small" @click="cancelEdit">
+                                    <fct-button size="small" @click="cancelEdit">
                                         {{ translate('Cancel') }}
-                                    </el-button>
-                                    <el-button
+                                    </fct-button>
+                                    <fct-button
                                         size="small"
                                         type="primary"
                                         :disabled="!(editingTerm.title || '').trim() || isSavingEdit"
@@ -510,7 +510,7 @@ const saveDrafts = () => {
                                         @click="saveEdit"
                                     >
                                         {{ translate('Save') }}
-                                    </el-button>
+                                    </fct-button>
                                 </div>
                             </template>
                         </TermForm>

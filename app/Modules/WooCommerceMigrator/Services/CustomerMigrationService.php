@@ -129,7 +129,7 @@ class CustomerMigrationService extends BaseMigrationService
             'state' => $this->getMetaValue($customerMeta, 'billing_state'),
             'postcode' => $this->getMetaValue($customerMeta, 'billing_postcode'),
             'created_at' => $wooCustomer->user_registered,
-            'updated_at' => current_time('mysql')
+            'updated_at' => current_time('mysql', true)
         ];
 
         // Clean empty values
@@ -192,8 +192,8 @@ class CustomerMigrationService extends BaseMigrationService
             'country' => $this->getMetaValue($customerMeta, 'billing_country'),
             'phone' => $this->getMetaValue($customerMeta, 'billing_phone'),
             'email' => $this->getMetaValue($customerMeta, 'billing_email'),
-            'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql')
+            'created_at' => current_time('mysql', true),
+            'updated_at' => current_time('mysql', true)
         ];
 
         $this->insertAddressIfValid($billingData);
@@ -227,8 +227,8 @@ class CustomerMigrationService extends BaseMigrationService
             'country' => $this->getMetaValue($customerMeta, 'shipping_country'),
             'phone' => $this->getMetaValue($customerMeta, 'shipping_phone'),
             'email' => '', // WooCommerce doesn't typically store shipping email
-            'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql')
+            'created_at' => current_time('mysql', true),
+            'updated_at' => current_time('mysql', true)
         ];
 
         $this->insertAddressIfValid($shippingData);
@@ -255,7 +255,7 @@ class CustomerMigrationService extends BaseMigrationService
                     'first_purchase_date' => $stats['first_order_date'],
                     'last_purchase_date' => $stats['last_order_date'],
                     'aov' => $stats['aov_cents'],
-                    'updated_at' => current_time('mysql')
+                    'updated_at' => current_time('mysql', true)
                 ],
                 ['id' => $fluentCustomerId]
             );
@@ -279,8 +279,8 @@ class CustomerMigrationService extends BaseMigrationService
             SELECT 
                 COUNT(*) as order_count,
                 SUM(CAST(pm_total.meta_value AS DECIMAL(10,2))) as total_spent,
-                MIN(p.post_date) as first_order_date,
-                MAX(p.post_date) as last_order_date,
+                MIN(p.post_date_gmt) as first_order_date,
+                MAX(p.post_date_gmt) as last_order_date,
                 pm_currency.meta_value as currency
             FROM {$wpdb->posts} p
             INNER JOIN {$wpdb->postmeta} pm_customer ON p.ID = pm_customer.post_id 

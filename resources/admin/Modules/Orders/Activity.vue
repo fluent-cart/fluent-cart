@@ -29,7 +29,7 @@
           {{$t('No activity found.')}}
         </div>
 
-        <el-dialog :title="$t('Delete Activity')" v-model="showModal" :append-to-body="true">
+        <fct-dialog :title="$t('Delete Activity')" v-model="showModal" :append-to-body="true">
           <div class="fct-delete-activity-content-heading">
             {{$t('Are you sure, you want to delete this activity?')}}
           </div>
@@ -43,10 +43,10 @@
           </div>
 
           <div class="dialog-footer is-border">
-            <el-button @click="showModal = false" size="small">{{$t('Cancel')}}</el-button>
-            <el-button type="primary" @click="deleteActivity" size="small">{{$t('Yes! Delete')}}</el-button>
+            <fct-button @click="showModal = false" size="small">{{$t('Cancel')}}</fct-button>
+            <fct-button type="primary" @click="deleteActivity" size="small">{{$t('Yes! Delete')}}</fct-button>
           </div>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 <script>

@@ -14,7 +14,7 @@ use Tests\Support\RateFixture;
 /**
  * The currency switcher — shortcode and block render the same form, and
  * nothing at all when only one currency can be offered
- * (dev-docs/multi-currency/plan.md §8.2). Base USD.
+ * (dev-docs/multi-currency/05-storefront-cart-checkout.md). Base USD.
  */
 class CurrencySwitcherTest extends DatabaseTestCase
 {

@@ -16,7 +16,7 @@
             .fct-material-input{
                 .el-input__wrapper,
                 .el-select__wrapper {
-                    @apply rounded-es-none border-b-[0.5px] border-e-[1px] !important;
+                    @apply rounded-es-none! [border-bottom-width:0.5px]! [border-inline-end-width:1px]!;
                 }
             }
         }
@@ -24,7 +24,7 @@
             .fct-material-input{
                 .el-input__wrapper,
                 .el-select__wrapper {
-                    @apply border-b-[1px] border-s-[1px] !important;
+                    @apply [border-bottom-width:1px]! [border-inline-start-width:1px]!;
                     border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
                 }
             }
@@ -44,16 +44,16 @@
     @apply hidden;
   }
   .fct-collapsible-search-wrap .el-input {
-    @apply w-auto !important;
+    @apply w-auto!;
   }
   .el-overlay .el-dialog {
     @apply w-[90%];
   }
   .fct-customer-dashboard-content-table-item {
-    @apply gap-6 !important;
+    @apply gap-6!;
   }
   .fct-license-key-wrap .license-key{
-    @apply text-xs px-2 py-1.5 !important;
+    @apply text-xs! px-2! py-1.5!;
   }
 }
 

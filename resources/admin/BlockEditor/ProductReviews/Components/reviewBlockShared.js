@@ -20,6 +20,7 @@ export const useInsideProductReviews = (clientId) => useSelect((select) => {
         'fluent-cart/product-reviews',
         'fluent-cart/product-review-summary-group',
         'fluent-cart/product-info',
+        'fluent-cart/product-card',
         'fluent-cart/products',
         'fluent-cart/shopapp-product-container',
         'fluent-cart/shopapp-product-loop',

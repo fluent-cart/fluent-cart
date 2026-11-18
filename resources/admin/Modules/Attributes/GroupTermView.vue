@@ -112,9 +112,9 @@ const termEditingIsDone = () => {
         </el-breadcrumb>
       </div>
       <div class="fct-btn-group sm">
-        <el-button type="primary" @click="createModalIsOpen = true">
+        <fct-button type="primary" @click="createModalIsOpen = true">
           {{ translate('Add Term') }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
 
@@ -134,16 +134,16 @@ const termEditingIsDone = () => {
       </div>
     </TableWrapper>
 
-    <el-dialog :append-to-body="true" width="40%" v-model="createModalIsOpen" :title="translate('Add new attribute term')">
+    <fct-dialog :append-to-body="true" width="40%" v-model="createModalIsOpen" :title="translate('Add new attribute term')">
       <template v-if="createModalIsOpen">
         <AddTermModal :group-id="groupId" :group="group" @is-term-creating-done="termCreatingIsDone"/>
       </template>
-    </el-dialog>
+    </fct-dialog>
 
-    <el-dialog :append-to-body="true" width="40%" v-model="editModalIsOpen" :title="translate('Edit the term')">
+    <fct-dialog :append-to-body="true" width="40%" v-model="editModalIsOpen" :title="translate('Edit the term')">
       <template v-if="editModalIsOpen">
         <EditTermModal :group-id="groupId" :group="group" :editing="editingTerm" @is-term-editing-done="termEditingIsDone"/>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

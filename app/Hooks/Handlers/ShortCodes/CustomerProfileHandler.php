@@ -39,7 +39,8 @@ class CustomerProfileHandler extends ShortCode
         $view = $this->render(
             $this->viewData()
         );
-        return $view ?? ob_get_clean();
+        $buffered = ob_get_clean();
+        return $view ?? $buffered;
     }
 
     public static function register()

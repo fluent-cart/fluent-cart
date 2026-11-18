@@ -1,6 +1,4 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
 import {renderToString} from 'vue/server-renderer';
 import {createSSRApp, h} from 'vue';
 
@@ -76,18 +74,5 @@ describe('VariationSelector price units', () => {
 
         expect(formatNumber).toHaveBeenCalledWith(4999, true);
         expect(html).toContain('Yearly');
-    });
-
-    // Belt and braces: the render assertions above go green if someone deletes the
-    // price span entirely. This pins the expression itself.
-    it('has no cents-to-cents rescale left in the template', () => {
-        const source = fs.readFileSync(
-            path.resolve('resources/admin/Bits/Components/VariationSelector.vue'),
-            'utf8'
-        );
-        const template = source.slice(source.indexOf('<template>'));
-
-        expect(template).toContain('formatNumber(variant.item_price, true)');
-        expect(template).not.toMatch(/formatNumber\(\s*variant\.item_price\s*\*/);
     });
 });

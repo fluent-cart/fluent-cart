@@ -31,14 +31,14 @@
   @apply flex items-center gap-3 px-3 py-2.5 cursor-pointer border border-x-0 border-t-0 border-b border-solid border-gray-divider dark:border-dark-400 last:border-b-0 hover:bg-gray-50 dark:hover:bg-dark-500;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-[-2px] outline-blue-500;
+    @apply [outline-width:2px] outline-offset-[-2px] outline-blue-500;
   }
 
   .fct-library-picker__row-icon {
     @apply inline-flex items-center justify-center w-6 h-6 rounded text-[12px] font-semibold bg-gray-100 text-system-dark dark:bg-dark-400 dark:text-gray-50 flex-shrink-0;
 
     &.fct-library-picker__row-icon--color {
-      @apply bg-gradient-to-tr from-orange-400 to-pink-500 text-transparent;
+      @apply bg-linear-to-tr/srgb from-orange-400 to-pink-500 text-transparent;
     }
   }
 
@@ -62,7 +62,7 @@
   @apply inline-flex items-center gap-1.5 px-1 py-2 mt-1 bg-transparent border-0 cursor-pointer text-blue-600 hover:text-blue-700 text-[13px] font-medium dark:text-blue-400 dark:hover:text-blue-300;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 
   svg {
@@ -222,7 +222,7 @@
         }
 
         &:focus-visible {
-            @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+            @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
         }
     }
 }
@@ -269,7 +269,7 @@
     @apply transition-colors duration-150 hover:bg-white hover:border-gray-200 dark:hover:bg-dark-600 dark:hover:border-dark-400;
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500 rounded-md;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-md;
     }
 
     &--ghost {
@@ -277,7 +277,7 @@
     }
 
     &--add {
-        @apply bg-transparent border border-solid border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
+        @apply bg-transparent border border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
         margin-top: 0;
         margin-right: 0;
 
@@ -287,7 +287,7 @@
     }
 
     &--load-more {
-        @apply bg-transparent border border-solid border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
+        @apply bg-transparent border border-gray-outline dark:border-dark-400 border-dashed text-system-mid dark:text-gray-400 cursor-pointer hover:bg-gray-100 hover:border-gray-200 hover:text-system-dark dark:hover:bg-dark-500 dark:hover:border-dark-400 dark:hover:text-gray-50;
         margin-top: 0;
         margin-right: 0;
 
@@ -339,7 +339,7 @@
         }
 
         &:focus-visible {
-            @apply outline-2 outline-offset-1 outline-red-400;
+            @apply [outline-width:2px] outline-offset-1 outline-red-400;
         }
     }
 }
@@ -464,7 +464,9 @@
     }
 
     .el-icon.el-color-picker__icon {
-        @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 right-auto bottom-auto text-white;
+        @apply absolute top-1/2 left-1/2 right-auto bottom-auto text-white;
+        // Plain transform, as in the base rule, so the two never add up.
+        transform: translate(-50%, -50%);
     }
 }
 
@@ -561,7 +563,7 @@
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 }
 
@@ -645,7 +647,7 @@
     /* Keyboard focus ring — row is role="button" tabindex="0", so Tab
        cycles through groups. */
     &:focus-visible {
-        @apply outline-2 outline-offset-[-2px] outline-blue-500;
+        @apply [outline-width:2px] outline-offset-[-2px] outline-blue-500;
 
         .fct-attr-group-item-actions {
             @apply opacity-100;
@@ -684,17 +686,12 @@
 
     /* Visible focus ring for the keyboard reorder path. */
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm text-system-dark dark:text-gray-50;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm text-system-dark dark:text-gray-50;
     }
 
     &:disabled {
         @apply opacity-50 cursor-not-allowed;
     }
-}
-
-/* sortablejs drop placeholder while dragging a group row. */
-.fct-attr-group-item--ghost {
-    @apply opacity-40;
 }
 
 .fct-attr-group-item-body {
@@ -824,7 +821,7 @@
     }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -835,7 +832,7 @@
     svg { @apply w-4 h-4; }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 
     &:disabled {
@@ -856,7 +853,7 @@
     svg { @apply w-4 h-4; }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -956,7 +953,7 @@
     }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -1018,7 +1015,7 @@
     }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -1030,7 +1027,7 @@
     svg { @apply w-4 h-4; }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-blue-500;
+        @apply [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -1097,7 +1094,7 @@
     svg { @apply w-4 h-4; }
 
     &:focus-visible {
-        @apply outline-2 outline-offset-2 outline-red-400;
+        @apply [outline-width:2px] outline-offset-2 outline-red-400;
     }
 }
 
@@ -1113,7 +1110,7 @@
     svg { @apply w-4 h-4; }
 
     &:focus-visible {
-        @apply opacity-100 outline-2 outline-offset-2 outline-blue-500;
+        @apply opacity-100 [outline-width:2px] outline-offset-2 outline-blue-500;
     }
 }
 
@@ -1150,6 +1147,11 @@
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
+}
+
+// Add/Edit group dialogs: type + styling side by side (dialogs live outside the app, so no utility classes).
+.fct-attr-group-modal-row {
+  @apply grid grid-cols-2 gap-x-6;
 }

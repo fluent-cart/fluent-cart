@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderItem;
 use FluentCart\App\Models\OrderTaxRate;
+use FluentCart\App\Services\Tax\RenewalTaxRates;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\Payments\SubscriptionHelper;
@@ -139,9 +140,9 @@ class RenewalService
         // pending + the normal dunning flow.
         $isSystemInvoice = $subscription->isSystem();
 
-        // Renewals carry the subscription's rate — no lookup (plan §9.2) — and
-        // bill in its currency: the recurring amount is in that currency, which
-        // can differ from the parent order's
+        // Renewals carry the subscription's rate — no lookup — and bill in its
+        // currency: the recurring amount is in that currency, which can differ
+        // from the parent order's (dev-docs/multi-currency/06-orders-subscriptions.md)
         $fx = CurrencySnapshot::fromSubscription($subscription);
 
         // Create invoice (child order) — created_at is now, due date stored as meta
@@ -183,30 +184,59 @@ class RenewalService
             self::copyParentOrderSnapshot($parentOrder, $childOrder);
 
        
-            $taxRates   = $parentOrder->orderTaxRates->values();
-            $parentTax  = (int) $taxRates->sum('total_tax');
+            $taxRates   = RenewalTaxRates::fromParent($parentOrder, $parentOrderItem, $originalTax, $fx['currency']);
+            // Shipping tax is not discounted: recurring rows split their item tax only.
+            $itemTaxOnly = $taxRates && $taxRates[0]->from_recurring;
+            $parentTax  = (int) array_sum(array_column($taxRates, $itemTaxOnly ? 'order_tax' : 'total_tax'));
             $splitTax   = $taxTotal < $originalTax && $parentTax > 0;
-            $lastIndex  = $taxRates->count() - 1;
+            $lastIndex  = count($taxRates) - 1;
+            if ($itemTaxOnly) {
+                while ($lastIndex > 0 && (int) $taxRates[$lastIndex]->order_tax <= 0) {
+                    $lastIndex--;
+                }
+            }
             $distributed = 0;
 
             foreach ($taxRates as $index => $taxRate) {
                 $rowTotal    = (int) $taxRate->total_tax;
                 $rowShipping = (int) $taxRate->shipping_tax;
                 $rowOrder    = (int) $taxRate->order_tax;
+                $rowMeta     = $taxRate->meta;
 
                 if ($splitTax) {
                     // Capped at what is left, so rounding up the earlier rates can
                     // never push the last one below zero.
+                    $splitShare = $itemTaxOnly ? $rowOrder : $rowTotal;
                     $newTotal = ($index === $lastIndex)
                         ? $taxTotal - $distributed
-                        : min((int) round($taxTotal * ($rowTotal / $parentTax)), $taxTotal - $distributed);
+                        : min((int) round($taxTotal * ($splitShare / $parentTax)), $taxTotal - $distributed);
 
                     $distributed += $newTotal;
 
-                    // Keep the row's own order/shipping split.
-                    $rowShipping = $rowTotal > 0 ? (int) round($newTotal * ($rowShipping / $rowTotal)) : 0;
-                    $rowOrder    = $newTotal - $rowShipping;
-                    $rowTotal    = $newTotal;
+                    if ($itemTaxOnly) {
+                        $rowOrder = $newTotal;
+                        $rowTotal = $newTotal + $rowShipping;
+                    } else {
+                        // Keep the row's own order/shipping split.
+                        $rowShipping = $rowTotal > 0 ? (int) round($newTotal * ($rowShipping / $rowTotal)) : 0;
+                        $rowOrder    = $newTotal - $rowShipping;
+                        $rowTotal    = $newTotal;
+                    }
+
+                    // Keep the item base in step with the lowered item tax.
+                    if (is_array($rowMeta) && isset($rowMeta['taxable_amount']) && (int) $taxRate->order_tax > 0) {
+                        $rowMeta['taxable_amount'] = (int) round($rowMeta['taxable_amount'] * $rowOrder / (int) $taxRate->order_tax);
+                    }
+
+                    // Keep the shipping base in step with the lowered shipping tax.
+                    if (is_array($rowMeta) && isset($rowMeta['shipping_taxable_amount'])) {
+                        $parentShipping = (int) $taxRate->shipping_tax;
+                        if ($rowShipping > 0 && $parentShipping > 0) {
+                            $rowMeta['shipping_taxable_amount'] = (int) round($rowMeta['shipping_taxable_amount'] * $rowShipping / $parentShipping);
+                        } else {
+                            unset($rowMeta['shipping_taxable_amount']);
+                        }
+                    }
                 }
 
                 OrderTaxRate::query()->create([
@@ -215,7 +245,7 @@ class RenewalService
                     'shipping_tax' => $rowShipping,
                     'order_tax'   => $rowOrder,
                     'total_tax'   => $rowTotal,
-                    'meta'        => $taxRate->meta,
+                    'meta'        => $rowMeta,
                 ]);
             }
 
@@ -241,6 +271,7 @@ class RenewalService
             if (!$orderItem) {
                 throw new \RuntimeException(__('Failed to create order item for renewal order.', 'fluent-cart'));
             }
+            RenewalTaxRates::reconcileOrder($childOrder);
 
             // Create a pending transaction record
             $transaction = OrderTransaction::query()->create([
@@ -495,17 +526,9 @@ class RenewalService
             return $results;
         }
 
-        $query = Subscription::query()
-            ->with(['order.order_items', 'product', 'variation']);
-
-        if (SubscriptionHelper::isModeGuardEnabled()) {
-            $storeMode = (new StoreSettings())->get('order_mode');
-            $query->whereHas('order', function ($query) use ($storeMode) {
-                $query->where('mode', $storeMode);
-            });
-        }
-
-        $subscriptions = $query
+        $subscriptions = Subscription::query()
+            ->with(['order.order_items', 'product', 'variation'])
+            ->inStoreMode()
             ->whereIn('collection_method', ['manual', 'system'])
             ->whereNotIn('status', [
                 Status::SUBSCRIPTION_COMPLETED,

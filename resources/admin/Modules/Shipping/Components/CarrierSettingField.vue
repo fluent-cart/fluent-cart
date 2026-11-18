@@ -1,87 +1,90 @@
 <template>
   <!-- A toggle carries its label beside the switch, so it takes one row instead of two. -->
-  <el-form-item :label="field.type === 'toggle' || field.label_note ? undefined : field.label">
+  <Field :label="field.type === 'toggle' || field.label_note ? '' : field.label">
     <template v-if="field.label_note" #label>
       {{ field.label }} <small class="fct-carrier-label-note">· {{ field.label_note }}</small>
     </template>
-    <template v-if="field.type === 'password'">
-      <el-input
-          v-model="value"
-          type="password"
-          show-password
-          autocomplete="new-password"
-          :placeholder="savedPlaceholder"
-          :aria-describedby="secretDescribedBy"
-          class="w-full"
-      />
-      <!-- The value never comes back from the server, so say a stored one exists. -->
-      <div
-          v-if="showSavedNote"
-          :id="savedNoteId"
-          class="fct-carrier-secret-saved"
-      >
-        <DynamicIcon v-if="!field.saved_hint" name="CheckCircleFill" class="fct-carrier-secret-saved-icon" aria-hidden="true"/>
-        <span>{{ savedNote }}</span>
+    <!-- One root: an unlabelled Field renders only its first node, so the toggle keeps a form item's gap itself. -->
+    <template #default="{id}">
+      <div :class="{'mb-[18px]': field.type === 'toggle'}">
+        <template v-if="field.type === 'password'">
+          <fct-input
+              :id="id"
+              v-model="value"
+              type="password"
+              show-password
+              autocomplete="new-password"
+              :placeholder="savedPlaceholder"
+              :aria-describedby="secretDescribedBy"
+              class="w-full"
+          />
+          <!-- The value never comes back from the server, so say a stored one exists. -->
+          <div
+              v-if="showSavedNote"
+              :id="savedNoteId"
+              class="fct-carrier-secret-saved"
+          >
+            <DynamicIcon v-if="!field.saved_hint" name="CheckCircleFill" class="fct-carrier-secret-saved-icon" aria-hidden="true"/>
+            <span>{{ savedNote }}</span>
+          </div>
+        </template>
+        <template v-else-if="field.type === 'toggle'">
+          <!--
+            el-switch and el-select fall stray attrs through onto their root
+            <div>, where aria-describedby is inert — unlike el-input, which
+            forwards them to the inner <input>. So the hint is carried in an
+            aria-label here instead, or a screen reader would never hear it.
+          -->
+          <div class="fct-carrier-toggle">
+            <fct-switch
+                :id="switchId"
+                v-model="value"
+                active-value="yes"
+                inactive-value="no"
+                :aria-label="controlLabel"
+            />
+            <label :for="switchId" class="fct-carrier-toggle__label">{{ field.label }}</label>
+          </div>
+        </template>
+        <template v-else-if="field.type === 'select'">
+          <!-- '' is a real choice (e.g. "All"), so only null/undefined count as empty. -->
+          <fct-select
+              :id="id"
+              v-model="value"
+              class="w-full"
+              :options="field.options || []"
+              :empty-values="[null, undefined]"
+              :aria-label="controlLabel"
+          />
+        </template>
+        <template v-else>
+          <fct-input
+              :id="id"
+              v-model="value"
+              :placeholder="field.placeholder ?? field.hint ?? ''"
+              :aria-describedby="shownHint ? hintId : null"
+              class="w-full"
+              :class="{ 'fct-carrier-input-warn': emptyHint }"
+          />
+        </template>
+        <div
+            v-if="shownHint"
+            :id="hintId"
+            class="w-full text-xs text-system-mid dark:text-gray-400 mt-1"
+            :class="{ 'fct-carrier-toggle__hint': field.type === 'toggle', ['fct-carrier-hint-' + (emptyHint && emptyHint.tone)]: !!emptyHint }"
+        >
+          {{ shownHint }}
+        </div>
       </div>
     </template>
-    <template v-else-if="field.type === 'toggle'">
-      <!--
-        el-switch and el-select fall stray attrs through onto their root
-        <div>, where aria-describedby is inert — unlike el-input, which
-        forwards them to the inner <input>. So the hint is carried in an
-        aria-label here instead, or a screen reader would never hear it.
-      -->
-      <div class="fct-carrier-toggle">
-        <el-switch
-            :id="switchId"
-            v-model="value"
-            active-value="yes"
-            inactive-value="no"
-            :aria-label="controlLabel"
-        />
-        <label :for="switchId" class="fct-carrier-toggle__label">{{ field.label }}</label>
-      </div>
-    </template>
-    <template v-else-if="field.type === 'select'">
-      <!-- '' is a real choice (e.g. "All"), so only null/undefined count as empty. -->
-      <el-select
-          v-model="value"
-          class="w-full"
-          :empty-values="[null, undefined]"
-          :aria-label="controlLabel"
-      >
-        <el-option
-            v-for="option in (field.options || [])"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-        />
-      </el-select>
-    </template>
-    <template v-else>
-      <el-input
-          v-model="value"
-          :placeholder="field.placeholder ?? field.hint ?? ''"
-          :aria-describedby="shownHint ? hintId : null"
-          class="w-full"
-          :class="{ 'fct-carrier-input-warn': emptyHint }"
-      />
-    </template>
-    <div
-        v-if="shownHint"
-        :id="hintId"
-        class="w-full text-xs text-system-mid dark:text-gray-400 mt-1"
-        :class="{ 'fct-carrier-toggle__hint': field.type === 'toggle', ['fct-carrier-hint-' + (emptyHint && emptyHint.tone)]: !!emptyHint }"
-    >
-      {{ shownHint }}
-    </div>
-  </el-form-item>
+  </Field>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import translate from '@/utils/translator/Translator';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
+import Field from '@/Bits/Components/Fct/Field.vue';
 
 const props = defineProps({
   field: {

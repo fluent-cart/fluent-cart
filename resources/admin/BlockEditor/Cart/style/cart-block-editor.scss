@@ -1,15 +1,18 @@
-@config "./cart-block-editor.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./cart-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 // Editor-canvas wireframes for the Cart block and its three children. The
 // editor has no shopper session, so each region draws a stand-in for what it
 // renders on the front end. Frontend cart styling lives in the stylesheet
 // CartLoader enqueues — nothing here ships to visitors.
 .fct-cart-block-preview-items {
-    @apply p-4 border border-neutral-200 rounded-lg bg-white;
+    @apply p-4 [border-width:1px] border-neutral-200 rounded-lg bg-white;
 
     .fct-cart-block-preview-row {
-        @apply flex items-center gap-4 py-4 border-b border-neutral-100;
+        @apply flex items-center gap-4 py-4 [border-bottom-width:1px] border-neutral-100;
     }
 
     .fct-cart-block-preview-thumb {
@@ -21,7 +24,7 @@
     }
 
     .fct-cart-block-preview-qty {
-        @apply w-16 h-8 rounded border border-neutral-200;
+        @apply w-16 h-8 rounded [border-width:1px] border-neutral-200;
     }
 
     .fct-cart-block-preview-price {
@@ -30,7 +33,7 @@
 }
 
 .fct-cart-block-preview-summary {
-    @apply flex items-center justify-between gap-4 p-4 border border-neutral-200 rounded-lg bg-white;
+    @apply flex items-center justify-between gap-4 p-4 [border-width:1px] border-neutral-200 rounded-lg bg-white;
 
     // Real label text on the left, skeleton amount on the right.
     .fct-cart-block-preview-total-label {

@@ -3,17 +3,17 @@
         <div v-if="!connect || connect.error" class="fct-connect-require">
             <img :src="connectConfig.image_url" alt="" class="w-10 h-10 mb-4">
 
-            <h4> {{
+            <h3> {{
                 /* translators: %1$s: payment mode (test/live), %2$s: payment method name */
                 translate('Connect your %1$s %2$s account', mode, methodName)
-              }}</h4>
+              }}</h3>
 
-            <el-button tag="a" :href="connectConfig[mode+'_redirect']" :style="{ backgroundColor: brandColor, borderColor: brandColor, color: 'white' }">
+            <fct-button tag="a" :href="connectConfig[mode+'_redirect']" :style="{ backgroundColor: brandColor, borderColor: brandColor, color: 'white' }">
                 {{
                     /* translators: %1$s: payment method label */
                     translate('Connect with %1$s', methodLabel)
                 }}
-            </el-button>
+            </fct-button>
         </div>
 
         <div v-else class="fct-connect-success">
@@ -22,9 +22,9 @@
                     <p class="display-name" v-if="connect.display_name">
                         {{ connect.display_name }}
                     </p>
-                    <h4 class="display-role">
+                    <h3 class="display-role">
                         {{ $t('Administrator') }} ({{ $t('Owner') }})
-                    </h4>
+                    </h3>
                 </div>
 
                 <el-tag size="small" type="success">
@@ -32,21 +32,20 @@
                 </el-tag>
             </div>
 
-            <el-popconfirm
+            <fct-popover
+                confirm
                 width="230"
                 :confirm-button-text="$t('Confirm')"
                 :cancel-button-text="$t('No, Thanks')"
-                icon="el-icon-info"
                 icon-color="red"
                 :title="connectConfig?.disconnect_note ?? $t('Are you sure to disconnect?')"
-                position="top"
                 @confirm="disconnect">
                 <template #reference>
-                    <el-button type="danger" plain>
+                    <fct-button type="danger" plain>
                         {{ translate('Disconnect') }}
-                    </el-button>
+                    </fct-button>
                 </template>
-            </el-popconfirm>
+            </fct-popover>
         </div>
     </div>
 </template>

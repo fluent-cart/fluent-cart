@@ -9,7 +9,7 @@
         @apply w-full h-auto items-start bg-white border border-solid border-gray-outline rounded py-3.5 px-4 m-0 whitespace-normal dark:bg-dark-500 dark:border-dark-400;
         transition: .14s;
         &:hover {
-            @apply shadow-sm;
+            @apply shadow-xs;
         }
         &.is-checked {
             @apply border-primary-500 dark:border-gray-400;
@@ -183,7 +183,7 @@
 
         .fct-conditions-label,
         .fct-conditions-operator {
-            @apply w-full #{!important};
+            @apply w-full!;
         }
 
         .fct-conditions-action {
@@ -192,7 +192,7 @@
     }
 
     .fct-conditions-popover {
-        @apply w-[220px] min-w-0 #{!important};
+        @apply w-[220px]! min-w-0!;
 
         .fct-cascader-panel {
             @apply grid;
@@ -238,7 +238,7 @@
     }
 
     &:focus-visible {
-        @apply outline outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-400;
+        @apply outline-solid outline-2 outline-offset-2 outline-primary-500 dark:outline-gray-400;
     }
 
     &.is-selected {

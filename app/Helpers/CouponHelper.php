@@ -509,15 +509,17 @@ class CouponHelper
             return;
         }
 
+        // "inactive" is turned off too (the MCP manage-coupon tool writes it): the dates
+        // must not switch it back on.
         // Set status to scheduled if start date is in the future
-        if ($startDateTime && $startDateTime > $now && !in_array($status, ['disabled', 'scheduled'])) {
+        if ($startDateTime && $startDateTime > $now && !in_array($status, ['disabled', 'inactive', 'scheduled'])) {
             $coupon->setStatus('scheduled');
             $coupon->save();
             return;
         }
 
         // Activate if start date passed and status is not already active/disabled
-        if ($startDateTime && $startDateTime <= $now && !in_array($status, ['disabled', 'active'])) {
+        if ($startDateTime && $startDateTime <= $now && !in_array($status, ['disabled', 'inactive', 'active'])) {
             $coupon->setStatus('active');
             $coupon->save();
         }

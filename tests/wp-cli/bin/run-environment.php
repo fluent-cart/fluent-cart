@@ -18,7 +18,7 @@ if (!isset($inventory[$axis])) {
 
 FcTest::case($inventory[$axis]['name'], $inventory[$axis]['run']);
 
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     'Environment-axis safety guards: outbound_http=%d mail=%d cron=%d action_scheduler=%d',
     count(FcTest::externalCalls()),
     count(FcTest::sentMails()),

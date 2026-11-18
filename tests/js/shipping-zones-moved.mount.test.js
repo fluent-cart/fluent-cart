@@ -17,10 +17,14 @@ vi.hoisted(() => {
 const route = vi.hoisted(() => ({path: '/settings/shipping/carriers/manual'}));
 
 vi.mock('@/utils/translator/Translator', async () => ({default: (await import('./support/reserved-words.js')).withReserved(text => text)}));
-vi.mock('vue-router', () => ({
-    useRoute: () => route,
-    useRouter: () => ({hasRoute: name => name === 'shipping', push: () => {}}),
-}));
+vi.mock('vue-router', async () => {
+    const {h} = await import('vue');
+    return {
+        useRoute: () => route,
+        useRouter: () => ({hasRoute: name => name === 'shipping', push: () => {}}),
+        RouterLink: {props: ['to'], setup: (props, {slots}) => () => h('a', {'data-to': JSON.stringify(props.to)}, slots.default && slots.default())},
+    };
+});
 vi.mock('@/utils/Config/AppConfig', () => ({default: {get: (key, fallback) => fallback}}));
 vi.mock('@/utils/permission/Permission', () => ({default: {has: () => true, hasAny: () => true}}));
 vi.mock('@/Bits/Components/Icons/DynamicIcon.vue', () => ({default: {render: () => null}}));
@@ -31,16 +35,14 @@ vi.mock('@/Bits/Components/Animation.vue', () => ({
 import ShippingZonesMoved from '@/Modules/Shipping/ShippingZonesMoved.vue';
 import SettingsView from '@/Modules/Settings/SettingsView.vue';
 import {byClass, FakeNode, renderer} from './support/fake-dom-renderer.js';
+import {registerFctComponents} from '@/Bits/Components/Fct/index.js';
+import {RouterLink} from 'vue-router';
 
-const RouterLink = {
-    props: ['to'],
-    setup: (props, {slots}) => () => h('a', {'data-to': JSON.stringify(props.to)}, slots.default && slots.default()),
-};
 
 const mount = async (component) => {
     const root = new FakeNode('div');
     const Host = defineComponent({setup: () => () => h(component)});
-    renderer.createApp(Host).use(ElementPlus).component('router-link', RouterLink)
+    renderer.createApp(Host).use(ElementPlus).use(registerFctComponents).component('router-link', RouterLink)
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0}).mount(root);
     await nextTick();
     return root;
@@ -50,7 +52,7 @@ describe('Shipping zones moved notice', () => {
     it('explains the move and links to the Manual carrier page', async () => {
         const root = await mount(ShippingZonesMoved);
 
-        const heading = root.findAll(node => node.tagName === 'h4')[0];
+        const heading = root.findAll(node => node.tagName === 'h2')[0];
         expect(heading.textContent.trim()).toBe('Shipping zones have moved');
         expect(root.textContent).toContain('Shipping zones are now part of the Manual carrier.');
 

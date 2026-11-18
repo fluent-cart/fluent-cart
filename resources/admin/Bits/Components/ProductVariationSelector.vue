@@ -8,7 +8,7 @@
         show-checkbox
         :multiple="is_multiple"
         clearable
-        :placeholder="$t('Select product')"
+        :placeholder="placeholder || $t('Select product')"
         @visible-change="(visible)=>{
           onVisibleChange(visible)
         }"
@@ -52,6 +52,10 @@ export default {
       default: true
     },
     popoverClass: {
+      type: String,
+      default: ''
+    },
+    placeholder: {
       type: String,
       default: ''
     },

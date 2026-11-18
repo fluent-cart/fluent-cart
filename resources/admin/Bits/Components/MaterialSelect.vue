@@ -1,6 +1,6 @@
 <script setup>
 
-import {defineEmits, onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 
 const props = defineProps({
   label: {
@@ -21,6 +21,7 @@ const emit = defineEmits(['onChange']);
 const model = defineModel();
 const label = ref(props.label);
 const isFocus = ref(false);
+const selectOptions = computed(() => (props.options || []).map(option => ({label: option.name, value: option.value})));
 
 const handleChange = (e) => {
   emit('onChange', e);
@@ -48,9 +49,10 @@ onMounted(() => {
     <span v-if="false" class="fct-material-select-label" :class="{'is-focus': isFocus || model}">
       {{ label }} <span v-if="required" class="required-mark">*</span>
     </span>
-    <el-select
+    <fct-select
         :required="required"
         v-model="model"
+        :options="selectOptions"
         :filterable="filterable"
         @change="handleChange"
         :placeholder="label + (required ? ' *' : '')"
@@ -59,14 +61,7 @@ onMounted(() => {
         @blur="handleInputBlur"
         @clear="() => {
           model = '';
-        }">
-      <el-option
-          v-for="country in options"
-          :key="country.value"
-          :label="country.name"
-          :value="country.value"
-      />
-    </el-select>
+        }"/>
   </div>
 </template>
 

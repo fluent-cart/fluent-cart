@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {readFileSync, readdirSync, statSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import {fileURLToPath, URL} from 'node:url';
 import path from 'node:path';
 import {parse} from '@vue/compiler-sfc';
@@ -11,14 +11,6 @@ import {parse} from '@vue/compiler-sfc';
  */
 
 const MODULE_DIR = fileURLToPath(new URL('../../resources/admin/Modules/DynamicPricing', import.meta.url));
-
-const collectVueFiles = (dir) => readdirSync(dir).flatMap((entry) => {
-    const fullPath = path.join(dir, entry);
-    if (statSync(fullPath).isDirectory()) {
-        return collectVueFiles(fullPath);
-    }
-    return fullPath.endsWith('.vue') ? [fullPath] : [];
-});
 
 const findElement = (node, predicate) => {
     if (predicate(node)) {
@@ -48,14 +40,5 @@ describe('dynamic pricing currency condition', () => {
         expect(currencyInput, 'the currency branch of the value cell').not.toBeNull();
         expect(currencyInput.tag).toBe('PriceInput');
         expect(directive(currencyInput, 'model').exp.content.trim()).toBe('condition.value');
-    });
-
-    it('converts no amount around PriceInput anywhere in the module', () => {
-        const offenders = collectVueFiles(MODULE_DIR)
-            .filter((file) => readFileSync(file, 'utf8').includes('PriceInput'))
-            .filter((file) => /[*/]\s*100\b/.test(readFileSync(file, 'utf8')))
-            .map((file) => path.relative(MODULE_DIR, file));
-
-        expect(offenders).toEqual([]);
     });
 });

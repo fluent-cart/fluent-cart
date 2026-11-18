@@ -8,7 +8,7 @@ use Tests\Support\Traits\BuildsPayPalWebhookRequests;
 use Tests\Support\Traits\MocksPayPalHttp;
 
 /**
- * Spec: Cases/paypal-webhooks.md [1-4] (FC-SEC-05).
+ * Spec: Cases/paypal-webhooks.md [1-4].
  *
  * The extension hook fluent_cart/paypal_webhook_received must only ever see
  * payloads whose PayPal signature has been verified (or whose verification was

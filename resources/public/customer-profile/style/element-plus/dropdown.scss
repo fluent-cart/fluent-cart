@@ -1,17 +1,17 @@
 .el-select-dropdown__list{
-    @apply p-3 #{!important};
+    @apply p-3!;
     .el-select-dropdown__item{
-        @apply rounded text-[var(--fct-customer-dashboard-text-color,#565865)] px-2.5 text-[13px] h-7.5 #{!important};
+        @apply rounded! text-[var(--fct-customer-dashboard-text-color,#565865)]! px-2.5! text-[13px]! h-7.5!;
         &.is-selected{
-            @apply text-[var(--fct-customer-dashboard-link-color,#253241)] font-medium #{!important};
+            @apply text-[var(--fct-customer-dashboard-link-color,#253241)]! font-medium!;
         }
         &.is-hovering{
-            @apply bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)] dark:bg-dark-600 #{!important};
+            @apply bg-[var(--fct-customer-dashboard-soft-hover-bg,#F0F0F1)]! dark:bg-dark-600!;
         }
     }
 }
 .el-select__popper.el-popper{
-    @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] #{!important};
+    @apply border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)]!;
 }
 .el-popper{
     border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT')) !important;
@@ -25,7 +25,7 @@
         border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
         box-shadow: 0px -4px 16px -12px rgba(14, 18, 27, 0.10), 0px 16px 32px 0px rgba(14, 18, 27, 0.10);
         .el-dropdown-menu{
-            @apply p-2 #{!important};
+            @apply p-2!;
             border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT')) !important;
             &__item{
                 @apply gap-2 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] relative rounded-sm hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] mb-0 p-2 last:mb-0 focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] focus:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
@@ -38,7 +38,7 @@
                 &.item-link{
                     @apply p-0 rounded-none bg-transparent cursor-default;
                     a {
-                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] relative rounded-sm focus:outline-none focus:shadow-none hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] mb-0 last:mb-0 focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] focus:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
+                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] relative rounded-sm focus:outline-hidden focus:shadow-none hover:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] mb-0 last:mb-0 focus:bg-[var(--fct-customer-dashboard-hover-bg,#F5F6F7)] focus:text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)];
                         .icon{
                             svg{
                                 @apply w-4 h-4;

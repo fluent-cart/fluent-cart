@@ -1,6 +1,6 @@
 <script setup>
 import Filters from "@/Bits/Components/TableNew/Components/AdvancedFilter/_Filters.vue";
-import {defineProps, computed} from "vue";
+import {computed} from "vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import TransitionAccordion from "@/Bits/Components/TransitionAccordion.vue";
 
@@ -60,32 +60,32 @@ const saveView = () => {
       </div>
 
       <div class="fct-advanced-filter-footer justify-end">
-        <el-button
+        <fct-button
             @click="() => table.clearAdvanceFilter()"
             text
-            class="el-button--x-small"
+            size="x-small"
         >
           {{ $t("Reset") }}
-        </el-button>
+        </fct-button>
 
-        <el-button
+        <fct-button
             @click="() => table.applyAdvancedFilter()"
             type="primary"
-            class="el-button--x-small"
+            size="x-small"
         >
           {{ $t("Apply") }}
-        </el-button>
+        </fct-button>
 
-        <el-button
+        <fct-button
             v-if="showSaveView"
             @click="saveView"
             text
-            class="el-button--x-small"
+            size="x-small"
             :disabled="!hasFilters"
         >
           <DynamicIcon name="Plus"/>
           {{ $t("Save as view") }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
   </TransitionAccordion>

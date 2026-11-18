@@ -15,7 +15,7 @@
   .fct-pro-feature-text{
     @apply text-system-mid text-sm leading-[20px] m-0 dark:text-gray-300;
     a {
-        @apply text-blue-500 underline !important;
+        @apply text-blue-500! underline!;
     }
   }
   .el-button{

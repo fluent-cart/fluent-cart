@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./customer-profile-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./customer-profile-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 .fct-customer-profile-block-editor{
     --fluent-cart-customer-dashboard-primary-color: var(--fluent-cart-primary-color, theme('colors.primary.500'));
@@ -23,7 +25,7 @@
     --fluent-cart-customer-dashboard-button-color: theme('colors.white');
 
     // nav
-    --fluent-cart-customer-dashboard-nav-bg: theme('colors.transparent');
+    --fluent-cart-customer-dashboard-nav-bg: transparent;
     --fluent-cart-customer-dashboard-nav-border-radius: 0;
     --fluent-cart-customer-dashboard-nav-padding: 0;
     --fluent-cart-customer-dashboard-nav-border: theme('colors.gray.divider');
@@ -144,7 +146,7 @@
         }
     }
     .button{
-        @apply inline-flex items-center justify-center py-1 px-3 rounded text-[13px] font-normal text-system-dark bg-white no-underline border border-solid border-gray-outline cursor-pointer leading-none duration-200 transition hover:bg-gray-50 !important;
+        @apply inline-flex! items-center! justify-center! py-1! px-3! rounded! text-[13px]! font-normal! text-system-dark! bg-white! no-underline! border! border-solid! border-gray-outline! cursor-pointer! leading-none! duration-200! transition! hover:bg-gray-50!;
         svg{
             @apply w-3 h-3 mr-1.5;
         }
@@ -229,7 +231,7 @@
     }
 
     .fct-customer-logout-btn{
-        @apply shadow-none bg-transparent rounded-none text-system-mid p-1.5 flex items-center hover:text-system-dark !important;
+        @apply shadow-none! bg-transparent! rounded-none! text-system-mid! p-1.5! flex! items-center! hover:text-system-dark!;
         svg{
             @apply w-4 h-4;
         }
@@ -261,7 +263,7 @@
                     @apply absolute left-[-20px] top-1/2 w-0 h-[calc(100%-16px)] transition-all duration-300 bg-[var(--fluent-cart-customer-dashboard-nav-active-bar-color)] rounded-tr-xs rounded-br-xs;
                 }
                 .fct-customer-nav-link {
-                    @apply no-underline block text-[var(--fluent-cart-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-none;
+                    @apply no-underline block text-[var(--fluent-cart-customer-dashboard-nav-text-color)] text-sm leading-5 font-medium py-2 px-3 rounded relative focus:outline-hidden;
                 }
                 &.active_customer_menu {
                     &:before {
@@ -295,7 +297,7 @@
 @container fct_customer_profile (max-width: 806px) {
     .fct-customer-dashboard-navs-wrap {
         #fct-customer-menu-toggle {
-            @apply flex #{!important};
+            @apply flex!;
         }
         #menu-container,
         .fct-customer-dashboard-customer-info {

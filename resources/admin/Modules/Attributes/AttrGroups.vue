@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount, nextTick } from 'vue';
-import { VueDraggableNext } from 'vue-draggable-next';
 import translate from "@/utils/translator/Translator";
 import GroupTermsPanel from "./GroupTermsPanel.vue";
 import AddGroupModal from "./AddGroupModal.vue";
 import EditGroupModal from "./EditGroupModal.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import PageHeading from "@/Bits/Components/Layout/PageHeading.vue";
+import SortableList from "@/Bits/Components/Layout/SortableList.vue";
 import Confirmation from "@/utils/Confirmation";
 import Notify from "@/utils/Notify";
 import Rest from "@/utils/http/Rest";
@@ -58,8 +58,8 @@ const matchesSearch = (group) => {
 const isSavingOrder = ref(false);
 let pendingReorder = false;
 
-// Persist the current order. vue-draggable-next (and moveGroup) have already
-// mutated groups.value in place (optimistic), so we just POST the loaded order;
+// Persist the current order. SortableList has already updated groups.value
+// (optimistic) for a drag or an arrow-key move, so we just POST the loaded order;
 // on failure we reload to fall back to the server's stored order.
 const persistGroupOrder = () => {
     if (isSavingOrder.value) {
@@ -88,28 +88,6 @@ const persistGroupOrder = () => {
         });
 };
 
-// Keyboard-accessible reorder: move a group up (-1) or down (+1) within the
-// loaded list, then persist — the focusable handle button calls this on
-// Arrow Up/Down so the feature isn't mouse-drag only. Focus follows the moved
-// row so repeated presses keep working. Bounded to the loaded set, same as drag.
-const moveGroup = (group, direction) => {
-    // No isSavingOrder guard: keyboard moves stay responsive during an in-flight
-    // save — persistGroupOrder() coalesces them so the latest order wins without
-    // racing (and the button stays focused so repeated presses keep working).
-    if (!canReorder.value) return;
-    const list = groups.value;
-    const index = list.findIndex(g => g.id === group.id);
-    const target = index + direction;
-    if (index === -1 || target < 0 || target >= list.length) return;
-    const swap = list[target];
-    list[target] = list[index];
-    list[index] = swap;
-    persistGroupOrder();
-    nextTick(() => {
-        const el = document.querySelector('.fct-attr-group-handle[data-group-id="' + group.id + '"]');
-        if (el) el.focus();
-    });
-};
 
 // Monotonic request id — every fetch captures its own version, and the
 // then/catch/finally blocks short-circuit when a newer fetch has started.
@@ -369,7 +347,7 @@ const groupEditingDone = () => {
                 </div>
 
                 <div class="fct-attr-split-search">
-                    <el-input
+                    <fct-input
                         v-model="search"
                         :placeholder="translate('Search attributes')"
                         size="small"
@@ -378,24 +356,23 @@ const groupEditingDone = () => {
                         <template #prefix>
                             <DynamicIcon name="Search"/>
                         </template>
-                    </el-input>
+                    </fct-input>
                 </div>
 
                 <div class="fct-attr-group-list" @scroll.passive="onGroupListScroll">
-                  <VueDraggableNext
-                      :list="groups"
-                      handle=".fct-attr-group-handle"
-                      :disabled="!canReorder || isLoading || isLoadingMore || isSavingOrder"
-                      :animation="150"
-                      ghost-class="fct-attr-group-item--ghost"
+                  <!-- Drag stays on while a save runs: persistGroupOrder() queues the latest order. -->
+                  <!-- translators: %1$s: attribute group title -->
+                  <SortableList
+                      v-model="groups"
                       tag="div"
                       class="fct-attr-group-list-inner"
-                      @end="persistGroupOrder"
+                      :filter="matchesSearch"
+                      :disabled="!canReorder || isLoading || isLoadingMore"
+                      :handle-label="group => translate('Reorder %1$s — drag, or use arrow up and down keys', group.title || translate('No Name'))"
+                      @reorder="persistGroupOrder"
                   >
+                   <template #item="{item: group, handle}">
                     <div
-                        v-for="group in groups"
-                        v-show="matchesSearch(group)"
-                        :key="group.id"
                         class="fct-attr-group-item"
                         :class="{ 'is-active': selectedGroup?.id === group.id }"
                         role="button"
@@ -406,20 +383,7 @@ const groupEditingDone = () => {
                         @keydown.enter.prevent="selectedGroup = group"
                         @keydown.space.prevent="selectedGroup = group"
                     >
-                        <!-- translators: %1$s: attribute group title -->
-                        <button
-                            v-if="canReorder"
-                            type="button"
-                            class="fct-attr-group-handle"
-                            :data-group-id="group.id"
-                            :aria-label="translate('Reorder %1$s — drag, or use arrow up and down keys', group.title || translate('No Name'))"
-                            @click.stop
-                            @mousedown.stop
-                            @keydown.up.prevent.stop="moveGroup(group, -1)"
-                            @keydown.down.prevent.stop="moveGroup(group, 1)"
-                        >
-                            <DynamicIcon name="ReorderDotsVertical"/>
-                        </button>
+                        <component :is="handle" v-if="canReorder" class="fct-attr-group-handle"/>
                         <div class="fct-attr-group-item-body">
                             <span class="fct-attr-group-item-name">{{ group.title || translate('No Name') }}</span>
                             <span class="fct-attr-group-item-meta">
@@ -452,7 +416,8 @@ const groupEditingDone = () => {
                             class="fct-attr-group-chevron"
                         />
                     </div>
-                  </VueDraggableNext>
+                   </template>
+                  </SortableList>
 
                     <!-- Hold off on the definitive "No results" state while a
                          search is mid-flight (debounce window + in-flight fetch).
@@ -532,7 +497,7 @@ const groupEditingDone = () => {
 
         </div>
 
-        <el-dialog
+        <fct-dialog
             :append-to-body="true"
             width="50%"
             v-model="createGroupModal"
@@ -542,9 +507,9 @@ const groupEditingDone = () => {
             <template v-if="createGroupModal">
                 <AddGroupModal ref="addGroupModalRef" @when-group-create-is-done="groupCreatingDone"/>
             </template>
-        </el-dialog>
+        </fct-dialog>
 
-        <el-dialog
+        <fct-dialog
             :append-to-body="true"
             width="50%"
             v-model="editGroupModal"
@@ -559,6 +524,6 @@ const groupEditingDone = () => {
                     @when-group-edit-is-done="groupEditingDone"
                 />
             </template>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>

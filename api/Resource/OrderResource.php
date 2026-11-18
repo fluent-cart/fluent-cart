@@ -17,6 +17,7 @@ use FluentCart\App\Events\Order\OrderStatusUpdated;
 use FluentCart\App\Events\Order\OrderUpdated;
 use FluentCart\App\Events\StockChanged;
 use FluentCart\App\Helpers\AddressHelper;
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\AdminOrderProcessor;
 use FluentCart\App\Helpers\Status;
@@ -49,6 +50,7 @@ use FluentCart\App\Services\Payments\PaymentInstance;
 use FluentCart\App\Services\Payments\Refund;
 use FluentCart\App\Services\Tax\AdminOrderTaxService;
 use FluentCart\App\Modules\Tax\TaxModule;
+use FluentCart\Framework\Database\QueryException;
 use FluentCart\Framework\Database\Orm\Builder;
 use FluentCart\Framework\Database\Orm\Collection;
 use FluentCart\Framework\Support\Arr;
@@ -249,7 +251,16 @@ class OrderResource extends BaseResourceApi
         $paymentMethod = sanitize_text_field('offline_payment');
 
         $items = Arr::except(Arr::get($order, 'order_items'), ['*']);
-        OrderService::validateProducts($items);
+        try {
+            OrderService::validateProducts($items);
+        } catch (QueryException $e) {
+            // A database failure is not a stock rejection, and its message holds the query.
+            throw $e;
+        } catch (\Exception $e) {
+            return static::makeErrorResponse([
+                ['code' => 'invalid_order_items', 'message' => $e->getMessage()]
+            ], 422);
+        }
 
         $customer = static::getCustomer($data);
 
@@ -260,6 +271,8 @@ class OrderResource extends BaseResourceApi
             $pricing = AdminOrderPricing::price($pricingData, Arr::get($customer, 'email', ''));
         } elseif ($currency !== '' && !BaseCurrency::is($currency)) {
             $pricing = AdminOrderPricing::priceInPostedCurrency($pricingData, Arr::get($customer, 'email', ''));
+        } elseif (Arr::get($data, 'shipping_method_id')) {
+            $pricing = AdminOrderPricing::price($pricingData, Arr::get($customer, 'email', ''));
         } else {
             $pricing = AdminOrderPricing::asPosted($pricingData, Arr::get($customer, 'email', ''));
         }
@@ -279,6 +292,9 @@ class OrderResource extends BaseResourceApi
 
         $items = $pricing['items'];
         $currencyQuote = $pricing['quote'];
+        if (Arr::get($pricing, 'shipping.id')) {
+            $shipping = $pricing['shipping'];
+        }
 
         // admin order processor
         $adminOrderProcessor = new AdminOrderProcessor($items, [
@@ -286,6 +302,7 @@ class OrderResource extends BaseResourceApi
             'payment_method'            => $paymentMethod,
             'applied_coupons'           => $pricing['applied_coupons'],
             'shipping_total'            => $pricing['shipping_total'],
+            'shipping'                  => Arr::get($pricing, 'shipping', []),
             'currency_snapshot'         => CurrencySnapshot::make($currencyQuote['currency'], $currencyQuote['rate'], [
                 'source'   => $currencyQuote['source'],
                 'rate_id'  => $currencyQuote['rate_id'],
@@ -444,8 +461,12 @@ class OrderResource extends BaseResourceApi
                     'shipping_charge'=> (int) Arr::get($item, 'shipping_charge', 0),
                     'quantity'       => $qty,
                     'other_info'     => Arr::get($item, 'other_info', []),
+                    'fulfillment_type' => Arr::get($item, 'fulfillment_type'),
+                    'line_total'     => $subtotal - (int) Arr::get($item, 'discount_total', 0) - (int) Arr::get($item, 'manual_discount', 0),
                 ];
             }
+
+            $taxItems = static::allocateShippingForTax($order, $taxItems);
 
             $taxResult = CurrencyContext::withCurrency($order->currency, function () use ($taxItems, $taxAddress, $taxSettings) {
                 return AdminOrderTaxService::calculate($taxItems, $taxAddress, $taxSettings);
@@ -633,6 +654,32 @@ class OrderResource extends BaseResourceApi
         return $order->refresh();
     }
 
+    private static function allocateShippingForTax($order, array $taxItems): array
+    {
+        $flatShipping = (int) $order->shipping_total - array_sum(array_column($taxItems, 'shipping_charge'));
+        if ($flatShipping <= 0) {
+            return $taxItems;
+        }
+
+        // Manual overrides and carrier quotes include free-shipping items; zone rates exclude them.
+        $spreadSource = $taxItems;
+        if (Arr::get($order->config, 'shipping_source') !== 'manual'
+            && in_array(Arr::get($order->config, 'shipping_carrier', ''), ['', 'manual'], true)
+        ) {
+            $spreadSource = array_filter($taxItems, function ($item) {
+                return !CartHelper::itemHasFreeShipping($item);
+            });
+        }
+        $spreadItems = CurrencyContext::withCurrency($order->currency, function () use ($spreadSource, $flatShipping) {
+            return CartHelper::itemizeFlatShipping($spreadSource, $flatShipping)['items'];
+        });
+        foreach ($spreadItems as $index => $spreadItem) {
+            $taxItems[$index]['shipping_charge'] += (int) $spreadItem['itemwise_shipping_charge'];
+        }
+
+        return $taxItems;
+    }
+
     /**
      * Recalculate and persist tax for an existing order after create or update.
      * Reads saved items + billing address from the DB, runs AdminOrderTaxService,
@@ -700,16 +747,20 @@ class OrderResource extends BaseResourceApi
                 $unitPrice = (int) Arr::get($item, 'unit_price', 0);
                 $qty       = max(1, (int) Arr::get($item, 'quantity', 1));
                 $taxItems[] = [
-                    'id'              => (int) Arr::get($item, 'id', 0),
-                    'post_id'         => (int) Arr::get($item, 'post_id', 0),
-                    'object_id'       => (int) Arr::get($item, 'object_id', 0),
-                    'subtotal'        => $unitPrice * $qty,
-                    'discount_total'  => (int) Arr::get($item, 'discount_total', 0),
-                    'shipping_charge' => (int) Arr::get($item, 'shipping_charge', 0),
-                    'quantity'        => $qty,
-                    'other_info'      => Arr::get($item, 'other_info', []),
+                    'id'               => (int) Arr::get($item, 'id', 0),
+                    'post_id'          => (int) Arr::get($item, 'post_id', 0),
+                    'object_id'        => (int) Arr::get($item, 'object_id', 0),
+                    'subtotal'         => $unitPrice * $qty,
+                    'discount_total'   => (int) Arr::get($item, 'discount_total', 0),
+                    'shipping_charge'  => (int) Arr::get($item, 'shipping_charge', 0),
+                    'quantity'         => $qty,
+                    'other_info'       => Arr::get($item, 'other_info', []),
+                    'fulfillment_type' => Arr::get($item, 'fulfillment_type'),
+                    'line_total'       => $unitPrice * $qty - (int) Arr::get($item, 'discount_total', 0),
                 ];
             }
+
+            $taxItems = static::allocateShippingForTax($order, $taxItems);
 
             if (empty($taxItems)) {
                 return static::clearOrderTax($orderId, $order);
@@ -1599,6 +1650,41 @@ class OrderResource extends BaseResourceApi
         $discount = $data['discount'];
         $shipping = $data['shipping'];
 
+        $shippingIdentity = [];
+        $shippingId = Arr::get($shipping, 'id');
+        $savedMethodId = Arr::get($order->config, 'shipping_method_id');
+        if ($shippingId !== null && $savedMethodId === null) {
+            $savedMethodId = Arr::get($order->getMeta('order_shipping', []), 'id');
+        }
+        $sameMethod = !empty($shippingId) && (string) $shippingId === (string) $savedMethodId
+            && (!is_numeric($shippingId) || in_array(Arr::get($order->config, 'shipping_carrier', ''), ['', 'manual'], true));
+        if (is_numeric($shippingId)) {
+            $method = (int) $shippingId > 0 ? ShippingMethod::find((int) $shippingId) : null;
+            if ((int) $shippingId !== 0 && !$method) {
+                return new \WP_Error('shipping_method_unavailable', __('The selected shipping method is unavailable.', 'fluent-cart'), ['status' => 422]);
+            }
+            if ($method && !(int) $method->is_enabled) {
+                $sameCharge = (int) Arr::get($orderData, 'shipping_total', $order->shipping_total) === (int) $order->shipping_total;
+                if (!$sameMethod || !$sameCharge) {
+                    return new \WP_Error('shipping_method_unavailable', __('The selected shipping method is unavailable.', 'fluent-cart'), ['status' => 422]);
+                }
+            }
+            if ($sameMethod) {
+                // The edit screen posts the method ID even when shipping was not changed.
+                $shipping = [];
+            } else {
+                $shipping = ['id' => $method ? (int) $method->id : 0, 'title' => $method ? $method->title : ''];
+                $shippingIdentity = [
+                    'shipping_method_id' => $shipping['id'],
+                    'shipping_method_title' => $shipping['title'],
+                    'shipping_carrier' => $method ? 'manual' : '',
+                    'shipping_source' => $method ? 'zone' : 'manual',
+                ];
+            }
+        } elseif ($sameMethod) {
+            $shipping = [];
+        }
+
         if (!empty($appliedCoupons)) {
             $submittedItems = Arr::except((array) Arr::get($orderData, 'order_items', []), ['*']);
             $couponCheck = CouponResource::validateOrderCoupons(
@@ -1681,17 +1767,6 @@ class OrderResource extends BaseResourceApi
                     ]);
                 }
             }
-            if (!empty($shipping)) {
-                $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
-                static::addOrUpdateOrderMeta([
-                    'order_id'   => $orderId,
-                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-                    'meta_key'   => 'order_shipping',
-                    //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-                    'meta_value' => $shipping
-                ]);
-            }
-
             $items = Arr::get($orderData, 'order_items');
             $isUpdatedOrderItems = OrderItemResource::updateOrInsertOrderItems($order, $orderId, Arr::except($items, ['*']));
 
@@ -1714,7 +1789,7 @@ class OrderResource extends BaseResourceApi
 
             // Currency and exchange rate are stamped once at creation and are
             // immutable; every amount on the row is in that currency.
-            // dev-docs/multi-currency/plan.md §2.3 invariants #1 and #3.
+            // dev-docs/multi-currency/06-orders-subscriptions.md.
             unset($orderData['currency'], $orderData['rate']);
             if (isset($orderData['config']) && is_array($orderData['config'])) {
                 unset($orderData['config']['fx']);
@@ -1724,8 +1799,41 @@ class OrderResource extends BaseResourceApi
                 }
             }
 
+            $storedShipping = Arr::only((array) $order->config, [
+                'shipping_method_id', 'shipping_method_title', 'shipping_carrier', 'shipping_source',
+            ]);
+            $orderData['config'] = array_merge(
+                (array) Arr::get($orderData, 'config', $order->config),
+                $storedShipping,
+                $shippingIdentity
+            );
+
             $oldOrder = clone $order;
-            $isUpdated = $order->update($orderData);
+            $db->beginTransaction();
+            try {
+                if (!empty($shipping)) {
+                    $shipping = is_array($shipping) ? static::resolveShippingTitle($shipping) : $shipping;
+                    $result = static::addOrUpdateOrderMeta([
+                        'order_id' => $orderId,
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                        'meta_key' => 'order_shipping',
+                        //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                        'meta_value' => $shipping,
+                    ]);
+                    if (is_wp_error($result)) {
+                        throw new \RuntimeException($result->get_error_message());
+                    }
+                }
+                $isUpdated = $order->update($orderData);
+                if ($isUpdated) {
+                    $db->commit();
+                } else {
+                    $db->rollBack();
+                }
+            } catch (\Throwable $e) {
+                $db->rollBack();
+                throw $e;
+            }
 
             if ($isUpdated) {
                 $newOrder = $order->refresh();
@@ -2575,12 +2683,18 @@ class OrderResource extends BaseResourceApi
                 'total_paid'     => ['-', $totalPaid],
                 'total_refund'   => ['+', $transaction->total],
             ];
-        } elseif ($newStatus == (Status::PAYMENT_PENDING || Status::PAYMENT_FAILED)) {
+        } elseif (in_array($newStatus, [Status::PAYMENT_PENDING, Status::PAYMENT_FAILED, Status::PAYMENT_AUTHORIZED], true)) {
             $data[] = [
                 'id'             => $order->id,
                 'payment_status' => $newStatus,
                 'total_paid'     => ['-', $totalPaid],
             ];
+        }
+
+        if (empty($data)) {
+            return static::makeErrorResponse([
+                ['code' => 400, 'message' => __('Failed to update payment status', 'fluent-cart')]
+            ]);
         }
 
         $updatedStatus = $transaction->updateStatus($newStatus);

@@ -47,7 +47,7 @@ if (!is_dir($mapDir) || !is_file($adminMapFile)) {
 // (useNavigationMenuUpdateService), the settings heading (StoreSettings) and
 // the payment page name (GlobalPaymentComponents) — mapped to the translation
 // map their bundle's translate util reads at runtime. The extra Vite entries
-// (withdrawal, order-bump, addon-assets, attributes) share the
+// (order-bump, addon-assets, attributes) share the
 // admin translator; the customer-profile portal ships its own translator and
 // reads customer-profile-translation.php instead.
 $routeFiles = [
@@ -55,7 +55,6 @@ $routeFiles = [
     'resources/admin/Modules/Subscriptions/subscription.js' => 'admin-translation.php',
     'resources/admin/Modules/Shipping/shipping.js' => 'admin-translation.php',
     'resources/admin/Modules/Coupons/coupons.js' => 'admin-translation.php',
-    'resources/withdrawal/withdrawal.js' => 'admin-translation.php',
     'resources/order-bump/order-bump.js' => 'admin-translation.php',
     'resources/addon-assets/addon-assets.js' => 'admin-translation.php',
     'resources/attributes/attributes.js' => 'admin-translation.php',
@@ -245,7 +244,7 @@ foreach ($rii as $file) {
     // A long sentence in an admin bundle belongs in reservedWords.json (the block editor and portal keep their own maps)
     $relative = str_replace($root . '/', '', $path);
     $flagWrappedLiterals($relative, $contents);
-    if (preg_match('#^resources/(admin|withdrawal|order-bump|addon-assets|attributes|accounting-export)/#', $relative) && strpos($relative, '/BlockEditor/') === false
+    if (preg_match('#^resources/(admin|order-bump|addon-assets|attributes|accounting-export)/#', $relative) && strpos($relative, '/BlockEditor/') === false
         && preg_match_all('/(?:(?<![\w$.])translate|\$t)\(\s*([\'"`])((?:\\\\.|(?!\1)[^\\\\])*)\1/', $contents, $longMatches, PREG_OFFSET_CAPTURE)) {
         foreach ($longMatches[2] as $literal) {
             if (strpos($literal[0], '${') === false && preg_match_all('/./su', stripslashes($literal[0])) >= 80) {
@@ -259,7 +258,7 @@ foreach ($rii as $file) {
         }
     }
     if (preg_match_all('/(?:(?<![\w$.])translate|\$t)\(\s*([\'"])([A-Za-z0-9]+(?:_[A-Za-z0-9]+)+)\1/', $contents, $keyMatches, PREG_OFFSET_CAPTURE)) {
-        $isAdminBundle = preg_match('#^resources/(admin|withdrawal|order-bump|addon-assets|attributes|accounting-export)/#', $relative) && strpos($relative, '/BlockEditor/') === false;
+        $isAdminBundle = preg_match('#^resources/(admin|order-bump|addon-assets|attributes|accounting-export)/#', $relative) && strpos($relative, '/BlockEditor/') === false;
         foreach ($keyMatches[2] as $keyMatch) {
             $place = $relative . ':' . (substr_count(substr($contents, 0, $keyMatch[1]), "\n") + 1);
             if ($isAdminBundle) {
@@ -323,16 +322,15 @@ foreach ($reserved as $key => $sentence) {
     }
 }
 
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
+if (!$violations) {
+    exit(0);
+}
+
 echo 'translation-map-integrity: '
     . count($mapKeys) . ' map files, '
     . count($adminKeys) . ' admin keys, '
     . count($routeFiles) . " route files, {$scanned} source files\n";
-
-if (!$violations) {
-    echo "OK — map keys reachable, route titles translated and mapped, no template-literal msgids.\n";
-    exit(0);
-}
-
 echo "\nFAIL — " . count($violations) . " violation(s):\n\n";
 foreach ($violations as $v) {
     echo "  {$v['file']}:{$v['line']}\n";

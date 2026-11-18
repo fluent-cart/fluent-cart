@@ -11,18 +11,18 @@
   }
   .el-input {
     .el-input__wrapper {
-      @apply max-h-10 !min-h-10;
+      @apply max-h-10 min-h-10!;
       input {
-        @apply text-[13px] m-0 outline-none shadow-none #{!important};
+        @apply text-[13px]! m-0! outline-hidden! shadow-none!;
         &:focus {
-          @apply outline-none shadow-none #{!important};
+          @apply outline-hidden! shadow-none!;
         }
       }
     }
 
     &.is-focus {
       .el-input__inner {
-        @apply pt-[22px] #{!important};
+        @apply pt-[22px]!;
       }
     }
   }
@@ -43,7 +43,7 @@
     .el-select__wrapper {
       --fct-select-pl: theme('spacing.4');
       --fct-select-text-offset: 0px;
-      @apply max-h-10 !min-h-10 shadow-none border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
+      @apply max-h-10 min-h-10! shadow-none border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)];
       input {
         @apply m-0 bg-transparent shadow-none;
       }
@@ -58,13 +58,13 @@
 
 /* fct-compact-form */
 .fct-compact-form {
-  @apply gap-0 !important;
+  @apply gap-0!;
   .fct-material-input{
     @apply m-0 relative;
     &:first-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-t-[1px] !important;
+        @apply [border-top-width:1px]!;
         border-top-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         border-top-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
@@ -72,7 +72,7 @@
     &:last-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-b-[1px] !important;
+        @apply [border-bottom-width:1px]!;
         border-bottom-left-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         border-bottom-right-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
@@ -81,20 +81,20 @@
 
   .el-input__wrapper,
   .el-select__wrapper {
-    @apply min-h-12 rounded-none border-b-[0.5px] border-t-[0.5px] !important;
+    @apply min-h-12! rounded-none! [border-bottom-width:0.5px]! [border-top-width:0.5px]!;
   }
 
   .setting-fields-inner{
     .el-input__wrapper,
     .el-select__wrapper {
-      @apply min-h-[48px] !important;
+      @apply min-h-[48px]!;
     }
   }
   .city{
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-e-[0.5px] border-b-[1px] border-t-[0.5px] rounded-se-none rounded-ss-none rounded-ee-none !important;
+        @apply [border-inline-end-width:0.5px]! [border-bottom-width:1px]! [border-top-width:0.5px]! rounded-se-none! rounded-ss-none! rounded-ee-none!;
         border-end-start-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
@@ -103,7 +103,7 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-s-[0.5px] border-b-[1px] border-t-[0.5px] rounded-se-none rounded-ss-none rounded-es-none !important;
+        @apply [border-inline-start-width:0.5px]! [border-bottom-width:1px]! [border-top-width:0.5px]! rounded-se-none! rounded-ss-none! rounded-es-none!;
         border-end-end-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
       }
     }
@@ -111,10 +111,9 @@
   .address_locale{
     .fct-material-input {
       .el-input__wrapper{
-        @apply rounded-none border-y-[0.5px] !important;
+        @apply rounded-none! [border-block-width:0.5px]!;
       }
     }
-
   }
 }
 
@@ -152,14 +151,14 @@
 .is-error{
   .el-input__wrapper,
   .el-select__wrapper{
-    @apply border-red-500 #{!important};
+    @apply border-red-500!;
   }
 }
 
 // address list
 .fct-form-container {
   .fct-customer-address-list {
-    @apply p-4 !important;
+    @apply p-4!;
   }
 }
 
@@ -171,7 +170,10 @@
       @apply bg-[var(--fct-customer-dashboard-border-color,#D6DAE1)] rounded-[6px] invisible;
     }
     &::-webkit-scrollbar-thumb:hover {
-      @apply bg-[var(--fct-customer-dashboard-border-color,#D6DAE1)] dark:bg-dark-500;
+      @apply bg-[var(--fct-customer-dashboard-border-color,#D6DAE1)];
+    }
+    .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+      @apply bg-dark-500;
     }
     &::-webkit-scrollbar {
       @apply h-1 w-1;

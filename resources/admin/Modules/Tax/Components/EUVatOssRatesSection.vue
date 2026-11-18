@@ -208,46 +208,46 @@ defineExpose({ loadRates })
                 >
                 </TaxClassTabs>
 
-                <el-table
-                    v-loading="loadingOssRates"
+                <fct-table
+                    :loading="loadingOssRates"
                     :data="ossVisibleRates"
                     class="w-full fct-tax-rates-table"
                     max-height="450"
                     :empty-text="translate('No rates found')"
                 >
-                    <el-table-column :label="translate('Country')" min-width="160">
+                    <fct-table-column :label="translate('Country')" min-width="160">
                         <template #default="{ row }">{{ row.label }}</template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Tax Label')" min-width="150">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Tax Label')" min-width="150">
                         <template #default="{ row }">
-                            <el-input
+                            <fct-input
                                 v-if="row.class_rates && row.class_rates[activeOssClassSlug]"
                                 v-model="row.class_rates[activeOssClassSlug].label"
                                 size="small"
                                 :placeholder="translate('e.g. VAT, MwSt')"
                             />
                         </template>
-                    </el-table-column>
-                    <el-table-column :label="translate('Rate')" min-width="120">
+                    </fct-table-column>
+                    <fct-table-column :label="translate('Rate')" min-width="120">
                         <template #default="{ row }">
-                            <el-input
+                            <fct-input
                                 v-if="row.class_rates && row.class_rates[activeOssClassSlug]"
                                 v-model.number="row.class_rates[activeOssClassSlug].rate"
                                 size="small"
-                                type="number"
+                                type="number" :controls="false"
                                 :min="0"
                                 :max="100"
                                 step="0.5"
                             >
                                 <template #suffix>%</template>
-                            </el-input>
+                            </fct-input>
                             <span v-else class="text-system-mid">—</span>
                         </template>
-                    </el-table-column>
-                </el-table>
+                    </fct-table-column>
+                </fct-table>
 
                 <div class="fct-btn-group mt-4 justify-end sm">
-                    <el-button
+                    <fct-button
                         v-if="activeOssClassSlug === 'standard'"
                         size="small"
                         :loading="resettingOssRates"
@@ -256,11 +256,11 @@ defineExpose({ loadRates })
                         soft
                     >
                         {{ translate('Reset to default') }}
-                    </el-button>
+                    </fct-button>
 
-                    <el-button type="primary" size="small" :loading="savingOssRates" @click="saveOssCountryRates">
+                    <fct-button type="primary" size="small" :loading="savingOssRates" @click="saveOssCountryRates">
                         {{ translate('Save Rates') }}
-                    </el-button>
+                    </fct-button>
                 </div>
 
 

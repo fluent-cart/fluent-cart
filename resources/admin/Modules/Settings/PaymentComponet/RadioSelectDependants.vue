@@ -1,18 +1,15 @@
 <template>
    <p class="setting-label">
         {{ fields[index].label }}
-        <el-tooltip v-if="fields[index].tooltip" placement="top-start"
-                    popper-class="fct-tooltip">
+        <fct-tooltip v-if="fields[index].tooltip" placement="top-start">
             <template #content>
             <p v-html="fields[index].tooltip">
             </p>
             </template>
             <el-icon><InfoFilled /></el-icon>
-        </el-tooltip>
+        </fct-tooltip>
     </p>
-    <el-radio-group v-model="settings[index]">
-        <el-radio v-for="(opt, ind) in fields[index].options" :label="opt" :value="ind" :key="ind" />
-    </el-radio-group>
+    <fct-choice type="radio" v-model="settings[index]" :options="toOptions(fields[index].options)"/>
      <!-- Renderer for displaying fields based on selected option -->
      <br/><br/>
      <div v-for="(depandant, ind) in fields[index].dependants" :key="ind">
@@ -31,5 +28,7 @@
       settings: Object,
       index: [String, Number],
     })
+    // Same values v-for gave: array index or object key.
+    const toOptions = (options) => Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
   </script>
   

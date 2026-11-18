@@ -227,6 +227,19 @@ class StatusHelper
             $this->order->refunded_at = DateTime::gmtNow();
         }
 
+        if ($this->order->total_paid <= $this->order->total_amount && $transactionPaidTotal > $this->order->total_amount) {
+            $this->order->addLog(
+                __('Order overpaid', 'fluent-cart'),
+                sprintf(
+                    /* translators: 1: amount paid, 2: order total */
+                    __('Payments total %1$s, more than the order total of %2$s. Refund the extra payment if needed.', 'fluent-cart'),
+                    Helper::toDecimal($transactionPaidTotal, true, $this->order->currency),
+                    Helper::toDecimal($this->order->total_amount, true, $this->order->currency)
+                ),
+                'warning'
+            );
+        }
+
         $this->order->status = $orderStatus;
         $this->order->payment_status = $orderPaymentStatus;
         $this->order->total_paid = $transactionPaidTotal;

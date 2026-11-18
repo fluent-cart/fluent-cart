@@ -101,8 +101,9 @@ class FluentProducts
         wp.domReady( function() {
             // The FluentCart product screen has no core/edit-post store; only the WP post editor does.
             const editPost = wp.data.dispatch( 'core/edit-post' );
-            if ( editPost ) {
-                editPost.toggleFeature( 'fullscreenMode', true );
+            // toggleFeature only flips, and the choice is saved per user, so turn it on only when off
+            if ( editPost && ! wp.data.select( 'core/edit-post' ).isFeatureActive( 'fullscreenMode' ) ) {
+                editPost.toggleFeature( 'fullscreenMode' );
             }
             
             // Hide the fullscreen toggle button

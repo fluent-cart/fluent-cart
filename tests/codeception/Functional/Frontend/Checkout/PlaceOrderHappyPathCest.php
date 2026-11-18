@@ -93,7 +93,7 @@ class PlaceOrderHappyPathCest
         foreach (['coupon_discount_total', 'manual_discount_total', 'discount_tax', 'shipping_total', 'shipping_tax', 'tax_total', 'fee_total', 'total_paid', 'total_refund'] as $column) {
             Assert::assertSame(0, (int) $row[$column], "fct_orders.{$column} must be exactly zero on a fresh, undiscounted, unshipped, untaxed, unpaid order");
         }
-        // DECIMAL(24,12) since multi-currency (dev-docs/multi-currency/plan.md §1.2)
+        // DECIMAL(24,12) since multi-currency (dev-docs/multi-currency/02-database-schema.md)
         Assert::assertSame('1.000000000000', (string) $row['rate'], 'a single-currency order must be stored at exchange rate 1');
         Assert::assertSame('on-hold', $row['status'], 'a placed order awaiting payment starts on hold');
         Assert::assertSame('pending', $row['payment_status'], 'a placed order awaiting payment starts with payment pending');

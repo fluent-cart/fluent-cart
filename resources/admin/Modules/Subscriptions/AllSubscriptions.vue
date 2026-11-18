@@ -8,7 +8,6 @@ import SubscriptionsLoaderMobile from "@/Modules/Subscriptions/Components/Subscr
 import SubscriptionsTableMobile from "@/Modules/Subscriptions/Components/SubscriptionsTableMobile.vue";
 import {getCurrentInstance, onMounted, onUnmounted, ref} from "vue";
 import {ArrowDown} from '@element-plus/icons-vue';
-import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
 import ExportDialog from "@/Bits/Components/ExportDialog.vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
 import {useExport} from "@/utils/export/useExport";
@@ -73,22 +72,19 @@ onUnmounted(() => {
     <PageHeading :title="$t('Subscriptions')">
       <template #action>
         <UserCan permission="subscriptions/export">
-          <el-dropdown trigger="click" popper-class="fct-dropdown" placement="bottom-end">
-            <el-button>
+          <fct-dropdown
+              trigger="click"
+              placement="bottom-end"
+              :items="[{command: 'export', label: translate('Export Subscriptions'), icon: 'Download'}]"
+              @command="isExportDialogVisible = true"
+          >
+            <fct-button>
               {{ translate('More actions') }}
               <el-icon>
                 <ArrowDown/>
               </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="isExportDialogVisible = true">
-                  <DynamicIcon name="Download"/>
-                  {{ translate('Export Subscriptions') }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+            </fct-button>
+          </fct-dropdown>
         </UserCan>
       </template>
     </PageHeading>

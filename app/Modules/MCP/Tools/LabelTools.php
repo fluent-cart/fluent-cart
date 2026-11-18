@@ -29,8 +29,8 @@ class LabelTools
     {
         return [
             'fluent-cart/apply-labels' => [
-                'label'       => __('Apply Labels', 'fluent-cart'),
-                'description' => __('Add or remove labels on an order, customer, or subscription. Pass add_label_ids and/or remove_label_ids; use list-reference-data with kind=labels to find label ids. Returns the resulting label set so you can confirm.', 'fluent-cart'),
+                'label'       => 'Apply Labels',
+                'description' => 'Add or remove labels on an order, customer, or subscription. Pass add_label_ids and/or remove_label_ids; use list-reference-data with kind=labels to find label ids. Returns the resulting label set so you can confirm.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -58,29 +58,29 @@ class LabelTools
     {
         $type = isset($params['entity_type']) ? sanitize_text_field($params['entity_type']) : '';
         if (!isset(self::TYPE_MAP[$type])) {
-            return MCPHelper::error('invalid_entity_type', __('entity_type must be one of: order, customer, subscription.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'entity_type must be one of: order, customer, subscription.');
         }
 
         $entityId = isset($params['entity_id']) ? (int) $params['entity_id'] : 0;
         if (!$entityId) {
-            return MCPHelper::error('missing_identifier', __('entity_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'entity_id is required.');
         }
 
         $modelClass = 'FluentCart\\App\\Models\\' . self::TYPE_MAP[$type];
         if (!class_exists($modelClass) || !$modelClass::query()->where('id', $entityId)->exists()) {
-            return MCPHelper::error('entity_not_found', __('No matching record found for entity_type and entity_id.', 'fluent-cart'));
+            return MCPHelper::error('entity_not_found', 'No matching record found for entity_type and entity_id.');
         }
 
         $rel = 'FluentCart\\App\\Models\\LabelRelationship';
         if (!class_exists($rel)) {
-            return MCPHelper::error('not_available', __('Labels are not available on this install.', 'fluent-cart'));
+            return MCPHelper::error('not_available', 'Labels are not available on this install.');
         }
 
         $add    = array_values(array_unique(array_map('intval', (array) (isset($params['add_label_ids']) ? $params['add_label_ids'] : []))));
         $remove = array_values(array_unique(array_map('intval', (array) (isset($params['remove_label_ids']) ? $params['remove_label_ids'] : []))));
 
         if (!$add && !$remove) {
-            return MCPHelper::error('missing_param', __('Provide add_label_ids and/or remove_label_ids.', 'fluent-cart'), ['fields' => ['add_label_ids', 'remove_label_ids']]);
+            return MCPHelper::error('invalid_param', 'Provide add_label_ids and/or remove_label_ids.', ['fields' => ['add_label_ids', 'remove_label_ids']]);
         }
 
         // The same id in both lists is a contradictory instruction (add then
@@ -90,7 +90,7 @@ class LabelTools
         if ($overlap) {
             return MCPHelper::error(
                 'conflicting_labels',
-                __('A label id cannot be in both add_label_ids and remove_label_ids.', 'fluent-cart'),
+                'A label id cannot be in both add_label_ids and remove_label_ids.',
                 ['fields' => ['add_label_ids', 'remove_label_ids'], 'conflicting_label_ids' => $overlap]
             );
         }
@@ -104,7 +104,7 @@ class LabelTools
             if ($unknown) {
                 return MCPHelper::error(
                     'label_not_found',
-                    __('One or more label IDs do not exist. Use list-reference-data with kind=labels to find valid ids.', 'fluent-cart'),
+                    'One or more label IDs do not exist. Use list-reference-data with kind=labels to find valid ids.',
                     ['fields' => ['add_label_ids'], 'unknown_label_ids' => $unknown]
                 );
             }
@@ -147,8 +147,7 @@ class LabelTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: labels added, 2: labels removed */
-                __('Labels updated: %1$d added, %2$d removed.', 'fluent-cart'),
+                'Labels updated: %1$d added, %2$d removed.',
                 count($added),
                 count($removed)
             ),

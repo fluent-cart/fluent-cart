@@ -54,10 +54,10 @@ return [
             // Month ends are the store's: cancelled at 22:00 on Jan 31 in New York (Feb 1 03:00 UTC) is gone by January's end
             $lateJanuary = [$fcCohortSub('canceled', '2001-01-15 10:00:00', '2001-02-01 03:00:00', null)];
             FcTest::assertSame(['', '2001-01'], [
-                FcReportFixture::inSiteTimezone('America/New_York', 0, function () use ($retainedMonths, $lateJanuary) {
+                FcReportFixture::inSiteTimezone('America/New_York', function () use ($retainedMonths, $lateJanuary) {
                     return $retainedMonths($lateJanuary);
                 }),
-                FcReportFixture::inSiteTimezone('UTC', 0, function () use ($retainedMonths, $lateJanuary) {
+                FcReportFixture::inSiteTimezone('UTC', function () use ($retainedMonths, $lateJanuary) {
                     return $retainedMonths($lateJanuary);
                 }),
             ], 'Cohort month ends follow the WordPress timezone');

@@ -17,17 +17,18 @@ defineExpose({ toggle: () => visible.value = !visible.value });
 </script>
 
 <template>
-    <el-popover :visible="visible" popper-class="fct-stock-dropdown" trigger="click" placement="bottom-end">
+    <fct-popover :visible="visible" popper-class="fct-stock-dropdown" trigger="click" placement="bottom-end">
         <div class="fct-adjust-by-wrap">
             <div class="fct-adjust-by-row">
                 <div class="fct-adjust-by-col">
                     <span class="title">
                         {{ translate('Adjust by') }}
                     </span>
-                    <el-input
+                    <fct-input
                         size="small"
                         :placeholder="translate('Quantity')"
                         type="number"
+                        :controls="false"
                         v-model.number="variant.adjusted_quantity"
                         @keyup="event => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', event.target.value, fieldKey, variant) }"
                         @change="value => { productEditModel.onChangeAdjustedQuantity('adjusted_quantity', value, fieldKey, variant) }"
@@ -37,10 +38,11 @@ defineExpose({ toggle: () => visible.value = !visible.value });
                     <span class="title">
                         {{ translate('New Stock') }}
                     </span>
-                    <el-input
+                    <fct-input
                         size="small"
                         :placeholder="translate('New Stock')"
                         type="number"
+                        :controls="false"
                         :min="1"
                         v-model.number="variant.new_stock"
                         @keyup="event => { productEditModel.onChangeNewStock('new_stock', event.target.value, fieldKey, variant) }"
@@ -48,22 +50,22 @@ defineExpose({ toggle: () => visible.value = !visible.value });
                 </div>
             </div>
             <div class="fct-adjust-by-action">
-                <el-button
+                <fct-button
                     size="small"
                     type="info"
                     soft
                     @click="visible = false"
                 >
                     {{ translate('Cancel') }}
-                </el-button>
-                <el-button
+                </fct-button>
+                <fct-button
                     size="small"
                     type="primary"
                     @click="visible = false; emit('save')"
                     :disabled="variant.new_stock === ''"
                 >
                     {{ translate('Apply') }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
 
@@ -72,5 +74,5 @@ defineExpose({ toggle: () => visible.value = !visible.value });
                 <DynamicIcon name="Configuration"/>
             </div>
         </template>
-    </el-popover>
+    </fct-popover>
 </template>

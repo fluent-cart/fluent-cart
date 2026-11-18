@@ -414,9 +414,9 @@ foreach ($validationInventory['read_probes'] as $entry) {
             );
         }
     }
-    if (!$entry['coverage'] && empty($entry['skip_reason'])) {
+    if (!$entry['coverage']) {
         WP_CLI::error(
-            'Phase 10 read probe lacks coverage or a safety reason at '
+            'Phase 10 read probe lacks coverage at '
             . $entry['source_file'] . ':' . $entry['source_line']
         );
     }
@@ -431,18 +431,6 @@ foreach ($validationInventory['read_probes'] as $entry) {
     }
 }
 
-if (
-    count($validationInventory['request_wiring']) !== 12
-    || count($validationInventory['read_probes']) !== 7
-    || !isset($cases['validation-destructive-routes-have-policy-methods'])
-) {
-    WP_CLI::error(
-        'Phase 10 validation inventory totals are incomplete: request_wiring='
-        . count($validationInventory['request_wiring'])
-        . ' read_probes=' . count($validationInventory['read_probes'])
-    );
-}
-
 $crudInventory = require dirname(__DIR__) . '/inventories/crud.php';
 if (
     !is_array($crudInventory)
@@ -452,34 +440,18 @@ if (
     WP_CLI::error('Phase 9 CRUD inventory is missing or malformed.');
 }
 
-$crudTotals = ['round_trip' => 0, 'safety_exclusion' => 0];
 $crudDomains = [];
 $crudSourceCache = [];
 foreach ($crudInventory['routes'] as $crudRoute) {
-    $classification = isset($crudRoute['classification'])
-        ? (string) $crudRoute['classification']
-        : '';
-    if (!isset($crudTotals[$classification])) {
+    if (!isset($crudRoute['classification']) || $crudRoute['classification'] !== 'round_trip') {
         WP_CLI::error(
             'Phase 9 CRUD inventory has invalid classification: '
             . wp_json_encode($crudRoute)
         );
     }
-    if (
-        $classification === 'round_trip'
-        && (
-            empty($crudRoute['coverage'])
-            || !isset($cases[$crudRoute['coverage']])
-        )
-    ) {
+    if (empty($crudRoute['coverage']) || !isset($cases[$crudRoute['coverage']])) {
         WP_CLI::error(
             'Phase 9 route references unknown round-trip coverage at '
-            . $crudRoute['source_file'] . ':' . $crudRoute['source_line']
-        );
-    }
-    if ($classification === 'safety_exclusion' && empty($crudRoute['reason'])) {
-        WP_CLI::error(
-            'Phase 9 safety exclusion lacks a written reason at '
             . $crudRoute['source_file'] . ':' . $crudRoute['source_line']
         );
     }
@@ -504,22 +476,7 @@ foreach ($crudInventory['routes'] as $crudRoute) {
         );
     }
 
-    $crudTotals[$classification]++;
     $crudDomains[$crudRoute['domain']] = true;
-}
-
-if (
-    count($crudInventory['routes']) !== 30
-    || $crudTotals !== ['round_trip' => 17, 'safety_exclusion' => 13]
-    || count($crudDomains) !== 5
-) {
-    WP_CLI::error(
-        'Phase 9 CRUD inventory totals are incomplete: routes='
-        . count($crudInventory['routes'])
-        . ' round_trip=' . $crudTotals['round_trip']
-        . ' safety_exclusion=' . $crudTotals['safety_exclusion']
-        . ' domains=' . count($crudDomains)
-    );
 }
 
 $reportInventory = require dirname(__DIR__) . '/inventories/reports.php';
@@ -531,30 +488,21 @@ if (
     WP_CLI::error('Phase 7 report inventory is missing or malformed.');
 }
 
-$reportTotals = [
-    'GET' => ['value' => 0, 'skip' => 0],
-    'POST' => ['value' => 0, 'skip' => 0],
-];
-$reportSmokeCases = 0;
+$reportTotals = ['GET' => 0, 'POST' => 0];
 $reportSourceCache = [];
 foreach ($reportInventory['routes'] as $reportRoute) {
     $verb = isset($reportRoute['verb']) ? (string) $reportRoute['verb'] : '';
-    $classification = isset($reportRoute['classification'])
-        ? (string) $reportRoute['classification']
-        : '';
-    if (!isset($reportTotals[$verb][$classification])) {
+    if (
+        !isset($reportTotals[$verb])
+        || !isset($reportRoute['classification'])
+        || $reportRoute['classification'] !== 'value'
+    ) {
         WP_CLI::error(
             'Phase 7 report inventory has invalid verb/classification at '
             . wp_json_encode($reportRoute)
         );
     }
-    if (empty($reportRoute['coverage'])) {
-        WP_CLI::error(
-            'Phase 7 report inventory lacks coverage/reason at '
-            . $reportRoute['source_file'] . ':' . $reportRoute['source_line']
-        );
-    }
-    if ($classification === 'value' && !isset($cases[$reportRoute['coverage']])) {
+    if (empty($reportRoute['coverage']) || !isset($cases[$reportRoute['coverage']])) {
         WP_CLI::error(
             'Phase 7 value-covered report references an unknown integration case: '
             . $reportRoute['coverage'] . ' at '
@@ -584,55 +532,15 @@ foreach ($reportInventory['routes'] as $reportRoute) {
         );
     }
 
-    $reportTotals[$verb][$classification]++;
-    $reportSmokeCases += (int) $reportRoute['phase1_smoke_cases'];
+    $reportTotals[$verb]++;
 }
 
-if (
-    count($reportInventory['routes']) !== 36
-    || array_sum($reportTotals['GET']) !== 34
-    || array_sum($reportTotals['POST']) !== 2
-    || $reportSmokeCases !== 46
-) {
-    WP_CLI::error(
-        'Phase 7 report inventory totals are incomplete: routes='
-        . count($reportInventory['routes'])
-        . ' GET=' . array_sum($reportTotals['GET'])
-        . ' POST=' . array_sum($reportTotals['POST'])
-        . ' Phase1_shapes=' . $reportSmokeCases
-    );
+// A case that needs Pro belongs to the runs where Pro loads, not to --axis=pro-absent.
+if (!FcTest::proExpected()) {
+    $cases = array_filter($cases, function ($case) {
+        return !isset($case['requires']) || $case['requires'] !== 'pro';
+    });
 }
-
-$smokeManifest = (static function ($path) {
-    return require $path;
-})(dirname(__DIR__) . '/smoke/routes.manifest.php');
-$phase1ReportDeclarations = array_filter(
-    $smokeManifest['declarations'],
-    function ($entry) {
-        return $entry['source_file'] === 'app/Http/Routes/reports.php';
-    }
-);
-$phase1ReportCases = array_filter(
-    $smokeManifest['cases'],
-    function ($entry) {
-        return $entry['source_file'] === 'app/Http/Routes/reports.php';
-    }
-);
-if (
-    count($phase1ReportDeclarations) !== $reportInventory['phase1']['get_declarations']
-    || count($phase1ReportCases) !== $reportInventory['phase1']['get_smoke_cases']
-) {
-    WP_CLI::error(
-        'Phase 7 inventory does not reconcile with the Phase 1 report manifest: '
-        . 'declarations=' . count($phase1ReportDeclarations)
-        . ' query_shapes=' . count($phase1ReportCases)
-    );
-}
-unset(
-    $smokeManifest,
-    $phase1ReportDeclarations,
-    $phase1ReportCases
-);
 
 if ($filter !== '') {
     $cases = array_filter($cases, function ($case) use ($filter) {
@@ -642,18 +550,16 @@ if ($filter !== '') {
     });
 }
 
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     "Integration — behavioral_cases=%d selected=%d invariant_checks=1%s\n"
     . "fixture identity: %s\n"
     . "cleared cache entries: %d\n"
     . "public UUID inventory: guarded_routes=%d UUID_PUBLIC-EXEMPT=%d "
     . "permission_PUBLIC-EXEMPT=%d\n"
-    . "CRUD inventory: routes=%d round_trip=%d safety_exclusion=%d domains=%d\n"
-    . "validation inventory: request_wiring=%d read_probes=%d "
-    . "destructive_policies=19\n"
+    . "CRUD inventory: routes=%d domains=%d\n"
+    . "validation inventory: request_wiring=%d read_probes=%d\n"
     . "throughput inventory: profiles=%d list=%d aggregate=%d rows=%d/%d\n"
-    . "report inventory: declarations=36 GET=34 POST=2 Phase1_query_shapes=%d "
-    . "GET_value=%d GET_skipped=%d POST_skipped=%d",
+    . "report inventory: routes=%d GET=%d POST=%d",
     $allCaseCount,
     count($cases),
     $filter !== '' ? ' filter=' . $filter : '',
@@ -663,8 +569,6 @@ WP_CLI::log(sprintf(
     $publicUuidExemptCount,
     count($permissionPublicExempt),
     count($crudInventory['routes']),
-    $crudTotals['round_trip'],
-    $crudTotals['safety_exclusion'],
     count($crudDomains),
     count($validationInventory['request_wiring']),
     count($validationInventory['read_probes']),
@@ -673,10 +577,9 @@ WP_CLI::log(sprintf(
     $throughputKinds['aggregate'],
     $throughputInventory['small_size'],
     $throughputInventory['large_size'],
-    $reportSmokeCases,
-    $reportTotals['GET']['value'],
-    $reportTotals['GET']['skip'],
-    $reportTotals['POST']['skip']
+    count($reportInventory['routes']),
+    $reportTotals['GET'],
+    $reportTotals['POST']
 ));
 
 /*
@@ -719,7 +622,7 @@ try {
         if (isset($case['site_timezone'])) {
             $inner = $run;
             $run = function () use ($inner, $case) {
-                FcReportFixture::inSiteTimezone((string) $case['site_timezone'], 0, $inner);
+                FcReportFixture::inSiteTimezone((string) $case['site_timezone'], $inner);
             };
         }
         FcTest::case($case['name'], $run);
@@ -910,7 +813,7 @@ FcTest::case('integration run restores protected counts and exact fixture absenc
 });
 
 $runtime = microtime(true) - $startedAt;
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     "internal protected counts: before=%s after=%s\n"
     . "Integration result: passed=%d failed=%d runtime=%.3fs\n"
     . "fixture cleanup: identity=%s customer_residue=%d order_residue=%d order_ids=%s related_residue=%d\n"

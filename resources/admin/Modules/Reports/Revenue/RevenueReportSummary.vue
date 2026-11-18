@@ -117,12 +117,11 @@ const dataLoader = computed(() => {
           <span v-if="summary.operator" class="text-system-light dark:text-gray-400" aria-hidden="true">{{ summary.operator }}</span>
           {{ summary.title }}
 
-          <el-tooltip :content="summary.info" placement="top"
-                      popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+          <fct-tooltip :content="summary.info" placement="top" :trigger="['hover', 'focus']">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help focus-visible:outline-2 focus-visible:outline-offset-2" :aria-label="translate('About this metric')">
               <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </div>
     </div>

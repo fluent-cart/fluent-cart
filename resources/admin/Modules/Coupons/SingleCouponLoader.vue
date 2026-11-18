@@ -10,25 +10,19 @@ import translate from "@/utils/translator/Translator";
     <div class="single-page-header">
       <el-breadcrumb :separator-icon="ArrowRight">
         <el-breadcrumb-item>
-          <el-skeleton :animated="true">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[90px] h-4"/>
-            </template>
-          </el-skeleton>
+          <fct-skeleton :animated="true">
+            <fct-skeleton variant="p" class="w-[90px] h-4"/>
+          </fct-skeleton>
         </el-breadcrumb-item>
         <el-breadcrumb-item>
-          <el-skeleton :animated="true">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[90px] h-4"/>
-            </template>
-          </el-skeleton>
+          <fct-skeleton :animated="true">
+            <fct-skeleton variant="p" class="w-[90px] h-4"/>
+          </fct-skeleton>
         </el-breadcrumb-item>
         <el-breadcrumb-item>
-          <el-skeleton :animated="true">
-            <template #template>
-              <el-skeleton-item variant="p" class="w-[60px] h-4"/>
-            </template>
-          </el-skeleton>
+          <fct-skeleton :animated="true">
+            <fct-skeleton variant="p" class="w-[60px] h-4"/>
+          </fct-skeleton>
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
@@ -46,17 +40,15 @@ import translate from "@/utils/translator/Translator";
             />
 
             <Card.Body>
-              <el-skeleton :animated="true" class="flex flex-col gap-3">
-                <template #template>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  <el-skeleton-item variant="p" class="max-w-[400px] h-4"/>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                </template>
-              </el-skeleton>
+              <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                <fct-skeleton variant="p" class="max-w-[400px] h-4"/>
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+              </fct-skeleton>
             </Card.Body>
           </Card.Container>
 
@@ -67,17 +59,15 @@ import translate from "@/utils/translator/Translator";
                 title_size="small"
             />
             <Card.Body>
-              <el-skeleton :animated="true" class="flex flex-col gap-3">
-                <template #template>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  <el-skeleton-item variant="p" class="max-w-[400px] h-4"/>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                </template>
-              </el-skeleton>
+              <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                <fct-skeleton variant="p" class="max-w-[400px] h-4"/>
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+              </fct-skeleton>
             </Card.Body>
           </Card.Container>
 
@@ -88,17 +78,15 @@ import translate from "@/utils/translator/Translator";
                 title_size="small"
             />
             <Card.Body>
-              <el-skeleton :animated="true" class="flex flex-col gap-3">
-                <template #template>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  <el-skeleton-item variant="p" class="max-w-[400px] h-4"/>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                </template>
-              </el-skeleton>
+              <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                <fct-skeleton variant="p" class="max-w-[400px] h-4"/>
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+              </fct-skeleton>
             </Card.Body>
           </Card.Container>
 
@@ -109,13 +97,11 @@ import translate from "@/utils/translator/Translator";
                 title_size="small"
             />
             <Card.Body>
-              <el-skeleton :animated="true" class="flex flex-col gap-3">
-                <template #template>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                </template>
-              </el-skeleton>
+              <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+              </fct-skeleton>
             </Card.Body>
           </Card.Container>
 
@@ -126,21 +112,19 @@ import translate from "@/utils/translator/Translator";
                 title_size="small"
             />
             <Card.Body>
-              <el-skeleton :animated="true" class="flex flex-col gap-3">
-                <template #template>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  <el-skeleton-item variant="p" class="max-w-[400px] h-4"/>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  <el-skeleton-item variant="p" class="max-w-[400px] h-4"/>
-                  <el-skeleton-item variant="p" class="w-full h-4"/>
-                  <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                  <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                </template>
-              </el-skeleton>
+              <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                <fct-skeleton variant="p" class="max-w-[400px] h-4"/>
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                <fct-skeleton variant="p" class="max-w-[400px] h-4"/>
+                <fct-skeleton variant="p" class="w-full h-4"/>
+                <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                <fct-skeleton variant="p" class="w-1/3 h-4"/>
+              </fct-skeleton>
             </Card.Body>
           </Card.Container>
         </div>
@@ -154,13 +138,11 @@ import translate from "@/utils/translator/Translator";
                   title_size="small"
               />
               <Card.Body>
-                <el-skeleton :animated="true" class="flex flex-col gap-3">
-                  <template #template>
-                    <el-skeleton-item variant="p" class="w-full h-4"/>
-                    <el-skeleton-item variant="p" class="w-2/3 h-4"/>
-                    <el-skeleton-item variant="p" class="w-1/3 h-4"/>
-                  </template>
-                </el-skeleton>
+                <fct-skeleton :animated="true" class="flex flex-col gap-3">
+                  <fct-skeleton variant="p" class="w-full h-4"/>
+                  <fct-skeleton variant="p" class="w-2/3 h-4"/>
+                  <fct-skeleton variant="p" class="w-1/3 h-4"/>
+                </fct-skeleton>
               </Card.Body>
             </Card.Container>
           </div>
@@ -171,6 +153,3 @@ import translate from "@/utils/translator/Translator";
   </div>
 </template>
 
-<style scoped>
-
-</style>

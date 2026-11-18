@@ -6,7 +6,9 @@ use FluentCart\Api\Resource\ShopResource;
 use FluentCart\Api\Taxonomy;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Http\Routes\WebRoutes;
+use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Filter\ShopAttributeFilter;
 use FluentCart\Framework\Pagination\CursorPaginator;
 use FluentCart\Framework\Pagination\LengthAwarePaginator;
 use FluentCart\Framework\Support\Arr;
@@ -14,6 +16,8 @@ use FluentCart\Framework\Support\Arr;
 class ShopAppRenderer
 {
     protected $viewMode = 'grid';
+
+    protected $isGridOnly = false;
 
     protected $isFilterEnabled = false;
 
@@ -65,6 +69,12 @@ class ShopAppRenderer
         }
         $this->config = $config;
         $this->viewMode = !empty($config['view_mode']) ? $config['view_mode'] : 'grid';
+        // A grid-only layout (Floating) is a grid with no Grid/List switch: the shortcode and the Products block
+        // say so with grid_only; a builder that passes only the layout gets the same.
+        $this->isGridOnly = !empty($config['grid_only']) || ProductCardLayoutPresets::isGridOnly((string) Arr::get($config, 'card_layout', ''));
+        if ($this->isGridOnly) {
+            $this->viewMode = 'grid';
+        }
         $this->isFilterEnabled = $enableFilter;
         $this->per_page = ShopResource::clampPerPage(Arr::get($config, 'per_page', Arr::get($defaultFilters, 'per_page', 10)));
         $this->order_type = Arr::get($defaultFilters, 'sort_type', 'DESC');
@@ -209,6 +219,14 @@ class ShopAppRenderer
             }
         }
 
+        // e.g. custom_filters='{"attributes":"color,size","show_attribute_counts":true,"show_attribute_empty":true}'
+        if (!empty($this->customFilters['attributes'])) {
+            $this->filters = array_merge($this->filters, ShopAttributeFilter::filterConfig(
+                $this->customFilters['attributes'],
+                filter_var(Arr::get($this->customFilters, 'show_attribute_counts', false), FILTER_VALIDATE_BOOLEAN),
+                filter_var(Arr::get($this->customFilters, 'show_attribute_empty', false), FILTER_VALIDATE_BOOLEAN)
+            ));
+        }
 
         // Example of $this->filters
 //        $this->filters = [
@@ -233,6 +251,9 @@ class ShopAppRenderer
     public function render()
     {
         AssetLoader::loadProductArchiveAssets();
+        if (Arr::get($this->config, 'card_layout', '')) {
+            ProductCardLayoutPresets::enqueueAssets();
+        }
         $isFullWidth = !$this->isFilterEnabled ? ' fct-full-container-width ' : '';
         $renderer = new \FluentCart\App\Services\Renderer\ProductFilterRender($this->filters);
 
@@ -269,6 +290,14 @@ class ShopAppRenderer
         if (Arr::get($this->config, 'hide_excerpt', false)) {
             $wrapperAttributes['data-hide-excerpt'] = '1';
         }
+        if (Arr::get($this->config, 'card_layout', '')) {
+            $wrapperAttributes['data-card-layout'] = Arr::get($this->config, 'card_layout');
+            // Paginator.js sends it back; only layout cards read it.
+            $wrapperAttributes['data-price-format'] = $this->priceFormat;
+            if (Arr::get($this->config, 'layout_options')) {
+                $wrapperAttributes['data-layout-options'] = wp_json_encode(Arr::get($this->config, 'layout_options'));
+            }
+        }
         ?>
         <div class="fct-products-wrapper" data-fluent-cart-shop-app data-fluent-cart-product-wrapper role="main" aria-label="<?php esc_attr_e('Products', 'fluent-cart'); ?>">
             <?php $this->renderViewSwitcher(); ?>
@@ -302,7 +331,10 @@ class ShopAppRenderer
 
     public function renderViewSwitcher()
     {
-
+        // A grid-only layout leaves only the filter toggle and sort menu here, which need filters.
+        if ($this->isGridOnly && !$this->isFilterEnabled) {
+            return;
+        }
         ?>
         <div class="fct-shop-view-switcher-wrap">
             <?php $this->renderViewSwitcherButton(); ?>
@@ -317,6 +349,7 @@ class ShopAppRenderer
 
     public function renderViewSwitcherButton()
     {
+        if (!$this->isGridOnly) {
         ?>
         <div class="fct-shop-view-switcher">
             <button type="button" data-fluent-cart-shop-app-grid-view-button=""
@@ -346,6 +379,7 @@ class ShopAppRenderer
                 </svg>
             </button>
         </div>
+        <?php } ?>
 
         <?php if ($this->isFilterEnabled) { ?>
         <button type="button"
@@ -545,6 +579,10 @@ class ShopAppRenderer
         if ($products instanceof CursorPaginator) {
             $cursor = wp_parse_args(wp_parse_url($products->nextPageUrl(), PHP_URL_QUERY));
         }
+        // Layout cards render swatches, which batch their queries over the cached products.
+        if (Arr::get($this->config, 'card_layout', '')) {
+            ProductDataSetup::setProductsCache($products);
+        }
         ?>
         <?php foreach ($products as $index => $product) {
         $cursorAttr = '';
@@ -552,7 +590,14 @@ class ShopAppRenderer
             $cursorAttr = Arr::get($cursor, 'cursor', '');
         }
 
-        (new \FluentCart\App\Services\Renderer\ProductCardRender($product, ['cursor' => $cursorAttr, 'hide_excerpt' => Arr::get($this->config, 'hide_excerpt', false)]))->render();
+        (new \FluentCart\App\Services\Renderer\ProductCardRender($product, [
+            'cursor'              => $cursorAttr,
+            'hide_excerpt'        => Arr::get($this->config, 'hide_excerpt', false),
+            'card_layout'         => Arr::get($this->config, 'card_layout', ''),
+            // Only layout cards; the classic card has always shown "starts from".
+            'layout_price_format' => $this->priceFormat,
+            'layout_options'      => (array) Arr::get($this->config, 'layout_options', []),
+        ]))->render();
         ?>
     <?php } ?>
         <?php
@@ -646,11 +691,12 @@ class ShopAppRenderer
     {
         $total = $this->total;
 
-        $lastPage = max((int)ceil($total / $this->per_page), 1);
+        // The size the products were fetched with: a ?per_page link can differ from the configured one.
+        $perPage = (int)$this->products->perPage() ?: $this->per_page;
+        $lastPage = max((int)ceil($total / $perPage), 1);
         $currentPage = $this->products->currentPage();
-        $from = ($currentPage - 1) * $this->per_page + 1;
-        $to = min($total, $currentPage * $this->per_page);
-        $perPage = $this->products->perPage();
+        $from = ($currentPage - 1) * $perPage + 1;
+        $to = min($total, $currentPage * $perPage);
         ?>
         <div class="fct-shop-paginator-result-wrapper" aria-label="<?php echo esc_attr__('Pagination information', 'fluent-cart'); ?>">
             <div
@@ -678,6 +724,23 @@ class ShopAppRenderer
                         name="per_page"
                         data-fluent-cart-shop-app-paginator-per-page-selector=""
                         aria-label="<?php echo esc_attr__('Select number of items per page', 'fluent-cart'); ?>">
+                    <?php
+                    // The grid's own page size, when it is not one of the sizes below (a builder's 4, say).
+                    $customPerPage = in_array((int) $perPage, [10, 20, 30], true) ? 0 : (int) $perPage;
+                    $customOption = function () use ($customPerPage) {
+                        ?>
+                        <option value="<?php echo esc_attr($customPerPage); ?>" selected>
+                            <?php
+                            /* translators: %s: number of products shown per page */
+                            echo esc_html(sprintf(__('%s Per page', 'fluent-cart'), number_format_i18n($customPerPage)));
+                            ?>
+                        </option>
+                        <?php
+                    };
+                    if ($customPerPage > 0 && $customPerPage < 10) {
+                        $customOption();
+                    }
+                    ?>
                     <option value="10" <?php selected($perPage, 10); ?>>
                         <?php echo esc_html__('10 Per page', 'fluent-cart'); ?>
                     </option>
@@ -687,6 +750,11 @@ class ShopAppRenderer
                     <option value="30" <?php selected($perPage, 30); ?>>
                         <?php echo esc_html__('30 Per page', 'fluent-cart'); ?>
                     </option>
+                    <?php
+                    if ($customPerPage > 30) {
+                        $customOption();
+                    }
+                    ?>
                 </select>
             </div>
         </div>
@@ -696,33 +764,89 @@ class ShopAppRenderer
     public function renderPerPageSelector()
     {
         $total = $this->total;
-        $lastPage = max((int)ceil($total / $this->per_page), 1);
+        $perPage = (int)$this->products->perPage() ?: $this->per_page;
+        $lastPage = max((int)ceil($total / $perPage), 1);
         $currentPage = $this->products->currentPage();
-        $from = ($currentPage - 1) * $this->per_page + 1;
-        $to = min($total, $currentPage * $this->per_page);
-        $perPage = $this->products->perPage();
 
-        if ($lastPage > 1) : ?>
+        if ($lastPage > 1) :
+            /* translators: %d: page number */
+            $goToLabel = __('Go to page %d', 'fluent-cart');
+            $labels = [
+                'prev' => __('Previous page', 'fluent-cart'),
+                'next' => __('Next page', 'fluent-cart'),
+            ];
+            ?>
         <ul class="fct-shop-paginator-pager"
-            data-fluent-cart-shop-app-paginator-items-wrapper="">
-            <?php for ($page = 1; $page <= $lastPage; $page++):
-                $isCurrent = $page == $currentPage;
-                $classes = $isCurrent ? 'active' : '';
+            data-fluent-cart-shop-app-paginator-items-wrapper=""
+            data-label-previous="<?php echo esc_attr($labels['prev']); ?>"
+            data-label-next="<?php echo esc_attr($labels['next']); ?>"
+            data-label-go-to="<?php echo esc_attr($goToLabel); ?>">
+            <?php foreach ($this->pagerItems((int)$currentPage, $lastPage) as $item):
+                $page = $item['page'];
+                $isCurrent = $item['type'] === 'page' && $page == $currentPage;
+                $isArrow = $item['type'] !== 'page';
+                $classes = trim(($isCurrent ? 'active ' : '') . ($isArrow ? 'arrow' : ''));
+                $label = $item['type'] === 'jump' ? sprintf($goToLabel, $page) : Arr::get($labels, $item['type'], '');
                 ?>
-                <li class="pager-number <?php echo $page == $currentPage ? 'active' : ''; ?>">
+                <li class="pager-number <?php echo $isCurrent ? 'active' : ''; ?>">
                     <button
                        class="<?php echo esc_attr($classes); ?>"
                        data-fluent-cart-shop-app-paginator-item
                        data-page="<?php echo esc_attr($page); ?>"
                        <?php if ($isCurrent) : ?>aria-current="page"<?php endif; ?>
+                       <?php if ($label) : ?>aria-label="<?php echo esc_attr($label); ?>"<?php endif; ?>
                     >
-                        <?php echo esc_html($page); ?>
+                        <?php if ($item['type'] === 'prev') : ?>
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.9168 15.8333L7.7906 10.7071C7.40008 10.3166 7.40008 9.68342 7.7906 9.29289L12.9168 4.16667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php elseif ($item['type'] === 'next') : ?>
+                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7.91667 4.16666L13.0429 9.29289C13.4334 9.68341 13.4334 10.3166 13.0429 10.7071L7.91667 15.8333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php elseif ($item['type'] === 'jump') : ?>
+                            <?php echo $page < $currentPage ? '&laquo;' : '&raquo;'; ?>
+                        <?php else : ?>
+                            <?php echo esc_html($page); ?>
+                        <?php endif; ?>
                     </button>
                 </li>
-            <?php endfor; ?>
+            <?php endforeach; ?>
         </ul>
         <?php
         endif;
+    }
+
+    // Same pages as #renderPaginator() in LengthAwarePaginator.js; keep the two in step,
+    // or the pager changes shape after the first AJAX page load.
+    private function pagerItems(int $currentPage, int $lastPage, int $jump = 5): array
+    {
+        $items = [];
+        if ($currentPage > 1) {
+            $items[] = ['type' => 'prev', 'page' => $currentPage - 1];
+        }
+        $items[] = ['type' => 'page', 'page' => 1];
+        if ($currentPage > $jump + 1) {
+            $items[] = ['type' => 'jump', 'page' => max(2, $currentPage - $jump)];
+        }
+        for ($page = $currentPage - 2; $page < $currentPage; $page++) {
+            if ($page > 1) {
+                $items[] = ['type' => 'page', 'page' => $page];
+            }
+        }
+        if ($currentPage !== 1 && $currentPage !== $lastPage) {
+            $items[] = ['type' => 'page', 'page' => $currentPage];
+        }
+        for ($page = $currentPage + 1; $page <= $currentPage + 2; $page++) {
+            if ($page < $lastPage) {
+                $items[] = ['type' => 'page', 'page' => $page];
+            }
+        }
+        if ($currentPage < $lastPage - $jump) {
+            $items[] = ['type' => 'jump', 'page' => min($lastPage - 1, $currentPage + $jump)];
+        }
+        $items[] = ['type' => 'page', 'page' => $lastPage];
+        if ($currentPage < $lastPage) {
+            $items[] = ['type' => 'next', 'page' => $currentPage + 1];
+        }
+
+        return $items;
     }
 
 }

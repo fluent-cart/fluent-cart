@@ -145,7 +145,7 @@
             </div>
 
             <div v-else-if="loading" class="fct-customer-dashboard-loader" aria-live="polite">
-                <el-skeleton :rows="5" animated/>
+                <fct-skeleton :rows="5" animated/>
             </div>
             <div v-else class="fct-customer-dashboard-no-data" role="alert">
                 <p>{{ $t('License could not be loaded. Please try again.') }}</p>

@@ -1,19 +1,15 @@
 <template>
-  <el-button size="small" @click="handleAddNewAddressModal()" :aria-label="translate('Add New Address')"
+  <fct-button size="small" @click="handleAddNewAddressModal()" :aria-label="translate('Add New Address')"
       aria-haspopup="dialog">
     {{ translate('Add New Address') }}
-  </el-button>
-  <el-dialog
+  </fct-button>
+  <fct-dialog
       v-model="addNewAddressModalVisible"
       :append-to-body="true"
       :title="getModalTitle()"
       @closed="resetFormDataAndValidation"
       class="fluent-cart-customer-profile-app fct-customer-root-container"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="addressModalTitleId"
-      :aria-describedby="addressFormDescId"
-      tabindex="-1"
+      aria-describedby="addressFormDescId"
   >
 
     <div class="fct-customer-dashboard-add-address-form-wrap">
@@ -71,25 +67,25 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="addNewAddressModalVisible = false" :aria-label="translate('Cancel')">
+        <fct-button @click="addNewAddressModalVisible = false" :aria-label="translate('Cancel')">
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button v-if="localIsEditAddress" type="primary" :loading="addAddressLoading" @click="editAddress" :aria-label="translate('Update Address')">
+        </fct-button>
+        <fct-button v-if="localIsEditAddress" type="primary" :loading="addAddressLoading" @click="editAddress" :aria-label="translate('Update Address')">
           {{ translate('Update Address') }}
-        </el-button>
-        <el-button v-else type="primary" :loading="addAddressLoading" @click="addAddress" :aria-label="translate('Add Address')">
+        </fct-button>
+        <fct-button v-else type="primary" :loading="addAddressLoading" @click="addAddress" :aria-label="translate('Add Address')">
           {{ translate('Add Address') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 <script>
 import MaterialInput from "@/Bits/Components/MaterialInput.vue";
 import AddressComponent from "../../parts/AddressComponent.vue";
 import translate from "../../../translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import Notify from "@/utils/Notify";
+import Notify from "../../../utils/PortalNotify";
 export default {
   name: "AddressModal",
   components: {DynamicIcon, AddressComponent, MaterialInput},

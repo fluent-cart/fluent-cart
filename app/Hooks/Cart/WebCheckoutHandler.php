@@ -693,30 +693,21 @@ class WebCheckoutHandler
 
     public function handleCartStatusAjax()
     {
-        return CartResource::getStatus();
-    }
+        $status = CartResource::getStatus();
 
-    public function handleCartUpdateAjax()
-    {
-        $requestData = App::request()->all();
-
-        $data = [
-            'item_id'  => (int)Arr::get($requestData, 'item_id'),
-            'quantity' => (int)Arr::get($requestData, 'quantity', 0),
-            'by_input' => Arr::get($requestData, 'by_input', false),
-            'is_custom' => Arr::get($requestData, 'is_custom', false)
-        ];
-
-        $cart = CartResource::update($data, '', $requestData);
-
-        if (is_wp_error($cart)) {
-            return $cart;
+        // Opt-in so add-ons can refresh the drawer after a server-side cart change.
+        if (App::request()->get('with_fragments') && $status) {
+            $status['fragments'] = $this->buildCartDrawerFragments(
+                CartHelper::getCart(null, false),
+                App::request()->all()
+            );
         }
 
-        do_action('fluent_cart/checkout/cart_amount_updated', [
-            'cart' => $cart
-        ]);
+        return $status;
+    }
 
+    protected function buildCartDrawerFragments($cart, $requestData)
+    {
         $itemCount = 0;
 
         if ($cart) {
@@ -734,16 +725,28 @@ class WebCheckoutHandler
             (new CartDrawerRenderer($cartItems, [
                 'item_count' => $itemCount,
                 'open_cart' => $defaultOpen,
-                'is_admin_bar_enabled' => $isAdminBarEnabled
+                'is_admin_bar_enabled' => $isAdminBarEnabled,
+                'cart' => $cart ?: null
             ]))->render();
             $cartDrawerView = ob_get_clean();
 
             ob_start();
-            (new CartRenderer($cartItems))->renderItems($cartItems);
+            (new CartDrawerRenderer($cartItems, ['cart' => $cart ?: null]))->renderAfterItems();
+            $cartDrawerAfterItemsView = ob_get_clean();
+
+            // One renderer: its constructor runs a bundle-child query.
+            $cartRenderer = new CartRenderer($cartItems);
+
+            ob_start();
+            $cartRenderer->renderAfterItems($cart ?: null);
+            $cartPageAfterItemsView = ob_get_clean();
+
+            ob_start();
+            $cartRenderer->renderItems($cartItems);
             $cartDrawerItemsView = ob_get_clean();
 
             ob_start();
-            (new CartRenderer($cartItems))->renderTotal();
+            $cartRenderer->renderTotal();
             $cartDrawerItemsTotalView = ob_get_clean();
 
             ob_start();
@@ -758,6 +761,16 @@ class WebCheckoutHandler
                 [
                     'selector' => '[data-fluent-cart-cart-drawer-container]',
                     'content' => $cartDrawerView,
+                    'type' => 'replace'
+                ],
+                [
+                    'selector' => '[data-fluent-cart-drawer-after-items]',
+                    'content' => $cartDrawerAfterItemsView,
+                    'type' => 'replace'
+                ],
+                [
+                    'selector' => '[data-fluent-cart-page-after-items]',
+                    'content' => $cartPageAfterItemsView,
                     'type' => 'replace'
                 ],
                 [
@@ -789,6 +802,31 @@ class WebCheckoutHandler
             ];
         }
 
+        return $fragments;
+    }
+
+    public function handleCartUpdateAjax()
+    {
+        $requestData = App::request()->all();
+
+        $data = [
+            'item_id'  => (int)Arr::get($requestData, 'item_id'),
+            'quantity' => (int)Arr::get($requestData, 'quantity', 0),
+            'by_input' => Arr::get($requestData, 'by_input', false),
+            'is_custom' => Arr::get($requestData, 'is_custom', false)
+        ];
+
+        $cart = CartResource::update($data, '', $requestData);
+
+        if (is_wp_error($cart)) {
+            return $cart;
+        }
+
+        do_action('fluent_cart/checkout/cart_amount_updated', [
+            'cart' => $cart
+        ]);
+
+        $fragments = $this->buildCartDrawerFragments($cart, $requestData);
 
         return [
             'message' => __('Cart updated successfully', 'fluent-cart'),
@@ -822,39 +860,10 @@ class WebCheckoutHandler
             $allData = AddressHelper::mergeBillingWithShipping($allData);
         }
 
-        $validKeys = [
-            'ship_to_different' => 'form_data.ship_to_different',
-            'billing_email' => 'form_data.billing_email',
-            'billing_first_name' => 'form_data.billing_first_name',
-            'billing_last_name' => 'form_data.billing_last_name',
-            'billing_address_id' => 'form_data.billing_address_id',
-            'shipping_address_id' => 'form_data.shipping_address_id',
-            'billing_company' => 'form_data.billing_company',
-            'order_notes' => 'form_data.order_notes',
+        $validKeys = AddressHelper::quoteFormFields() + [
             'shipping_method_id' => 'shipping_data.shipping_method_id',
-            '_fct_pay_method' => 'form_data._fct_pay_method',
-            'billing_company_name' => 'form_data.billing_company_name',
-            'billing_legal_registration_id' => 'form_data.billing_legal_registration_id',
-            'is_business'          => 'form_data.is_business',
-            'fct_billing_tax_id'        => 'tax_data.vat_number',
+            '_fct_pay_method'    => 'form_data._fct_pay_method',
         ];
-
-        $addressFieldKeys = [
-            'full_name',
-            'country',
-            'address_1',
-            'address_2',
-            'state',
-            'city',
-            'postcode',
-            'company_name',
-            'phone'
-        ];
-
-        foreach ($addressFieldKeys as $addressFieldKey) {
-            $validKeys['billing_' . $addressFieldKey] = 'form_data.billing_' . $addressFieldKey;
-            $validKeys['shipping_' . $addressFieldKey] = 'form_data.shipping_' . $addressFieldKey;
-        }
 
         $prevFlatData = [];
         $prevCheckoutData = $cart->checkout_data;
@@ -1242,8 +1251,9 @@ class WebCheckoutHandler
                 $shippingCountry = Arr::has($changedData, $countryKey) ? Arr::get($changedData, $countryKey) : Arr::get($allData, $countryKey);
                 $shippingState = Arr::has($changedData, $stateKey) ? Arr::get($changedData, $stateKey) : Arr::get($allData, $stateKey);
                 $availableShippingMethods = AddressHelper::getShippingMethods($shippingCountry, $shippingState, null, null, [
-                    'postcode' => Arr::has($changedData, $prefix . 'postcode') ? Arr::get($changedData, $prefix . 'postcode') : Arr::get($allData, $prefix . 'postcode'),
-                    'city'     => Arr::has($changedData, $prefix . 'city') ? Arr::get($changedData, $prefix . 'city') : Arr::get($allData, $prefix . 'city'),
+                    'postcode'  => Arr::has($changedData, $prefix . 'postcode') ? Arr::get($changedData, $prefix . 'postcode') : Arr::get($allData, $prefix . 'postcode'),
+                    'city'      => Arr::has($changedData, $prefix . 'city') ? Arr::get($changedData, $prefix . 'city') : Arr::get($allData, $prefix . 'city'),
+                    'form_data' => array_merge($allData, $changedData),
                 ] + AddressHelper::quoteContact(array_merge($allData, $changedData)));
 
                 // WP_Error's $errors/$error_data are public, so foreach happily walks

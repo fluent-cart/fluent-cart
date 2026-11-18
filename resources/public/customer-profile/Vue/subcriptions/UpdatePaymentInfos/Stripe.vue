@@ -1,5 +1,5 @@
 <template>
-    <div role="form" aria-labelledby="stripe-payment-heading">
+    <div class="fct-update-payment-gateway" role="form" aria-labelledby="stripe-payment-heading">
         <h2 id="stripe-payment-heading" class="sr-only">{{ translate('Stripe Payment Method') }}</h2>
 
         <div class="stripe-card-form" v-loading="loading">
@@ -38,19 +38,13 @@
                         {{ translate('Select billing address') }}
                     </label>
 
-                    <el-select
+                    <fct-select
                         id="billing-select"
                         v-model="selectedAddress"
                         :placeholder="translate('Select')"
                         aria-describedby="billing-help"
-                    >
-                        <el-option
-                            v-for="address in getBillingAddresses"
-                            :key="address.id"
-                            :label="getAddress(address.formatted_address)"
-                            :value="address.id"
-                        />
-                    </el-select>
+                        :options="getBillingAddresses.map((address) => ({label: getAddress(address.formatted_address), value: address.id}))"
+                    />
 
                     <small id="billing-help" class="sr-only">
                         {{ translate('Choose an existing billing address or add a new one in profile settings.') }}
@@ -86,18 +80,17 @@
         </div>
 
         <div class="dialog-footer">
-            <el-button size="small" @click="closeUpdatePaymentModal" :aria-label="translate('Cancel')">{{ translate('Cancel') }}</el-button>
-            <el-button 
+            <fct-button size="small" @click="closeUpdatePaymentModal" :aria-label="translate('Cancel')">{{ translate('Cancel') }}</fct-button>
+            <fct-button 
                 size="small" 
                 type="primary" 
                 @click="processNewPaymentMethod" 
                 :loading="updating || switching"
                 :disabled="updating || switching || invalidCard"
-                :aria-disabled="updating || switching || invalidCard"
                 :aria-label="updateMethod ? translate('Update') : translate('Reactivate')"
             >
                 {{ updateMethod ? translate('Update') : translate('Reactivate') }}
-            </el-button>
+            </fct-button>
         </div>
     </div>
 </template>
@@ -432,73 +425,3 @@ export default {
     }
 };
 </script>
-
-
-
-<style scoped>
-.dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
-}
-.dialog-footer .el-button {
-    margin-left: 0;
-}
-
-.stripe-card-form {
-    width: 100%;
-    margin: 0 auto;
-    font-family: sans-serif;
-}
-
-.stripe-element {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 12px 15px;
-    background: white;
-}
-
-.stripe-element--focus {
-    border-color: #666;
-    outline: none;
-}
-
-.error-message {
-    color: #f56c6c;
-    margin-top: 10px;
-}
-
-.success-message {
-    color: #67c23a;
-    margin-top: 10px;
-}
-
-.rate-limit-notice {
-    background-color: #f0f9ff;
-    border: 1px solid #bae6fd;
-    border-radius: 4px;
-    padding: 12px 15px;
-    margin-bottom: 20px;
-}
-
-.rate-limit-notice-warning {
-    background-color: #fef3c7;
-    border: 1px solid #fcd34d;
-}
-
-.rate-limit-text {
-    margin: 0;
-    color: #0369a1;
-    font-size: 14px;
-}
-
-.rate-limit-notice-warning .rate-limit-text {
-    color: #92400e;
-}
-
-.rate-limit-text strong {
-    font-weight: 600;
-}
-</style>
-  

@@ -1,97 +1,37 @@
 <template>
   <div class="fct-order-bulk-action-modal">
-    <el-dropdown trigger="click" class="fct-more-option-wrap" popper-class="fct-dropdown"
-                 @command="handleCommandAction">
-      <el-button v-if="triggerMode === 'button'">
+    <fct-dropdown trigger="click" class="fct-more-option-wrap" :items="actionItems" @command="handleCommandAction">
+      <fct-button v-if="triggerMode === 'button'">
         {{ translate('More Action') }}
         <DynamicIcon name="ChevronDown"/>
-      </el-button>
+      </fct-button>
       <span v-else class="more-btn">
           <DynamicIcon name="More"/>
       </span>
-      <template #dropdown>
-        <el-dropdown-menu>
-          <div v-if="trigger_action !== 'add'">
-            <el-dropdown-item command="shipping_status" v-if="!isCancelled && isPhysicalOrder">
-              <DynamicIcon name="ShipmentStatus"/>
-              {{ translate('Change Shipping Status') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="delete_order" v-if="order.mode ==='test' ||isCancelled" class="item-destructive">
-              <DynamicIcon name="Delete"/>
-              {{ translate('Delete order') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="order_complete" v-if="order.status === 'processing'">
-              <DynamicIcon name="Check"/>
-              {{ translate('Mark As Complete') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="order_cancel" v-if="!isCancelled">
-              <DynamicIcon name="Cross"/>
-              {{ translate('Cancel Order') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="order_processing" v-if="order.status === 'completed'">
-              <DynamicIcon name="Refresh"/>
-              {{ translate('Back to processing') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="sync_order_statuses" v-if="!isCompleted && !isCancelled">
-              <DynamicIcon name="Refresh"/>
-              {{ translate('Sync Order Statuses') }}
-            </el-dropdown-item>
-            <el-dropdown-item command="order_receipt" class="item-link">
-              <a target="_blank" :href="order.receipt_url">
-                <DynamicIcon name="External"/>
-                {{ translate('Receipt') }}
-              </a>
-            </el-dropdown-item>
-            <el-dropdown-item command="generate_missing_licenses" v-if="order?.has_missing_licenses">
-              <DynamicIcon name="Files"/>
-              {{ translate('Generate missing licenses') }}
-            </el-dropdown-item>
-
-            <el-dropdown-item command="refund_order" class="bulk-action-only-mobile" v-if="shouldShowRefund">
-              <DynamicIcon name="Money"/>
-              {{ translate('Refund') }}
-            </el-dropdown-item>
-
-            <el-dropdown-item :command="{
-                action: 'order_edit',
-                isEditingItem: isEditingItem
-            }" class="bulk-action-only-mobile" :disabled="shouldDisableEditing">
-              <DynamicIcon name="Edit"/>
-              <template v-if="!isEditingItem">
-                <template v-if="shouldDisableEditing">
-                  <el-tooltip
-                      placement="top"
-                      popper-class="fct-tooltip fct-disabled-edit-order-tooltip"
-                  >
-                    <template #content>
-                      {{ warningMessage }}
-                    </template>
-                    {{ translate("Edit") }}
-                  </el-tooltip>
-                </template>
-
-                <template v-else>
-                  {{ translate("Edit") }}
-                </template>
-              </template>
-
-              <template v-else>
-                {{ translate("Disable Editing") }}
-              </template>
-            </el-dropdown-item>
-
-
-
-          </div>
-        </el-dropdown-menu>
+      <template #item="{item}">
+        <a v-if="item.href" target="_blank" :href="item.href">
+          <DynamicIcon :name="item.icon"/>
+          {{ item.label }}
+        </a>
+        <template v-else>
+          <DynamicIcon :name="item.icon"/>
+          <fct-tooltip v-if="item.tooltip" placement="top" popper-class="fct-disabled-edit-order-tooltip" :content="item.tooltip">
+            {{ item.label }}
+          </fct-tooltip>
+          <template v-else>{{ item.label }}</template>
+        </template>
       </template>
-    </el-dropdown>
+    </fct-dropdown>
 
-    <el-dialog v-model="showModal" :title="translate('Update Shipping Status')">
-      <el-form :data="status_data" label-position="top">
-        <el-form-item v-if="selected_action === 'shipping_status' || selected_action === 'all'"
-                      :label="translate('Shipping Status')">
-          <el-select v-model="status_data.shipping_status" :placeholder="translate('Select Shipping Status')">
+    <fct-dialog v-model="showModal" :title="translate('Update Shipping Status')">
+      <div>
+          <fct-select
+              v-if="selected_action === 'shipping_status' || selected_action === 'all'"
+              v-model="status_data.shipping_status"
+              :label="translate('Shipping Status')"
+              :placeholder="translate('Select Shipping Status')"
+              :options="shippingStatusOptions"
+          />
             <!--
               editable_shipping_statuses (not shipping_statuses) — `partially_shipped`
               is a DERIVED status, computed from the shipment records. Offering it here
@@ -104,26 +44,11 @@
               when the bound value has no matching option, so surface it as a
               disabled option purely to give the select a label to render.
             -->
-            <el-option
-                v-if="status_data.shipping_status && !appVars.editable_shipping_statuses[status_data.shipping_status]"
-                :key="status_data.shipping_status"
-                :label="appVars.shipping_statuses[status_data.shipping_status] || status_data.shipping_status"
-                :value="status_data.shipping_status"
-                disabled
-            />
-            <el-option
-                v-for="(statusName, status) in appVars.editable_shipping_statuses"
-                :key="status"
-                :label="statusName"
-                :value="status"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+      </div>
       <span class="dialog-footer">
-          <el-button @click="changeShippingStatus()" type="primary">{{ translate('Update') }}</el-button>
+          <fct-button @click="changeShippingStatus()" type="primary">{{ translate('Update') }}</fct-button>
       </span>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 
@@ -159,8 +84,44 @@ export default {
     }
   },
   computed: {
+    actionItems() {
+      if (this.trigger_action === 'add') {
+        return [];
+      }
+      const editDisabled = !this.isEditingItem && this.shouldDisableEditing;
+      return [
+        !this.isCancelled && this.isPhysicalOrder && {command: 'shipping_status', icon: 'ShipmentStatus', label: translate('Change Shipping Status')},
+        (this.order.mode === 'test' || this.isCancelled) && {command: 'delete_order', icon: 'Delete', label: translate('Delete order'), danger: true},
+        this.order.status === 'processing' && {command: 'order_complete', icon: 'Check', label: translate('Mark As Complete')},
+        !this.isCancelled && {command: 'order_cancel', icon: 'Cross', label: translate('Cancel Order')},
+        this.order.status === 'completed' && {command: 'order_processing', icon: 'Refresh', label: translate('Back to processing')},
+        !this.isCompleted && !this.isCancelled && {command: 'sync_order_statuses', icon: 'Refresh', label: translate('Sync Order Statuses')},
+        {command: 'order_receipt', icon: 'External', label: translate('Receipt'), href: this.order.receipt_url},
+        this.order?.has_missing_licenses && {command: 'generate_missing_licenses', icon: 'Files', label: translate('Generate missing licenses')},
+        this.shouldShowRefund && {command: 'refund_order', icon: 'Money', label: translate('Refund'), class: 'bulk-action-only-mobile'},
+        {
+          command: {action: 'order_edit', isEditingItem: this.isEditingItem},
+          icon: 'Edit',
+          label: this.isEditingItem ? translate('Disable Editing') : translate('Edit'),
+          tooltip: editDisabled ? this.warningMessage : '',
+          class: 'bulk-action-only-mobile',
+          disabled: this.shouldDisableEditing,
+        },
+      ].filter(Boolean);
+    },
     isPhysicalOrder() {
       return this.order?.fulfillment_type === FULFILLMENT_TYPE_PHYSICAL;
+    },
+    shippingStatusOptions() {
+      // editable_shipping_statuses, not shipping_statuses: `partially_shipped` is derived from the
+      // shipment records, and hand-setting it zeroes every item's fulfilled_quantity server-side.
+      const current = this.status_data.shipping_status;
+      const options = Object.entries(this.appVars.editable_shipping_statuses).map(([status, statusName]) => ({label: statusName, value: status}));
+      // A current derived status has no editable option; show it disabled so the select prints its label, not the slug.
+      if (current && !this.appVars.editable_shipping_statuses[current]) {
+        options.unshift({label: this.appVars.shipping_statuses[current] || current, value: current, disabled: true});
+      }
+      return options;
     },
   },
   methods: {

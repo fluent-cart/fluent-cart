@@ -1,21 +1,20 @@
 <template>
   <div v-loading="loading" class="fluent_cart_chained_filter">
-    <el-row :gutter="0">
-      <el-col :span="12" v-for="(options, optionKey) in field.fields_options" :key="optionKey"
-              class="fluent_carteach_filter">
+    <div class="flex flex-wrap">
+      <div v-for="(options, optionKey) in field.fields_options" :key="optionKey"
+              class="w-1/2 fluent_carteach_filter">
         <label>{{ field.options_labels[optionKey].label }}</label>
-        <el-select
+        <fct-select
             @change="handleSlectChange(optionKey)"
             filterable
             clearable
             :placeholder="field.options_labels[optionKey].placeholder"
             :multiple="field.options_labels[optionKey].type == 'multi-select'"
-            v-model="value[optionKey]">
-          <el-option v-for="(option,optionId) in options" :key="optionId" :value="optionId"
-                     :label="option"></el-option>
-        </el-select>
-      </el-col>
-    </el-row>
+            v-model="value[optionKey]"
+            :options="toOptions(options)"
+        />
+      </div>
+    </div>
   </div>
 </template>
 <script type="text/babel">
@@ -35,6 +34,9 @@ export default {
     this.app_ready = true;
   },
   methods: {
+    toOptions(options) {
+      return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+    },
     fetchSettings() {
       this.loading = true;
       this.$get(this.field.remote_url, {

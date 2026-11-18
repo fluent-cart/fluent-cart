@@ -19,7 +19,7 @@ use Tests\Support\RateFixture;
 
 /**
  * Coupons applied on the Create Order screen when the order's currency has
- * pricing rules (dev-docs/multi-currency/plan.md §11.7, §15.4). The screen
+ * pricing rules (dev-docs/multi-currency/06-orders-subscriptions.md). The screen
  * applies coupons to the base prices the admin entered; the order's line
  * prices follow the currency's rules. A percentage coupon is a percentage of
  * the line the order charges; a fixed coupon converts plainly.

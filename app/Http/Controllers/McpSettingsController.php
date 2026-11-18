@@ -39,7 +39,35 @@ class McpSettingsController extends Controller
             'plugins_url'          => admin_url('plugins.php'),
             'current_user_login'   => ($user && $user->exists()) ? $user->user_login : '',
             'is_local_dev'         => $this->isLocalDev(),
+            // The FluentHub one-URL connection, or null: the card then shows as before.
+            'hub'                  => MCPInit::hubState(),
         ];
+    }
+
+    /**
+     * Turn on the FluentHub MCP server, or another Fluent plugin's MCP, from the card.
+     * Turn on only. FluentHub checks the capability again and does the switching.
+     */
+    public function enableHub(Request $request)
+    {
+        if (!current_user_can('manage_options')) {
+            return $this->sendError([
+                'message' => __('Sorry, you do not have permission to change the MCP setting.', 'fluent-cart'),
+            ], 403);
+        }
+
+        $target = $request->get('target', 'hub');
+        $target = is_string($target) ? sanitize_key($target) : '';
+        $result = MCPInit::enableHub($target === '' ? 'hub' : $target);
+
+        if (!$result['ok']) {
+            return $this->sendError(['message' => $result['message']], $result['status']);
+        }
+
+        return $this->sendSuccess([
+            'message' => $result['message'],
+            'hub'     => MCPInit::hubState(),
+        ]);
     }
 
     /**
@@ -117,6 +145,8 @@ class McpSettingsController extends Controller
 
         return $this->sendSuccess([
             'mcp_enabled' => $stored,
+            // FluentHub serves FluentCart only while this switch is on, so its state changed too
+            'hub'         => MCPInit::hubState(),
             'message'     => $stored
                 ? __('MCP enabled. AI agents with a valid app password can now reach the FluentCart tools.', 'fluent-cart')
                 : __('MCP disabled. The endpoint will reject requests until re-enabled.', 'fluent-cart'),
@@ -162,6 +192,8 @@ class McpSettingsController extends Controller
      */
     private function buildSnippet($client, $endpoint, $isLocalDev)
     {
+        // The site address is in the name: an AI app refuses a second connection with a name it has.
+        $name  = MCPInit::clientServerName();
         $basic = '<base64(your-username:application-password)>';
         $user  = '<your-username>';
         $pass  = '<your-application-password>';
@@ -179,7 +211,7 @@ class McpSettingsController extends Controller
                 }
                 $snippet = wp_json_encode([
                     'mcpServers' => [
-                        'fluent-cart' => [
+                        $name => [
                             'command' => 'npx',
                             'args'    => ['-y', '@automattic/mcp-wordpress-remote@latest'],
                             'env'     => $env,
@@ -192,7 +224,7 @@ class McpSettingsController extends Controller
             case 'cursor':
                 $snippet = wp_json_encode([
                     'mcpServers' => [
-                        'fluent-cart' => [
+                        $name => [
                             'url'     => $endpoint,
                             'type'    => 'http',
                             'headers' => ['Authorization' => 'Basic ' . $basic],
@@ -204,7 +236,7 @@ class McpSettingsController extends Controller
 
             case 'codex':
                 $snippet = "Settings → Connect to a custom MCP\n\n"
-                    . "Name:       fluent-cart\n"
+                    . "Name:       {$name}\n"
                     . "Transport:  Streamable HTTP\n"
                     . "URL:        {$endpoint}\n\n"
                     . "Header:\n  Key:    Authorization\n  Value:  Basic {$basic}";
@@ -228,7 +260,7 @@ class McpSettingsController extends Controller
                 $client  = 'claude-code';
                 $snippet = "claude mcp add \\\n"
                     . "  --transport http \\\n"
-                    . "  fluent-cart {$endpoint} \\\n"
+                    . "  {$name} {$endpoint} \\\n"
                     . "  --header \"Authorization: Basic {$basic}\"";
                 $instructions = __('Run this in your terminal where Claude Code is installed, with base64 of "username:application-password".', 'fluent-cart');
                 break;

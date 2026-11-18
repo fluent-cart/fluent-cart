@@ -6,8 +6,19 @@ use FluentCart\Framework\Support\Arr;
 
 class IntegrationHelper
 {
-    public static function validateAndFormatIntegrationFeedSettings(array $integration, $args = [])
+    public static function validateAndFormatIntegrationFeedSettings($integration, $args = [])
     {
+        // The admin sends the settings as a JSON string; API callers may send an object
+        if (is_string($integration)) {
+            $integration = json_decode($integration, true);
+        }
+
+        if (!is_array($integration)) {
+            $message = __('Integration settings must be a JSON object.', 'fluent-cart');
+
+            return new \WP_Error('integration_validation_error', $message, ['integration' => $message]);
+        }
+
         $defaultSettings = [
             'provider'       => '',
             'scope'          => 'product',

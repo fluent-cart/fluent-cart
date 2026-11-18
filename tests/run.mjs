@@ -5,7 +5,7 @@
  *
  *   npm test -- wp-cli                 whole wp-cli      npm test -- codeception unit
  *   npm test -- wp-cli smoke orders    one tier + filter  npm test -- codeception functional Rest/Orders/CreateOrderCest
- *   npm test -- js                                      npm test -- playwright admin/orders --headed
+ *   npm test -- js
  *   npm test -- e2e                                     npm test -- safe   (wp-cli + codeception unit + js)
  *
  * Every module keeps its own runner; this file only picks and sequences them.
@@ -37,8 +37,7 @@ const MODULES = [
     { id: 'codeception integration',      group: 'codeception',                                    cmd: php('Integration'),    blurb: 'DESTRUCTIVE: installs WP into the test DB', destructive: true },
     { id: 'codeception functional',       group: 'codeception',                                    cmd: php('Functional'),     blurb: 'DESTRUCTIVE: REST contracts via rest_do_request()', destructive: true },
     { id: 'codeception integration-pro',  group: 'codeception',                                    cmd: php('IntegrationPro'), blurb: 'DESTRUCTIVE: needs fluent-cart-pro installed', destructive: true },
-    { id: 'js',                   group: 'js / playwright',                           cmd: (a) => [NODE, 'node_modules/vitest/vitest.mjs', 'run', ...a], blurb: 'Vitest: admin request layer, stores, formatters' },
-    { id: 'playwright',              group: 'js / playwright',                           cmd: (a) => [NODE, 'tests/playwright/runner.mjs', ...a], blurb: 'Playwright against a live site; slow. Also: status, serve, <suite>, --headed, --firefox, --safari' },
+    { id: 'js',                   group: 'js',                           cmd: (a) => [NODE, 'node_modules/vitest/vitest.mjs', 'run', ...a], blurb: 'Vitest: admin request layer, stores, formatters' },
 ];
 const COMPOSITES = {
     codeception: { members: ['codeception unit', 'codeception integration', 'codeception functional', 'codeception integration-pro'], blurb: 'unit, integration, functional, then integration-pro' },
@@ -86,7 +85,6 @@ async function runOne({ module, args }) {
     const env = { ...process.env };
     if (module.destructive && dbAllow) env.FCT_TEST_DB_ALLOW = dbAllow;
     const [cmd, ...cmdArgs] = module.cmd(args);
-    console.log(`\n▶ ${module.id}${args.length ? ' ' + args.join(' ') : ''}\n`);
     const { status, error } = spawnSync(cmd, cmdArgs, { cwd: ROOT, stdio: 'inherit', env });
     if (error) { console.error(error.message); return 1; }
     return status ?? 1;
@@ -107,7 +105,7 @@ function menuText() {
     let group = '';
     MODULES.forEach((m, i) => {
         const g = m.group.startsWith('wp-cli') ? 'wp-cli (REAL store, read-mostly)'
-            : m.group.startsWith('codeception') ? 'codeception (DISPOSABLE database)' : 'js / playwright';
+            : m.group.startsWith('codeception') ? 'codeception (DISPOSABLE database)' : 'js';
         if (g !== group) { group = g; lines.push(`  ${g}`); }
         lines.push(`  ${String(i + 1).padStart(3)}  ${m.id.padEnd(22)} ${m.blurb}`);
     });
@@ -141,7 +139,7 @@ function help() {
 FluentCart test commands
 
   npm test                      menu (terminal only)
-  npm test -- <module> [args]   run one module; aliases: npm run test:wp-cli, test:codeception, test:unit, test:js, test:playwright, test:e2e
+  npm test -- <module> [args]   run one module; aliases: npm run test:wp-cli, test:codeception, test:unit, test:js, test:e2e
 
   Modules`);
     for (const m of MODULES) console.log(`    ${m.id.padEnd(pad)} ${m.blurb}`);
@@ -157,10 +155,7 @@ FluentCart test commands
     FCT_TEST_DB_ALLOW="host:db"  opt-in for the destructive suites; the menu asks once per run
     FLUENTCART_NO_TEST_INSTALL=1 never install Codeception or create .env; fail with instructions
 
-  playwright arguments            <suite> or <suite>/<test>, status, serve [port]; --headed, --chrome, --firefox, --safari
-    HEADED=true BROWSER=firefox PACE=500 MAX_BROWSERS=1 CI=true FLUENTCART_NO_BROWSER_INSTALL=1
-
-  Config files: tests/codeception/.env (PHP suites), tests/playwright/.env (Playwright). Map: tests/README.md
+  Config files: tests/codeception/.env (PHP suites). Map: tests/README.md
 `);
 }
 

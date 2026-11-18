@@ -1,6 +1,7 @@
 import {afterAll, beforeAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin, popoverStub} from './support/fct-stubs.js';
 
 /**
  * A Shippo label is billed in USD; on a BDT order the rate picker, the cost
@@ -99,6 +100,7 @@ const mount = async (component, props) => {
         .component('ElPopconfirm', PopconfirmTitle)
         .component('ElDrawer', DrawerStub)
         .component('ElPopover', stub)
+        .use(fctPlugin({FctDatePicker: stub, FctSelect: stub, FctDropdown: stub, FctDialog: DrawerStub, FctPopover: popoverStub({confirm: PopconfirmTitle, popover: stub})}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await flush();

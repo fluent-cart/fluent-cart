@@ -250,7 +250,7 @@ class ChangeOrderStatusCest
      *    fully refunded through the refund action."
      *
      * Refunds go through POST /orders/{order_id}/refund; the transaction-status action
-     * refuses to change a succeeded charge (FC-SEC-09).
+     * refuses to change a succeeded charge.
      */
     public function adminSeesOrderRefundTimestampRecordedAutomaticallyWhenFullyRefundedThroughTheRefundAction(FunctionalTester $I): void
     {

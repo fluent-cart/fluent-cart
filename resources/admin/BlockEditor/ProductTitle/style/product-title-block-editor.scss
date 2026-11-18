@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./product-title-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./product-title-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 .fct-inspector-control-wrap .components-toggle-control__label {
   display: unset !important;

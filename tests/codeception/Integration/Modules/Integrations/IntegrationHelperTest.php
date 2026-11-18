@@ -96,6 +96,21 @@ class IntegrationHelperTest extends WPTestCase
         $this->assertEmpty($result['enabled'], 'a disabled feed stays disabled and skips the required-field check');
     }
 
+    public function test_validate_accepts_a_json_string_and_rejects_a_non_object(): void
+    {
+        $args = ['provider' => $this->provider, 'scope' => 'global'];
+        $settings = ['enabled' => 'yes', 'name' => 'Feed'];
+
+        $this->assertSame(
+            IntegrationHelper::validateAndFormatIntegrationFeedSettings($settings, $args),
+            IntegrationHelper::validateAndFormatIntegrationFeedSettings(wp_json_encode($settings), $args)
+        );
+
+        $result = IntegrationHelper::validateAndFormatIntegrationFeedSettings('not json', $args);
+        $this->assertInstanceOf(\WP_Error::class, $result);
+        $this->assertArrayHasKey('integration', (array) $result->get_error_data());
+    }
+
     // Spec 166: final value filtered through integration_saving_data_{provider}
     public function test_validate_runs_saving_data_filter(): void
     {

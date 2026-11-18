@@ -1,2 +1,3 @@
-@config "./product-description-block-editor.config.js";
-@tailwind utilities;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-description-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);

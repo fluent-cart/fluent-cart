@@ -1,79 +1,60 @@
 <template>
-  <div class="setting-wrap">
-    <SettingsHeader
-        :heading="currentRouteTitle"
-        :loading="saving"
-        @on-save="saveSettings"
-    />
+  <SettingsPage
+      :heading="currentRouteTitle"
+      :loading="saving"
+      @on-save="saveSettings"
+  >
+    <AdminNotice/>
+
+    <template v-if="!hasFormFieldsError">
+      <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
+        <fct-skeleton animated>
+          <div class="grid gap-3 mb-6">
+            <fct-skeleton variant="p" class="w-[20%]"/>
+            <fct-skeleton variant="p"/>
+          </div>
+          <div class="grid gap-3 mb-6">
+            <fct-skeleton variant="p" class="w-[20%]"/>
+            <fct-skeleton variant="p"/>
+          </div>
+          <div class="grid gap-3 mb-6">
+            <fct-skeleton variant="p" class="w-[20%]"/>
+            <fct-skeleton variant="p"/>
+          </div>
+          <div class="grid gap-3">
+            <fct-skeleton variant="p" class="w-[20%]"/>
+            <fct-skeleton variant="p"/>
+          </div>
+        </fct-skeleton>
+      </div>
+      <template v-if="!formLoading">
+        <div v-if="form.isReady" class="relative">
 
 
-    <div class="setting-wrap-inner">
-      <AdminNotice/>
+          <Section v-if="loading">
+            <fct-skeleton :rows="5" animated/>
+          </Section>
 
-      <template v-if="!hasFormFieldsError">
-        <div class="bg-white rounded p-6 dark:bg-dark-700" v-if="formLoading">
-          <el-skeleton :loading="formLoading" animated>
-            <template #template>
-              <div class="grid gap-3 mb-6">
-                <el-skeleton-item variant="p" class="w-[20%]"/>
-                <el-skeleton-item variant="p"/>
-              </div>
-              <div class="grid gap-3 mb-6">
-                <el-skeleton-item variant="p" class="w-[20%]"/>
-                <el-skeleton-item variant="p"/>
-              </div>
-              <div class="grid gap-3 mb-6">
-                <el-skeleton-item variant="p" class="w-[20%]"/>
-                <el-skeleton-item variant="p"/>
-              </div>
-              <div class="grid gap-3">
-                <el-skeleton-item variant="p" class="w-[20%]"/>
-                <el-skeleton-item variant="p"/>
-              </div>
-            </template>
-          </el-skeleton>
+          <VueForm
+              v-if="!loading"
+              :form="form"
+              :showSubmitButton="!isAppearanceRoute"
+
+              @on-submit-button-click="saveSettings"
+              :submitButtonText="translate('Save')"
+              :loading="saving"
+              @on-change="(value) => {}"
+              :validation-errors="validationErrors"
+          />
         </div>
-        <template v-if="!formLoading">
-          <el-form v-if="form.isReady" class="relative">
-
-
-            <Card v-if="loading">
-              <CardBody>
-                <el-skeleton
-                    :rows="5"
-                    animated
-                >
-                  <el-skeleton-item />
-                  <el-skeleton-item variant="text" />
-                  <el-skeleton-item variant="text" />
-                </el-skeleton>
-              </CardBody>
-            </Card>
-
-            <VueForm
-                v-if="!loading"
-                :form="form"
-                :showSubmitButton="!isAppearanceRoute"
-
-                @on-submit-button-click="saveSettings"
-                :submitButtonText="translate('Save')"
-                :loading="saving"
-                @on-change="(value) => {}"
-                :validation-errors="validationErrors"
-            />
-          </el-form>
-        </template>
       </template>
-      <template v-else>
-        <Card>
-          <CardBody>
-            <p>{{ translate('There is an error in the form fields. Please try reloading the page.') }}</p>
-          </CardBody>
-        </Card>
-      </template>
-    </div>
-  </div>
-  <!-- .setting-wrap -->
+    </template>
+    <template v-else>
+      <Section>
+        <p>{{ translate('There is an error in the form fields. Please try reloading the page.') }}</p>
+      </Section>
+    </template>
+  </SettingsPage>
 </template>
 
 <script setup>
@@ -90,9 +71,8 @@ import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
 import {onBeforeRouteLeave, useRoute} from 'vue-router';
 import useKeyboardShortcuts from "@/utils/KeyboardShortcut";
-import CardBody from "@/Bits/Components/Card/CardBody.vue";
-import Card from "@/Bits/Components/Card/Card.vue";
-import SettingsHeader from "./Parts/SettingsHeader.vue";
+import SettingsPage from "./Parts/SettingsPage.vue";
+import Section from "@/Bits/Components/Layout/Section.vue";
 import AdminNotice from "@/Bits/Components/AdminNotice.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import CurrencyFormatter from "@/utils/support/CurrencyFormatter";

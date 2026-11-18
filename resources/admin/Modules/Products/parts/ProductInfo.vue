@@ -8,6 +8,8 @@ import {translateNumber} from "@/utils/translator/Translator";
 import translate from "@/utils/translator/Translator";
 import GutenbergEditor from "@/Bits/Components/Inputs/GutenbergEditor.vue";
 import * as Fluid from "@/Bits/Components/FluidTab/FluidTab.js";
+import BuilderAddonNotice from "./BuilderAddonNotice.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 const props = defineProps({
   product: Object,
@@ -66,29 +68,25 @@ watch(() => props.productEditModel.data.discardKey, () => {
   <div class="fct-product-info-wrap">
     <Card.Container>
       <Card.Body>
-        <el-form
-            label-position="top"
-            require-asterisk-position="right"
-            @submit.prevent
-        >
+        <form @submit.prevent>
           <div class="fct-admin-input-wrapper">
-            <el-form-item :label="translate('Title')" required>
-              <el-input :class="productEditModel.hasValidationError('post_title') ? 'is-error' : ''"
-                        :id="`post_title`"
-                        :placeholder="translate('Title')"
-                        type="text" v-model="product.post_title"
-                        @input="value => {productEditModel.onChangeInputField('post_title',value)}"
-                        @focus="productEditModel.clearValidationError(`post_title`)">
-              </el-input>
-              <ValidationError :validation-errors="productEditModel.validationErrors"
-                               field-key="post_title"/>
-            </el-form-item>
+            <fct-input :class="productEditModel.hasValidationError('post_title') ? 'is-error' : ''"
+                       id="post_title"
+                       :label="translate('Title')"
+                       required
+                       :validation-errors="productEditModel.validationErrors"
+                       field-key="post_title"
+                       :placeholder="translate('Title')"
+                       type="text" v-model="product.post_title"
+                       @input="value => {productEditModel.onChangeInputField('post_title',value)}"
+                       @focus="productEditModel.clearValidationError(`post_title`)"/>
           </div>
 
 
           <div class="fct-admin-input-wrapper">
-            <el-form-item :label="translate('Short description')">
-              <el-input
+            <Field :label="translate('Short description')" v-slot="field">
+              <fct-input
+                  :id="field.id"
                   class="fct-short-desc-input"
                   @input="value => {productEditModel.onChangeInputField('post_excerpt',value)}"
                   v-model="product.post_excerpt"
@@ -108,7 +106,7 @@ watch(() => props.productEditModel.data.discardKey, () => {
                 <ValidationError :validation-errors="productEditModel.validationErrors"
                                  field-key="post_excerpt"/>
               </div>
-            </el-form-item>
+            </Field>
           </div>
 
 
@@ -136,7 +134,7 @@ watch(() => props.productEditModel.data.discardKey, () => {
             </div>
           </el-dialog> -->
 
-        </el-form>
+        </form>
       </Card.Body>
     </Card.Container>
 
@@ -162,14 +160,9 @@ watch(() => props.productEditModel.data.discardKey, () => {
       </Card.Header>
 
       <Card.Body>
-        <el-form
-            label-position="top"
-            require-asterisk-position="right"
-            @submit.prevent
-        >
+        <form @submit.prevent>
 
           <div class="fct-custom-long-desc-wrap fct-admin-input-wrapper">
-            <el-form-item>
               <div class="custom-wp-editor-wrapper relative">
 
                 <!-- Tab Content -->
@@ -193,9 +186,9 @@ watch(() => props.productEditModel.data.discardKey, () => {
 
 
               </div>
-            </el-form-item>
           </div>
-        </el-form>
+        </form>
+        <BuilderAddonNotice/>
       </Card.Body>
     </Card.Container>
 
@@ -204,6 +197,8 @@ watch(() => props.productEditModel.data.discardKey, () => {
 </template>
 
 <style lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../../tailwind.config.mjs";
 .fct-custom-gutenberg-editor-wrap {
   @apply relative overflow-hidden;
   .fct-custom-gutenberg-editor-wrap-overlay {
@@ -221,15 +216,15 @@ watch(() => props.productEditModel.data.discardKey, () => {
 
 .fct-custom-gutenberg-editor-dialog {
   overscroll-behavior: contain;
-  @apply z-[99999999] #{!important};
+  @apply z-[99999999]!;
   .el-overlay-dialog {
     overscroll-behavior: contain;
-    @apply h-[100vh] overflow-hidden block bg-white #{!important};
+    @apply h-[100vh]! overflow-hidden! block! bg-white!;
     .el-dialog {
-      @apply w-full h-full m-0 rounded-none shadow-none #{!important};
+      @apply w-full! h-full! m-0! rounded-none! shadow-none!;
       .el-dialog__body {
         padding: 0;
-        @apply h-[calc(100%-22px)] #{!important};
+        @apply h-[calc(100%-22px)]!;
         .fct-custom-gutenberg-editor-wrap {
           height: 100%;
 

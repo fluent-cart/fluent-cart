@@ -1,21 +1,15 @@
+import LegacyProductCard from './LegacyProductCard';
+import ProductCardTemplate from './ProductCardTemplate';
+import {NEW_CARD_ATTRIBUTES} from './productCardDefaults';
 import {ProductCard} from "@/BlockEditor/Icons";
-import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
-import apiFetch from "@wordpress/api-fetch";
-import {addQueryArgs} from "@wordpress/url";
-import InspectorSettings from "@/BlockEditor/ProductCard/Components/InspectorSettings";
-import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
 import ProductCardPreview from "./ProductCard.png";
 
 
-const { useBlockProps } = wp.blockEditor;
+const { InnerBlocks } = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
-const {useEffect, useState} = wp.element;
 
 
 const blockEditorData = window.fluent_cart_product_card_data;
-const rest = window['fluentCartRestVars'].rest;
-const currencySign = blockEditorData.currency_sign;
-const currencyPosition = blockEditorData.currency_position;
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     apiVersion: 3,
@@ -43,6 +37,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     },
     category: "fluent-cart",
     attributes: {
+        template_version: {type: 'number', default: 0},
+        card_layout: {type: 'string', default: 'classic'},
+        // Any layout in a staggered grid, pictures at their own height. Replaces the Masonry layout.
+        masonry: {type: 'boolean', default: false},
         product_id: {
             type: ['string', 'number'],
             default: '',
@@ -60,169 +58,16 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             default: 'default',
         },
     },
-    edit: ({attributes, setAttributes}) => {
-        const blockProps = useBlockProps();
-        const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+    variations: [{
+        name: 'template',
+        isDefault: true,
+        attributes: NEW_CARD_ATTRIBUTES,
+        scope: ['inserter'],
+    }],
+    usesContext: ['postId', 'postType', 'fluent-cart/price_format'],
+    edit: (props) => props.attributes.template_version === 1
+        ? <ProductCardTemplate {...props}/>
+        : <LegacyProductCard {...props}/>,
 
-
-        const fetchProduct = () => {
-            if (!attributes.product_id) {
-                return;
-            }
-            apiFetch({
-                path: addQueryArgs(fetchUrl, {
-                    // Screen key, not a relation name — ProductController::allowedWiths()
-                    // owns what it resolves to (detail + variants).
-                    with: ['block_product_detail']
-                }),
-                headers: {
-                    'X-WP-Nonce': rest.nonce
-                }
-            }).then((response) => {
-                setSelectedProduct(response.product || {});
-            }).finally(() => {
-
-            });
-        }
-
-        const isSimpleVariations = () => {
-            return selectedProduct?.detail?.variation_type === "simple_variations";
-        };
-
-        const isOutOfStock = selectedProduct?.detail?.stock_availability === 'out-of-stock';
-
-        useEffect(() => {
-            fetchProduct();
-        }, [attributes.product_id]);
-
-        return (
-            <div {...blockProps}>
-
-                <ErrorBoundary>
-                    <div className="flex flex-col gap-4">
-                        <InspectorSettings
-                            attributes={attributes}
-                            setAttributes={setAttributes}
-                            selectedProduct={selectedProduct}
-                            setSelectedProduct={setSelectedProduct}
-                        />
-
-                        <div className="fct-product-card" style={{ width: attributes.card_width === '100%' ? '100%' : `${attributes.card_width}px` }}>
-                            <div className="fct-product-card-head" style={{ position: 'relative' }}>
-                                <img className="fct-product-card-image"
-                                     src={selectedProduct?.thumbnail ?? blockEditorData.placeholder_image}
-                                     alt={selectedProduct?.post_title}/>
-                            </div>
-
-                            <div className="fct-product-card-body">
-                                <h5 className="fct-product-card-title">
-                                    {selectedProduct?.post_title ?? blocktranslate('Select a Product')}
-                                </h5>
-                                <div className="fct-product-card-price-wrap">
-                                    {(() => {
-                                        const priceFormat = attributes.price_format;
-                                        const isSimple = selectedProduct?.detail?.variation_type === 'simple';
-                                        let minPrice = selectedProduct?.detail?.min_price;
-                                        let maxPrice = selectedProduct?.detail?.max_price;
-                                        let comparePrice = 0;
-
-                                        if (isSimple) {
-                                            const firstVariant = selectedProduct?.variants?.[0];
-                                            if (firstVariant) {
-                                                minPrice = firstVariant.item_price;
-                                                if (firstVariant.compare_price > minPrice) {
-                                                    comparePrice = firstVariant.compare_price;
-                                                }
-                                            }
-                                        }
-
-                                        // Convert from cents → dollars and format
-                                        const formatPrice = (price) => {
-                                            if (!price && price !== 0) {
-                                                return currencyPosition === 'after'
-                                                    ? `0${currencySign}`
-                                                    : `${currencySign}0`;
-                                            }
-
-                                            // Divide by 100 since your price is stored in cents
-                                            const formatted = String(parseFloat((price / 100).toFixed(2)));
-
-                                            return currencyPosition === 'after'
-                                                ? `${formatted}${currencySign}`
-                                                : `${currencySign}${formatted}`;
-                                        };
-
-                                        // CASE 1: Compare price available
-                                        if (comparePrice) {
-                                            return (
-                                                <>
-                                                        <span className="fc_compare_price">
-                                                            <del>{formatPrice(comparePrice)}</del>
-                                                        </span>
-                                                    <span className="fct-item-price">{formatPrice(minPrice)}</span>
-                                                </>
-                                            );
-                                        }
-
-                                        // CASE 2: Variable product (multiple variations)
-                                        if (maxPrice && maxPrice > minPrice) {
-                                            if (priceFormat === 'range') {
-                                                // Range format: "min - max"
-                                                return (
-                                                    <>
-                                                            <span className="fct-item-price">
-                                                              {formatPrice(minPrice)} - {formatPrice(maxPrice)}
-                                                            </span>
-                                                    </>
-                                                );
-                                            } else {
-                                                // Starts-from format: "From min"
-                                                return (
-                                                    <>
-                                                            <span className="fct-item-price">
-                                                              From {formatPrice(minPrice)}
-                                                            </span>
-                                                    </>
-                                                );
-                                            }
-                                        }
-
-                                        // CASE 3: Simple price
-                                        return (
-                                            <>
-                                                <span className="fct-item-price">{formatPrice(minPrice)}</span>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-
-                            <div className="fct-product-card-footer">
-                                {isOutOfStock ? (
-                                    <button className="fluent-cart-shop-app-view-product-button" disabled style={{
-                                        cursor: 'not-allowed',
-                                        pointerEvents: 'none',
-                                    }}>
-                                        <span>{ blocktranslate('Out of Stock') }</span>
-                                    </button>
-                                ) : (
-                                    <button className="fluent-cart-shop-app-view-product-button">
-                                        <span>{ blocktranslate(isSimpleVariations() ? 'View Options' : 'Add To Cart') }</span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </ErrorBoundary>
-
-
-
-            </div>
-        );
-    },
-
-    save: function (props) {
-        return null;
-    },
+    save: ({attributes}) => attributes.template_version === 1 ? <InnerBlocks.Content/> : null,
 });

@@ -7,15 +7,15 @@
             </div>
 
             <div class="fct-inventory-toolbar-actions ml-auto">
-                <el-button v-if="selectedItems.length > 0" type="primary" size="small" @click="openBulkAdjustModal">
+                <fct-button v-if="selectedItems.length > 0" type="primary" size="small" @click="openBulkAdjustModal">
                     {{ translate('Update Stocks') }}
-                </el-button>
+                </fct-button>
 
-                <el-button class="fct-expand-row-button" size="small" @click="toggleAllRows">
+                <fct-button class="fct-expand-row-button" size="small" @click="toggleAllRows">
                     <DynamicIcon :name="allRowsExpanded ? 'Expand' : 'Collapse'" />
 
                     {{ allRowsExpanded ? translate('Collapse All') : translate('Expand All') }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
 
@@ -36,7 +36,7 @@
                 <thead>
                     <tr>
                         <th width="50">
-                            <el-checkbox v-model="selectAll" :indeterminate="isIndeterminate" @change="toggleSelectAll" />
+                            <fct-choice v-model="selectAll" :indeterminate="isIndeterminate" @change="toggleSelectAll" />
                         </th>
                         <th>{{ translate('Products') }}</th>
                         <th v-if="inventoryTable?.isColumnVisible('sku')">
@@ -66,7 +66,6 @@
                             :is-row-selected="isRowSelected"
                             :toggle-row-selection="toggleRowSelection"
                             :navigate-to-product="navigateToProduct"
-                            :get-placeholder-image="getPlaceholderImage"
                             @stock-save="emit('stock-save', $event)"
                             @open-history="openAdjustmentHistory"
                         />
@@ -77,7 +76,6 @@
                                 :row="row"
                                 :inventory-table="inventoryTable"
                                 :navigate-to-product="navigateToProduct"
-                                :get-placeholder-image="getPlaceholderImage"
                                 :is-row-selected="isRowSelected"
                                 :toggle-row-selection="toggleRowSelection"
                                 :expanded="allRowsExpanded"
@@ -107,7 +105,7 @@
 </template>
 
 <script setup>
-import { defineOptions, watch, ref } from 'vue';
+import { watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import translate from '@/utils/translator/Translator';
 import Empty from "@/Bits/Components/Table/Empty.vue";

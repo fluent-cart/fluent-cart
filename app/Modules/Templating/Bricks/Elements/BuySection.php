@@ -12,13 +12,15 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class BuySection extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name = 'fct-product-buy-section';
     public $icon = 'ti-bag fluent-cart-element-icon';
 
     public function enqueue_scripts()
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
     }
 
     public function get_label()

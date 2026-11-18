@@ -1,0 +1,525 @@
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./product-card.config.mjs";
+
+.fct-product-card-template {
+  display: contents;
+}
+
+// Classic has no .fct-card-layout wrapper, so its title link gets the layouts' plain style here,
+// in the editor too, instead of the theme's underlined link.
+// The editor renders Classic's Product Title block as the link itself.
+.fct-product-card-template :is(.fct-product-card-title, .fct-product-block-editor-product-card-title) a,
+.fct-product-card-template a.wp-block-fluent-cart-product-title {
+  @apply text-inherit no-underline hover:underline;
+}
+
+.fct-product-block-editor-product-card .fct-product-card-template {
+  @apply flex flex-col w-full h-full;
+}
+
+// The image block pulls itself over the standard card's padding; a layout frames the image itself.
+.fct-card-layout :is(.fct-product-image-wrap, .fct-product-image-block) {
+  @apply m-0 w-full;
+}
+
+// The Related Products editor wraps the layout in .fct-related-product-card (and its previews one level deeper).
+.fct-product-card:has(> .fct-card-layout),
+.fct-product-card:has(> .fct-related-product-card .fct-card-layout),
+.fct-product-block-editor-product-card:has(.fct-card-layout) {
+  @apply p-0 border-0 bg-transparent shadow-none block;
+  container: fct-layout-card / inline-size;
+}
+
+.fct-product-block-editor-product-card:has(.fct-card-layout) .fct-block-product { @apply h-full; }
+
+.fct-product-block-editor-product-card:not(:has(.fct-card-layout)) {
+  container: fct-layout-card / inline-size;
+}
+
+.fct-card-layout.fct-card-layout {
+  @apply flex flex-col h-full min-w-0 m-0 p-3 border border-solid rounded-2xl;
+  container-type: inline-size;
+
+  &, * { @apply box-border; }
+  > .block-editor-inner-blocks,
+  > .block-editor-inner-blocks > .block-editor-block-list__layout,
+  .fct-card-layout-details > .block-editor-inner-blocks,
+  .fct-card-layout-details > .block-editor-inner-blocks > .block-editor-block-list__layout,
+  .fct-card-layout-meta > .block-editor-inner-blocks,
+  .fct-card-layout-meta > .block-editor-inner-blocks > .block-editor-block-list__layout,
+  .fct-card-layout-footer > .block-editor-inner-blocks,
+  .fct-card-layout-footer > .block-editor-inner-blocks > .block-editor-block-list__layout,
+  // Classic themes (Bricks, Astra…) wrap a group's blocks in this container. It would hide the price and buttons from
+  // the footer's row, the category and stars from the meta row, and the footer from the panel that pushes it down.
+  .fct-card-layout-footer > .wp-block-group__inner-container,
+  .fct-card-layout-meta > .wp-block-group__inner-container,
+  .fct-card-layout-details > .wp-block-group__inner-container {
+    display: contents;
+  }
+
+  .fct-card-layout-media {
+    @apply relative m-0 min-w-0 rounded-xl;
+    .fct-product-card-image-wrap,
+    .fct-product-block-editor-product-card-image {
+      @apply block m-0 w-full rounded-xl overflow-hidden;
+      aspect-ratio: 1 / 1;
+    }
+    img.fct-product-card-image,
+    .fct-product-block-editor-product-card-image img {
+      @apply w-full h-full object-contain rounded-xl;
+      aspect-ratio: 1 / 1;
+    }
+    // A discounted, sold-out product shows both badges; stack the second one 7px under the first,
+    // however tall a merchant's sale badge is. Without anchor support, a default badge's offset.
+    .fct-sale-badge--top-left { anchor-name: --fct-sale-badge; }
+    .fct-sale-badge--top-left ~ .fct-sold-out-badge--top-left {
+      top: 2.25rem;
+      top: calc(anchor(--fct-sale-badge bottom, 29px) + 7px);
+    }
+    // In the editor each badge is placed inside its block's relative wrapper, so move that wrapper.
+    .wp-block-fluent-cart-sale-badge:has(.fct-sale-badge--top-left) ~ .wp-block-fluent-cart-sold-out-badge:has(.fct-sold-out-badge--top-left) {
+      top: 1.75rem;
+    }
+  }
+
+  .fct-card-layout-details {
+    @apply relative flex flex-col flex-1 min-w-0 gap-3 m-0 px-1 pt-4 pb-0;
+  }
+  // Categories take the spare width and the rating keeps its own, so a long category never pushes it to a new line.
+  .fct-card-layout-meta {
+    @apply grid items-center gap-2 m-0 text-xs;
+    grid-template-columns: minmax(0, 1fr) auto;
+    > *, .wp-block-post-terms { @apply m-0; }
+    // Plain CSS: v4's justify-self-end compiles to flex-end.
+    .fct-product-card-rating { @apply m-0 p-0 whitespace-nowrap; justify-self: end; }
+  }
+  // ...unless the category would get less than 4rem, where it is cut to a letter or two: then the rating moves to its own line.
+  .fct-card-layout-meta:has(.fct-card-layout-category) {
+    @apply flex flex-wrap justify-between;
+    .fct-product-card-rating { margin-inline-start: auto; }
+  }
+  .fct-card-layout-category {
+    @apply min-w-0 text-xs font-semibold uppercase tracking-wide whitespace-nowrap overflow-hidden text-ellipsis;
+    flex: 1 1 0%;
+    min-width: min(4rem, 100%);
+    a { @apply text-inherit no-underline hover:underline; }
+  }
+  .fct-product-card-title,
+  .fct-product-block-editor-product-card-title {
+    @apply m-0 p-0 text-lg leading-snug font-semibold;
+    overflow-wrap: anywhere;
+    a { @apply text-inherit no-underline hover:underline; }
+  }
+  [data-fct-card-swatch-rows], .fct-card-swatches-block { @apply m-0 p-0; }
+  // List view's margin-inline-end: auto would shrink the options to one column in the details panel.
+  .fct-card-layout-details .fct-card-swatch-rows[data-fct-card-swatch-rows] { margin-inline-end: 0; }
+  .fct-card-swatch-heading { @apply mb-2; }
+  .fct-card-swatches.is-label { @apply w-full; }
+
+  // span.fct-card-swatch is the editor's preview of an option; it must look like the storefront button.
+  .fct-card-swatches.is-label .fct-card-swatch-list {
+    @apply grid gap-1 rounded-xl p-1 w-full;
+    // Equal columns that wrap: a short last row keeps the column width instead of stretching.
+    // auto-fit drops the columns no option fills, so two options share the row instead of two narrow cells.
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.5rem), 1fr));
+    :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) {
+      @apply rounded-lg min-h-8 h-auto w-full min-w-0 max-w-full px-2 py-2 m-0 shadow-none;
+      // A long label wraps inside its option rather than ending in "…".
+      // Breaks between words; inside one only when that word alone is wider than its option.
+      .fct-card-swatch-text { @apply whitespace-normal overflow-visible text-center leading-tight [overflow-wrap:break-word]; color: inherit; text-overflow: clip; }
+      // The swatch stylesheet colours a chosen label for the standard card's dark pill, with equal weight;
+      // here the label follows its button, whichever stylesheet loads last.
+      &[aria-pressed="true"] .fct-card-swatch-text { color: inherit; }
+      // Shown in every colour mode, so the selection never depends on colour alone.
+      &[aria-pressed="true"] { outline: 2px solid currentColor; outline-offset: -2px; }
+      &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+    }
+    .fct-card-swatch-more { @apply self-center justify-self-center m-0; }
+  }
+  // The layouts show two options, alone or with a "+N" chip after them, which takes only its own width on the line.
+  // The options share the row while their longest words fit, and wrap onto their own lines when not, so no word breaks.
+  .fct-card-swatches.is-label .fct-card-swatch-list:is(
+    :has(> .fct-card-swatch-more:nth-child(3):last-child),
+    :has(> :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch):nth-child(2):last-child)
+  ) {
+    @apply flex flex-wrap;
+    > :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) { flex: 1 1 0%; min-width: min-content; }
+    > .fct-card-swatch-more { @apply flex-none; }
+  }
+
+  .fct-card-layout-footer {
+    @apply flex flex-wrap items-center justify-between gap-3 pt-3 mb-0 mx-0 border-0 border-t border-solid;
+    margin-top: auto;
+    .fct-product-card-prices,
+    .fct-product-block-editor-product-card-sub-title {
+      @apply p-0 m-0 text-xl font-semibold min-w-0;
+      // Prefer the full range width; wrap only when the card itself cannot fit it. Its large grow
+      // keeps a button on the same line at its own width.
+      flex: 999 1 auto;
+      .fct-item-price { @apply whitespace-normal [overflow-wrap:anywhere]; }
+    }
+    .fct_price_suffix { @apply block text-xs font-normal; }
+    .fct-product-view-button,
+    .fluent-cart-add-to-cart-button,
+    .fct-product-block-editor-product-card-primary-button {
+      @apply w-auto max-w-full min-h-10 m-0 px-4 py-3 rounded-xl text-sm font-semibold;
+      // A button that wraps below the price is alone on its line and fills it, instead of sitting at the left.
+      flex: 1 1 auto;
+      overflow-wrap: anywhere;
+    }
+    .fct-card-buy-row { @apply m-0 w-auto; flex: 1 1 auto; }
+    button:disabled { @apply cursor-not-allowed opacity-60; }
+  }
+
+  &:is(.fct-card-layout--compact, .fct-card-layout--masonry) .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch)[aria-pressed="true"] {
+    @apply shadow-xs;
+  }
+  // FluentCart's own button colours, with small corners.
+  &:is(.fct-card-layout--compact, .fct-card-layout--masonry) .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+    @apply rounded-sm;
+  }
+
+  &.fct-card-layout--floating {
+    @apply border-0 p-0 bg-transparent;
+    .fct-card-layout-media {
+      .fct-product-card-image-wrap,
+      .fct-product-block-editor-product-card-image { aspect-ratio: 4 / 5; }
+      // The whole picture at the top of the tall frame, so its spare band sits under the overlapping panel,
+      // not split into a strip above the picture.
+      img { aspect-ratio: 4 / 5; object-position: top; }
+    }
+    .fct-card-layout-details {
+      @apply mx-3 p-4 rounded-2xl shadow-lg;
+      margin-top: -3rem;
+      transition: transform 180ms ease;
+    }
+    .fct-card-swatches.is-label .fct-card-swatch-list {
+      @apply p-0 bg-transparent;
+      :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) {
+        @apply rounded-full border border-solid;
+      }
+    }
+    // An outlined purchase button; its colours are in the colours block below.
+    .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+      @apply rounded-xs border border-solid shadow-none;
+    }
+  }
+
+  &.fct-card-layout--framed {
+    .fct-card-layout-media { @apply bg-transparent; }
+    .fct-card-layout-details {
+      @apply p-4 rounded-2xl mt-3;
+    }
+    // Pills cannot end in "…", so they wrap between words; the rating moves below them only when a word cannot fit beside it.
+    .fct-card-layout-meta { @apply items-start; }
+    .fct-card-layout-category {
+      @apply normal-case tracking-normal whitespace-normal overflow-visible flex flex-wrap gap-1;
+      min-width: min-content;
+      a { @apply inline-block px-2 py-1 rounded-full border border-solid; }
+    }
+    .fct-card-layout-footer {
+      @apply border-0;
+      // A soft purchase button beside the price, or below it when the card is too narrow;
+      // Quick View sits beside the button as a square of the same height.
+      :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+        @apply h-11 min-h-11 rounded font-medium shadow-none;
+      }
+      // Editor: the Quick View preview is pinned just right of the button block, so leave it its 44px and gap.
+      &:has(> .fct-card-quick-view.is-preview-button) > [data-type="fluent-cart/shopapp-product-buttons"] {
+        @apply w-auto;
+        flex: 1 1 auto;
+        margin-inline-end: 3.25rem;
+      }
+      // Quick View drops below a button whose label cannot fit beside it.
+      .fct-card-buy-row {
+        @apply flex flex-row flex-wrap items-stretch gap-2;
+        > :is(.fct-product-view-button, .fluent-cart-add-to-cart-button) { @apply w-auto min-w-0; flex: 1 1 auto; }
+        .fct-card-quick-view { @apply m-0 flex-none; }
+        button.fct-card-quick-view-button[type="button"] {
+          @apply flex items-center justify-center w-11 min-w-11 h-11 min-h-11 p-0 m-0 rounded border border-solid shadow-none;
+        }
+      }
+    }
+    // Pill options; the tray only rounds its corners, since a pill-shaped tray looks wrong once options wrap.
+    .fct-card-swatches.is-label .fct-card-swatch-list { @apply rounded-2xl; }
+
+    .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) { @apply rounded-full; }
+  }
+
+  // Masonry on, in any layout (or the builders' Masonry layout): each picture keeps its own height so the
+  // grid staggers. After the layouts' own picture rules (Floating's tall frame, the square), which it overrides.
+  &:is(.fct-card-masonry, .fct-card-layout--masonry) .fct-card-layout-media {
+    .fct-product-card-image-wrap,
+    .fct-product-block-editor-product-card-image,
+    img.fct-product-card-image,
+    .fct-product-block-editor-product-card-image img { aspect-ratio: auto; height: auto; }
+  }
+}
+
+// Colours only. Under no-colors these do not exist, so the theme styles the card.
+body:not(.fluent-cart-no-colors) .fct-card-layout.fct-card-layout {
+  border-color: var(--fct-card-border-color, theme('colors.gray.200'));
+  background-color: var(--fct-card-bg, theme('colors.white'));
+  color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+  .fct-card-layout-media { background-color: var(--fct-card-image-bg, theme('colors.gray.50')); }
+  .fct-card-swatches.is-label .fct-card-swatch-list {
+    background-color: var(--fct-card-options-bg, theme('colors.gray.100'));
+    :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) {
+      background: transparent;
+      color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+      &[aria-pressed="true"]:not(:focus-visible) { outline: none; }
+      &[aria-pressed="true"] {
+        background: var(--fct-card-btn-bg-color, theme('colors.gray.900'));
+        color: var(--fct-card-btn-text-color, theme('colors.white'));
+      }
+      // Focus on the chosen option: the same outer ring as the others, not a ring in its text colour
+      // drawn inside it, which makes the chosen option look changed.
+      &[aria-pressed="true"]:focus-visible {
+        outline: 2px solid var(--fct-card-primary-text-color, theme('colors.gray.900'));
+        outline-offset: 2px;
+      }
+      // In the tray, hover lifts the option toward the card colour, with no border.
+      @media (hover: hover) {
+        &:hover:not([data-sold-out], [aria-pressed="true"]) {
+          background: rgb(255 255 255 / 40%);
+          background: color-mix(in srgb, var(--fct-card-bg, theme('colors.white')) 40%, transparent);
+          box-shadow: none;
+        }
+      }
+    }
+    // "+N" lifts like the options; it keeps its own border. Its button, the link it becomes without card
+    // actions, and the editor's preview all share the class.
+    @media (hover: hover) {
+      .fct-card-swatch-more:hover {
+        background: rgb(255 255 255 / 40%);
+        background: color-mix(in srgb, var(--fct-card-bg, theme('colors.white')) 40%, transparent);
+        box-shadow: inset 0 0 0 1px var(--fct-card-border-color, theme('colors.gray.200'));
+      }
+    }
+  }
+  .fct-card-layout-footer { border-color: var(--fct-card-border-color, theme('colors.gray.200')); }
+  &:is(.fct-card-layout--compact, .fct-card-layout--masonry) .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch)[aria-pressed="true"] {
+    background: var(--fct-card-bg, theme('colors.white'));
+    color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+  }
+  // The resets below repeat the layout's transparent surfaces, which this block would otherwise outrank.
+  &.fct-card-layout--floating {
+    @apply bg-transparent;
+    .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+      background: var(--fct-card-bg, theme('colors.white'));
+      color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+      border-color: var(--fct-card-border-color, theme('colors.gray.200'));
+      &:hover { background: var(--fct-card-options-bg, theme('colors.gray.100')); }
+    }
+    .fct-card-layout-details { background-color: var(--fct-card-panel-bg, var(--fct-card-bg, theme('colors.white'))); }
+    .fct-card-swatches.is-label .fct-card-swatch-list { @apply bg-transparent; }
+    .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) { border-color: var(--fct-card-border-color, theme('colors.gray.200')); }
+    // No tray here, so hover tints the option on the panel instead.
+    @media (hover: hover) {
+      .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch):hover:not([data-sold-out], [aria-pressed="true"]),
+      .fct-card-swatches.is-label .fct-card-swatch-list .fct-card-swatch-more:hover {
+        background: var(--fct-card-options-bg, theme('colors.gray.100'));
+      }
+    }
+  }
+  &.fct-card-layout--framed {
+    .fct-card-layout-media { @apply bg-transparent; }
+    .fct-card-layout-details { background-color: var(--fct-card-panel-bg, #faf8f4); }
+    .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+      background: var(--fct-card-options-bg, theme('colors.gray.100'));
+      color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+      &:hover { background: var(--fct-card-border-color, theme('colors.gray.200')); }
+    }
+    .fct-card-layout-footer .fct-card-buy-row button.fct-card-quick-view-button[type="button"] {
+      background: var(--fct-card-bg, theme('colors.white'));
+      color: var(--fct-card-primary-text-color, theme('colors.gray.900'));
+      border-color: var(--fct-card-border-color, theme('colors.gray.200'));
+    }
+    .fct-card-layout-category a { border-color: var(--fct-card-border-color, theme('colors.gray.200')); }
+  }
+}
+// Without a panel colour the floating panel would put its text over the photo.
+body.fluent-cart-no-colors .fct-card-layout.fct-card-layout--floating .fct-card-layout-details { margin-top: 0; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .fct-card-layout--floating:hover .fct-card-layout-details { transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fct-card-layout.fct-card-layout.fct-card-layout--floating .fct-card-layout-details { transition: none; }
+}
+
+// A narrow card keeps the price and buttons on one row while they fit, at a smaller size;
+// the buttons drop below the price only when they cannot fit beside it.
+@container fct-layout-card (max-width: 300px) {
+  // Tighter options, so a two-option row keeps its words whole ("Commercial" in a 4-column Framed card).
+  .fct-card-layout.fct-card-layout .fct-card-swatches.is-label .fct-card-swatch-list :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) {
+    @apply px-0.5 text-xs;
+  }
+  // Tripled to outrank the per-layout button sizes.
+  .fct-card-layout.fct-card-layout.fct-card-layout .fct-card-layout-footer {
+    @apply gap-2;
+    .fct-product-card-prices,
+    .fct-product-block-editor-product-card-sub-title { @apply text-lg; }
+    :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+      @apply h-9 min-h-9 px-3 py-2 text-xs;
+    }
+    .fct-card-buy-row { @apply gap-1.5; }
+    .fct-card-buy-row button.fct-card-quick-view-button[type="button"] { @apply w-9 min-w-9 h-9 min-h-9; }
+    &:has(> .fct-card-quick-view.is-preview-button) > [data-type="fluent-cart/shopapp-product-buttons"] { margin-inline-end: 2.75rem; }
+  }
+}
+
+// A very narrow card, as in a dense grid in a theme's content column: Floating's and Framed's padded panel
+// is thinner, and their rating and button labels wrap instead of running out of the card.
+@container fct-layout-card (max-width: 150px) {
+  .fct-card-layout.fct-card-layout.fct-card-layout:is(.fct-card-layout--floating, .fct-card-layout--framed) {
+    .fct-card-layout-details { @apply px-2; }
+    // The editor's preview rating has its own root class.
+    .fct-card-layout-meta :is(.fct-product-card-rating, .fct-product-rating-block-editor) { @apply flex-wrap; }
+  }
+}
+// Height grows only for a second line; the narrow-card minimum height still applies.
+@container fct-layout-card (max-width: 150px) {
+  .fct-card-layout.fct-card-layout.fct-card-layout:is(.fct-card-layout--floating, .fct-card-layout--framed) .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+    @apply h-auto;
+    .fct-button-text { @apply whitespace-normal; }
+    // The editor's preview button holds its label as plain text.
+    &.fct-product-block-editor-product-card-primary-button { @apply whitespace-normal; }
+  }
+}
+@container fct-layout-card (max-width: 120px) {
+  .fct-card-layout.fct-card-layout.fct-card-layout .fct-card-layout-footer :is(.fct-product-view-button, .fluent-cart-add-to-cart-button, .fct-product-block-editor-product-card-primary-button) {
+    @apply h-auto;
+    .fct-button-text { @apply whitespace-normal; }
+    // The editor's preview button holds its label as plain text.
+    &.fct-product-block-editor-product-card-primary-button { @apply whitespace-normal; }
+  }
+}
+
+@container fct-layout-card (min-width: 500px) {
+  .mode-list .fct-product-block-editor-product-card:not(:has(.fct-card-layout)) :is(.fct-block-product:not(:has(.fct-product-card-template)), .fct-product-card-template) {
+    @apply grid grid-cols-[140px_minmax(0,1fr)] gap-x-4 items-start;
+    grid-template-rows: repeat(5, auto) 1fr;
+    > .block-editor-block-list__layout { display: contents; }
+    &, > .block-editor-block-list__layout {
+      > [data-type] { grid-column: 2; }
+      > [data-type="fluent-cart/product-image"],
+      > [data-type="fluent-cart/shopapp-product-image"] {
+        grid-column: 1;
+        grid-row: 1 / span 6;
+        @apply m-0 w-full;
+        img { @apply w-full aspect-square object-contain; }
+      }
+    }
+  }
+  // As compact as the standard list card: its 140px thumbnail and tight spacing.
+  .mode-list .fct-card-layout.fct-card-layout {
+    @apply grid gap-4 items-start p-2;
+    grid-template-columns: clamp(110px, 20%, 140px) minmax(0, 1fr);
+    &.fct-card-layout--floating { @apply p-0; }
+    .fct-card-layout-details { @apply m-0 p-3 gap-2; }
+    .fct-card-layout-footer { @apply pt-2 gap-2; }
+    // A wide row has room for the button beside the price, which saves the colour band a row.
+    &.fct-card-layout--framed .fct-card-layout-footer {
+      @apply flex-row items-center;
+      .fct-product-card-prices, .fct-product-block-editor-product-card-sub-title { flex: 1 1 auto; }
+      // The price takes the spare width; a grown button would take half the row.
+      .fct-product-view-button,
+      .fluent-cart-add-to-cart-button,
+      .fct-product-block-editor-product-card-primary-button,
+      .fct-card-buy-row { @apply w-auto; flex: 0 1 auto; }
+    }
+    // Square in every layout: the floating panel's tall frame would leave bands around the picture.
+    .fct-card-layout-media {
+      .fct-product-card-image-wrap,
+      .fct-product-block-editor-product-card-image,
+      img { aspect-ratio: 1 / 1; }
+    }
+    // A wide row: options sit inline at their own width instead of in narrow equal columns. When they do not fit
+    // one line, a whole option moves to the next; only a label wider than the row itself wraps inside its option.
+    .fct-card-swatches.is-label .fct-card-swatch-list {
+      @apply flex flex-wrap w-auto max-w-full;
+      :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) {
+        // Roomy like the grid view's cells: padding around the label.
+        @apply w-auto px-5;
+      }
+      // The two-option tray's shared rule makes the options split the row at their longest word; here they keep their own width.
+      &:is(
+        :has(> .fct-card-swatch-more:nth-child(3):last-child),
+        :has(> :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch):nth-child(2):last-child)
+      ) > :is(button.fct-card-swatch[type="button"][data-fct-card-swatch], span.fct-card-swatch) { flex: 0 1 auto; min-width: auto; }
+    }
+    // Floating: the shorter of the image and the details panel is centred on the other.
+    &.fct-card-layout--floating { @apply items-center; }
+    &.fct-card-layout--floating .fct-card-layout-details { @apply relative z-[1]; }
+  }
+  // ...and overlaps the image's edge, past the 1rem gap. Only with a panel colour: otherwise its text would sit on the photo.
+  // Like the grid view's tall frame, the image column gets a 2rem spare band that the panel covers, so the picture stays whole.
+  body:not(.fluent-cart-no-colors) .mode-list .fct-card-layout.fct-card-layout.fct-card-layout--floating {
+    grid-template-columns: calc(clamp(110px, 20%, 140px) + 2rem) minmax(0, 1fr);
+    .fct-card-layout-media {
+      .fct-product-card-image-wrap,
+      .fct-product-block-editor-product-card-image { width: calc(100% - 2rem); }
+      // As tall as the picture, not a square of the wider column: otherwise the picture sat at the top
+      // of an empty band while the panel was centred on the whole box.
+      .fct-product-image-wrap { aspect-ratio: auto; height: auto; }
+    }
+    .fct-card-layout-details { margin-inline-start: -3rem; }
+  }
+}
+
+// Classic with Masonry on: no layout wrapper frames its picture, the card does (product-card.scss), so the
+// card holding it lets the picture keep its own height.
+:is(.fct-product-card, .fct-product-block-editor-product-card):has(.fct-product-card-template.fct-card-masonry) {
+  :is(.fct-product-card-image-wrap, .fct-dynamic-product-image, .fct-product-block-editor-product-card-image),
+  :is(img.fct-product-card-image, .fct-product-block-editor-product-card-image img) { aspect-ratio: auto; height: auto; }
+}
+
+// A grid of Masonry cards: product-card-masonry.js sets 1px rows and gives each card a row span from its height,
+// so the column count stays whatever the Products block or page builder set.
+.fct-masonry-grid.fct-masonry-grid {
+  align-items: start;
+  // A card as tall as its span would grow with every span the script gives it, so it keeps its own height.
+  // The editor's card wrapper is full height too.
+  > * { align-self: start; }
+  > *, > * :is(.fct-card-layout.fct-card-layout, .fct-block-product) { height: auto; min-height: 0; }
+}
+// A builder's own cards in a Masonry Grid: pictures keep their own height. Kept below a widget's
+// {{WRAPPER}} .fct-product-card-image height setting, so a height the merchant set still wins.
+:where(.fct-masonry-grid > :not(:has(.fct-card-layout))) a img.fct-product-card-image { aspect-ratio: auto; height: auto; }
+
+:where(.fct-masonry-grid) .fct-product-card:where(:not(:has(.fct-card-layout))) :is(.fct-product-card-image-wrap, .fct-dynamic-product-image) {
+  aspect-ratio: auto;
+  height: auto;
+}
+
+// A grid of layout cards keeps the columns the block asks for where each card gets at least the width the
+// layouts are drawn for, and drops a column where it would not: a wide section keeps them all, a narrow one,
+// a tablet or a phone gets fewer, down to one. !important: the grids' own column rules (media queries, the
+// editors' inline style) would otherwise keep their count. List view keeps its single column.
+// The 1px: cards that exactly fill the row would round to one column fewer.
+:is(.fct-products-container, .shop-app-preview-products, .fct-product-list, .fct-related-products-grid):has(.fct-card-layout):not(.mode-list *) {
+  --fct-layout-card-min: 220px;
+  grid-template-columns: repeat(auto-fill, minmax(max(min(var(--fct-layout-card-min), 100%), calc((100% - (var(--fct-layout-columns) - 1) * var(--fct-layout-gap)) / var(--fct-layout-columns) - 1px)), 1fr)) !important;
+}
+:where(.fct-products-container, .shop-app-preview-products) {
+  --fct-layout-columns: 3;
+  // The grids' own gap, from the same theme spacing (not rem: themes change the root font size).
+  --fct-layout-gap: var(--fct-grid-gap, theme('spacing.6'));
+  &.grid-columns-1 { --fct-layout-columns: 1; }
+  &.grid-columns-2 { --fct-layout-columns: 2; }
+  &.grid-columns-4 { --fct-layout-columns: 4; }
+  &.grid-columns-5 { --fct-layout-columns: 5; }
+  &.grid-columns-6 { --fct-layout-columns: 6; }
+}
+:where(.shop-app-preview-products) { --fct-layout-gap: theme('spacing.5'); }
+// Bricks Products sets its Columns (and their breakpoints) as --grid-columns, with no grid-columns-N class.
+:where(.fct-brick-products-wrapper .fct-products-container) { --fct-layout-columns: var(--grid-columns, 4); }
+:where(.fct-product-list) {
+  --fct-layout-columns: var(--fct-product-list-columns, 4);
+  --fct-layout-gap: var(--fct-grid-gap, theme('spacing.6'));
+}
+:where(.fct-related-products-grid) {
+  --fct-layout-columns: var(--fct-related-product-columns, 4);
+  --fct-layout-gap: var(--fct-grid-gap, theme('spacing.5'));
+}

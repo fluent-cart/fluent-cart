@@ -1,4 +1,5 @@
-@config "./style.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./style.config.mjs";
 
 :root {
   --fct-add-to-cart-btn-bg-color: var(--fct-secondary-btn-bg-color, #ffffff);

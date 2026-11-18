@@ -208,7 +208,8 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                         {getDisplayText()}
                     </span>
 
-                    {hasProduct && !saleInfo.isOnSale && (
+                    {/* Over an image the note would sit under the badge; the sidebar shows the status there. */}
+                    {hasProduct && !saleInfo.isOnSale && !isInsideVisualContainer && (
                         <small style={{display: 'block', color: '#999', fontSize: '11px', marginTop: '4px'}}>
                             {blocktranslate('Product is not on sale')}
                         </small>

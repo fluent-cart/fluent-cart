@@ -135,7 +135,7 @@ class ProductIntegrationsController extends Controller
             }
         }
 
-        $integrationFeed = json_decode(Arr::get($requestData, 'integration'), true);
+        $integrationFeed = Arr::get($requestData, 'integration');
         $provider = Arr::get($requestData, 'integration_name');
 
         $integrationFeedData = IntegrationHelper::validateAndFormatIntegrationFeedSettings($integrationFeed, [

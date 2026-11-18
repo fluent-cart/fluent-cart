@@ -17,6 +17,7 @@ class ProductImageBlockEditor extends BlockEditor
     public function ancestor(): array
     {
         return [
+            'fluent-cart/product-card',
             'fluent-cart/products',
             'fluent-cart/product-carousel',
             'fluent-cart/product-info',
@@ -84,7 +85,7 @@ class ProductImageBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
 
         Vite::enqueueStyle(
             'fluent-cart-product-image-block',

@@ -54,13 +54,12 @@ export default class AdvancedVariationSelector {
      * before price / stock / cart are populated.
      *
      * Resolution order:
-     *   1. data-default-variation-id (ProductDetail.default_variation_id)
+     *   1. ?selected=<variant id> (a product card swatch link), when it is
+     *      one of this product's variants.
+     *   2. data-default-variation-id (ProductDetail.default_variation_id)
      *      reverse-mapped against variationMap to recover its identifier.
-     *   2. First IN-STOCK identifier in variationMap. Honours
-     *      variantData[id].stock so a default that would otherwise land on
-     *      an out-of-stock combination is skipped.
-     *   3. First identifier in variationMap (final fallback when every
-     *      variant is out of stock — better than leaving the form empty).
+     *   3. The combination with the lowest serial_index, regardless of stock,
+     *      matching what the server rendered.
      */
     #applyDefaultSelection() {
         if (this.#groupIds.length === 0) return;
@@ -70,11 +69,14 @@ export default class AdvancedVariationSelector {
 
         let chosenIdentifier = null;
 
+        // ?selected= (from a product card swatch) wins when it is one of this product's variants.
+        const urlVariationId = parseInt(new URL(window.location.href).searchParams.get('selected') || '0', 10);
         const defaultVariationId = parseInt(this.#container.getAttribute('data-default-variation-id') || '0', 10);
-        if (defaultVariationId) {
-            const entry = Object.entries(this.#variationMap).find(([, variantId]) => Number(variantId) === defaultVariationId);
+        for (const candidateId of [urlVariationId, defaultVariationId]) {
+            const entry = candidateId && Object.entries(this.#variationMap).find(([, variantId]) => Number(variantId) === candidateId);
             if (entry) {
                 chosenIdentifier = entry[0];
+                break;
             }
         }
 

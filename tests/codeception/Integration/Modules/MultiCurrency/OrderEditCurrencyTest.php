@@ -18,7 +18,7 @@ use Tests\Support\Factory\ProductFactory;
 /**
  * A product added to an existing order in the admin edit is priced in the
  * order's currency at the order's own frozen rate and rules
- * (dev-docs/multi-currency/plan.md §9.1). The picker converts the base price.
+ * (dev-docs/multi-currency/06-orders-subscriptions.md). The picker converts the base price.
  * Base USD; the order is GBP at 0.79.
  */
 class OrderEditCurrencyTest extends DatabaseTestCase

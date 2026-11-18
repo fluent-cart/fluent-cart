@@ -5,6 +5,7 @@ namespace FluentCart\App\Hooks\Handlers\BlockEditors\RelatedProduct\InnerBlocks;
 use FluentCart\Api\Resource\ShopResource;
 use FluentCart\App\Models\Product;
 use FluentCart\App\Models\ProductDetail;
+use FluentCart\App\Modules\Data\ProductDataSetup;
 use FluentCart\Framework\Support\Arr;
 
 class InnerBlocks
@@ -46,7 +47,8 @@ class InnerBlocks
     {
         return [
             [
-                'title'        => __('Product Template', 'fluent-cart'),
+                // Named like Product Loop and Product Carousel Loop: it repeats its card per related product.
+                'title'        => __('Related Products Loop', 'fluent-cart'),
                 'slug'         => 'fluent-cart/product-template',
                 'callback'     => [$this, 'renderProductTemplate'],
                 'component'    => 'ProductTemplateBlock',
@@ -136,7 +138,11 @@ class InnerBlocks
                    '</p></div>';
         }
 
+        // Card blocks (title, price, swatches) then reuse these models instead of re-querying each.
+        ProductDataSetup::setProductsCache($relatedProducts);
+
         $blockContext = $block->context;
+        $blockContext['fluent-cart/product-card-loop'] = true;
         $columns = absint(Arr::get($block->context, 'fluent-cart/columns', 4));
         $columns = max(self::MIN_COLUMNS, min(self::MAX_COLUMNS, $columns));
 

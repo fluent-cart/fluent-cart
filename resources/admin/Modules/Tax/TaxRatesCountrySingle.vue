@@ -1065,7 +1065,7 @@ onMounted(() => {
             >
               {{ taxEnabledForCountry ? translate('Collecting tax') : translate('Disabled') }}
             </span>
-            <el-switch
+            <fct-switch
                 :model-value="isTaxEnabled ? taxEnabledForCountry : false"
                 :loading="savingCountryStatus"
                 :disabled="!isTaxEnabled"
@@ -1086,18 +1086,17 @@ onMounted(() => {
         <Card.Container v-if="!isEuCountryPage">
 
           <Card.Body>
-            <el-skeleton v-if="loadingCountryTaxId" animated :rows="2" />
-            <el-form v-else label-position="top">
-              <el-form-item :label="translate('VAT/GST/Tax Number')" class="mb-0">
-                <el-input
-                    v-model="countryTaxId"
-                    :placeholder="translate('VAT/GST/Tax Number')"
-                    maxlength="255"
-                />
-              </el-form-item>
-            </el-form>
+            <fct-skeleton v-if="loadingCountryTaxId" animated :rows="2" />
+            <div v-else class="[&_.fct-form-field]:mb-0">
+              <fct-input
+                  v-model="countryTaxId"
+                  :label="translate('VAT/GST/Tax Number')"
+                  :placeholder="translate('VAT/GST/Tax Number')"
+                  maxlength="255"
+              />
+            </div>
             <div class="mt-3 flex justify-end">
-              <el-button
+              <fct-button
                   type="primary"
                   size="small"
                   :loading="savingCountryTaxId"
@@ -1105,7 +1104,7 @@ onMounted(() => {
                   @click="saveCountryTaxId"
               >
                 {{ translate('Save') }}
-              </el-button>
+              </fct-button>
             </div>
           </Card.Body>
         </Card.Container>
@@ -1140,45 +1139,46 @@ onMounted(() => {
                 >
                 </TaxClassTabs>
 
-                <el-table :data="tableRows" class="w-full fct-tax-rates-table" max-height="450">
-                  <el-table-column :label="translate('Region')">
+                <fct-table :data="tableRows" class="w-full fct-tax-rates-table" max-height="450">
+                  <fct-table-column :label="translate('Region')">
                     <template #default="{ row }">
                       <span :class="['fct-base-taxes__region-name', !row.state ? 'fct-base-taxes__region-name--federal' : '']">
                         {{ !row.state ? (country_name || country) : row.stateName }}
                       </span>
                     </template>
-                  </el-table-column>
-                  <el-table-column :label="translate('Rate')" width="130">
+                  </fct-table-column>
+                  <fct-table-column :label="translate('Rate')" width="130">
                     <template #default="{ row }">
-                      <el-input v-model="row.rate" size="small" type="number" step="0.01" min="0">
+                      <fct-input v-model="row.rate" size="small" type="number" :controls="false" step="0.01" min="0">
                         <template #suffix>%</template>
-                      </el-input>
+                      </fct-input>
                     </template>
-                  </el-table-column>
-                  <el-table-column :label="translate('Tax Label')" width="200">
+                  </fct-table-column>
+                  <fct-table-column :label="translate('Tax Label')" width="200">
                     <template #default="{ row }">
-                      <el-input v-model="row.name" size="small" :placeholder="translate('Tax name')" />
+                      <fct-input v-model="row.name" size="small" :placeholder="translate('Tax name')" />
                     </template>
-                  </el-table-column>
-                  <el-table-column v-if="stateRows.length > 0" :label="translate('Compound')" width="310">
+                  </fct-table-column>
+                  <fct-table-column v-if="stateRows.length > 0" :label="translate('Compound')" width="310">
                     <template #default="{ row }">
-                      <el-select
+                      <fct-select
                           v-if="row.state"
                           :model-value="getCompoundValue(row)"
                           size="small"
                           style="width: 100%"
+                          :options="[
+                            {value: '0_0', label: compoundOptions[0].label},
+                            {value: '0_1', label: compoundOptions[1].label},
+                            {value: '1_0', label: compoundOptions[2].label},
+                          ]"
                           @change="(val) => setCompoundValue(row, val)"
-                      >
-                        <el-option value="0_0" :label="compoundOptions[0].label"/>
-                        <el-option value="0_1" :label="compoundOptions[1].label"/>
-                        <el-option value="1_0" :label="compoundOptions[2].label"/>
-                      </el-select>
+                      />
                     </template>
-                  </el-table-column>
-                </el-table>
+                  </fct-table-column>
+                </fct-table>
 
                 <div class="fct-btn-group mt-4 justify-end sm">
-                    <el-button
+                    <fct-button
                         v-if="activeClassSlug === 'standard'"
                         :loading="resetting"
                         size="small"
@@ -1187,11 +1187,11 @@ onMounted(() => {
                         soft
                     >
                         {{ translate('Reset to default') }}
-                    </el-button>
+                    </fct-button>
 
-                    <el-button type="primary" size="small" :loading="savingAll" @click="saveAllRates">
+                    <fct-button type="primary" size="small" :loading="savingAll" @click="saveAllRates">
                         {{ translate('Save Rates') }}
-                    </el-button>
+                    </fct-button>
                 </div>
 
               </div>
@@ -1206,37 +1206,37 @@ onMounted(() => {
               :title="translate('Tax overrides')"
               :text="translate('Override tax rates for specific product categories or shipping.')">
             <template #action>
-              <el-button size="small" @click="addNewTaxOverride">
+              <fct-button size="small" @click="addNewTaxOverride">
                 {{ translate('Add Tax Override') }}
-              </el-button>
+              </fct-button>
             </template>
           </Card.Header>
           <Card.Body>
             <div class="fct-tax-rates-country-view">
-              <el-table :data="overrideRows" :empty-text="translate('No overrides configured')">
-                <el-table-column :label="translate('Type')" width="110">
+              <fct-table :data="overrideRows" :empty-text="translate('No overrides configured')">
+                <fct-table-column :label="translate('Type')" width="110">
                   <template #default="{ row }">
                     <el-tag :type="row.type === 'products' ? 'primary' : 'info'" size="small">
                       {{ row.type === 'products' ? translate('Product') : translate('Shipping') }}
                     </el-tag>
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Category')">
+                </fct-table-column>
+                <fct-table-column :label="translate('Category')">
                   <template #default="{ row }">
                     {{ row.category_name || '—' }}
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Tax Label')">
+                </fct-table-column>
+                <fct-table-column :label="translate('Tax Label')">
                   <template #default="{ row }">
                     {{ row.tax_label || '—' }}
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Location')">
+                </fct-table-column>
+                <fct-table-column :label="translate('Location')">
                   <template #default="{ row }">
                     {{ row.location }}
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Tax Class')" width="130">
+                </fct-table-column>
+                <fct-table-column :label="translate('Tax Class')" width="130">
                   <template #default="{ row }">
                     <span v-if="row.type === 'products'">
                       {{ row.class_label || translate('All') }}
@@ -1245,21 +1245,21 @@ onMounted(() => {
                       {{ row.class_label || '—' }}
                     </span>
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('City / Postcode')">
+                </fct-table-column>
+                <fct-table-column :label="translate('City / Postcode')">
                   <template #default="{ row }">
                     <span v-if="row.city || row.postcode">
                       {{ [row.city, row.postcode].filter(Boolean).join(' / ') }}
                     </span>
                     <span v-else>—</span>
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Rate')" width="100">
+                </fct-table-column>
+                <fct-table-column :label="translate('Rate')" width="100">
                   <template #default="{ row }">
                     {{ row.rate }}%
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Actions')" width="110" align="right">
+                </fct-table-column>
+                <fct-table-column :label="translate('Actions')" width="110" align="right">
                   <template #default="{ row }">
                     <div class="fct-btn-group sm justify-end">
                       <IconButton tag="button" size="small" @click="editOverride(row)">
@@ -1270,173 +1270,139 @@ onMounted(() => {
                       </IconButton>
                     </div>
                   </template>
-                </el-table-column>
-              </el-table>
+                </fct-table-column>
+              </fct-table>
             </div>
           </Card.Body>
         </Card.Container>
 
         <!-- Tax override dialog -->
-        <el-dialog
+        <fct-dialog
             v-model="showAddTaxOverrideModal"
             :title="(isEditOverride ? translate('Edit tax override for') : translate('Add tax override for')) + ' ' + (country_name || country)"
             width="520px"
             :append-to-body="true"
             @close="onOverrideModalClose"
         >
-          <el-form label-position="top" :model="taxOverrideForm">
-            <el-form-item :label="translate('Override type')">
-              <el-radio-group v-model="taxOverrideForm.type">
-                <el-radio value="products">{{ translate('Products') }}</el-radio>
-                <el-radio value="shipping">{{ translate('Shipping') }}</el-radio>
-              </el-radio-group>
-            </el-form-item>
+          <div>
+            <fct-choice
+                v-model="taxOverrideForm.type"
+                type="radio"
+                :label="translate('Override type')"
+                :options="[
+                  {value: 'products', label: translate('Products')},
+                  {value: 'shipping', label: translate('Shipping')},
+                ]"
+            />
 
             <!-- Products mode -->
             <template v-if="taxOverrideForm.type === 'products'">
-              <el-form-item :label="translate('Category')">
-                <el-select
-                    v-model="taxOverrideForm.category_id"
-                    filterable
-                    :placeholder="translate('Select a category')"
-                    :loading="fetchingCategories"
-                    style="width: 100%"
-                    @change="onCategoryChange"
-                >
-                  <el-option
-                      v-for="cat in categories"
-                      :key="cat.value"
-                      :label="cat.label"
-                      :value="cat.value"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item :label="translate('Tax Class')">
-                <el-select
-                    v-model="taxOverrideForm.class_id"
-                    style="width: 100%"
-                >
-                  <el-option :value="0" :label="translate('All Tax Classes')" />
-                  <el-option
-                      v-for="tc in taxClasses"
-                      :key="tc.id"
-                      :value="Number(tc.id)"
-                      :label="tc.title"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item :label="translate('Tax label')">
-                <el-input
-                    v-model="taxOverrideForm.tax_label"
-                    :placeholder="translate('e.g. Tax, VAT, GST')"
-                />
-              </el-form-item>
-              <el-form-item :label="translate('Location')">
-                <el-select
-                    v-model="taxOverrideForm.state"
-                    :placeholder="translate('Select location')"
-                    filterable
-                    style="width: 100%"
-                >
-                  <el-option
-                      v-for="loc in locationOptions"
-                      :key="loc.value"
-                      :label="loc.label"
-                      :value="loc.value"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item :label="translate('City (optional)')">
-                <el-input
-                    v-model="taxOverrideForm.city"
-                    :placeholder="translate('Leave empty to match all cities')"
-                />
-              </el-form-item>
-              <el-form-item :label="translate('Postcode (optional)')">
-                <el-input
-                    v-model="taxOverrideForm.postcode"
-                    :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
-                />
-              </el-form-item>
-              <el-form-item :label="translate('Tax rate (%)')">
-                <el-input
-                    v-model="taxOverrideForm.tax_rate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    :placeholder="translate('e.g. 0 for tax exempt')"
-                />
-              </el-form-item>
-              <el-form-item v-if="stateRows.length > 0">
-                <el-checkbox v-model="taxOverrideForm.override_state_tax">
+              <fct-select
+                  :label="translate('Category')"
+                  v-model="taxOverrideForm.category_id"
+                  filterable
+                  :placeholder="translate('Select a category')"
+                  :loading="fetchingCategories"
+                  style="width: 100%"
+                  @change="onCategoryChange"
+                  :options="categories"
+              />
+              <fct-select
+                  v-model="taxOverrideForm.class_id"
+                  :label="translate('Tax Class')"
+                  style="width: 100%"
+                  :options="[
+                    {value: 0, label: translate('All Tax Classes')},
+                    ...taxClasses.map(tc => ({value: Number(tc.id), label: tc.title})),
+                  ]"
+              />
+              <fct-input
+                  :label="translate('Tax label')"
+                  v-model="taxOverrideForm.tax_label"
+                  :placeholder="translate('e.g. Tax, VAT, GST')"
+              />
+              <fct-select
+                  :label="translate('Location')"
+                  v-model="taxOverrideForm.state"
+                  :placeholder="translate('Select location')"
+                  filterable
+                  style="width: 100%"
+                  :options="locationOptions"
+              />
+              <fct-input
+                  :label="translate('City (optional)')"
+                  v-model="taxOverrideForm.city"
+                  :placeholder="translate('Leave empty to match all cities')"
+              />
+              <fct-input
+                  :label="translate('Postcode (optional)')"
+                  v-model="taxOverrideForm.postcode"
+                  :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
+              />
+              <fct-input
+                  :label="translate('Tax rate (%)')"
+                  v-model="taxOverrideForm.tax_rate"
+                  type="number" :controls="false"
+                  step="0.01"
+                  min="0"
+                  :placeholder="translate('e.g. 0 for tax exempt')"
+              />
+              <div v-if="stateRows.length > 0" class="fct-tax-override-state-toggle">
+                <fct-choice v-model="taxOverrideForm.override_state_tax">
                   {{ translate('Also override state/provincial taxes') }}
-                </el-checkbox>
-              </el-form-item>
+                </fct-choice>
+              </div>
             </template>
 
             <!-- Shipping mode -->
             <template v-else>
-              <el-form-item :label="translate('Tax Class')">
-                <el-select
-                    v-model="taxOverrideForm.class_id"
-                    style="width: 100%"
-                    :loading="loadingShippingProvinces"
-                >
-                  <el-option
-                      v-for="tc in taxClasses"
-                      :key="tc.id"
-                      :value="Number(tc.id)"
-                      :label="tc.title"
-                      :disabled="isEditOverride && Number(tc.id) !== Number(originalShippingClassId) && classesWithShippingOverride.has(Number(tc.id))"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item :label="translate('Location')">
-                <el-select
-                    v-model="taxOverrideForm.state"
-                    :placeholder="translate('Select location')"
-                    filterable
-                    style="width: 100%"
-                >
-                  <el-option
-                      v-for="loc in shippingLocationOptions"
-                      :key="loc.value"
-                      :label="loc.label"
-                      :value="loc.value"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item :label="translate('City (optional)')">
-                <el-input
-                    v-model="taxOverrideForm.city"
-                    :placeholder="translate('Leave empty to match all cities')"
-                />
-              </el-form-item>
-              <el-form-item :label="translate('Postcode (optional)')">
-                <el-input
-                    v-model="taxOverrideForm.postcode"
-                    :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
-                />
-              </el-form-item>
-              <el-form-item :label="translate('Tax rate (%)')">
-                <el-input
-                    v-model="taxOverrideForm.tax_rate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                />
-              </el-form-item>
+              <fct-select
+                  v-model="taxOverrideForm.class_id"
+                  :label="translate('Tax Class')"
+                  style="width: 100%"
+                  :loading="loadingShippingProvinces"
+                  :options="taxClasses.map(tc => ({
+                    value: Number(tc.id),
+                    label: tc.title,
+                    disabled: isEditOverride && Number(tc.id) !== Number(originalShippingClassId) && classesWithShippingOverride.has(Number(tc.id)),
+                  }))"
+              />
+              <fct-select
+                  :label="translate('Location')"
+                  v-model="taxOverrideForm.state"
+                  :placeholder="translate('Select location')"
+                  filterable
+                  style="width: 100%"
+                  :options="shippingLocationOptions"
+              />
+              <fct-input
+                  :label="translate('City (optional)')"
+                  v-model="taxOverrideForm.city"
+                  :placeholder="translate('Leave empty to match all cities')"
+              />
+              <fct-input
+                  :label="translate('Postcode (optional)')"
+                  v-model="taxOverrideForm.postcode"
+                  :placeholder="translate('e.g. 9300 or 9300-9399 or 9300,9400')"
+              />
+              <fct-input
+                  :label="translate('Tax rate (%)')"
+                  v-model="taxOverrideForm.tax_rate"
+                  type="number" :controls="false"
+                  step="0.01"
+                  min="0"
+              />
             </template>
-          </el-form>
+          </div>
           <template #footer>
-            <el-button @click="showAddTaxOverrideModal = false">
+            <fct-button @click="showAddTaxOverrideModal = false">
               {{ translate('Cancel') }}
-            </el-button>
-            <el-button type="primary" :loading="savingOverride" @click="saveTaxOverride">
+            </fct-button>
+            <fct-button type="primary" :loading="savingOverride" @click="saveTaxOverride">
               {{ isEditOverride ? translate('Save changes') : translate('Add override') }}
-            </el-button>
+            </fct-button>
           </template>
-        </el-dialog>
+        </fct-dialog>
 
       </div>
 

@@ -575,10 +575,12 @@ class InnerBlocks
         ?>
         <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
             <?php
+            do_action('fluent_cart/before_customer_details', ['cart' => $cart]);
             $renderer = new CheckoutRenderer($cart);
             $renderer->renderNameFields();
             $renderer->renderB2BToggle();
             $renderer->renderCreateAccountField();
+            do_action('fluent_cart/after_customer_details', ['cart' => $cart]);
             ?>
         </div>
         <?php
@@ -799,9 +801,11 @@ class InnerBlocks
         ob_start();
         ?>
         <div <?php echo $atts; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output, escaped per attribute ?>>
+            <?php do_action('fluent_cart/before_order_summary', ['cart' => $cart]); ?>
             <div class="fct_summary active" data-fluent-cart-checkout-page-checkout-form-order-summary>
                 <?php (new CartSummaryRender($cart))->render(); ?>
             </div>
+            <?php do_action('fluent_cart/after_order_summary', ['cart' => $cart]); ?>
         </div>
         <?php
         return ob_get_clean();

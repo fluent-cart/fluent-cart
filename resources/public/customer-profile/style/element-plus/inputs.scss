@@ -28,7 +28,7 @@
         @apply absolute inset-0 m-0;
         border-radius: inherit;
         .el-select__input{
-            @apply h-full w-full #{!important};
+            @apply h-full! w-full!;
             padding-block: var(--fct-select-pt) var(--fct-select-pb) !important;
             padding-inline: calc(var(--fct-select-pl) + var(--fct-select-text-offset)) calc(var(--fct-select-pr) + 20px) !important;
             border-radius: inherit !important;
@@ -55,14 +55,14 @@
     }
     .el-input.is-focus .el-input__wrapper,
     .el-input__wrapper.is-focus {
-        @apply shadow-none #{!important};
+        @apply shadow-none!;
     }
     &:focus:not(.el-select--disabled) .el-input__wrapper,
     &:hover:not(.el-select--disabled) .el-input__wrapper{
         @apply shadow-none;
     }
     &__input{
-        @apply p-0 border-0 #{!important};
+        @apply p-0! border-0!;
     }
 }
 
@@ -74,7 +74,7 @@
     .el-checkbox__inner{
         @apply border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-xs w-4 h-4;
         &::after{
-            @apply border-[1.5px];
+            @apply [border-width:1.5px];
         }
     }
     .el-checkbox__input{
@@ -99,22 +99,22 @@
 // input
 .el-input{
     &__wrapper{
-        @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] shadow-none p-0 #{!important};
+        @apply border! border-solid! border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)]! shadow-none! p-0!;
         border-radius: var(--fct-input-radius, theme('borderRadius.DEFAULT')) !important;
         &.is-focus{
-            @apply shadow-none border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)] #{!important};
+            @apply shadow-none! border-[color:var(--fct-customer-dashboard-focus-border-color,#253241)]!;
         }
         .icon{
             @apply inline-flex items-center;
         }
         input {
-            @apply outline-none shadow-none h-auto #{!important};
+            @apply outline-hidden! shadow-none! h-auto!;
         }
     }
     // The field's padding lives on the input, not the wrapper: a theme that
     // paints input:focus then fills the whole field instead of a box inset in it.
     &__inner{
-        @apply self-stretch border-0 bg-transparent #{!important};
+        @apply self-stretch! border-0! bg-transparent!;
         padding-top: var(--fct-input-padding-y, theme('spacing.1')) !important;
         padding-bottom: var(--fct-input-padding-y, theme('spacing.1')) !important;
         padding-left: var(--fct-input-padding-x, theme('spacing.4')) !important;
@@ -125,14 +125,14 @@
     &__prefix{
         padding-inline-start: var(--fct-input-padding-x, theme('spacing.4'));
         & ~ .el-input__inner{
-            @apply ps-0 #{!important};
+            @apply ps-0!;
         }
     }
     &__suffix{
         padding-inline-end: var(--fct-input-padding-x, theme('spacing.4'));
     }
     &__inner:has(~ .el-input__suffix){
-        @apply pe-0 #{!important};
+        @apply pe-0!;
     }
     &--medium{
         .el-input__wrapper{
@@ -146,7 +146,7 @@
     @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] font-medium;
 }
 .el-form-item.is-error .el-input__wrapper{
-    @apply border-red-500 #{!important};
+    @apply border-red-500!;
 }
 
 input[type=email]:focus,
@@ -158,8 +158,8 @@ input[type=text]:focus,
 input[type=url]:focus,
 select:focus,
 textarea:focus {
-    @apply bg-transparent #{!important};
+    @apply bg-transparent!;
 }
 .el-input--small .el-input__inner{
-    @apply h-[22px] !important;
+    @apply h-[22px]!;
 }

@@ -16,7 +16,7 @@ use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
 
 /**
- * Case 6 of the customer identity binding fix (dev/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.6).
+ * Case 6 of the customer identity binding fix (dev-docs/CUSTOMER_IDENTITY_BINDING_AUDIT.md §6.6).
  *
  * Recovery moves resources but retains the unlinked parent for late writes.
  */

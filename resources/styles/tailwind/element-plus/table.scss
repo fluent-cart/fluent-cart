@@ -4,8 +4,13 @@ table.el-table__body {
   @apply min-w-full;
 }
 
-.el-table__inner-wrapper::before {
-  @apply dark:opacity-0;
+.fluent_theme_dark .el-table__inner-wrapper::before {
+	@apply opacity-0;
+}
+
+// Some lines in bordered tables, like a pinned column's edge, use Element Plus's light border variable
+.fluent_theme_dark .el-table--border {
+	--el-table-border: 1px solid theme('colors.dark.400');
 }
 
 .el-table {
@@ -15,6 +20,11 @@ table.el-table__body {
       th.el-table__cell {
         @apply bg-gray-25 border border-solid border-gray-divider border-l-0 border-r-0 border-b-0 dark:bg-dark-600 dark:border-dark-500;
       }
+    }
+
+    // Element Plus fills grouped headers itself, with a selector that outranks the rule above
+    &.is-group tr th.el-table__cell {
+      @apply dark:bg-dark-600 dark:border-dark-400;
     }
 
     th.el-table__cell {
@@ -106,9 +116,13 @@ table.el-table__body {
     }
   }
 
+  .el-table__footer-wrapper tfoot td.el-table__cell {
+    @apply dark:bg-dark-600 dark:border-dark-500;
+  }
+
   td.el-table__cell,
   th.el-table__cell.is-leaf {
-    @apply border-gray-divider dark:border-dark-400 dark:border-opacity-60;
+    @apply border-gray-divider dark:border-dark-400/60;
   }
 
   &--enable-row-hover {
@@ -153,7 +167,7 @@ table.el-table__body {
   }
 
   .link {
-    @apply text-dark-500 hover:text-dark-600 hover:underline focus:shadow-none dark:text-gray-50 dark:hover:text-gray-50 #{!important};
+    @apply text-dark-500! hover:text-dark-600! hover:underline! focus:shadow-none! dark:text-gray-50! dark:hover:text-gray-50!;
   }
 
   .link.hover\:no-underline:hover {
@@ -166,7 +180,7 @@ table.el-table__body {
 
   &__body-wrapper tr td.el-table-fixed-column--right {
     @apply dark:bg-dark-700;
-    @apply transition-none #{!important};
+    @apply transition-none!;
   }
 
   .fct-copy-wrap {
@@ -188,12 +202,12 @@ table.el-table__body {
 
   &--border {
     thead tr th.el-table__cell {
-      @apply border-r;
+      @apply [border-right-width:1px];
     }
   }
 
   .el-scrollbar__bar.is-horizontal {
-    @apply hidden #{!important};
+    @apply hidden!;
   }
   table.el-table__body{
     .el-table__cell.el-table__expanded-cell{
@@ -202,7 +216,7 @@ table.el-table__body {
     td.el-table__cell,
     th.el-table__cell.is-leaf{
       @apply dark:border-dark-400 dark:bg-dark-600;
-      @apply dark:hover:bg-dark-600 !important;
+      @apply dark:hover:bg-dark-600!;
     }
   }
   .el-table__expand-icon{
@@ -234,10 +248,10 @@ table.el-table__body {
 }
 
 .el-table--border .el-table__inner-wrapper::after,
-.el-table--border::after,
-.el-table--border::before,
-.el-table__inner-wrapper::before {
-  @apply dark:bg-dark-500;
+.fluent_theme_dark .el-table--border::after,
+.fluent_theme_dark .el-table--border::before,
+.fluent_theme_dark .el-table__inner-wrapper::before {
+	@apply bg-dark-500;
 }
 
 .el-table.is-scrolling-right th.el-table-fixed-column--right {
@@ -279,7 +293,7 @@ table.el-table__body {
 
 .compact-table .el-table__body-wrapper table .el-table__cell .cell .table-cell {
   @apply min-h-[72px] items-center px-2;
-  @apply flex !important;
+  @apply flex!;
 }
 
 .compact-table.full-compact .el-table__body-wrapper table .el-table__cell .cell .table-cell {
@@ -352,7 +366,7 @@ table.el-table__body {
         }
         &__body-wrapper {
           .el-table__body {
-            @apply block !w-full max-w-full;
+            @apply block w-full! max-w-full;
             colgroup {
               @apply hidden;
             }
@@ -366,7 +380,7 @@ table.el-table__body {
               }
               &:hover {
                 td {
-                  @apply bg-transparent #{!important};
+                  @apply bg-transparent!;
                 }
               }
               td {
@@ -375,7 +389,7 @@ table.el-table__body {
                 }
                 @apply border-0;
                 .table-cell {
-                  @apply px-0 py-2 min-h-[unset] #{!important};
+                  @apply px-0! py-2! min-h-[unset]!;
                 }
               }
   

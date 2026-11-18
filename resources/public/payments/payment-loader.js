@@ -13,6 +13,8 @@ export default class PaymentLoader {
     #hasSubscriptions = false;
     #checkoutUiService = null;
     #translate = window.fluentcart.$t;
+    #loadingReportedBy = null;
+    #skeletonTimers = {};
 
     constructor({form, orderHandler, checkoutHandler = null, customPayment = false}) {
         this.#orderHandler = orderHandler;
@@ -73,6 +75,7 @@ export default class PaymentLoader {
         window.addEventListener('fluent_cart_payment_method_loading', (event) => {
             const paymentMethod = event.detail.payment_method;
             if (paymentMethod) {
+                this.#loadingReportedBy = paymentMethod;
                 document.querySelectorAll('.fct_payment_method_wrapper').forEach(el => {
                     el.classList.remove('fct-payment-loading');
                     el.classList.remove('fct-payment-loading-failed');
@@ -98,6 +101,7 @@ export default class PaymentLoader {
                     el.classList.remove('fct-payment-loading');
                     el.classList.add('fct-payment-loading-failed');
                 });
+                this.#hideSkeleton(paymentMethod);
 
                 if (document.querySelector('.fct_place_order_btn_wrap')) {
                     document.querySelector('.fct_place_order_btn_wrap').classList.remove('fct-payment-loading');
@@ -116,6 +120,7 @@ export default class PaymentLoader {
                     el.classList.remove('fct-payment-loading');
                     el.classList.remove('fct-payment-loading-failed');
                 });
+                this.#hideSkeleton(paymentMethod);
 
                 document.querySelector('.fluent-cart-checkout_embed_payment_container_' + paymentMethod).parentNode.classList.remove('fct-payment-loading');
 
@@ -355,6 +360,7 @@ export default class PaymentLoader {
          * unpayable.
          */
         window['is_' + paymentMethod + '_ready'] = false;
+        this.#showSkeleton(paymentMethod);
 
         for (const gate of (window.fluentCartPaymentLoadGates || [])) {
             try {
@@ -419,6 +425,55 @@ export default class PaymentLoader {
                 hasSubscriptions: this.#hasSubscriptions
             }
         }));
+
+        // Listeners run synchronously, so a gateway that fires the loading
+        // events has done so by now and will hide the skeleton on success/failed.
+        if (this.#loadingReportedBy !== paymentMethod) {
+            this.#hideSkeletonWhenFilled(paymentMethod);
+        }
+    }
+
+    #skeletonWrapper(paymentMethod) {
+        const wrapper = document.querySelector('.fluent-cart-checkout_embed_payment_container_' + paymentMethod)?.parentNode;
+        return wrapper?.classList.contains('fct-has-skeleton') ? wrapper : null;
+    }
+
+    // The skeleton comes from the gateway's getCheckoutSkeleton(), rendered server-side.
+    #showSkeleton(paymentMethod) {
+        this.#loadingReportedBy = null;
+        const wrapper = this.#skeletonWrapper(paymentMethod);
+        if (!wrapper) {
+            return;
+        }
+
+        wrapper.classList.remove('fct-skeleton-done');
+        clearTimeout(this.#skeletonTimers[paymentMethod]);
+        // Never leave a gateway that stalls behind a skeleton.
+        this.#skeletonTimers[paymentMethod] = setTimeout(() => this.#hideSkeleton(paymentMethod), 8000);
+    }
+
+    #hideSkeleton(paymentMethod) {
+        clearTimeout(this.#skeletonTimers[paymentMethod]);
+        this.#skeletonWrapper(paymentMethod)?.classList.add('fct-skeleton-done');
+    }
+
+    // For gateways that never fire the loading events: done once they add anything.
+    #hideSkeletonWhenFilled(paymentMethod) {
+        const container = document.querySelector('.fluent-cart-checkout_embed_payment_container_' + paymentMethod);
+        if (!this.#skeletonWrapper(paymentMethod)) {
+            return;
+        }
+
+        if (container.children.length) {
+            this.#hideSkeleton(paymentMethod);
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            observer.disconnect();
+            this.#hideSkeleton(paymentMethod);
+        });
+        observer.observe(container, {childList: true});
     }
 
     changeLoaderStatus(status) {

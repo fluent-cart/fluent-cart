@@ -1040,32 +1040,6 @@ class FcFixture
     }
 
     /**
-     * Record an expected exact value after exercising a real production update.
-     *
-     * @param string              $kind
-     * @param int                 $id
-     * @param array<string,mixed> $expected
-     * @return void
-     */
-    public static function expectSharedRowValues($kind, $id, array $expected)
-    {
-        $kind = (string) $kind;
-        $id = (int) $id;
-        if (!isset(self::$sharedRows[$kind][$id])) {
-            throw new LogicException(
-                'Cannot update ownership expectations for unknown '
-                . $kind . ' ID ' . $id . '.'
-            );
-        }
-
-        self::$sharedRows[$kind][$id]['expected'] = array_merge(
-            self::$sharedRows[$kind][$id]['expected'],
-            $expected
-        );
-        self::$sharedRowHistory[$kind][$id] = self::$sharedRows[$kind][$id];
-    }
-
-    /**
      * Use the real OrderResource state-machine entry point.
      *
      * @param object $order

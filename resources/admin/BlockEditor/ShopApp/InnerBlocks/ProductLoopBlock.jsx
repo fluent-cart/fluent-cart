@@ -1,6 +1,7 @@
 import {useProductData} from "@/BlockEditor/ShopApp/Context/ProductContext";
 import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import { ProductContainerContext } from "@/BlockEditor/ShopApp/Context/ProductContainerContext";
+import useMasonryGrid from "@/BlockEditor/Components/useMasonryGrid";
 
 const {
     InnerBlocks,
@@ -71,7 +72,7 @@ const ProductContent = ({
     return (
         <BlockContextProvider
             key={blockContext.ID}
-            value={blockContext}
+            value={{...blockContext, postId: blockContext.ID, postType: 'fluent-products'}}
         >
             {displayTemplate ? <ProductTemplateInnerBlocks/> : null}
             <MemoizedProductTemplateBlockPreview
@@ -105,9 +106,10 @@ const ProductLoopBlock = {
         let isHidden = simulateLoading || simulateNoResults ? 'hide' : '';
         const enableFilter = context['fluent-cart/enable_filter'];
         let isEnableFilter = enableFilter ? '' : 'not-enable-filter';
+        const isList = context['fluent-cart/view_mode'] === 'list';
 
         const blockProps = useBlockProps({
-            className: 'fct-shop-app-preview-wrap' + ' ' + isHidden + ' ' + isEnableFilter,
+            className: 'fct-shop-app-preview-wrap' + ' ' + isHidden + ' ' + isEnableFilter + (isList ? ' mode-list' : ''),
         });
 
 
@@ -120,7 +122,7 @@ const ProductLoopBlock = {
             setAttributes({wp_client_id: clientId});
         }, [clientId, attributes.wp_client_id, setAttributes]);
 
-        const productBoxGridSize = context['fluent-cart/product_box_grid_size'];
+        const productBoxGridSize = isList ? 1 : context['fluent-cart/product_box_grid_size'];
         const parentData = useProductData();
 
 
@@ -140,17 +142,15 @@ const ProductLoopBlock = {
             setCount(count + 1);
         }, [currentBlock]);
 
-        const blocks = currentBlock.innerBlocks;
-
-        console.log({
-            blocks
-        })
+        const blocks = currentBlock?.innerBlocks || [];
 
         const [ activeBlockContextId, setActiveBlockContextId ] = useState();
 
+        const gridRef = useMasonryGrid();
+
         return (
             <div {...blockProps}>
-                <div className={
+                <div ref={gridRef} className={
                     "shop-app-preview-products gap-5 grid md:grid-cols-dynamic col-dynamic group-[.list]:grid-cols-1 grid-columns-" + productBoxGridSize
                 }>
                     {parentData?.products.map((product) => {

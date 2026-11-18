@@ -257,8 +257,9 @@ onBeforeUnmount(() => clearTimeout(searchTimer));
 </script>
 
 <template>
-    <el-select
+    <fct-select
         v-model="selected"
+        :options="options"
         class="w-full fct-resource-selector"
         filterable
         remote
@@ -277,19 +278,14 @@ onBeforeUnmount(() => clearTimeout(searchTimer));
         <template v-if="multiple" #tag>
             <ProductChips class="fct-product-chips--wrap" :groups="chipGroups" :tooltips-disabled="dropdownOpen"/>
         </template>
-        <el-option
-            v-for="option in options"
-            :key="option.value"
-            :value="option.value"
-            :label="option.label"
-        >
+        <template #option="{option}">
             <span class="fct-resource-option-label">
                 {{ option.label }}
             </span>
             <span v-if="option.description" class="fct-resource-option-description">
                 {{ option.description }}
             </span>
-        </el-option>
-    </el-select>
+        </template>
+    </fct-select>
 </template>
 

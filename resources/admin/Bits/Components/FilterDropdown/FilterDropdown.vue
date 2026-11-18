@@ -1,10 +1,10 @@
 <template>
   <div ref="dropdownRef" class="fct-filter-dropdown-container" @click.stop>
-    <el-button v-if="label" size="small" class="fct-filter-dropdown-text-button" @click="filter.toggleDropdown">
+    <fct-button v-if="label" size="small" class="fct-filter-dropdown-text-button" @click="filter.toggleDropdown">
       <DynamicIcon name="Filter" class="w-4 h-4"/>
       <span>{{ label }}</span>
       <span v-if="count" class="fct-filter-dropdown-count">{{ count }}</span>
-    </el-button>
+    </fct-button>
     <IconButton v-else class="fct-filter-dropdown-toggle-button" size="small" tag="button" @click="filter.toggleDropdown">
       <DynamicIcon name="Filter"/>
     </IconButton>
@@ -26,7 +26,7 @@
           <div class="fct-filter-dropdown-body">
             <!-- Show filter options if a filter is selected -->
             <SelectedFilters
-                v-if="filter.data.activeFilter != null"
+                v-if="filter.openFilter"
                 :filter-state="filter"
             />
 

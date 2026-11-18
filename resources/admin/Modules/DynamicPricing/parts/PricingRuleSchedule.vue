@@ -2,6 +2,7 @@
 import {ref, watch} from "vue";
 import translate from "@/utils/translator/Translator";
 import * as Card from "@/Bits/Components/Card/Card.js";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 const props = defineProps({
     startDate: {
@@ -48,9 +49,9 @@ const clearEndDate = (enabled) => {
         <Card.Header :title="translate('Schedule')" border_bottom/>
         <Card.Body>
             <div class="fct-pricing-rule-schedule">
-                <el-form label-position="top">
-                    <el-form-item :label="translate('Start Date & Time')">
-                        <el-date-picker
+                <div>
+                    <Field :label="translate('Start Date & Time')">
+                        <fct-date-picker
                             :model-value="startDate"
                             type="datetime"
                             value-format="YYYY-MM-DDTHH:mm:ssZ"
@@ -63,19 +64,17 @@ const clearEndDate = (enabled) => {
                         <div class="form-note mt-2">
                             <p>{{ translate('Pricing_Time_Dynamic') }}</p>
                         </div>
-                    </el-form-item>
+                    </Field>
 
-                    <el-form-item>
-                        <el-checkbox
-                            v-model="hasEndDate"
-                            :label="translate('Set end date & time')"
-                            :disabled="disabled"
-                            @change="clearEndDate"
-                        />
-                    </el-form-item>
+                    <fct-choice
+                        v-model="hasEndDate"
+                        class="mb-[18px]"
+                        :disabled="disabled"
+                        @change="clearEndDate"
+                    >{{ translate('Set end date & time') }}</fct-choice>
 
-                    <el-form-item v-if="hasEndDate" :label="translate('End Date & Time')">
-                        <el-date-picker
+                    <Field v-if="hasEndDate" :label="translate('End Date & Time')">
+                        <fct-date-picker
                             :model-value="endDate"
                             type="datetime"
                             value-format="YYYY-MM-DDTHH:mm:ssZ"
@@ -88,8 +87,8 @@ const clearEndDate = (enabled) => {
                         <div class="form-note mt-2">
                             <p>{{ translate('Time at which the dynamic price becomes inactive.') }}</p>
                         </div>
-                    </el-form-item>
-                </el-form>
+                    </Field>
+                </div>
             </div>
         </Card.Body>
     </Card.Container>

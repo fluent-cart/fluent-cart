@@ -204,7 +204,7 @@ const setStep = (step) => { activeStep.value = step || 0 }
                   translate('Step %1$s of %2$s', activeStep, steps.length)
                 }}
               </div>
-              <el-progress
+              <fct-progress
                   :percentage="(activeStep / steps.length) * 100"
                   :stroke-width="8"
                   :show-text="false"
@@ -225,10 +225,10 @@ const setStep = (step) => { activeStep.value = step || 0 }
                     v-if="currentStep.key === 'pages' && stepRef && !stepRef.pageGenerated"
                     class="fct-onboarding-card-head-action"
                 >
-                    <el-button @click="stepRef.createAllPage()" :loading="stepRef.generating" size="small">
+                    <fct-button @click="stepRef.createAllPage()" :loading="stepRef.generating" size="small">
                         <DynamicIcon v-if="!stepRef.generating" name="MagicPen" />
                         {{ translate('Generate All Pages') }}
-                    </el-button>
+                    </fct-button>
                 </div>
             </div>
           </div><!-- .fct-onboarding-card-head -->
@@ -236,7 +236,7 @@ const setStep = (step) => { activeStep.value = step || 0 }
           <div class="fct-onboarding-content-box-inner">
             <div v-if="loadError" class="fct-onboarding-load-error">
               <p>{{ translate('Failed to load settings. Please refresh and try again.') }}</p>
-              <el-button @click="getSettings">{{ translate('Retry') }}</el-button>
+              <fct-button @click="getSettings">{{ translate('Retry') }}</fct-button>
             </div>
             <div v-else class="fct-onboarding-form-wrap active">
               <div class="fct-onboarding-form-body">
@@ -258,21 +258,21 @@ const setStep = (step) => { activeStep.value = step || 0 }
   <!-- Hidden while the products step inserts — its own progress bar takes over -->
   <div v-if="activeStep < maxStep && !stepInserting" class="fct-onboarding-bottom">
     <div class="fct-onboarding-bottom-left">
-      <el-button v-if="activeStep > 1" text @click="handleSkipAll">
+      <fct-button v-if="activeStep > 1" text @click="handleSkipAll">
         {{ translate('Skip All') }}
-      </el-button>
+      </fct-button>
     </div>
 
     <div class="fct-onboarding-bottom-right">
-      <el-button @click="handlePrev" type="info" plain :disabled="activeStep === 1">
+      <fct-button @click="handlePrev" type="info" plain :disabled="activeStep === 1">
         {{ translate('Go Back') }}
-      </el-button>
+      </fct-button>
 
-      <el-button v-if="currentStep.canSkip" text @click="handleSkip" :disabled="stepLoading">
+      <fct-button v-if="currentStep.canSkip" text @click="handleSkip" :disabled="stepLoading">
         {{ translate('Skip for now') }}
-      </el-button>
+      </fct-button>
 
-      <el-button
+      <fct-button
           v-if="!currentStep.isFinal"
           type="primary"
           :loading="stepLoading"
@@ -280,8 +280,8 @@ const setStep = (step) => { activeStep.value = step || 0 }
           @click="handleNext"
       >
         {{ translate('Continue') }}
-      </el-button>
-      <el-button
+      </fct-button>
+      <fct-button
           v-else
           type="primary"
           :loading="stepLoading"
@@ -289,7 +289,7 @@ const setStep = (step) => { activeStep.value = step || 0 }
       >
         <span v-if="!stepLoading" class="cmd">⌘s</span>
         {{ stepLoading ? translate('Saving') : translate('Save') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

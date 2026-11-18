@@ -200,7 +200,77 @@ class OrderTransaction extends Model
         $refundAmount = (int)(Arr::get($this->meta, 'refunded_total', 0));
         $baseAmount   = $this->total - $refundAmount;
         $filtered     = apply_filters('fluent_cart/transaction/max_refundable_amount', $baseAmount, $this);
-        return max(0, min((int) $filtered, $baseAmount));
+
+        $orderTransactions = static::query()->where('order_id', $this->order_id)->get();
+        $chargeIds = [];
+        foreach ($orderTransactions as $transaction) {
+            if ($transaction->transaction_type !== Status::TRANSACTION_TYPE_REFUND) {
+                $chargeIds[] = (int) $transaction->id;
+            }
+        }
+
+        $linkedRefunded = 0;
+        $linkedPending = 0;
+        $unlinkedRefunded = 0;
+        foreach ($orderTransactions as $refund) {
+            if ($refund->transaction_type !== Status::TRANSACTION_TYPE_REFUND) {
+                continue;
+            }
+            $chargeId = static::refundChargeId($refund);
+            if ($chargeId === (int) $this->id) {
+                if ($refund->status === Status::TRANSACTION_REFUNDED) {
+                    $linkedRefunded += (int) $refund->total;
+                } elseif ($refund->status === Status::TRANSACTION_PENDING) {
+                    $linkedPending += (int) $refund->total;
+                }
+            } elseif ($refund->status === Status::TRANSACTION_REFUNDED && !in_array($chargeId, $chargeIds, true)) {
+                $unlinkedRefunded += (int) $refund->total;
+            }
+        }
+
+        // A pending gateway refund settles later without asking, so it reserves its share now. Before 2.3.0 a
+        // pending row was added to refunded_total at insert, so only the part of refunded_total that no refund
+        // row explains can already hold it. A refunded row linked to no charge may be in this charge's total,
+        // so that part does not count as holding a pending refund.
+        $absorbed = min($linkedPending, max(0, $refundAmount - $linkedRefunded - $unlinkedRefunded));
+        $reserved = max(0, $linkedRefunded - $refundAmount) + $linkedPending - $absorbed;
+
+        // Taken after the filter, so a filter's own cap (Paddle MoR captured amount) is reserved too.
+        return max(0, min((int) $filtered, $baseAmount) - $reserved);
+    }
+
+    public function linkedRefunds()
+    {
+        $chargeId = (int) $this->id;
+
+        return static::query()
+            ->where('order_id', $this->order_id)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->get()
+            ->filter(function ($refund) use ($chargeId) {
+                return static::refundChargeId($refund) === $chargeId;
+            });
+    }
+
+    public static function refundChargeId(OrderTransaction $refund): int
+    {
+        $meta = is_array($refund->meta) ? $refund->meta : [];
+        $chargeId = Arr::get($meta, 'parent_id');
+        if (!$chargeId && $refund->payment_method === 'stripe') {
+            // Older Stripe webhook rows link the charge as transaction_id.
+            $chargeId = Arr::get($meta, 'transaction_id');
+        }
+
+        return (int) $chargeId;
+    }
+
+    public static function pendingRefundTotal($orderId)
+    {
+        return (int) static::query()
+            ->where('order_id', $orderId)
+            ->where('transaction_type', Status::TRANSACTION_TYPE_REFUND)
+            ->where('status', Status::TRANSACTION_PENDING)
+            ->sum('total');
     }
 
     /**

@@ -29,6 +29,14 @@ const currentOptions = computed(() => {
   return props.itemConfig.options || {};
 });
 
+// v-for over an array gave numeric values, over an object its string keys: keep both.
+const selectOptions = computed(() => {
+  const options = currentOptions.value || {};
+  return Array.isArray(options)
+      ? options.map((label, index) => ({value: index, label}))
+      : Object.keys(options).map(value => ({value, label: options[value]}));
+});
+
 const handleRemoteSearch = async (query) => {
   if (props.itemConfig.remote) {
     loading.value = true;
@@ -63,8 +71,9 @@ onMounted(() => {
 
 <template>
   <template v-if="itemConfig.options || itemConfig.remote">
-    <el-select
+    <fct-select
         @change="handleChange"
+        :options="selectOptions"
         :remote-method="handleRemoteSearch"
         size="small"
         v-model="model"
@@ -74,14 +83,7 @@ onMounted(() => {
         :filterable="itemConfig.remote"
         :remote-show-suffix="itemConfig.remote"
         :loading="loading"
-    >
-      <el-option
-          v-for="(optionLabel,option) in currentOptions"
-          :key="option"
-          :value="option"
-          :label="optionLabel">
-      </el-option>
-    </el-select>
+    />
   </template>
 </template>
 

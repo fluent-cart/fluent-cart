@@ -8,6 +8,7 @@ use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\PaymentMethods\Core\GatewayManager;
 use FluentCart\App\Modules\Tax\TaxModule;
 use FluentCart\App\Services\DateTime\DateTime;
 use FluentCart\App\Services\DateTime\DateFormatter;
@@ -17,6 +18,7 @@ use FluentCart\App\Services\Payments\PaymentReceipt;
 use FluentCart\App\Services\TemplateService;
 use FluentCart\App\Services\Renderer\Receipt\StoreBusinessInfoHelper;
 use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
+use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\Framework\Database\Orm\Model;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
@@ -78,6 +80,7 @@ class OrderParser extends BaseParser
         'tax_breakdown'                    => 'getTaxBreakdown',
         'fee_lines'                        => 'getFeeLines',
         'payment_method_human'             => 'getPaymentMethodTitle',
+        'payment_instructions'             => 'getPaymentInstructions',
     ];
 
     protected array $attributeMap = [
@@ -335,6 +338,14 @@ class OrderParser extends BaseParser
             ]);
         }
 
+        // Documented in app/Views/emails/order/paid/customer.php; skips preview stub orders.
+        if ($order instanceof \FluentCart\App\Models\Order) {
+            do_action('fluent_cart/email/order_entitlements', [
+                'order'   => $order,
+                'context' => 'payment_receipt',
+            ]);
+        }
+
         $downloads = $order->getDownloads();
         if ($downloads) {
             \FluentCart\App\App::make('view')->render('emails.parts.downloads', [
@@ -562,6 +573,42 @@ class OrderParser extends BaseParser
             Arr::get($this->order, 'payment_method', ''),
             Arr::get($this->order, 'payment_method_title', '')
         );
+    }
+
+    public function getPaymentInstructions(): string
+    {
+        if (!$this->order) {
+            return '';
+        }
+
+        $method = (string) Arr::get($this->order, 'payment_method', '');
+        if (!$method || !GatewayManager::has($method)) {
+            return '';
+        }
+
+        $gateway = GatewayManager::getInstance($method);
+        if (!$gateway || !$gateway->has('offline') || !isset($gateway->settings)) {
+            return '';
+        }
+
+        $instructions = (string) Arr::get((array) $gateway->settings->get(), 'thank_you_page_instructions', '');
+        $plainText = str_replace("\xC2\xA0", '', wp_strip_all_tags(html_entity_decode($instructions, ENT_QUOTES)));
+        if (trim($plainText) === '' && stripos($instructions, '<img') === false) {
+            return '';
+        }
+
+        // The instructions may contain this smartcode in any spelling the parser accepts.
+        static $rendering = false;
+        if ($rendering) {
+            return '';
+        }
+
+        $rendering = true;
+        try {
+            return wp_kses_post(ShortcodeTemplateBuilder::make($instructions, ['order' => $this->order]));
+        } finally {
+            $rendering = false;
+        }
     }
 
     public function getFeeLines(): string

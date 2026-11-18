@@ -1,8 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./media-carousel-block-editor.config.js";
-@tailwind base;
-@tailwind utilities;
+@config "./media-carousel-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 
 /* =====================================================
@@ -715,14 +717,7 @@
 }
 
 .fluent-cart-product-loop button {
-    @apply mt-auto py-3 px-4 bg-[var(--button-bg)] text-[var(--button-color)]
-        border-0 rounded cursor-pointer text-sm font-medium w-full
-        flex items-center justify-center
-        hover:bg-[var(--button-hover-bg)]
-        hover:text-[var(--button-hover-color)]
-        group-[.list]:max-w-[188px]
-        group-[.list]:transition-none
-        group-[.list]:mt-0;
+    @apply mt-auto py-3 px-4 bg-[var(--button-bg)] text-[var(--button-color)] border-0 rounded cursor-pointer text-sm font-medium w-full flex items-center justify-center hover:bg-[var(--button-hover-bg)] hover:text-[var(--button-hover-color)] group-[.list]:max-w-[188px] group-[.list]:transition-none group-[.list]:mt-0;
 
     height: max-content;
 }

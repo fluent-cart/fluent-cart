@@ -9,8 +9,8 @@ use Tests\Support\DatabaseTestCase;
 use Tests\Support\RateFixture;
 
 /**
- * The store's margin on automated rates (dev-docs/multi-currency/plan.md
- * §11.5, §14.2). Feeds publish mid-market rates; the merchant settles at
+ * The store's margin on automated rates (dev-docs/multi-currency/08-exchange-rates.md,
+ * "Safeguards"). Feeds publish mid-market rates; the merchant settles at
  * their gateway's rate, so a markup covers the spread. Manual rates are the
  * merchant's own number and are never marked up.
  */

@@ -96,8 +96,6 @@ class UpdateVariationStockOptionalCest
      * `required_if`, and Validator::filterRequiredIf() discarded every rule on the
      * attribute — closures included — whenever inventory tracking was off. Carrying the
      * requirement as a RequiredWhenRule closure instead leaves the guard running.
-     *
-     * See dev-docs/framework-update-2.12.6-qa.md finding 5.
      */
     public function adminIsRejectedWhenSupplyingANonNumericStockQuantityWhileTrackingIsOff(FunctionalTester $I): void
     {

@@ -2,9 +2,12 @@
 .fct-copy-advanced{
   @apply relative flex items-center;
   input{
-    @apply w-full border border-solid border-gray-outline rounded-tl rounded-bl rounded-tr-none rounded-br-none bg-white shadow-none outline-none px-3 m-0 text-sm truncate text-system-dark min-h-9.5 dark:text-gray-300 dark:bg-transparent dark:border-dark-400 #{!important};
+    @apply w-full! border! border-solid! border-gray-outline! rounded-tl! rounded-bl! rounded-tr-none! rounded-br-none! bg-white! shadow-none! outline-hidden! px-3! m-0! text-sm! truncate! text-system-dark! min-h-9.5! dark:text-gray-300! dark:bg-transparent! dark:border-dark-400!;
     &::-webkit-input-placeholder{
-      @apply text-system-light text-sm dark:text-gray-800 opacity-50;
+      @apply text-system-light text-sm opacity-50;
+    }
+    .fluent_theme_dark &::-webkit-input-placeholder {
+      @apply text-gray-800;
     }
   }
   .copy-tooltip{

@@ -121,7 +121,7 @@ class OrderTest extends DatabaseTestCase
         ]);
 
         // A new order's config carries only its currency snapshot
-        // (dev-docs/multi-currency/plan.md §9.3)
+        // (dev-docs/multi-currency/03-data-storage-map.md)
         $fresh = Order::query()->find($order->id);
         $this->assertIsArray($fresh->config);
         $this->assertSame(['fx'], array_keys($fresh->config));
@@ -199,7 +199,7 @@ class OrderTest extends DatabaseTestCase
         $order = $this->orderFactory->create(['customer_id' => $customer->id]);
 
         // Empty apart from the currency snapshot every order carries
-        // (dev-docs/multi-currency/plan.md §9.3)
+        // (dev-docs/multi-currency/03-data-storage-map.md)
         $this->assertIsArray($order->config);
         $this->assertSame(['fx'], array_keys($order->config));
     }
@@ -849,12 +849,11 @@ class OrderTest extends DatabaseTestCase
         $this->assertEquals(2000, $fresh->total_refund);
     }
 
-    public function test_recount_total_paid_clamps_to_zero(): void
+    public function test_recount_total_paid_keeps_charges_gross_of_refunds(): void
     {
         $customer = $this->customerFactory->create();
         $order = $this->orderFactory->create(['customer_id' => $customer->id]);
 
-        // Refunded more than paid (edge case)
         $this->txnFactory->create($order->id, [
             'status' => Status::TRANSACTION_SUCCEEDED,
             'total'  => 1000,
@@ -868,7 +867,7 @@ class OrderTest extends DatabaseTestCase
         $order->recountTotalPaid();
 
         $fresh = Order::query()->find($order->id);
-        $this->assertEquals(0, $fresh->total_paid);
+        $this->assertEquals(1000, $fresh->total_paid);
     }
 
     public function test_update_refunded_items_single_item(): void

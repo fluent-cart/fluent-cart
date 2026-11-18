@@ -1,4 +1,5 @@
-import {nextTick} from 'vue'
+import {nextTick, readonly} from 'vue'
+import * as Vue from 'vue';
 import Dashboard from "./Vue/Dashboard.vue";
 import PurchaseHistory from "./Vue/PurchaseHistory.vue";
 import Licenses from "./Vue/Licenses.vue";
@@ -14,11 +15,12 @@ import SingleOrder from "./Vue/SingleOrder.vue";
 import fctCreatePortalApp from "./fctCreatePortalApp";
 import {createRouter, createWebHistory} from "vue-router";
 import Rest from "@/utils/http/Rest";
-import ElementPlus, {ElMessageBox, ElNotification, ElLoadingDirective} from 'element-plus';
+import ElementPlus, {ElMessageBox, ElNotification} from 'element-plus';
 import {useElementPlusComponents} from "./mixin/useElementPlusComponents";
 import translate from "./translator/Translator";
 import {translateNumber, bidiIsolate} from "./translator/Translator";
 import {formatDate} from "@/Bits/common";
+import {registerFctComponents} from "@/Bits/Components/Fct";
 
 const routes = [
     {
@@ -132,9 +134,22 @@ const routes = [
 ];
 
 
+/**
+ * Add-ons add portal pages here. Hook a classic script that depends on `wp-hooks`
+ * on `fluent_cart/customer_dashboard/enqueue_assets`; it runs before this module.
+ * Give the matching `fluent_cart/global_customer_menu_items` entry `css_class: 'fct_route'`
+ * and `meta.active_menu` set to its menu key.
+ *
+ * @param {Array}  routes  vue-router route records
+ * @param {Object} context {vue}: this app's Vue, for render functions
+ */
+const portalRoutes = window.wp?.hooks
+    ? window.wp.hooks.applyFilters('fluent_cart/customer_portal/routes', routes, {vue: readonly(Vue)})
+    : routes;
+
 const router = createRouter(
     {
-        routes: routes,
+        routes: Array.isArray(portalRoutes) ? portalRoutes : routes,
         history: createWebHistory(window.fluentcart_customer_profile_vars.app_slug)
     },
 );
@@ -168,12 +183,12 @@ if (containers && containers.length > 0) {
     const app = fctCreatePortalApp();
 
     useElementPlusComponents(app);
+    registerFctComponents(app);
 
     app.config.globalProperties.$notify = ElNotification;
     app.config.globalProperties.$confirm = ElMessageBox.confirm;
     app.config.globalProperties.appVars = window.fluentcart_customer_profile_vars;
 
-    app.directive('loading', ElLoadingDirective);
     app.mixin({
         methods: {
             $get: Rest.get,

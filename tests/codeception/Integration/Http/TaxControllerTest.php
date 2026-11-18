@@ -570,20 +570,6 @@ class TaxControllerTest extends RestTestCase
     // Spec 171-174: AJAX endpoints
     // =========================================================================
 
-    public function test_validate_vat_ajax_handler_registered(): void
-    {
-        $src = file_get_contents(FLUENTCART_PLUGIN_PATH . 'app/Modules/Tax/TaxModule.php');
-        $this->assertStringContainsString("add_action('wp_ajax_fluent_cart_validate_vat'", $src);
-        $this->assertStringContainsString("add_action('wp_ajax_nopriv_fluent_cart_validate_vat'", $src);
-    }
-
-    public function test_remove_vat_ajax_handler_registered(): void
-    {
-        $src = file_get_contents(FLUENTCART_PLUGIN_PATH . 'app/Modules/Tax/TaxModule.php');
-        $this->assertStringContainsString("add_action('wp_ajax_fluent_cart_remove_vat'", $src);
-        $this->assertStringContainsString("add_action('wp_ajax_nopriv_fluent_cart_remove_vat'", $src);
-    }
-
     public function test_validate_vat_without_nonce_returns_error(): void
     {
         unset($_REQUEST['_wpnonce']);
@@ -749,16 +735,6 @@ class TaxControllerTest extends RestTestCase
         $this->assertSame(0, (int) $line['tax_amount'], 'A 0% rate yields zero tax');
         $this->assertNotEmpty(Arr::get($line, 'line_meta.tax_config.rates'),
             'The matched 0% rate still produces a tax line entry');
-    }
-
-    public function test_quantity_change_triggers_recalculate(): void
-    {
-        $this->enableTax();
-        (new \FluentCart\App\Modules\Tax\TaxModule())->register();
-        $this->assertNotFalse(
-            has_action('fluent_cart/cart/cart_data_items_updated'),
-            'Action must be registered to respond to quantity changes'
-        );
     }
 
     public function test_deleting_tax_class_preserves_stored_order_tax_rate(): void

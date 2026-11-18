@@ -70,10 +70,14 @@ export const recalculatePayout = ($orderObj, $hasCoupon, discountTotal = 0) => {
   ) {
       $orderObj.manual_discount_total =
       $orderObj.coupon_discount_total =
-      $orderObj.shipping_tax =
-      $orderObj.shipping_total =
       $orderObj.tax_total =
         0;
+      const hasManualShipping = $orderObj.config?.shipping_source === 'manual'
+          && $orderObj.order_items?.some(item => item.fulfillment_type === 'physical');
+      if (!hasManualShipping) {
+          $orderObj.shipping_tax = 0;
+          $orderObj.shipping_total = 0;
+      }
   }
   calculateOrderTotal($orderObj);
 

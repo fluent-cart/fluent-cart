@@ -306,8 +306,8 @@ foreach ($scanDirs as $dir) {
     }
 }
 
+// A passing lint prints nothing, so anything it writes is an unexpected diagnostic.
 if (!$violations) {
-    echo "localized-dates: clean ({$scanned} files scanned)\n";
     exit(0);
 }
 

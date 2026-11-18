@@ -1,8 +1,8 @@
 .el-alert{
-  @apply text-system-dark #{!important};
+  @apply text-system-dark!;
   border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT')) !important;
   .el-alert__icon{
-    @apply self-start w-auto me-2 relative #{!important};
+    @apply self-start! w-auto! me-2! relative!;
     [dir="rtl"] & {
       margin-right: 0 !important;
     }
@@ -30,14 +30,14 @@
     }
   }
   .el-alert__title.with-description{
-    @apply text-sm font-medium #{!important};
+    @apply text-sm! font-medium!;
   }
   &--error{
     &.is-light{
-      @apply bg-red-50 #{!important};
+      @apply bg-red-50!;
     }
     .el-icon{
-      @apply w-4.5 #{!important};
+      @apply w-4.5!;
       svg{
         @apply hidden;
       }
@@ -54,7 +54,7 @@
   }
   &--success{
     &.is-light{
-      @apply bg-success-50 #{!important};
+      @apply bg-success-50!;
       .el-alert__icon{
         @apply text-success-500;
       }
@@ -65,7 +65,7 @@
   }
   &--warning{
     &.is-light{
-      @apply bg-warning-50 #{!important};
+      @apply bg-warning-50!;
       .el-alert__icon{
         @apply text-warning-500;
       }
@@ -76,7 +76,7 @@
   }
   &--blue{
     &.is-light{
-      @apply bg-blue-50 #{!important};
+      @apply bg-blue-50!;
       .el-alert__icon{
         @apply text-blue-500;
       }

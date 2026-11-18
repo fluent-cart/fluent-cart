@@ -51,6 +51,20 @@
   }
 
   &.fct-shipping-method-drawer {
+    // Was el-row :gutter="12" + el-col :lg; the drawer sits outside the Tailwind scope.
+    .fct-shipping-method-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 12px;
+    }
+    .fct-shipping-method-col {
+      grid-column: span 2 / span 2;
+      @media (min-width: 1200px) {
+        &.is-half {
+          grid-column: span 1 / span 1;
+        }
+      }
+    }
     .el-drawer__footer {
       @apply pt-0 border-t-0;
       .dialog-footer {
@@ -107,10 +121,16 @@
       @apply visible;
     }
     &::-webkit-scrollbar-thumb {
-      @apply bg-gray-200 rounded-[6px] invisible dark:bg-dark-400;
+      @apply bg-gray-200 rounded-[6px] invisible;
+    }
+    .fluent_theme_dark &::-webkit-scrollbar-thumb {
+      @apply bg-dark-400;
     }
     &::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-200 dark:bg-dark-500;
+      @apply bg-gray-200;
+    }
+    .fluent_theme_dark &::-webkit-scrollbar-thumb:hover {
+      @apply bg-dark-500;
     }
     &::-webkit-scrollbar {
       @apply h-[3px] w-[3px];

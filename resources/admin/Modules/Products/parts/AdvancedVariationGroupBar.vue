@@ -45,16 +45,10 @@ defineExpose({ configuredGroups });
     class="fct-adv-groupby-bar"
 >
     <span class="fct-adv-groupby-label">{{ $t('Group by') }}</span>
-    <el-select
+    <fct-select
         v-model="groupByGroupId"
         :placeholder="$t('Select')"
-    >
-       <el-option
-            v-for="g in configuredGroups"
-            :key="g.id"
-            :label="g.title"
-            :value="g.id"
-        />
-    </el-select>
+        :options="configuredGroups.map(group => ({label: group.title, value: group.id}))"
+    />
   </div>
 </template>

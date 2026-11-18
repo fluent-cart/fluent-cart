@@ -274,7 +274,7 @@ class ProductSchema
 
         // Always the base currency and base amounts: crawlers must see one
         // stable price, not the visitor's presentment currency
-        // (multi-currency plan §12.7)
+        // (dev-docs/multi-currency/05-storefront-cart-checkout.md, "Display")
         $currency = BaseCurrency::get();
         $decimals = Money::getDecimals($currency);
 

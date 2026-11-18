@@ -1,4 +1,5 @@
-@config "./single-product.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./single-product.config.mjs";
 
 /* product */
 
@@ -26,7 +27,8 @@
 // for — so its surfaces follow the printed globals with their own fallbacks:
 // dark sites get a dark panel, everything else keeps the white it always had.
 .fct-product-modal {
-    @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5;
+    // box-border: full size plus padding ran past the screen in content-box themes.
+    @apply fixed top-0 left-0 w-full h-full flex justify-center items-center z-[99999] p-5 box-border;
 }
 
 .fct-product-modal-overlay {
@@ -44,7 +46,7 @@
 }
 
 .fct-product-modal-body {
-  @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden;
+  @apply relative bg-[var(--fct-card-bg-color,#ffffff)] w-[1020px] min-h-[400px] max-h-[610px] p-7.5 z-10 overflow-x-hidden box-border;
   border-radius: var(--fct-popup-radius, theme('borderRadius.DEFAULT'));
   &:active::-webkit-scrollbar-thumb,
   &:focus::-webkit-scrollbar-thumb,
@@ -75,14 +77,14 @@
     }
   }
   .fct-single-product-page {
-    @apply px-0 !important;
+    @apply px-0!;
   }
 }
 
 .fluent-cart-similar-product-list {
     .fluent-cart-single-product-card {
         &.single-product-card {
-            @apply max-w-full w-full #{!important};
+            @apply max-w-full! w-full!;
         }
     }
 }
@@ -92,7 +94,8 @@
   @apply grid;
   gap: var(--fct-grid-gap, theme('spacing.5'));
   --fct-related-product-columns: 4;
-  grid-template-columns: repeat(var(--fct-related-product-columns), 1fr);
+  // minmax(0, …): equal columns; a card's content never widens its own past the grid.
+  grid-template-columns: repeat(var(--fct-related-product-columns), minmax(0, 1fr));
 }
 @media (max-width: 1290px) {
   .fct-similar-product-list-container {
@@ -108,6 +111,13 @@
 
 @media (max-width: 640px) {
   .fct-related-products-grid {
+    --fct-related-product-columns: 2 !important;
+  }
+}
+
+// Template cards need about 260px; three columns on a tablet left them near 230px, as the Products block avoids.
+@media (min-width: 425px) and (max-width: 900px) {
+  .fct-related-products-grid:has(.fct-card-layout, .fct-product-card-template) {
     --fct-related-product-columns: 2 !important;
   }
 }

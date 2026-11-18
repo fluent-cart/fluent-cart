@@ -84,20 +84,20 @@ onUnmounted(() => {
     <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h4 class="fct-card-header-title is-small">{{ translate("Retention curve") }}</h4>
-          <el-tooltip popper-class="fct-tooltip" placement="top"
+          <h2 class="fct-card-header-title is-small">{{ translate("Retention curve") }}</h2>
+          <fct-tooltip placement="top"
                       :content="metric === 'mrr'
                         ? translate('SubRpt_Average_Cohort_Share')
                         : translate('SubRpt_Average_Cohort')">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="5" />
+      <fct-skeleton v-if="loading" animated :rows="5" />
       <div v-else-if="!points.length" class="py-10 text-center text-sm text-system-light dark:text-gray-400">
         {{ translate("No cohort has reached its first period yet") }}
       </div>

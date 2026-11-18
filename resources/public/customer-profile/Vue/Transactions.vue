@@ -42,13 +42,13 @@
                 </template>
               </span>
 
-              <el-tooltip
+              <fct-tooltip
                   v-if=" transaction.meta && transaction.meta.refunded_total"
                   :content="translate(/* translators: %1$s: refunded amount */ 'Partially refunded: %1$s', formatNumber(transaction.meta.refunded_total, true, false, transaction.currency))"
                   placement="top"
               >
                 <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
-              </el-tooltip>
+              </fct-tooltip>
 
               <a 
                 :href="receiptUrl(order?.uuid)" 
@@ -101,13 +101,13 @@
                   </template>
                 </span>
 
-                <el-tooltip
+                <fct-tooltip
                     v-if="transaction.total_refund > 0"
                     :content="translate(/* translators: %1$s: refunded amount */ 'Partially refunded: %1$s', formatNumber(transaction.total_refund, true, false, transaction.currency))"
                     placement="top"
                 >
                   <DynamicIcon name="InformationFill" class="w-4.5" aria-hidden="true"/>
-                </el-tooltip>
+                </fct-tooltip>
 
                 <a 
                     :href="receiptUrl(transaction?.uuid)" target="_blank"

@@ -315,9 +315,9 @@ const removeUrlImage = (url) => {
           {{ modelValue.length }} {{ $t('images') }}
         </el-tag>
       </button>
-      <el-button v-else class="fct-mp-add-featured">
+      <fct-button v-else class="fct-mp-add-featured">
         <DynamicIcon name="GalleryAdd"/>
-      </el-button>
+      </fct-button>
     </template>
 
     <!-- Compact inline: avatar stack (for table cells) -->
@@ -346,9 +346,9 @@ const removeUrlImage = (url) => {
         </span>
       </div>
 
-      <el-button v-else class="fct-mp-add-compact">
+      <fct-button v-else class="fct-mp-add-compact">
         <DynamicIcon name="GalleryAdd"/>
-      </el-button>
+      </fct-button>
     </template>
 
     <!-- Full inline: thumbnail grid preview (for product pages, etc.) -->
@@ -383,7 +383,7 @@ const removeUrlImage = (url) => {
   </div>
 
   <!-- Modal: full gallery management -->
-  <el-dialog
+  <fct-dialog
     v-if="showModal"
     v-model="showModal"
     :title="dialogTitle"
@@ -492,14 +492,14 @@ const removeUrlImage = (url) => {
             </div>
 
             <div class="fmp-url-add">
-              <el-input
+              <fct-input
                 v-model="pasteUrl"
                 :placeholder="$t('Paste image URL...')"
                 size="small"
                 :disabled="galleryLocked"
                 @keyup.enter="addFromUrl"
               />
-              <el-button size="small" @click="addFromUrl" :disabled="galleryLocked || !pasteUrl.trim()">{{ $t('Add') }}</el-button>
+              <fct-button size="small" @click="addFromUrl" :disabled="galleryLocked || !pasteUrl.trim()">{{ $t('Add') }}</fct-button>
             </div>
           </div>
         </el-tab-pane>
@@ -519,19 +519,19 @@ const removeUrlImage = (url) => {
 
       <div class="fct-media-picker-footer-actions">
         <label v-if="showApplyToAll" class="fct-media-picker-apply-to-group-label" :class="{ 'is-enabled': applyToAll }">
-          <el-checkbox
+          <fct-choice
               v-model="applyToAll"
               :aria-label="$t('Apply media to all variants in this group')"
           />
           {{ applyToAllLabel }}
         </label>
         <div class="fct-btn-group sm">
-          <el-button :disabled="busy" @click="cancelModal">{{ $t('Cancel') }}</el-button>
-          <el-button type="primary" :disabled="busy || galleryLocked" @click="saveAndClose">{{ $t('Save') }}</el-button>
+          <fct-button :disabled="busy" @click="cancelModal">{{ $t('Cancel') }}</fct-button>
+          <fct-button type="primary" :disabled="busy || galleryLocked" @click="saveAndClose">{{ $t('Save') }}</fct-button>
         </div>
       </div>
     </div>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 

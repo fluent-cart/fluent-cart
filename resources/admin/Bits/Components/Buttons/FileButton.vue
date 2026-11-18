@@ -1,8 +1,8 @@
 <template>
-  <el-button type="default" :size="size" @click="openMediaFrame">
+  <fct-button :size="size" @click="openMediaFrame">
     <el-icon class="el-icon--left"><Upload /></el-icon>
     {{title}}
-  </el-button>
+  </fct-button>
 </template>
 
 <script setup>
@@ -21,7 +21,7 @@ const props = defineProps({
   },
 
   size:{
-    default: 'medium'
+    default: ''
   },
 })
 

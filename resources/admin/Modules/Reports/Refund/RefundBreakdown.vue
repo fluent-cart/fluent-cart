@@ -72,18 +72,18 @@ const sections = computed(() => {
     <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h5 class="fct-card-header-title is-small">{{ translate("Refund breakdown") }}</h5>
-          <el-tooltip popper-class="fct-tooltip" placement="top"
+          <h2 class="fct-card-header-title is-small">{{ translate("Refund breakdown") }}</h2>
+          <fct-tooltip placement="top"
                       :content="translate('RefundRpt_Refunded_Amount')">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="4" />
+      <fct-skeleton v-if="loading" animated :rows="4" />
 
       <div v-else-if="!overview || !overview.summary || !overview.summary.refunds" class="text-sm text-system-light dark:text-gray-400">
         {{ translate("No refunds in this period") }}
@@ -92,7 +92,7 @@ const sections = computed(() => {
       <div v-else class="fct-report-order-mix-grid has-3">
         <section v-for="section in sections" :key="section.key" class="fct-report-order-mix-section">
           <div class="fct-report-order-mix-head">
-            <h6 class="fct-report-order-mix-title">{{ section.title }}</h6>
+            <h3 class="fct-report-order-mix-title">{{ section.title }}</h3>
           </div>
           <div class="fct-report-order-mix-bar" role="img" :aria-label="section.rows.map(row => row.label + ' ' + share(row.share)).join(', ')">
             <span v-for="row in section.rows" :key="row.key" :class="row.color" :style="{width: Math.max(0, Math.min(100, row.share)) + '%'}"></span>

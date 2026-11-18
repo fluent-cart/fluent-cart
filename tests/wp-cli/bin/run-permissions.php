@@ -13,6 +13,7 @@
  */
 
 require_once __DIR__ . '/../lib/harness.php';
+require_once __DIR__ . '/../lib/fixtures.php';
 require_once __DIR__ . '/../lib/permission-route-source.php';
 
 FcTest::boot();
@@ -144,7 +145,7 @@ foreach ($declarations as $declaration) {
 
 $cleared = FcTest::clearCaches();
 $protectedRoutes = $categoryTotals['protected_executable'];
-WP_CLI::log(
+FcTest::note(
     'FluentCart permission smoke — ' . count($declarations) . ' mutating declarations, '
         . $protectedRoutes . ' protected executable routes, '
         . ($protectedRoutes * 2) . ' denial cases'
@@ -152,9 +153,9 @@ WP_CLI::log(
         . ($authFilter !== '' ? ' (auth: ' . $authFilter . ')' : '')
         . ' — cleared ' . $cleared . " cache entries\n"
 );
-WP_CLI::log('Permission inventory by configured route file:');
+FcTest::note('Permission inventory by configured route file:');
 foreach ($stats as $file => $fileStats) {
-    WP_CLI::log(sprintf(
+    FcTest::note(sprintf(
         '  %s POST=%d PUT=%d PATCH=%d DELETE=%d protected=%d public_exempt=%d unsafe_skips=%d known_failures=%d',
         $file,
         $fileStats['POST'],
@@ -167,7 +168,7 @@ foreach ($stats as $file => $fileStats) {
         $fileStats['known']
     ));
 }
-WP_CLI::log(sprintf(
+FcTest::note(sprintf(
     "\nInventory totals: protected_executable=%d anonymous_cases=%d subscriber_cases=%d public_exempt=%d unsafe_skips=%d known_failures=%d\n",
     $protectedRoutes,
     $protectedRoutes,
@@ -181,7 +182,7 @@ foreach ($declarations as $declaration) {
     if (!in_array($declaration['classification'], ['public_exempt', 'unsafe_skip', 'known_failure'], true)) {
         continue;
     }
-    WP_CLI::log(sprintf(
+    FcTest::note(sprintf(
         '  %s %s /%s [%s] — %s',
         strtoupper(str_replace('_', '-', $declaration['classification'])),
         $declaration['verb'],
@@ -190,7 +191,7 @@ foreach ($declarations as $declaration) {
         $declaration['reason']
     ));
 }
-WP_CLI::log('');
+FcTest::note('');
 
 global $wpdb;
 
@@ -200,7 +201,7 @@ $readProtectedCounts = static function () {
 };
 $assertProtectedCounts = static function ($context) use (
     $readProtectedCounts,
-    $startingCounts
+    &$startingCounts
 ) {
     $actual = $readProtectedCounts();
     if ($actual !== $startingCounts) {
@@ -213,7 +214,7 @@ $assertProtectedCounts = static function ($context) use (
     return $actual;
 };
 
-WP_CLI::log(
+FcTest::note(
     'internal protected run-start: '
     . FcProtectedTables::format($startingCounts)
 );
@@ -261,7 +262,7 @@ if (
     $cleanupSubscriber();
     WP_CLI::error('Sacrificial user is not a clean low-privilege subscriber.');
 }
-WP_CLI::log(
+FcTest::note(
     'subscriber fixture: created fresh ID ' . $subscriberId
         . '; role=subscriber manage_options=no fluent_cart_admin=no'
 );
@@ -289,27 +290,89 @@ add_filter('rest_dispatch_request', $controllerFuse, PHP_INT_MAX, 4);
 $refreshPluginUser = static function () {
     \FluentCart\App\Helpers\Helper::getCurrentUser(true);
 };
-$bindingValues = [
-    'existing_product_id' => (int) $wpdb->get_var($wpdb->prepare(
-        "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s AND post_status <> %s ORDER BY ID ASC LIMIT 1",
-        \FluentCart\App\CPT\FluentProducts::CPT_NAME,
-        'auto-draft'
-    )),
-    'existing_order_id' => (int) $wpdb->get_var(
-        'SELECT id FROM `' . $wpdb->prefix . 'fct_orders` ORDER BY id ASC LIMIT 1'
-    ),
-    'existing_transaction_id' => (int) $wpdb->get_var(
-        'SELECT id FROM `' . $wpdb->prefix . 'fct_order_transactions` ORDER BY id ASC LIMIT 1'
-    ),
-];
-foreach ($bindingValues as $bindingName => $bindingValue) {
-    if ($bindingValue <= 0) {
-        $cleanupSubscriber();
-        WP_CLI::error(
-            'Required read-only permission binding is unavailable: ' . $bindingName
-        );
+// A store without an order or a transaction gets an owned fixture set (customer, order, transaction)
+// from FcFixture, which checks ownership and residue on cleanup. The order and transaction routes bind
+// to it. The baseline is re-read once it exists; the end check compares against the original counts.
+$fixtureOrderId = 0;
+$fixtureTransactionId = 0;
+$fixtureCleaned = true;
+$cleanupFixtureOrder = static function () use (&$fixtureCleaned) {
+    if (!$fixtureCleaned) {
+        FcFixture::cleanupAll();
+        $fixtureCleaned = true;
     }
+};
+register_shutdown_function(static function () use ($cleanupFixtureOrder) {
+    try {
+        $cleanupFixtureOrder();
+    } catch (\Throwable $e) {
+        WP_CLI::warning('Permission order fixture shutdown cleanup failed: ' . $e->getMessage());
+    }
+});
+$existingProductId = (int) $wpdb->get_var($wpdb->prepare(
+    "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s AND post_status <> %s ORDER BY ID ASC LIMIT 1",
+    \FluentCart\App\CPT\FluentProducts::CPT_NAME,
+    'auto-draft'
+));
+if ($existingProductId <= 0) {
+    // Before any fixture row exists, so there is nothing to clean but the subscriber.
+    $cleanupSubscriber();
+    WP_CLI::error('Required read-only permission binding is unavailable: existing_product_id');
 }
+$existingOrderId = (int) $wpdb->get_var(
+    'SELECT id FROM `' . $wpdb->prefix . 'fct_orders` ORDER BY id ASC LIMIT 1'
+);
+$existingTransactionId = (int) $wpdb->get_var(
+    'SELECT id FROM `' . $wpdb->prefix . 'fct_order_transactions` ORDER BY id ASC LIMIT 1'
+);
+if ($existingOrderId <= 0 || $existingTransactionId <= 0) {
+    try {
+        FcFixture::initialize(
+            getenv('WP_PLUGIN_TEST_FIXTURE_IDENTITY') !== false ? getenv('WP_PLUGIN_TEST_FIXTURE_IDENTITY') : null
+        );
+        $fixtureCleaned = false;
+        FcFixture::customer();
+        $fixtureOrderId = (int) FcFixture::order()->id;
+        $transaction = \FluentCart\App\Models\OrderTransaction::query()->create([
+            'order_id'            => $fixtureOrderId,
+            'order_type'          => 'payment',
+            'vendor_charge_id'    => FcFixture::identity(),
+            'payment_method'      => '',
+            'payment_mode'        => 'test',
+            'payment_method_type' => '',
+            'currency'            => 'USD',
+            'transaction_type'    => 'charge',
+            'card_last_4'         => 0,
+            'card_brand'          => '',
+            'status'              => 'pending',
+            'total'               => 1000,
+            'rate'                => 1,
+        ]);
+        $fixtureTransactionId = isset($transaction->id) ? (int) $transaction->id : 0;
+        if ($fixtureTransactionId <= 0) {
+            throw new RuntimeException('Transaction create returned no ID.');
+        }
+    } catch (\Throwable $e) {
+        $message = 'Could not create the permission order fixture: ' . $e->getMessage();
+        $cleanupSubscriber();
+        try {
+            $cleanupFixtureOrder();
+        } catch (\Throwable $cleanupError) {
+            $message .= '; cleanup also failed: ' . $cleanupError->getMessage();
+        }
+        WP_CLI::error($message);
+    }
+    $startingCounts = $readProtectedCounts();
+    FcTest::note(
+        'permission order fixture: created owned customer, order and transaction; per-route baseline re-read: '
+        . FcProtectedTables::format($startingCounts)
+    );
+}
+$bindingValues = [
+    'existing_product_id'     => $existingProductId,
+    'existing_order_id'       => $fixtureOrderId ?: $existingOrderId,
+    'existing_transaction_id' => $fixtureTransactionId ?: $existingTransactionId,
+];
 $resolveRoute = static function ($route, array $bindings) use ($bindingValues) {
     return preg_replace_callback('/\{([^{}]+)\}/', static function ($matches) use (
         $bindings,
@@ -452,6 +515,18 @@ try {
     wp_set_current_user(0);
     $refreshPluginUser();
     $cleanupOk = $cleanupSubscriber();
+    // Fixture rows sit in protected tables, so a failed cleanup is a hard failure like a changed count.
+    // It halts here so a probe that threw cannot hide it.
+    try {
+        $cleanupFixtureOrder();
+    } catch (\Throwable $e) {
+        restore_error_handler();
+        WP_CLI::log(
+            'HARD FAILURE — Permission order fixture cleanup failed: ' . $e->getMessage()
+            . '; subscriber cleanup ' . ($cleanupOk ? 'ok' : 'failed')
+        );
+        WP_CLI::halt(97);
+    }
 }
 
 if ($filter !== '' && $selectedRoutes === 0) {
@@ -460,12 +535,12 @@ if ($filter !== '' && $selectedRoutes === 0) {
 if (!$cleanupOk || get_userdata($subscriberId)) {
     WP_CLI::error('Subscriber cleanup failed for user ID ' . $subscriberId . '.');
 }
-WP_CLI::log(
+FcTest::note(
     'subscriber cleanup: deleted fresh ID ' . $subscriberId . '; lookup=absent'
 );
 
 $endingCounts = $readProtectedCounts();
-WP_CLI::log(
+FcTest::note(
     'internal protected run-end: '
     . FcProtectedTables::format($endingCounts)
     . '; selected_routes=' . $selectedRoutes

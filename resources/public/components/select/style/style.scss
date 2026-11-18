@@ -1,4 +1,5 @@
-@config "./select.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./select.config.mjs";
 :root{
   --fct-select-input-bg: var(--fct-input-bg-color, #ffffff);
   --fct-select-input-text-color: var(--fct-input-text-color, theme('colors.system.dark'));
@@ -12,7 +13,7 @@
         @apply relative bg-white rounded-none transition-all duration-[300ms] border-[0.5px] border-solid border-gray-200;
         .select {
             &-input {
-                @apply w-full pe-10 text-sm border-none outline-none bg-transparent pointer-events-none;
+                @apply w-full pe-10 text-sm border-none outline-hidden bg-transparent pointer-events-none;
                 padding-top: var(--fct-input-padding-y, theme('spacing.3'));
                 padding-bottom: var(--fct-input-padding-y, theme('spacing.3'));
                 padding-inline-start: var(--fct-input-padding-x, theme('spacing.4'));
@@ -24,7 +25,9 @@
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
                 border-top: 4px solid;
-                @apply absolute end-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-primary-200 transition-transform duration-300 ease-in-out pointer-events-none;
+                @apply absolute end-3 top-1/2 w-0 h-0 border-t-primary-200 transition-transform duration-300 ease-in-out pointer-events-none;
+                // Plain transform: the open state replaces it with translate + rotate.
+                transform: translateY(-50%);
             }
             &-option {
                 transition: background-color 0.2s ease;
@@ -140,7 +143,7 @@
         @apply hidden;
     }
     .fct-nice-select {
-        @apply border-t-[1px] rounded-none;
+        @apply [border-top-width:1px] rounded-none;
     }
 }
 #billing_state_wrapper {
@@ -169,7 +172,7 @@
         }
     }
     .fct-nice-select {
-        @apply border-t-[1px] rounded-none;
+        @apply [border-top-width:1px] rounded-none;
     }
 }
 #shipping_state_wrapper {
@@ -188,7 +191,7 @@
 .fct-nice-select {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     transition: all .2s ease-in-out;
-    @apply w-full h-9.5 pe-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-none text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
+    @apply w-full h-9.5 pe-7.5 clear-both whitespace-nowrap select-none box-border leading-[38px] relative outline-hidden text-[var(--fct-select-input-text-color)] bg-[var(--fct-select-input-bg)] text-sm cursor-pointer block font-normal rounded-none border-x-[1px] border-y-[0.5px] border-solid border-[var(--fct-checkout-input-border-color)] active:border-[#999] focus:border-[#999];
     padding-inline-start: var(--fct-input-padding-x, theme('spacing[4.5]'));
 
     &:after {
@@ -224,7 +227,7 @@
     &.wide {
         @apply w-full;
         .fct-nice-select-dropdown {
-            @apply left-0 right-0 #{!important};
+            @apply left-0! right-0!;
         }
     }
     &.right {
@@ -234,7 +237,7 @@
         }
     }
     &.small {
-        @apply text-xs h-9 h-8.5;
+        @apply text-xs h-8.5;
         &:after {
             @apply w-1 h-1;
         }
@@ -259,7 +262,7 @@
 
     &-search {
         @apply border-b-[1px] border-solid border-[var(--fct-checkout-input-border-color)];
-        @apply border-t-0 border-x-0 !important;
+        @apply border-t-0! border-x-0!;
         &-box {
             @apply w-full p-0 top-0 sticky box-border rounded-none z-[2];
         }
@@ -293,7 +296,7 @@
     }
 
     .option {
-        @apply cursor-pointer font-normal leading-[40px] list-none outline-none ps-4.5 pe-[29px] text-start transition-all duration-200;
+        @apply cursor-pointer font-normal leading-[40px] list-none outline-hidden ps-4.5 pe-[29px] text-start transition-all duration-200;
         &.selected.focus,
         &.focus,
         &:hover {
@@ -349,20 +352,7 @@
 .select-selection-list {
     @apply list-none p-0 m-0;
     .select-selection {
-        @apply bg-[#e4e4e4]
-        border-[1px] border-[#aaa]
-        box-border
-        inline-block
-        ms-[5px]
-        mt-[5px]
-        py-[2px]
-        px-[5px]
-        relative
-        max-w-full
-        overflow-hidden
-        text-ellipsis
-        align-bottom
-        whitespace-nowrap;
+        @apply bg-[#e4e4e4] [border-width:1px] border-[#aaa] box-border inline-block ms-[5px] mt-[5px] py-[2px] px-[5px] relative max-w-full overflow-hidden text-ellipsis align-bottom whitespace-nowrap;
         border-radius: var(--fct-badge-radius, theme('borderRadius.xs'));
     }
 

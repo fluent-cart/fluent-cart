@@ -349,6 +349,46 @@ class IntegrationEventListenerTest extends WPTestCase
     }
 
     // Spec 146: realtime feeds fire do_action with order + event_data keys
+    public function test_scheduled_action_times_are_utc_on_a_store_in_another_timezone(): void
+    {
+        $original = get_option('timezone_string');
+        update_option('timezone_string', 'Asia/Dhaka'); // UTC+6: site time is 6 hours ahead
+
+        try {
+            $order = $this->makeOrder();
+            $addonFilter = $this->addProviderFilter('fakep8', ['delay_on_global_action' => true]);
+            $this->addGlobalFeed('fakep8', [
+                'enabled'       => 'yes',
+                'event_trigger' => ['subscription_activated'],
+            ]);
+
+            (new IntegrationEventListener())->mapAllIntegrationActions(['order' => $order], 'subscription_activated');
+
+            $action = ScheduledAction::query()
+                ->where('action', 'fluent_cart/integration/run_order_actions')
+                ->where('object_id', $order->id)
+                ->orderBy('id', 'DESC')
+                ->first();
+            $this->assertNotEmpty($action->scheduled_at);
+            $this->assertLessThan(120, abs(strtotime($action->scheduled_at . ' UTC') - time()), 'scheduled_at is UTC, like the other columns');
+
+            // The provider stays registered, or the runner drops the feed and never writes completed_at
+            (new IntegrationEventListener())->initOrderAsyncRunner($action->id);
+            remove_filter('fluent_cart/integration/order_integrations', $addonFilter);
+            $done = ScheduledAction::query()->find($action->id);
+            $this->assertSame('completed', $done->status);
+            $this->assertNotEmpty($done->completed_at, 'An empty value would read as "now" below');
+            $this->assertLessThan(120, abs(strtotime($done->completed_at . ' UTC') - time()), 'completed_at is UTC');
+
+            $queueId = (new \FluentCart\App\Hooks\Scheduler\JobRunner())->addQueue(['action' => 'fct_test_utc_clock', 'group' => 'integration']);
+            $queued  = ScheduledAction::query()->find($queueId);
+            $this->assertNotEmpty($queued->created_at);
+            $this->assertLessThan(120, abs(strtotime($queued->created_at . ' UTC') - time()), 'created_at is UTC');
+        } finally {
+            update_option('timezone_string', $original);
+        }
+    }
+
     public function test_realtime_feeds_fire_action_with_order_and_event_data(): void
     {
         $order = $this->makeOrder();

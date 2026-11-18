@@ -1,13 +1,13 @@
 .el-select-dropdown__list{
     .el-select-dropdown__item{
         &.is-selected{
-            @apply text-dark-500 font-medium dark:text-gray-300 #{!important};
+            @apply text-dark-500! font-medium! dark:text-gray-300!;
         }
         &.is-disabled{
-            @apply text-gray-500 dark:text-gray-300 #{!important};
+            @apply text-gray-500! dark:text-gray-300!;
         }
         &.is-hovering{
-            @apply bg-gray-50 dark:bg-dark-500 dark:text-gray-300 #{!important};
+            @apply bg-gray-50! dark:bg-dark-500! dark:text-gray-300!;
         }
     }
 }
@@ -50,7 +50,7 @@
                 &.item-link{
                     @apply p-0 rounded-none bg-transparent cursor-default dark:bg-transparent;
                     a {
-                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-system-dark relative rounded-sm focus:outline-none focus:shadow-none hover:bg-gray-50 mb-0 last:mb-0 focus:bg-gray-50 focus:text-system-dark dark:text-gray-50 dark:focus:text-gray-50 dark:focus:bg-dark-400 dark:hover:bg-dark-500;
+                        @apply no-underline flex items-center w-full p-2 text-sm gap-2 text-system-dark relative rounded-sm focus:outline-hidden focus:shadow-none hover:bg-gray-50 mb-0 last:mb-0 focus:bg-gray-50 focus:text-system-dark dark:text-gray-50 dark:focus:text-gray-50 dark:focus:bg-dark-400 dark:hover:bg-dark-500;
                         .icon{
                             svg{
                                 @apply w-4 h-4;
@@ -99,7 +99,7 @@
 }
 
 .el-popper.el-popover.fct-stock-dropdown {
-    @apply w-[250px] #{!important};
+    @apply w-[250px]!;
 }
 .el-popper {
     &.fct-select-role-dropdown {
@@ -150,8 +150,8 @@
     &.is-multiple {
         .el-select-dropdown__item {
             &.is-selected {
-                &:after {
-                    @apply dark:bg-gray-50;
+                .fluent_theme_dark &:after {
+                    @apply bg-gray-50;
                 }
             }
         }
@@ -164,7 +164,7 @@
     }
     .el-select-dropdown__item{
         &.is-hovering {
-            @apply bg-transparent rounded-none dark:bg-transparent #{!important};
+            @apply bg-transparent! rounded-none! dark:bg-transparent!;
         }
     }
     .el-tree-node__content{

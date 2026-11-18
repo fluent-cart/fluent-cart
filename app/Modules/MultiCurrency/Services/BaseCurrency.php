@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
  * Deliberately NOT read through CurrencySettings::get(): that path carries the
  * fluent_cart/global_currency_setting filter, which a storefront may use to
  * present a different currency per request. The base currency must never vary
- * by visitor. dev-docs/multi-currency/plan.md §12.1.
+ * by visitor. dev-docs/multi-currency/01-architecture.md, "The model".
  */
 class BaseCurrency
 {

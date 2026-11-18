@@ -89,85 +89,73 @@ const handleCommand = (command) => {
 </script>
 
 <template>
-    <el-table ref="tableRef" :data="attrGroupsTable.getTableData()" row-key="id" class="w-full compact-table" @expand-change="handleExpandChange">
+    <fct-table ref="tableRef" :data="attrGroupsTable.getTableData()" row-key="id" class="w-full compact-table" @expand-change="handleExpandChange">
 
-        <el-table-column type="expand" :width="80">
+        <fct-table-column type="expand" :width="80">
             <template #default="scope">
                 <GroupTermsPanel
                     :group="scope.row"
                     :ref="el => { if (el) panelRefs[scope.row.id] = el; else delete panelRefs[scope.row.id]; }"
                 />
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column v-if="attrGroupsTable.isColumnVisible('title')" :min-width="150" :label="translate('Title')">
+        <fct-table-column v-if="attrGroupsTable.isColumnVisible('title')" :min-width="150" :label="translate('Title')">
             <template #default="scope">
                 <div class="table-cell">{{ scope.row.title || translate('No Name') }}</div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :min-width="100" :label="translate('Type')">
+        <fct-table-column :min-width="100" :label="translate('Type')">
             <template #default="scope">
                 <div class="table-cell">{{ getGroupTypeLabel(scope.row) }}</div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :min-width="100" :label="translate('Styling')">
+        <fct-table-column :min-width="100" :label="translate('Styling')">
             <template #default="scope">
                 <div class="table-cell">{{ getGroupStylingLabel(scope.row) }}</div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :min-width="80" :label="translate('Terms')">
+        <fct-table-column :min-width="80" :label="translate('Terms')">
             <template #default="scope">
                 <div class="table-cell">{{ scope.row.terms_count || 0 }}</div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :min-width="120" :label="translate('Date')">
+        <fct-table-column :min-width="120" :label="translate('Date')">
             <template #default="scope">
                 <div class="table-cell"><ConvertedTime :date-time="scope.row.created_at"/></div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :width="80" align="right" :label="translate('Actions')">
+        <fct-table-column :width="80" align="right" :label="translate('Actions')">
             <template #default="scope">
                 <div class="table-cell justify-end">
-                <el-dropdown
+                <fct-dropdown
                     trigger="click"
                     class="fct-more-option-wrap"
-                    popper-class="fct-dropdown"
                     :disabled="isDeleting"
-                    @command="handleCommand"
+                    :items="[
+                        {command: 'edit', label: translate('Edit'), icon: 'Edit'},
+                        {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true}
+                    ]"
+                    @command="action => handleCommand({action, row: scope.row})"
                     placement="bottom-end"
                 >
                     <span class="more-btn me-2">
                         <DynamicIcon name="More"/>
                     </span>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item :command="{ action: 'edit', row: scope.row }">
-                                <DynamicIcon name="Edit"/>
-                                {{ translate('Edit') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item
-                                :command="{ action: 'delete', row: scope.row }"
-                                class="item-destructive"
-                            >
-                                <DynamicIcon name="Delete"/>
-                                {{ translate('Delete') }}
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                </fct-dropdown>
                 </div>
             </template>
-        </el-table-column>
+        </fct-table-column>
 
         <template #empty>
             <Empty icon="Empty/ListView" :has-dark="true"
                    :text="translate('No attribute groups found!')"/>
         </template>
-    </el-table>
+    </fct-table>
 
 </template>

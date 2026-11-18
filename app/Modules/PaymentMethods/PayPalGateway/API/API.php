@@ -41,11 +41,21 @@ class API
         return self::TEST_API_URL . '/v1/oauth2/token';
     }
 
-    public static function validateCredentials($clientId, $clientSecret, $mode = 'test')
+    /**
+     * Request an access token with the given credentials from the PayPal host of the mode.
+     *
+     * @param string $clientId
+     * @param string $clientSecret
+     * @param string $mode 'test' or 'live'
+     * @param bool $storeToken Save the new token as the store's cached token for the mode.
+     * @return true|\WP_Error
+     */
+    public static function validateCredentials($clientId, $clientSecret, $mode = 'test', $storeToken = true)
     {
         $result = self::getAccessToken($mode, [
-            'public_key' => $clientId,
-            'api_key'    => $clientSecret
+            'public_key'  => $clientId,
+            'api_key'     => $clientSecret,
+            'store_token' => $storeToken
         ]);
 
         if (is_wp_error($result)) {
@@ -345,7 +355,7 @@ class API
      * Retrieves PayPal access token using WP_HTTP.
      *
      * @param string $mode The PayPal mode (live/sandbox).
-     * @param array $args Additional arguments including public_key and api_key.
+     * @param array $args Additional arguments including public_key and api_key. store_token false keeps the new token out of the request and option caches.
      * @return string|\WP_Error Access token on success, WP_Error on failure.
      */
     private static function getAccessToken($mode = '', $args = [])
@@ -408,7 +418,17 @@ class API
 
         if ($http_code === 200) {
             $response_data = json_decode($response_body, true);
-            $accessToken = $response_data['access_token'];
+            $token = Arr::get($response_data, 'access_token');
+
+            if (!$token) {
+                return new \WP_Error('access_token_error', __('PayPal returned a response that could not be read.', 'fluent-cart'));
+            }
+
+            if (!Arr::get($args, 'store_token', true)) {
+                return $token;
+            }
+
+            $accessToken = $token;
 
             $data = [
                 'access_token' => $accessToken,
@@ -505,6 +525,10 @@ class API
             : self::TEST_VERIFYING_URL;
 
         $accessToken = self::getAccessToken();
+
+        if (is_wp_error($accessToken)) {
+            return $accessToken;
+        }
 
         $args = array(
             'headers'     => array(

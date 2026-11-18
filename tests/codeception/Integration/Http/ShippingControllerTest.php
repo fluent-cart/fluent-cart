@@ -304,18 +304,6 @@ class ShippingControllerTest extends RestTestCase
     // Spec 135-138: Hooks
     // =========================================================================
 
-    public function test_before_patch_checkout_data_filter_registered(): void
-    {
-        \FluentCart\App\Modules\Shipping\ShippingModule::register();
-        $this->assertNotFalse(has_filter('fluent_cart/checkout/before_patch_checkout_data'));
-    }
-
-    public function test_cart_data_items_updated_action_registered(): void
-    {
-        \FluentCart\App\Modules\Shipping\ShippingModule::register();
-        $this->assertNotFalse(has_action('fluent_cart/cart/cart_data_items_updated'));
-    }
-
     public function test_user_without_store_caps_gets_403(): void
     {
         // Read denial + write denial with a state-unchanged proof; the wider

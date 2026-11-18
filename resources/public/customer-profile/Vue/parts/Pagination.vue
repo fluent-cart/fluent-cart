@@ -6,17 +6,16 @@
           translate('Page %1$s of %2$s', translateNumber(currentPage), translateNumber(totalPage))
         }}</span>
       <div class="el-pagination">
-        <el-select @change="changeSize" v-model="pagination.per_page" :placeholder="translate('Select')">
-          <el-option
-              v-for="item in page_sizes"
-              :key="item"
-              :label="
+        <fct-select
+            @change="changeSize"
+            v-model="pagination.per_page"
+            :placeholder="translate('Select')"
+            :options="page_sizes.map((item) => ({
               /* translators: %s - number of items per page */
-              translate('%s / page',translateNumber(item))
-              "
-              :value="item"
-          />
-        </el-select>
+              label: translate('%s / page', translateNumber(item)),
+              value: item
+            }))"
+        />
       </div>
       <span class="text">{{
           /* translators: %s - total number of items */

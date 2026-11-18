@@ -3,55 +3,45 @@
         <CardContainer>
             <CardHeader border_bottom :title="integration_id ? $t('Edit Integration') : $t('Add Integration')">
                 <template #action>
-                    <el-button @click="saveIntegration" type="primary" :loading="saving">
+                    <fct-button @click="saveIntegration" type="primary" :loading="saving">
                         {{ $t('Save') }}
-                    </el-button>
+                    </fct-button>
                 </template>
             </CardHeader>
             <CardBody>
-                <el-form label-position="top" :model="formData.values" class="integration-form">
-                    <el-form-item :label="$t('Integration Name')" required>
-                        <el-input v-model="formData.values.name"
-                                  :placeholder="$t('Enter a name for this integration')"></el-input>
-                    </el-form-item>
+                <div class="integration-form">
+                    <fct-input v-model="formData.values.name"
+                               :label="$t('Integration Name')"
+                               required
+                               :placeholder="$t('Enter a name for this integration')"/>
 
-                    <el-form-item :label="$t('Integration Type')" v-if="!integration_id">
-                        <el-select v-model="formData.values.integrationName" disabled class="fct-select">
-                            <el-option
-                                v-for="option in formData.fields.integrationName.options"
-                                :key="option.value"
-                                :label="option.label"
-                                :value="option.value">
-                            </el-option>
-                        </el-select>
-                    </el-form-item>
+                    <fct-select v-if="!integration_id"
+                                v-model="formData.values.integrationName"
+                                :label="$t('Integration Type')"
+                                disabled
+                                class="fct-select"
+                                :options="formData.fields.integrationName.options"/>
 
                     <template v-for="(field, fieldKey) in formData.fields" :key="fieldKey">
-                        <el-form-item
-                            v-if="fieldKey !== 'integrationName' && dependancyPass(field)"
-                            :label="field.label">
-                            <template v-if="field.type === 'text'">
-                                <el-input v-model="formData.values[fieldKey]"
-                                          :placeholder="field.placeholder"></el-input>
-                            </template>
-                            <template v-else-if="field.type === 'select'">
-                                <el-select v-model="formData.values[fieldKey]" :placeholder="field.placeholder"
-                                           class="fct-select">
-                                    <el-option
-                                        v-for="option in field.options"
-                                        :key="option.value"
-                                        :label="option.label"
-                                        :value="option.value">
-                                    </el-option>
-                                </el-select>
-                            </template>
-                            <template v-else-if="field.type === 'textarea'">
-                                <el-input type="textarea" v-model="formData.values[fieldKey]"
-                                          :placeholder="field.placeholder"></el-input>
-                            </template>
-                        </el-form-item>
+                        <template v-if="fieldKey !== 'integrationName' && dependancyPass(field)">
+                            <fct-input v-if="field.type === 'text'"
+                                       v-model="formData.values[fieldKey]"
+                                       :label="field.label"
+                                       :placeholder="field.placeholder"/>
+                            <fct-select v-else-if="field.type === 'select'"
+                                        v-model="formData.values[fieldKey]"
+                                        :label="field.label"
+                                        :placeholder="field.placeholder"
+                                        class="fct-select"
+                                        :options="field.options"/>
+                            <fct-input v-else-if="field.type === 'textarea'"
+                                       type="textarea"
+                                       v-model="formData.values[fieldKey]"
+                                       :label="field.label"
+                                       :placeholder="field.placeholder"/>
+                        </template>
                     </template>
-                </el-form>
+                </div>
             </CardBody>
         </CardContainer>
     </div>

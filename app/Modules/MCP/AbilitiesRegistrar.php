@@ -210,13 +210,13 @@ class AbilitiesRegistrar
         return \FluentCart\App\Modules\MCP\Support\MCPHelper::error(
             'unknown_param',
             sprintf(
-                /* translators: 1: rejected parameter names, 2: tool name, 3: accepted parameter names */
-                __('Unknown parameter(s) [%1$s] — %2$s does not support them, and running without them would return a result that is NOT filtered the way you asked. Accepted parameters: [%3$s]. Rename or remove the unknown parameter(s) and retry.', 'fluent-cart'),
+                'Unknown parameter(s) [%1$s] — %2$s does not support them, and running without them would return a result that is NOT filtered the way you asked. Accepted parameters: [%3$s]. Rename or remove the unknown parameter(s) and retry.',
                 implode(', ', $unknown),
                 $toolName,
-                $declaredParams ? implode(', ', $declaredParams) : __('none — this tool takes no parameters', 'fluent-cart')
+                $declaredParams ? implode(', ', $declaredParams) : 'none — this tool takes no parameters'
             ),
-            ['fields' => $unknown, 'accepted' => $declaredParams, 'tool' => $toolName]
+            // `allowed` is the name FluentCRM and Fluent Support use; `accepted` stays for existing readers.
+            ['fields' => $unknown, 'accepted' => $declaredParams, 'allowed' => $declaredParams, 'tool' => $toolName]
         );
     }
 
@@ -253,8 +253,7 @@ class AbilitiesRegistrar
             : [];
 
         $warnings[] = sprintf(
-            /* translators: 1: requested per_page, 2: the maximum this tool returned */
-            __('per_page %1$d exceeds this tool\'s maximum; %2$d rows per page were returned. Use meta.page (total/pages/has_more) to page through the rest.', 'fluent-cart'),
+            'per_page %1$d exceeds this tool\'s maximum; %2$d rows per page were returned. Use meta.page (total/pages/has_more) to page through the rest.',
             $requested,
             $actual
         );
@@ -273,6 +272,9 @@ class AbilitiesRegistrar
     private static function wrapExecuteCallback($toolName, $callback, $declaredParams = [])
     {
         return function ($params) use ($toolName, $callback, $declaredParams) {
+            // A tool returns its result and prints nothing. With WP_DEBUG on, wpdb prints a failed
+            // query, which would put SQL in front of the JSON response.
+            ob_start();
             try {
                 // Before executing: an undeclared param means the caller asked for
                 // a filter this tool can't apply — error out rather than return a
@@ -315,8 +317,48 @@ class AbilitiesRegistrar
                     $details['trace'] = array_slice(explode("\n", $e->getTraceAsString()), 0, 5);
                 }
 
-                return \FluentCart\App\Modules\MCP\Support\MCPHelper::error('tool_failed', $e->getMessage(), $details);
+                // A query error message holds the SQL and the database name, and
+                // the same query fails again on retry.
+                $message = $e->getMessage();
+                if ($e instanceof \PDOException) {
+                    fluent_cart_error_log('MCP tool query failed: ' . $toolName, $message);
+                    $message = 'A database query failed while running this tool. Retrying the same call will fail the same way. Report it to the site administrator.';
+                    $details['retryable'] = false;
+                }
+
+                return \FluentCart\App\Modules\MCP\Support\MCPHelper::error('tool_failed', $message, $details);
+            } finally {
+                ob_end_clean();
             }
         };
+    }
+
+    /**
+     * Give WordPress' own input validation error the JSON shape of every other tool error.
+     * WordPress raises it before the tool runs, as plain text with no code and no field.
+     * Hooked on wp_ability_validate_input.
+     *
+     * @param true|\WP_Error $validity
+     * @param mixed           $input
+     * @param string          $abilityName
+     * @return true|\WP_Error
+     */
+    public static function structuredInputError($validity, $input, $abilityName)
+    {
+        if (!is_wp_error($validity) || strpos((string) $abilityName, 'fluent-cart/') !== 0) {
+            return $validity;
+        }
+
+        // Validate again for the reason alone: the core message wraps it in a translated sentence.
+        $ability = wp_get_ability($abilityName);
+        $reason  = $ability ? rest_validate_value_from_schema($input, $ability->get_input_schema(), 'input') : null;
+        $message = is_wp_error($reason) ? $reason->get_error_message() : $validity->get_error_message();
+
+        $details = [];
+        if (preg_match('/input\[([^\]]+)\]/', $message, $m) || preg_match('/^(\S+) is a required property/', $message, $m)) {
+            $details['fields'] = [$m[1]];
+        }
+
+        return \FluentCart\App\Modules\MCP\Support\MCPHelper::error('invalid_param', $message, $details);
     }
 }

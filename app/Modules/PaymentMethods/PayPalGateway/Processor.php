@@ -10,6 +10,7 @@ use FluentCart\App\Helpers\StatusHelper;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\DateTime\DateTime;
@@ -887,7 +888,14 @@ class Processor
         /** @var Subscription|null $subscription */
         $subscription = Subscription::query()->find($transaction->subscription_id);
 
-        if (!$subscription || !$subscription->isSystem()) {
+        if (!$subscription) {
+            return;
+        }
+
+        $converting = !$subscription->isSystem()
+            && SubscriptionManagementMode::transactionConvertsToSystem($transaction);
+
+        if (!$subscription->isSystem() && !$converting) {
             return;
         }
 
@@ -897,7 +905,7 @@ class Processor
         $existing = $subscription->getMeta('active_payment_method', []) ?: [];
 
         if ($tokenId) {
-            if (Arr::get($existing, 'vendor_method_id') === $tokenId) {
+            if (!$converting && Arr::get($existing, 'vendor_method_id') === $tokenId) {
                 return; // already persisted (webhook/AJAX race)
             }
 
@@ -921,6 +929,11 @@ class Processor
             ]);
             $billingInfo['vendor_method_id'] = $tokenId;
 
+            if ($converting) {
+                SystemChargeService::promoteToSystem($subscription, $billingInfo, (string) $vaultCustomerId, 'paypal');
+                return;
+            }
+
             $subscription->updateMeta('active_payment_method', $billingInfo);
 
             $subscription->addLog(
@@ -934,7 +947,8 @@ class Processor
 
         // No token on the INITIAL capture and none stored yet — never leave a
         // system subscription that can never be charged.
-        if ($transaction->order
+        if (!$converting
+            && $transaction->order
             && $transaction->order->type === Status::ORDER_TYPE_SUBSCRIPTION
             && !Arr::get($existing, 'vendor_method_id')
         ) {

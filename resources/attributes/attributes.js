@@ -26,7 +26,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_attribute
             {
                 // Redirect legacy /attributes/:id URLs back to the group list.
                 path: ':group_id(\\d+)',
-                redirect: { name: 'attributes' },
+                redirect: '/attributes',
             }
         ]
     };

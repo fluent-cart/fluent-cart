@@ -4,6 +4,8 @@ namespace FluentCart\App\Modules\Templating\Bricks;
 
 use Bricks\Frontend;
 use FluentCart\App\Helpers\Helper;
+use FluentCart\App\Modules\Templating\AssetLoader;
+use FluentCart\App\Services\Renderer\ProductCardLayoutPresets;
 use FluentCart\Framework\Support\Arr;
 
 class BricksHelper
@@ -58,10 +60,17 @@ class BricksHelper
         // too, and it must not inherit stale settings from this render.
         self::$imageBadgeSettings = [];
 
+        // The stagger class and the stylesheet that keeps a staggered card at its own height (core loads it with layouts only).
+        $masonry = !empty($settings['layoutMasonry']);
+        if ($masonry) {
+            AssetLoader::loadProductCardAssets();
+            ProductCardLayoutPresets::enqueueAssets();
+        }
+        $masonryClass = $masonry ? ' fct-card-masonry' : '';
         if ($post_index === 1) {
-            echo "<div data-fluent-client-id='" . esc_attr($uid) . "' data-template-provider='bricks' data-fct-product-card class='fct-product-card repeater-item'>";
+            echo "<div data-fluent-client-id='" . esc_attr($uid) . "' data-template-provider='bricks' data-fct-product-card class='fct-product-card repeater-item" . $masonryClass . "'>";
         } else {
-            echo "<div data-fct-product-card class='fct-product-card repeater-item'>";
+            echo "<div data-fct-product-card class='fct-product-card repeater-item" . $masonryClass . "'>";
         }
 
         $linkedProduct = isset($settings['linkProduct']) ? $settings['linkProduct'] : false;

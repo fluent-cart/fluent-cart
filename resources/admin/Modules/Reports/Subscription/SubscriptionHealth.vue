@@ -139,9 +139,9 @@ onUnmounted(() => {
         <div class="title">
           {{ card.title }}
 
-          <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark">
+          <fct-tooltip :content="card.info" placement="top">
             <DynamicIcon class="text-gray-500 w-4 h-4 cursor-help" name="InformationFill" />
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@ use FluentCart\App\Services\Report\ProductReportService;
 use FluentCart\App\Services\Report\ReportHelper;
 use FluentCart\App\Services\ShipmentService;
 use PHPUnit\Framework\Assert;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Doubles\FakeRefundGateway;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderItemFactory;
@@ -345,12 +346,10 @@ class RemoteFirstRefundCest
         $wpdb->update($wpdb->prefix . 'fct_order_items', ['post_id' => (int) $product->ID, 'object_id' => (int) $variant->id], ['id' => (int) $item->id]);
 
         FakeRefundGateway::$nextResult = 're_fake_1';
-        $failItemUpdates = function ($query) {
-            return preg_match('/^update `[^`]*fct_order_items`/i', $query) ? 'SELECT * FROM fct_missing_table_for_test' : $query;
-        };
+        $failItemUpdates = FailingQueries::prepared('/^update `[^`]*fct_order_items`/i');
         FakeRefundGateway::$beforeReturn = function ($charge, $amount) use ($failItemUpdates) {
             $this->stripeChargeRefunded($charge, 're_fake_1', $amount);
-            add_filter('query', $failItemUpdates);
+            $failItemUpdates->add();
         };
         $savedModules = get_option(ModuleSettings::MODULE_SETTINGS_OPTION);
         update_option(ModuleSettings::MODULE_SETTINGS_OPTION, ['stock_management' => ['active' => 'yes']]);
@@ -363,7 +362,7 @@ class RemoteFirstRefundCest
                 'amount'         => 0,
                 'manageStock'    => 'true',
             ], [['id' => (int) $item->id, 'refund_qty' => 1]]);
-            remove_filter('query', $failItemUpdates);
+            $failItemUpdates->remove();
 
             Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
             $refundRow = $this->refundRows((int) $order->id)->first();
@@ -371,7 +370,7 @@ class RemoteFirstRefundCest
 
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund/' . (int) $refundRow->id . '/resync');
         } finally {
-            remove_filter('query', $failItemUpdates);
+            $failItemUpdates->remove();
             remove_action('fluent_cart/order_refunded', $events->listener);
             update_option(ModuleSettings::MODULE_SETTINGS_OPTION, $savedModules);
             ModuleSettings::getAllSettings(false);
@@ -680,11 +679,9 @@ class RemoteFirstRefundCest
         [$order, $item, $transaction] = $this->orderWithShippingTax(1, false);
 
         FakeRefundGateway::$nextResult = 're_fake_1';
-        $failItemUpdates = function ($query) {
-            return preg_match('/^update `[^`]*fct_order_items`/i', $query) ? 'SELECT * FROM fct_missing_table_for_test' : $query;
-        };
+        $failItemUpdates = FailingQueries::prepared('/^update `[^`]*fct_order_items`/i');
         FakeRefundGateway::$beforeReturn = function () use ($failItemUpdates) {
-            add_filter('query', $failItemUpdates);
+            $failItemUpdates->add();
         };
 
         try {
@@ -694,7 +691,7 @@ class RemoteFirstRefundCest
                 'manageStock'     => 'false',
                 'shipping_amount' => 3000,
             ], [['id' => (int) $item->id, 'refund_qty' => 1]]);
-            remove_filter('query', $failItemUpdates);
+            $failItemUpdates->remove();
 
             Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
             $refundRow = $this->refundRows((int) $order->id)->first();
@@ -703,7 +700,7 @@ class RemoteFirstRefundCest
 
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund/' . (int) $refundRow->id . '/resync');
         } finally {
-            remove_filter('query', $failItemUpdates);
+            $failItemUpdates->remove();
         }
 
         Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
@@ -822,23 +819,13 @@ class RemoteFirstRefundCest
         return [$order, $first, $second, $transaction];
     }
 
-    private function failQueries(string $pattern): callable
-    {
-        $filter = function ($query) use ($pattern) {
-            return preg_match($pattern, $query) ? 'SELECT * FROM fct_missing_table_for_test' : $query;
-        };
-        add_filter('query', $filter);
-
-        return $filter;
-    }
-
     private function assertFailedLineWriteResyncsOntoTheSelectedLine(FunctionalTester $I, bool $forceLocal): void
     {
         $I->loginAsSuperAdmin();
         [$order, $selected, $other, $transaction] = $this->orderWithTwoItems();
         FakeRefundGateway::$nextResult = 're_fake_1';
         $events = $this->countOrderRefundedEvents();
-        $failLineWrites = $this->failQueries('/^update `[^`]*fct_order_items` set `refund_total`/i');
+        $failLineWrites = FailingQueries::matching('/^update `[^`]*fct_order_items` set `refund_total`/i');
 
         try {
             [$status, $body] = $this->refund($I, (int) $order->id, [
@@ -847,7 +834,7 @@ class RemoteFirstRefundCest
                 'manageStock'    => 'false',
                 'force_local'    => $forceLocal ? 'true' : 'false',
             ], [['id' => (int) $selected->id, 'refund_qty' => 1]]);
-            remove_filter('query', $failLineWrites);
+            $failLineWrites->remove();
 
             Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
             Assert::assertSame('warning', $body['local_sync']['status'] ?? null, wp_json_encode($body));
@@ -859,7 +846,7 @@ class RemoteFirstRefundCest
 
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund/' . (int) $refundRow->id . '/resync');
         } finally {
-            remove_filter('query', $failLineWrites);
+            $failLineWrites->remove();
             remove_action('fluent_cart/order_refunded', $events->listener);
         }
 
@@ -887,7 +874,7 @@ class RemoteFirstRefundCest
         $I->loginAsSuperAdmin();
         [$order, $item, $transaction] = $this->orderWithShippingTax(1, false);
         FakeRefundGateway::$nextResult = 're_fake_1';
-        $failOrderWrites = $this->failQueries('/^update `[^`]*fct_orders` set/i');
+        $failOrderWrites = FailingQueries::matching('/^update `[^`]*fct_orders` set/i');
 
         try {
             [$status, $body] = $this->refund($I, (int) $order->id, [
@@ -896,7 +883,7 @@ class RemoteFirstRefundCest
                 'manageStock'     => 'false',
                 'shipping_amount' => 3000,
             ]);
-            remove_filter('query', $failOrderWrites);
+            $failOrderWrites->remove();
 
             Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
             $refundRow = $this->refundRows((int) $order->id)->first();
@@ -906,7 +893,7 @@ class RemoteFirstRefundCest
 
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund/' . (int) $refundRow->id . '/resync');
         } finally {
-            remove_filter('query', $failOrderWrites);
+            $failOrderWrites->remove();
         }
 
         Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
@@ -918,7 +905,7 @@ class RemoteFirstRefundCest
     private function pendingShippingRefund(FunctionalTester $I, int $orderId, int $transactionId, int $shippingAmount)
     {
         FakeRefundGateway::$nextResult = 're_fake_1';
-        $failOrderMetaWrites = $this->failQueries('/^insert into `[^`]*fct_order_meta`/i');
+        $failOrderMetaWrites = FailingQueries::matching('/^insert into `[^`]*fct_order_meta`/i');
 
         try {
             [$status, $body] = $this->refund($I, $orderId, [
@@ -928,7 +915,7 @@ class RemoteFirstRefundCest
                 'shipping_amount' => $shippingAmount,
             ]);
         } finally {
-            remove_filter('query', $failOrderMetaWrites);
+            $failOrderMetaWrites->remove();
         }
 
         Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
@@ -977,11 +964,11 @@ class RemoteFirstRefundCest
         $I->loginAsSuperAdmin();
         [$order, $first, $second, $transaction] = $this->orderWithTwoItems();
         FakeRefundGateway::$nextResult = 're_fake_1';
-        $failLineWrites = $this->failQueries('/^update `[^`]*fct_order_items` set `refund_total`/i');
+        $failLineWrites = FailingQueries::matching('/^update `[^`]*fct_order_items` set `refund_total`/i');
 
         try {
             [$status, $body] = $this->refund($I, (int) $order->id, ['transaction_id' => (int) $transaction->id, 'amount' => Helper::toCent(40)]);
-            remove_filter('query', $failLineWrites);
+            $failLineWrites->remove();
 
             Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
             $refundRow = $this->refundRows((int) $order->id)->first();
@@ -990,7 +977,7 @@ class RemoteFirstRefundCest
 
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund/' . (int) $refundRow->id . '/resync');
         } finally {
-            remove_filter('query', $failLineWrites);
+            $failLineWrites->remove();
         }
 
         Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));

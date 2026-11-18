@@ -19,7 +19,7 @@ use Tests\Support\Traits\MakesMultiCurrencyAvailable;
 use Tests\Support\RateFixture;
 
 /**
- * Global per-currency pricing rules (dev-docs/multi-currency/plan.md §15.4):
+ * Global per-currency pricing rules (dev-docs/multi-currency/04-conversion-engine.md):
  * a % adjustment, rounding up to a step, a charm ending — applied to product
  * prices, never to shipping or coupon amounts. Base USD, GBP at 0.79.
  */

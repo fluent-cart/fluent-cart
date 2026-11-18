@@ -29,10 +29,26 @@ import Unauthorized from "@/Pages/Unauthorized.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Rest from "@/utils/http/Rest";
 import {addLicensingFallbackRoutes} from "@/Modules/Licensing/legacyLicensingRoutes.js";
+import CustomerRightsNeedsUpdate from "@/Modules/Withdrawals/CustomerRightsNeedsUpdate.vue";
+import {registerFctComponents} from "@/Bits/Components/Fct";
 
 
 // Late priority: fills licensing routes only when Pro registered none (old Pro, no Pro).
 window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_cart/licensing_fallback', addLicensingFallbackRoutes, 999);
+
+// Customer Rights now ships the withdrawal screen; an older release still active
+// gets an "update" screen there instead of a 404.
+if (AppConfig.get('app_config.customerRightsUpdate')) {
+    window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_cart/customer_rights_update', (routes) => {
+        routes.withdrawal_requests = routes.withdrawal_requests || {
+            name: 'withdrawal_requests',
+            path: '/withdrawal-requests',
+            component: CustomerRightsNeedsUpdate,
+            meta: {active_menu: 'withdrawal_requests', title: translate('Withdrawal Requests'), permission: 'orders/view'},
+        };
+        return routes;
+    }, 999);
+}
 
 const appRoutes = window.fluent_cart_admin.hooks.applyFilters('fluent_cart_routes', routes);
 
@@ -143,6 +159,7 @@ useNavigationMenuUpdateService(router);
 elPlusIcons.forEach(component => {
     app.component(component.name, component)
 })
+registerFctComponents(app);
 
 const locale = AppConfig.get('el_strings');
 const datei18 = AppConfig.get('datei18');

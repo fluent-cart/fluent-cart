@@ -146,6 +146,10 @@ const handleExtraTabChange = (viewKey) => {
 
 const repositionTabIndicator = () => {
   setTimeout(() => {
+    // Picking Advanced Filter unmounts the tabs before this runs.
+    if (!fluidTab.value) {
+      return;
+    }
     const activeSavedViewId = props.table.getActiveSavedViewId();
     let selectedIndex = -1;
     if (!activeSavedViewId) {
@@ -208,37 +212,29 @@ const deleteSavedView = async (viewId) => {
         @click="() => handleTabClick(viewKey, viewLabel)"
     >
       <template v-if="viewLabel && viewLabel.isCustomView">
-        <el-tooltip
+        <fct-tooltip
             :content="viewLabel.description || ''"
             :disabled="!viewLabel.description"
             placement="top"
-            effect="light"
-            popper-class="fct-tooltip"
         >
           <span class="inline-flex items-center gap-1">
             <span>{{ viewLabel.title }}</span>
             <svg v-if="viewLabel.is_public" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-40"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <el-dropdown
+            <fct-dropdown
                 v-if="table.isViewOwner(viewLabel)"
                 trigger="click"
+                :items="[{command: 'rename', label: $t('Rename')}, {command: 'delete', label: $t('Delete'), divided: true}]"
                 @command="(cmd) => {
                   if (cmd === 'rename') renameSavedView(viewLabel.viewId, viewLabel.title);
                   else if (cmd === 'delete') deleteSavedView(viewLabel.viewId);
                 }"
-                @click.stop
             >
               <span class="inline-flex items-center text-system-light cursor-pointer opacity-50 hover:opacity-100 dark:text-gray-400 [&_svg]:w-3 [&_svg]:h-3" @click.stop>
                 <DynamicIcon name="ChevronDown"/>
               </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="rename">{{ $t('Rename') }}</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>{{ $t('Delete') }}</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            </fct-dropdown>
           </span>
-        </el-tooltip>
+        </fct-tooltip>
       </template>
       <template v-else>
         {{ typeof viewLabel === 'object' ? viewLabel.title : viewLabel }}
@@ -247,7 +243,7 @@ const deleteSavedView = async (viewId) => {
 
 
     <Fluid.Item v-if="Object.keys(tabsData.excludedTabs).length > 0" class="fct-fluid-tab-select-wrap">
-      <el-select
+      <fct-select
           :placeholder="translate('More views')"
           v-model="selectedExtraTab"
           @change="handleExtraTabChange"
@@ -258,44 +254,44 @@ const deleteSavedView = async (viewId) => {
           }"
           class="w-[120px]"
           :class="{'active':selectedExtraTab}"
-          popper-class="fct-fluid-tab-select">
-        <template v-for="(viewLabel, viewKey) in tabsData.excludedTabs" :key="viewKey">
-          <el-option
-              :label="(typeof viewLabel === 'object' ? viewLabel.title : viewLabel)"
-              :value="viewKey"
-          >
-            <template v-if="viewLabel && viewLabel.isCustomView">
-              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                <div>
-                  <div class="select-label">{{ viewLabel.title }}</div>
-                  <div v-if="viewLabel.description" class="select-desc">{{ viewLabel.description }}</div>
-                </div>
-                <span
-                    v-if="table.isViewOwner(viewLabel)"
-                    style="display:inline-flex;align-items:center;cursor:pointer;padding:2px;"
-                    @click.stop="deleteSavedView(viewLabel.viewId)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                       style="opacity:0.6;">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </span>
-              </div>
-            </template>
-            <template v-else-if="typeof viewLabel === 'object'">
+          popper-class="fct-fluid-tab-select"
+          :options="Object.entries(tabsData.excludedTabs).map(([viewKey, viewLabel]) => ({
+            label: typeof viewLabel === 'object' ? viewLabel.title : viewLabel,
+            value: viewKey,
+            viewLabel
+          }))">
+        <template #option="{option: {viewLabel}}">
+          <template v-if="viewLabel && viewLabel.isCustomView">
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
               <div>
                 <div class="select-label">{{ viewLabel.title }}</div>
-                <div class="select-desc">{{ viewLabel.description }}</div>
+                <div v-if="viewLabel.description" class="select-desc">{{ viewLabel.description }}</div>
               </div>
-            </template>
-            <template v-else>
-              {{ viewLabel }}
-            </template>
-          </el-option>
+              <span
+                  v-if="table.isViewOwner(viewLabel)"
+                  style="display:inline-flex;align-items:center;cursor:pointer;padding:2px;"
+                  @click.stop="deleteSavedView(viewLabel.viewId)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     style="opacity:0.6;">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </span>
+            </div>
+          </template>
+          <template v-else-if="typeof viewLabel === 'object'">
+            <div>
+              <div class="select-label">{{ viewLabel.title }}</div>
+              <div class="select-desc">{{ viewLabel.description }}</div>
+            </div>
+          </template>
+          <template v-else>
+            {{ viewLabel }}
+          </template>
         </template>
-      </el-select>
+      </fct-select>
     </Fluid.Item>
   </Fluid.Tab>
 

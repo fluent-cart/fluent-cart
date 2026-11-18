@@ -4,12 +4,11 @@
           <div class="fct-table-mobile-header">
             <div class="fct-table-mobile-header-left">
               <div class="fct-table-status-col">
-                <el-tooltip
+                <fct-tooltip
                     v-if="row?.meta?.reason"
-                    effect="dark"
                     :placement="'top'"
                     :content="translate(row?.meta?.reason)"
-                    popper-class="fct-label-hint-popover fct-tooltip"
+                    popper-class="fct-label-hint-popover"
                 >
                   <Badge
                       v-if="row?.meta?.disputed === 'yes' && row?.meta?.dispute_resolved === 'no'"
@@ -19,7 +18,7 @@
                   <Badge v-else :status="(row.status)" kind="transaction">
                     {{ row.status === 'paid' ? 'Completed' : row.status }}
                   </Badge>
-                </el-tooltip>
+                </fct-tooltip>
 
                 <Badge v-else :status="(row.status)" kind="transaction">
                   {{ row.status === 'paid' ? 'Completed' : row.status }}
@@ -45,17 +44,15 @@
               </template>
             </div>
 
-            <el-tooltip
+            <fct-tooltip
                 v-if="row.transaction_type == 'charge' && row.status == 'pending' && row.vendor_charge_id"
-                effect="dark"
                 :placement="'top'"
                 :content="translate('Sync payment status from %1$s', paymentMethodAdminTitle(row.payment_method))"
-                popper-class="fct-tooltip"
             >
-              <el-button size="small" :aria-label="translate('Sync payment status from %1$s', paymentMethodAdminTitle(row.payment_method))" :loading="syncing_transaction === row.id" @click="syncTransaction(row)">
+              <fct-button size="small" :aria-label="translate('Sync payment status from %1$s', paymentMethodAdminTitle(row.payment_method))" :loading="syncing_transaction === row.id" @click="syncTransaction(row)">
                 <DynamicIcon class="w-4 h-4" name="Refresh" aria-hidden="true"/>
-              </el-button>
-            </el-tooltip>
+              </fct-button>
+            </fct-tooltip>
 
 
           </div>
@@ -100,13 +97,13 @@
             </ul>
 
             <div v-if="isResyncPending(row)" class="mt-2">
-              <el-button
+              <fct-button
                   size="small"
                   :loading="resyncingId === row.id"
                   @click="resyncRefund(row)"
               >
                 {{ translate('Re-sync refund') }}
-              </el-button>
+              </fct-button>
             </div>
 
           </div><!-- fct-table-mobile-body -->

@@ -16,12 +16,12 @@ if (!defined('ABSPATH')) {
  * Every report is in exactly one currency: the one requested, else the base
  * currency — never "all currencies added together". Amounts of different
  * currencies are not summable without a rate.
- * dev-docs/multi-currency/plan.md §2.4 Tier A, §13.
+ * dev-docs/multi-currency/07-reports.md, "Two modes".
  */
 class ReportCurrency
 {
     /**
-     * "All currencies, converted to the base currency" — Tier B (plan §2.4).
+     * "All currencies, converted to the base currency".
      * Each order is converted at its own frozen rate; orders without a
      * trustworthy rate are left out and counted.
      */

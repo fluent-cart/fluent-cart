@@ -156,7 +156,7 @@ const handleCardKeydown = (e) => {
 
 <template>
   <div class="fct-subscription-mode-manager">
-    <div class="flex items-start justify-between gap-4 rounded border border-gray-divider bg-gray-25 p-4 dark:border-slate-700 dark:bg-slate-800">
+    <div class="flex items-start justify-between gap-4 rounded [border-width:1px] border-gray-divider bg-gray-25 p-4 dark:border-slate-700 dark:bg-slate-800">
       <div>
         <div class="flex items-center gap-2">
           <Badge :type="statusBadge.type" :text="statusBadge.label"/>
@@ -175,12 +175,12 @@ const handleCardKeydown = (e) => {
         </ul>
       </div>
 
-      <el-button plain size="small" @click="openChangeFlow">
+      <fct-button plain size="small" @click="openChangeFlow">
         {{ translate('Change') }}
-      </el-button>
+      </fct-button>
     </div>
 
-    <el-dialog
+    <fct-dialog
         v-model="dialogVisible"
         :title="translate('Renewal Billing')"
         width="560px"
@@ -210,9 +210,9 @@ const handleCardKeydown = (e) => {
 
             <TransitionAccordion :visible="draftMode === 'gateway_managed'">
               <div class="fct-subscription-mode-card__extras">
-                <el-checkbox v-model="draftManualFallback">
+                <fct-choice v-model="draftManualFallback">
                   {{ translate('Allow all payment methods') }}
-                </el-checkbox>
+                </fct-choice>
                 <p class="fct-subscription-mode-note">
                   {{ translate('SubMode_Gateways_Without') }}
                 </p>
@@ -240,9 +240,9 @@ const handleCardKeydown = (e) => {
 
             <TransitionAccordion :visible="draftMode === 'store_managed'">
               <div class="fct-subscription-mode-card__extras">
-                <el-checkbox v-model="draftSystemCharge">
+                <fct-choice v-model="draftSystemCharge">
                   {{ translate('Auto-charge saved payment methods') }}
-                </el-checkbox>
+                </fct-choice>
                 <p class="fct-subscription-mode-note">
                   {{ translate('SubMode_Supported_Customer') }}
                 </p>
@@ -255,7 +255,7 @@ const handleCardKeydown = (e) => {
               </div>
 
               <div v-if="scheduleItems.length" class="fct-subscription-mode-card__schedule-link">
-                <el-tooltip placement="bottom-start" effect="dark" popper-class="fct-tooltip fct-schedule-tooltip">
+                <fct-tooltip placement="bottom-start" popper-class="fct-schedule-tooltip">
                   <template #content>
                     <p class="fct-schedule-tooltip__title">{{ translate('When are renewal orders created?') }}</p>
                     <ul class="fct-schedule-tooltip__list">
@@ -272,7 +272,7 @@ const handleCardKeydown = (e) => {
                     </svg>
                     {{ translate('When are renewal orders created?') }}
                   </span>
-                </el-tooltip>
+                </fct-tooltip>
               </div>
             </TransitionAccordion>
         </div>
@@ -288,9 +288,9 @@ const handleCardKeydown = (e) => {
       </div>
 
       <template #footer>
-        <el-button :disabled="applying" @click="dialogVisible = false">{{ translate('Cancel') }}</el-button>
-        <el-button type="primary" :loading="applying" @click="applyDraft">{{ translate('Apply') }}</el-button>
+        <fct-button :disabled="applying" @click="dialogVisible = false">{{ translate('Cancel') }}</fct-button>
+        <fct-button type="primary" :loading="applying" @click="applyDraft">{{ translate('Apply') }}</fct-button>
       </template>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

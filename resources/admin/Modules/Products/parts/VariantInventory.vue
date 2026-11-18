@@ -195,7 +195,7 @@ const generateSku = () => {
              would be two switches fighting over one decision. -->
         <template v-if="showInventory && productStockEnabled" #action>
             <div class="fct-shared-variant-item-box__switch">
-                <el-switch
+                <fct-switch
                     v-if="!isGroupMode"
                     size="small"
                     v-model="variant.manage_stock"
@@ -207,17 +207,18 @@ const generateSku = () => {
                 <div v-else class="fct-inline-select-wrap">
                     <label>{{ translate('Manage Stock') }}:</label>
 
-                    <el-select
+                    <fct-select
                         size="small"
                         v-model="variant.manage_stock"
                         popper-class="fct-group-select-popper"
                         class="fct-inline-select"
                         placement="bottom"
-                    >
-                        <el-option value="__unchanged__" :label="translate('Unchanged')" />
-                        <el-option value="1" :label="translate('Manage stock')" />
-                        <el-option value="0" :label="translate('Don\'t manage')" />
-                    </el-select>
+                        :options="[
+                            {value: '__unchanged__', label: translate('Unchanged')},
+                            {value: '1', label: translate('Manage stock')},
+                            {value: '0', label: translate('Don\'t manage')},
+                        ]"
+                    />
                 </div>
             </div>
         </template>
@@ -230,7 +231,7 @@ const generateSku = () => {
                 {{ translate('Product_Enable_Inventory') }}
             </span>
             <span class="fct-variant-inventory-global-off__action">
-                <el-switch
+                <fct-switch
                     size="small"
                     v-model="enableInventorySwitch"
                     :loading="enablingProductStock"
@@ -281,14 +282,14 @@ const generateSku = () => {
         </div>
 
         <div v-if="isStockManaged && showInventory && isGroupMode" class="fct-admin-input-wrapper">
-            <el-form-item :label="translate('Total Stock')">
-                <el-input
-                    type="number"
-                    :min="0"
-                    :placeholder="translate('Unchanged')"
-                    v-model="variant.total_stock"
-                />
-            </el-form-item>
+            <fct-input
+                :label="translate('Total Stock')"
+                type="number"
+                :controls="false"
+                :min="0"
+                :placeholder="translate('Unchanged')"
+                v-model="variant.total_stock"
+            />
         </div>
 
         <VariantItemCollapse v-if="!isGroupMode">
@@ -305,8 +306,9 @@ const generateSku = () => {
             </template>
 
             <div class="fct-admin-input-wrapper">
-                <el-form-item>
-                    <template #label>
+                <!-- Hand-built field: the label row holds the Generate button. -->
+                <div class="fct-form-field">
+                    <div class="fct-form-field__label" style="justify-self: start;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <LabelHint
                                 :title="translate('SKU (Stock Keeping Unit)')"
@@ -321,18 +323,18 @@ const generateSku = () => {
                                 {{ generatingSku ? translate('Generating...') : translate('Generate SKU') }}
                             </button>
                         </div>
-                    </template>
-                    <el-input
+                    </div>
+                    <fct-input
                         :class="productEditModel.hasValidationError(`${fieldKey}.sku`) ? 'is-error' : ''"
                         :id="`${fieldKey}.sku`"
                         :placeholder="translate('SKU')" type="text" v-model="variant.sku"
                         maxlength="30"
                         show-word-limit
                         @input="value => {productEditModel.updatePricingValue('sku', value, fieldKey, variant, modeType)}">
-                    </el-input>
+                    </fct-input>
                     <ValidationError :validation-errors="productEditModel.validationErrors"
                                     :field-key="`${fieldKey}.sku`"/>
-                </el-form-item>
+                </div>
             </div><!-- .fct-admin-input-wrapper -->
         </VariantItemCollapse>
 

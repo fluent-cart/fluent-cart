@@ -14,7 +14,7 @@ const emit = defineEmits(['update:modelValue']);
 
 <template>
     <div class="fct-pricing-rule-fee-tax">
-        <el-switch
+        <fct-switch
             :model-value="modelValue !== 'no'"
             :active-text="translate('Charge tax on this fee')"
             @update:model-value="(value) => emit('update:modelValue', value ? 'yes' : 'no')"

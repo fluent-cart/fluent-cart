@@ -8,6 +8,7 @@ import AppConfig from "@/utils/Config/AppConfig";
 import Rest from "@/utils/http/Rest";
 import {ElMessage} from "element-plus";
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 import {syncShippingPackagesConfig} from "@/Modules/Shipping/shippingPackagesConfig";
 
 const props = defineProps({
@@ -121,7 +122,7 @@ const onPackageCreated = (packageData) => {
                     <span class="fct-shared-variant-item-box__hint">
                         {{ translate('Physical Product') }}
                     </span>
-                    <el-switch
+                    <fct-switch
                         v-model="variant.fulfillment_type"
                         active-value="physical"
                         inactive-value="digital"
@@ -131,100 +132,87 @@ const onPackageCreated = (packageData) => {
                 </template>
                 <div v-else class="fct-inline-select-wrap">
                     <label>{{ translate('Fulfillment Type') }}:</label>
-                    <el-select
+                    <fct-select
                         size="small"
                         v-model="variant.fulfillment_type"
                         popper-class="fct-group-select-popper"
                         class="fct-inline-select"
                         placement="bottom"
-                    >
-                        <el-option value="__unchanged__" :label="translate('Unchanged')" />
-                        <el-option value="physical" :label="translate('Physical')" />
-                        <el-option value="digital" :label="translate('Digital')" />
-                    </el-select>
+                        :options="[
+                            {value: '__unchanged__', label: translate('Unchanged')},
+                            {value: 'physical', label: translate('Physical')},
+                            {value: 'digital', label: translate('Digital')}
+                        ]"
+                    />
                 </div>
             </div>
         </template>
 
         <Animation :visible="variant.fulfillment_type === 'physical'" accordion>
-            <el-row :gutter="10" class="fct-physical-product-meta-row">
-                <el-col :xs="24" :sm="14" :lg="14">
-                    <el-form-item>
-                        <template #label>
-                            {{ _x('Package', 'Shipping box') }}
-                        </template>
-                        <el-select
-                            v-model="variant.other_info.package_slug"
-                            :placeholder="translate('Select a package')"
-                            @change="onPackageChange"
-                            class="fct-package-options-select"
-                            clearable
-                        >
-                            <template #prefix>
-                                <span v-if="getSelectedPackage" class="fct-package-select-icon">
-                                    <DynamicIcon :name="typeIcons[getSelectedPackage.type] || 'Box'"/>
-                                </span>
-                            </template>
+            <div class="fct-physical-product-meta-row">
+                <fct-select
+                    :label="_x('Package', 'Shipping box')"
+                    v-model="variant.other_info.package_slug"
+                    :placeholder="translate('Select a package')"
+                    @change="onPackageChange"
+                    class="fct-package-options-select"
+                    clearable
+                    :options="[
+                        {label: translate('Add new package'), value: '__add_new__'},
+                        ...shippingPackages.map(pkg => ({label: formatPackageLabel(pkg), value: pkg.slug, pkg}))
+                    ]"
+                >
+                    <template #prefix>
+                        <span v-if="getSelectedPackage" class="fct-package-select-icon">
+                            <DynamicIcon :name="typeIcons[getSelectedPackage.type] || 'Box'"/>
+                        </span>
+                    </template>
 
-                            <el-option value="__add_new__" :label="translate('Add new package')">
-                                <div class="fct-add-new-package-option">
-                                    + {{ translate('Add new package') }}
-                                </div>
-                            </el-option>
-
-                            <el-option
-                                v-for="pkg in shippingPackages"
-                                :key="pkg.slug"
-                                :label="formatPackageLabel(pkg)"
-                                :value="pkg.slug"
-                            >
-                                <div class="fct-package-options">
-                                    <DynamicIcon :name="typeIcons[pkg.type] || 'Box'"/>
-
-                                    <div class="fct-package-options-info">
-                                        <span class="fct-package-options-name">
-                                            {{ pkg.is_default ? translate('Store default') + ' · ' : '' }}{{ pkg.name }}
-                                        </span>
-
-                                        <span class="fct-package-options-dimensions">
-                                            {{ pkg.type === 'envelope' ? (pkg.length + ' × ' + pkg.width) : (pkg.length + ' × ' + pkg.width + ' × ' + pkg.height) }} {{ pkg.dimension_unit }}, {{ pkg.weight }} {{ pkg.weight_unit }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </el-option>
-                        </el-select>
-                    </el-form-item>
-                </el-col>
-                <el-col :xs="24" :sm="10" :lg="10">
-                    <el-form-item>
-                        <template #label>
-                            {{ translate('Product weight') }}
-                        </template>
-                        <div class="fct-product-weight-input">
-                            <el-input
-                                v-model="variant.other_info.weight"
-                                type="number"
-                                :min="0"
-                                step="0.0001"
-                                :placeholder="'0.0'"
-                                inputmode="decimal"
-                                @input="value => {productEditModel.updatePricingOtherValue('weight', value, fieldKey, variant, modeType)}"
-                                class="fct-product-weight-number"
-                            >
-                                <template #append>
-                                    <el-select
-                                        v-model="variant.other_info.weight_unit"
-                                        @change="onWeightUnitChange"
-                                        class="fct-product-weight-unit"
-                                    >
-                                        <el-option v-for="u in weightUnits" :key="u.value" :label="u.label" :value="u.value" />
-                                    </el-select>
-                                </template>
-                            </el-input>
+                    <template #option="{option}">
+                        <div v-if="!option.pkg" class="fct-add-new-package-option">
+                            + {{ translate('Add new package') }}
                         </div>
-                    </el-form-item>
-                </el-col>
-            </el-row>
+                        <div v-else class="fct-package-options">
+                            <DynamicIcon :name="typeIcons[option.pkg.type] || 'Box'"/>
+
+                            <div class="fct-package-options-info">
+                                <span class="fct-package-options-name">
+                                    {{ option.pkg.is_default ? translate('Store default') + ' · ' : '' }}{{ option.pkg.name }}
+                                </span>
+
+                                <span class="fct-package-options-dimensions">
+                                    {{ option.pkg.type === 'envelope' ? (option.pkg.length + ' × ' + option.pkg.width) : (option.pkg.length + ' × ' + option.pkg.width + ' × ' + option.pkg.height) }} {{ option.pkg.dimension_unit }}, {{ option.pkg.weight }} {{ option.pkg.weight_unit }}
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </fct-select>
+                <Field :label="translate('Product weight')" v-slot="field">
+                    <div class="fct-product-weight-input">
+                        <fct-input
+                            :id="field.id"
+                            v-model="variant.other_info.weight"
+                            type="number"
+                            :controls="false"
+                            :min="0"
+                            step="0.0001"
+                            :placeholder="'0.0'"
+                            inputmode="decimal"
+                            @input="value => {productEditModel.updatePricingOtherValue('weight', value, fieldKey, variant, modeType)}"
+                            class="fct-product-weight-number"
+                        >
+                            <template #append>
+                                <fct-select
+                                    v-model="variant.other_info.weight_unit"
+                                    :options="weightUnits"
+                                    @change="onWeightUnitChange"
+                                    class="fct-product-weight-unit"
+                                />
+                            </template>
+                        </fct-input>
+                    </div>
+                </Field>
+            </div>
         </Animation>
     </SharedVariantItemBox>
 

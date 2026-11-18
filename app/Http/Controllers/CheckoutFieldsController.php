@@ -14,6 +14,10 @@ class CheckoutFieldsController extends Controller
         return [
             'fields'   => CheckoutFieldsSchema::getFieldsSchemaConfig(),
             'settings' => CheckoutFieldsSchema::getFieldsSettings(),
+            'address_field_order' => [
+                'billing_address'  => CheckoutFieldsSchema::getAddressFieldOrder('billing_address'),
+                'shipping_address' => CheckoutFieldsSchema::getAddressFieldOrder('shipping_address'),
+            ],
         ];
     }
 
@@ -46,6 +50,26 @@ class CheckoutFieldsController extends Controller
 
         return [
             'message' => __('Checkout fields has been updated successfully.', 'fluent-cart'),
+        ];
+    }
+
+    public function saveFieldOrder(Request $request)
+    {
+        $section = sanitize_key($request->get('section', ''));
+        if (!in_array($section, ['billing_address', 'shipping_address'], true)) {
+            return $this->sendError([
+                'message' => __('Invalid address section.', 'fluent-cart'),
+            ], 422);
+        }
+
+        $settings = CheckoutFieldsSchema::getFieldsSettings();
+        $order = CheckoutFieldsSchema::sanitizeAddressFieldOrder([$section => $request->get('order', [])], $settings);
+
+        update_option(CheckoutFieldsSchema::addressFieldOrderKey($section), $order[$section]);
+
+        return [
+            'message' => __('Field order has been saved.', 'fluent-cart'),
+            'order'   => $order[$section],
         ];
     }
 

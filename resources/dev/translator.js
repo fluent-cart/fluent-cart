@@ -14,7 +14,6 @@ const TranslationHelper = require('./TranslationHelper');
 // and their own maps; they stay out of this list.
 let resourcesDir = [
     path.join('resources/admin'),
-    path.join('resources/withdrawal'),
     path.join('resources/order-bump'),
     path.join('resources/addon-assets'),
     path.join('resources/attributes'),
@@ -49,7 +48,11 @@ if (isBlock) {
 }
 
 if (isCustomer) {
-    resourcesDir = path.join('resources/public/customer-profile');
+    resourcesDir = [
+        path.join('resources/public/customer-profile'),
+        // Shared admin component the portal renders; its $t() is the portal translator there
+        path.join('resources/admin/Bits/Components/BundleProducts.vue'),
+    ];
     phpFile = path.join('app/Services/Translations/customer-profile-translation.php');
     excludeDirs = [];
 }

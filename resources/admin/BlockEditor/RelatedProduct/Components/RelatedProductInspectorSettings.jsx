@@ -4,7 +4,7 @@ import ProductDropdownPicker from "@/BlockEditor/Components/ProductPicker/Produc
 const {InspectorControls} = wp.blockEditor;
 const {PanelBody, CheckboxControl, SelectControl, RangeControl, ToggleControl, __experimentalToolsPanel: ToolsPanel, __experimentalToolsPanelItem: ToolsPanelItem, __experimentalToggleGroupControl: ToggleGroupControl, __experimentalToggleGroupControlOption: ToggleGroupControlOption} = wp.components;
 
-const RelatedProductInspectorSettings = ({ attributes, setAttributes, selectedProduct, setSelectedProduct }) => {
+const RelatedProductInspectorSettings = ({ attributes, setAttributes, selectedProduct, setSelectedProduct, showDisplayElements }) => {
 
     const handleProductSelect = (product) => {
         setAttributes({product_id: product.ID || ''});
@@ -95,6 +95,7 @@ const RelatedProductInspectorSettings = ({ attributes, setAttributes, selectedPr
                             onChange={(value) => setAttributes({ columns: value })}
                             min={1}
                             max={6}
+                            help={blocktranslate("Layout cards show fewer per row where each would be under 220px wide.")}
                         />
                     </ToolsPanelItem>
 
@@ -114,7 +115,7 @@ const RelatedProductInspectorSettings = ({ attributes, setAttributes, selectedPr
                     </ToolsPanelItem>
                 </ToolsPanel>
 
-                <PanelBody
+                {showDisplayElements && <PanelBody
                     title={blocktranslate("Display Elements")}
                     initialOpen={false}
                 >
@@ -138,7 +139,7 @@ const RelatedProductInspectorSettings = ({ attributes, setAttributes, selectedPr
                         checked={attributes.show_button}
                         onChange={(value) => setAttributes({ show_button: value })}
                     />
-                </PanelBody>
+                </PanelBody>}
             </InspectorControls>
         </>
     );

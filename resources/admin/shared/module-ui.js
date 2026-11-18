@@ -3,6 +3,9 @@
 // Only names a shipped add-on imports; removing or renaming one breaks it and
 // must bump FLUENTCART_MODULE_API.
 import {Body, Container, Footer, Header} from '@/Bits/Components/Card/Card.js';
+import {Item as FluidTabItem, Tab as FluidTabContainer} from '@/Bits/Components/FluidTab/FluidTab.js';
+import Alert from '@/Bits/Components/Alert.vue';
+import Animation from '@/Bits/Components/Animation.vue';
 import Badge from '@/Bits/Components/Badge.vue';
 import ChartTab from '@/Bits/Components/ChartTab.vue';
 import CopyToClipboard from '@/Bits/Components/CopyToClipboard.vue';
@@ -20,6 +23,7 @@ import Pagination from '@/Bits/Components/Pagination.vue';
 import ProductInfo from '@/Bits/Components/Card/ProductInfo.vue';
 import ProductSalesChart from '@/Modules/Reports/Product/ProductSalesChart.vue';
 import ReportSummary from '@/Bits/Components/ReportSummary.vue';
+import StepIndicator from '@/Bits/Components/StepIndicator.vue';
 import RouteCell from '@/Bits/Components/TableNew/RouteCell.vue';
 import Screenshot from '@/Bits/Components/Screenshot.vue';
 import SummaryLoader from '@/Modules/Reports/Components/SummaryLoader.vue';
@@ -30,10 +34,42 @@ import Label from '@/Modules/Parts/Labels/Label.vue';
 import OrderCustomerInformation from '@/Modules/Orders/OrderCustomerInformation.vue';
 import UpgradePlan from '@/Modules/Products/UpgradePaths/UpgradePlan.vue';
 import NotFound from '@/Pages/NotFound.vue';
+// Layout components: dev-docs/admin-design-system/spec.md.
+import DetailLayout from '@/Bits/Components/Layout/DetailLayout.vue';
+import EmptyState from '@/Bits/Components/Layout/EmptyState.vue';
+import CoreUpdateCard from '@/Bits/Components/CoreUpdateCard.vue';
+import KeyValue from '@/Bits/Components/Layout/KeyValue.vue';
+import KeyValueList from '@/Bits/Components/Layout/KeyValueList.vue';
+import List from '@/Bits/Components/Layout/List.vue';
+import ListItem from '@/Bits/Components/Layout/ListItem.vue';
+import Page from '@/Bits/Components/Layout/Page.vue';
+import Section from '@/Bits/Components/Layout/Section.vue';
+import SettingRow from '@/Bits/Components/Layout/SettingRow.vue';
+import SortableList from '@/Bits/Components/Layout/SortableList.vue';
+import StatGrid from '@/Bits/Components/Layout/StatGrid.vue';
+import StatTile from '@/Bits/Components/Layout/StatTile.vue';
+import Title from '@/Bits/Components/Layout/Title.vue';
 
 export const Card = {Container, Header, Body, Footer};
+export const FluidTab = {Tab: FluidTabContainer, Item: FluidTabItem};
 
 export {
+    Alert,
+    Animation,
+    CoreUpdateCard,
+    DetailLayout,
+    EmptyState,
+    KeyValue,
+    KeyValueList,
+    List,
+    ListItem,
+    Page,
+    Section,
+    SettingRow,
+    SortableList,
+    StatGrid,
+    StatTile,
+    Title,
     Badge,
     ChartTab,
     CopyToClipboard,
@@ -56,6 +92,7 @@ export {
     ReportSummary,
     RouteCell,
     Screenshot,
+    StepIndicator,
     SummaryLoader,
     TableWrapper,
     UpgradePlan,
@@ -73,6 +110,7 @@ export {default as Clipboard} from '@/utils/Clipboard';
 export {default as Arr} from '@/utils/support/Arr';
 export {default as Str} from '@/utils/support/Str';
 export {default as Asset} from '@/utils/support/Asset';
+export {default as CurrencyFormatter} from '@/utils/support/CurrencyFormatter';
 export {default as Model} from '@/utils/model/Model';
 export {default as Table} from '@/utils/table-new/Table';
 export {default as Permission} from '@/utils/permission/Permission';

@@ -1,12 +1,17 @@
-@config "./searchbar-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./searchbar-block-editor.config.mjs";
+/* source(none) drops the config's `important` scope, so nest the utilities in it. */
+.fluent-cart-searchbar-block-editor {
+    @tailwind utilities source(none);
+}
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 .fluent-cart-searchbar-block-editor *{
     @apply box-border;
 }
 .block-editor-block-list__block.wp-block[data-type="fluent-cart/fluent-cart-searchbar-block-editor'"] {
-    @apply ml-0 mr-0 w-full max-w-full !important
+    @apply ml-0! mr-0! w-full! max-w-full!
 }
 
 /* product menu items */
@@ -30,7 +35,7 @@
 /*}*/
 
 .components-select-control__input{
-    @apply text-sm !important;
+    @apply text-sm!;
 }
 .components-select-control__input option{
     @apply py-1 px-2 rounded-[2px] capitalize;
@@ -38,44 +43,44 @@
 
 /*===== search bar block =====*/
 .fluent-cart-search-bar-app-wrapper{
-    @apply max-w-[360px] ml-0 !important;
+    @apply max-w-[360px]! ml-0!;
 }
 .fluent-cart-search-bar-app-wrapper-result-container{
     @apply relative;
 }
 .fluent-cart-search-bar-app-input-wrap{
-    @apply flex items-center w-full relative !important;
+    @apply flex! items-center! w-full! relative!;
 }
 .fluent-cart-search-bar-app-input{
-    @apply bg-white border border-solid border-gray-outline rounded w-full focus:border-dark-500 focus:outline-none max-h-12 text-system-dark placeholder:text-system-light placeholder:text-base !important;
+    @apply bg-white! border! border-solid! border-gray-outline! rounded! w-full! focus:border-dark-500! focus:outline-hidden! max-h-12! text-system-dark! placeholder:text-system-light! placeholder:text-base!;
 }
 .fluent-cart-search-bar-app-input.is-active{
-    @apply border-dark-500 rounded-bl-none rounded-br-none !important;
+    @apply border-dark-500! rounded-bl-none! rounded-br-none!;
 }
 .fluent-cart-search-bar-app-input-search{
-    @apply absolute top-0 left-4 h-full flex items-center text-system-mid !important;
+    @apply absolute! top-0! left-4! h-full! flex! items-center! text-system-mid!;
 }
 .fluent-cart-search-bar-app-input-search + .fluent-cart-search-bar-app-input{
-    @apply pl-10.5 !important;
+    @apply pl-10.5!;
 }
 .fluent-cart-search-bar-app-input-clear{
-    @apply absolute top-0 right-0 py-3.5 px-4 h-full text-system-mid cursor-pointer !important;
+    @apply absolute! top-0! right-0! py-3.5! px-4! h-full! text-system-mid! cursor-pointer!;
     @apply hidden;
 }
 .fluent-cart-search-bar-app-wrapper-result-wrap{
     @apply absolute top-full left-0 w-full border border-solid border-gray-outline rounded-br rounded-bl border-t-0 py-3 bg-white;
 }
 .fluent-cart-search-bar-app-wrapper-result-wrap h5{
-    @apply text-system-light font-medium mt-0 mb-2 text-sm px-4 !important;
+    @apply text-system-light! font-medium! mt-0! mb-2! text-sm! px-4!;
 }
 .fluent-cart-search-bar-app-list-wrapper{
-    @apply p-0 m-0 list-none !important;
+    @apply p-0! m-0! list-none!;
 }
 .fluent-cart-search-bar-app-list-wrapper li a{
-    @apply px-4 py-2.5 block text-system-dark text-sm font-normal no-underline leading-[1.1] transition duration-200 hover:bg-gray-50 !important;
+    @apply px-4! py-2.5! block! text-system-dark! text-sm! font-normal! no-underline! leading-[1.1]! transition! duration-200! hover:bg-gray-50!;
 }
 .fluent-cart-search-bar-app-list-wrapper li.is-empty{
-    @apply px-4 py-2.5 text-system-dark text-sm font-normal leading-[1.1] !important;
+    @apply px-4! py-2.5! text-system-dark! text-sm! font-normal! leading-[1.1]!;
 }
 
 .fct-searchbar-block-select-wrap {
@@ -83,7 +88,7 @@
 }
 
 .fct-searchbar-block-select-wrap select {
-    @apply w-full outline-none px-3 py-1 h-10 rounded bg-white text-sm border border-solid border-gray-outline;
+    @apply w-full outline-hidden px-3 py-1 h-10 rounded bg-white text-sm border border-solid border-gray-outline;
     margin-right: 0 !important;
     box-shadow: none !important;
 }

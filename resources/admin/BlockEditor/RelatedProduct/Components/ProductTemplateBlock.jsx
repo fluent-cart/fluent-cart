@@ -1,6 +1,8 @@
 import {Layout} from "@/BlockEditor/Icons";
 import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import {ALLOWED_BLOCKS, PRODUCT_TEMPLATE} from "./productTemplate";
+import useMasonryGrid from "@/BlockEditor/Components/useMasonryGrid";
 
 const {
     useBlockProps,
@@ -18,15 +20,6 @@ const useBlockPreview = __experimentalUseBlockPreview || (() => ({}));
 const blockEditorData = window.fluent_cart_related_product_data;
 const parentBlockName = blockEditorData.slug + '/' + blockEditorData.name;
 
-// Template for the inner product template block: image, title, price, button
-const PRODUCT_TEMPLATE = [
-    ['fluent-cart/shopapp-product-image'],
-    ['fluent-cart/shopapp-product-title'],
-    ['fluent-cart/product-rating'],
-    ['fluent-cart/shopapp-product-price'],
-    ['fluent-cart/shopapp-product-buttons'],
-];
-
 // Product Template Components (following ProductLoopBlock pattern)
 const ProductTemplateInnerBlocks = () => {
     const innerBlocksProps = useInnerBlocksProps(
@@ -34,13 +27,7 @@ const ProductTemplateInnerBlocks = () => {
         {
             template: PRODUCT_TEMPLATE,
             templateLock: false,
-            allowedBlocks: [
-                'fluent-cart/shopapp-product-image',
-                'fluent-cart/shopapp-product-title',
-                'fluent-cart/product-rating',
-                'fluent-cart/shopapp-product-price',
-                'fluent-cart/shopapp-product-buttons',
-            ],
+            allowedBlocks: ALLOWED_BLOCKS,
         }
     );
     return <div {...innerBlocksProps} />;
@@ -112,7 +99,7 @@ const ProductContent = ({
 // Register the product template block directly
 registerBlockType('fluent-cart/product-template', {
     apiVersion: 3,
-    title: blocktranslate('Product Template'),
+    title: blocktranslate('Related Products Loop'),
     description: blocktranslate('Contains the block elements used to render a product.'),
     icon: {
         src: Layout,
@@ -131,9 +118,12 @@ registerBlockType('fluent-cart/product-template', {
         const productId = context['fluent-cart/product_id'] || '';
         const columns = context['fluent-cart/columns'] || 4;
         const [activeBlockContextId, setActiveBlockContextId] = useState();
+        const gridRef = useMasonryGrid();
 
         const gridStyle = {
             gridTemplateColumns: `repeat(${columns}, 1fr)`,
+            // As on the page, for the layout cards' column limit (card-layouts.scss).
+            '--fct-related-product-columns': columns,
         };
 
         // Build hide classes for show/hide element toggles
@@ -194,7 +184,7 @@ registerBlockType('fluent-cart/product-template', {
 
         return (
             <div {...blockProps}>
-                <div className="fct-related-products-grid" style={gridStyle}>
+                <div ref={gridRef} className="fct-related-products-grid" style={gridStyle}>
                     {relatedProducts.map((product) => {
                         const displayTemplate =
                             product.ID === (activeBlockContextId || relatedProducts[0]?.ID);

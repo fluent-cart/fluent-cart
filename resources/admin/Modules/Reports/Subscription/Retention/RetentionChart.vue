@@ -4,9 +4,9 @@
             <Card.Header title_size="small" border_bottom>
                 <template #title>
                     <div class="flex items-center gap-2">
-                        <h4 class="fct-card-header-title is-small">
+                        <h2 class="fct-card-header-title is-small">
                             {{ translate("Retention Rate") }}
-                        </h4>
+                        </h2>
                     </div>
                 </template>
                 <template #action v-if="!isEmpty && !loading">
@@ -25,7 +25,7 @@
                 </template>
             </Card.Header>
             <Card.Body class="px-0 pt-0">
-                <el-skeleton v-if="loading" animated :rows="7" class="px-4 pt-4" />
+                <fct-skeleton v-if="loading" animated :rows="7" class="px-4 pt-4" />
 
                 <template v-else>
                     <template v-if="!isEmpty">

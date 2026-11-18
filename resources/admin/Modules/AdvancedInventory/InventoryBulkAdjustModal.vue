@@ -1,16 +1,17 @@
 <template>
-    <el-dialog v-model="modalVisible" :title="translate('Update Stocks')">
+    <fct-dialog v-model="modalVisible" :title="translate('Update Stocks')">
         <div class="fct-bulk-modal-content">
             <!-- Mode Selection with Radio Buttons -->
             <div class="fct-inventory-mode-selection">
-                <el-radio-group v-model="bulkMode" class="fct-mode-radio-group">
-                    <el-radio value="add">
-                        {{ translate('Increase Stock') }}
-                    </el-radio>
-                    <el-radio value="set">
-                        {{ translate('Set Exact Stock') }}
-                    </el-radio>
-                </el-radio-group>
+                <fct-choice
+                    v-model="bulkMode"
+                    type="radio"
+                    class="fct-mode-radio-group"
+                    :options="[
+                        {label: translate('Increase Stock'), value: 'add'},
+                        {label: translate('Set Exact Stock'), value: 'set'}
+                    ]"
+                />
             </div>
 
             <!-- Value Input -->
@@ -20,9 +21,10 @@
                     :content="bulkMode === 'add' ? translate('Increase stock by value (e.g. 10 + 5 = 15)') : translate('Set stock to exact value (e.g. 10 → 20)')"
                 />
 
-                <el-input
+                <fct-input
                     v-model.number="bulkStock"
                     type="number"
+                    :controls="false"
                     :placeholder="bulkMode === 'add' ? translate('Enter amount to add') : translate('Enter exact stock value')"
                 />
 
@@ -88,19 +90,19 @@
 
             <!-- Footer -->
             <div class="dialog-footer">
-                <el-button @click="handleCancel">
+                <fct-button @click="handleCancel">
                     {{ translate('Cancel') }}
-                </el-button>
-                <el-button type="primary" @click="handleSave" :disabled="!bulkAdjustmentReason">
+                </fct-button>
+                <fct-button type="primary" @click="handleSave" :disabled="!bulkAdjustmentReason">
                     {{ translate('Update Stocks') }}
-                </el-button>
+                </fct-button>
             </div>
         </div>
-    </el-dialog>
+    </fct-dialog>
 </template>
 
 <script setup>
-import { defineOptions, ref } from 'vue';
+import { ref } from 'vue';
 import translate from '@/utils/translator/Translator';
 import Rest from '@/utils/http/Rest';
 import Notify from '@/utils/Notify';

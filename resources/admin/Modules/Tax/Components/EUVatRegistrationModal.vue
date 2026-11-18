@@ -200,7 +200,7 @@ function saveCountryRegistration() {
 
 <template>
     <!-- Modal: Country VAT Registration -->
-    <el-dialog
+    <fct-dialog
         :model-value="modelValue"
         :title="form.isEdit ? translate('Edit VAT registration') : translate('Collect VAT')"
         :close-on-click-modal="false"
@@ -213,36 +213,24 @@ function saveCountryRegistration() {
                 {{ translate("Make sure you're registered for VAT when collecting in the EU.") }}
             </p>
 
-            <el-form label-position="top">
-                <el-form-item :label="translate('Registration country')">
-                    <el-select
-                        v-model="form.country"
-                        :placeholder="translate('Select country')"
-                        filterable
-                        class="w-full"
-                        :disabled="form.isEdit"
-                        @change="onRegCountryChange"
-                    >
-                        <el-option
-                            v-for="country in availableCountriesForReg"
-                            :key="country.value"
-                            :label="country.label"
-                            :value="country.value"
-                        />
-                    </el-select>
-                </el-form-item>
+            <div>
+                <fct-select
+                    :label="translate('Registration country')"
+                    v-model="form.country"
+                    :placeholder="translate('Select country')"
+                    filterable
+                    class="w-full"
+                    :disabled="form.isEdit"
+                    @change="onRegCountryChange"
+                    :options="availableCountriesForReg"
+                />
 
-                <el-form-item :label="translate('VAT number')">
-                    <el-input
-                        v-model="form.vat"
-                        :placeholder="form.country ? form.country + '999999999' : 'DE999999999'"
-                    />
-                    <div class="form-note">
-                        <p>
-                            {{ translate('Shown on VAT invoice') }}
-                        </p>
-                    </div>
-                </el-form-item>
+                <fct-input
+                    :label="translate('VAT number')"
+                    v-model="form.vat"
+                    :placeholder="form.country ? form.country + '999999999' : 'DE999999999'"
+                    :help="translate('Shown on VAT invoice')"
+                />
 
                 <div class="fct-reg-rates-table">
                     <!-- Header row -->
@@ -256,7 +244,7 @@ function saveCountryRegistration() {
                     <template v-if="allRegClasses.length">
                         <div v-for="cls in allRegClasses" :key="cls.tempKey || cls.slug" class="fct-reg-rates-row">
                             <div class="fct-reg-rates-cell-label">
-                                <el-input
+                                <fct-input
                                     v-if="cls.isNew"
                                     v-model="cls.title"
                                     size="small"
@@ -267,19 +255,19 @@ function saveCountryRegistration() {
                                 <span v-else class="fct-reg-class-name">{{ cls.title }}</span>
                             </div>
                             <div class="fct-reg-rates-cell-input fct-reg-rates-cell-rate">
-                                <el-input
+                                <fct-input
                                     v-model.number="form.rates[getRegClassKey(cls)].rate"
-                                    type="number"
+                                    type="number" :controls="false"
                                     step="0.01"
                                     min="0"
                                     size="small"
                                     :placeholder="cls.slug === 'standard' ? '19' : '0'"
                                 >
                                     <template #suffix>%</template>
-                                </el-input>
+                                </fct-input>
                             </div>
                             <div class="fct-reg-rates-cell-input">
-                                <el-input
+                                <fct-input
                                     v-model="form.rates[getRegClassKey(cls)].label"
                                     size="small"
                                     :placeholder="translate('e.g. VAT, MwSt')"
@@ -290,19 +278,19 @@ function saveCountryRegistration() {
                     <div v-else class="fct-reg-rates-row">
                         <div class="fct-reg-rates-cell-label">{{ translate('Standard') }}</div>
                         <div class="fct-reg-rates-cell-input fct-reg-rates-cell-rate">
-                            <el-input
+                            <fct-input
                                 v-model.number="form.rates.standard.rate"
-                                type="number"
+                                type="number" :controls="false"
                                 step="0.01"
                                 min="0"
                                 size="small"
                                 placeholder="19"
                             >
                                 <template #suffix>%</template>
-                            </el-input>
+                            </fct-input>
                         </div>
                         <div class="fct-reg-rates-cell-input">
-                            <el-input
+                            <fct-input
                                 v-model="form.rates.standard.label"
                                 size="small"
                                 :placeholder="translate('e.g. VAT, MwSt')"
@@ -324,36 +312,25 @@ function saveCountryRegistration() {
                         {{ translate('Add class') }}
                     </button>
                     <!-- Multiple options — show dropdown -->
-                    <el-dropdown v-else trigger="click" @command="handleAddRegClass">
+                    <fct-dropdown v-else trigger="click" :items="availableRegClasses" @command="handleAddRegClass">
                         <button type="button" class="fct-reg-add-class-btn">
                             <DynamicIcon name="Plus" />
                             {{ translate('Add class') }}
                         </button>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item
-                                    v-for="opt in availableRegClasses"
-                                    :key="opt.command"
-                                    :command="opt.command"
-                                >
-                                    {{ opt.label }}
-                                </el-dropdown-item>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
+                    </fct-dropdown>
                 </div>
-            </el-form>
+            </div>
         </div>
 
         <template #footer>
-            <el-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</el-button>
-            <el-button
+            <fct-button @click="emit('update:modelValue', false)">{{ translate('Cancel') }}</fct-button>
+            <fct-button
                 type="primary"
                 @click="saveCountryRegistration"
                 :loading="savingCountryReg"
             >
                 {{ translate('Collect VAT') }}
-            </el-button>
+            </fct-button>
         </template>
-    </el-dialog>
+    </fct-dialog>
 </template>

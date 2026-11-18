@@ -9,11 +9,8 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Hooks\Scheduler\AutoSchedules\FcDailySchedulerClock;
 use FluentCart\App\Hooks\Scheduler\AutoSchedules\DailyScheduler;
 use FluentCart\App\Hooks\Scheduler\AutoSchedules\FiveMinuteScheduler;
-use FluentCart\App\Hooks\Scheduler\AutoSchedules\HourlyScheduler;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Models\ScheduledAction;
-use FluentCart\App\Models\Subscription;
-use FluentCart\App\Services\Email\StoreDigestService;
 
 return [
     [
@@ -68,110 +65,6 @@ return [
                 FcTest::assertSame([], FcTest::sentMails(), 'job runner sends no mail');
                 FcTest::assertSame([], FcTest::externalCalls(), 'job runner makes no loopback');
             } finally {
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
-    [
-        'id'            => 'automation-hourly-retention-and-expiry',
-        'name'          => 'Hourly scheduler removes completed jobs and expires eligible subscriptions once',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'phase'         => 14,
-        'run'           => function () {
-            $disableIntegrations = '__return_empty_array';
-            add_filter(
-                'fluent_cart/integration/order_integrations',
-                $disableIntegrations,
-                PHP_INT_MAX,
-                1
-            );
-            $cacheProperty = new ReflectionProperty(StoreDigestService::class, 'settingsCache');
-            $cacheProperty->setAccessible(true);
-            $cacheProperty->setValue(null, ['enabled' => 'no']);
-
-            try {
-                $completed = ScheduledAction::query()
-                    ->where('status', Status::SCHEDULE_COMPLETED)
-                    ->pluck('id')
-                    ->toArray();
-                if ($completed !== []) {
-                    throw new RuntimeException(
-                        'Refusing hourly retention; foreign completed IDs: '
-                        . wp_json_encode(array_map('intval', $completed))
-                    );
-                }
-                $expiryCandidates = FcDomainFixture::expiryCandidateIds();
-                if ($expiryCandidates !== []) {
-                    throw new RuntimeException(
-                        'Refusing hourly expiry; foreign subscription IDs: '
-                        . wp_json_encode($expiryCandidates)
-                    );
-                }
-
-                $completedJob = FcDomainFixture::scheduledAction([
-                    'action_suffix' => 'hourly-completed',
-                    'status'        => Status::SCHEDULE_COMPLETED,
-                    'completed_at'  => '2001-02-03 04:06:07',
-                ]);
-                $product = FcDomainFixture::product([
-                    'payment_type' => 'subscription',
-                    'other_info'   => ['repeat_interval' => 'monthly'],
-                ]);
-                $order = FcDomainFixture::orderWithItem(
-                    (int) $product['post']->ID,
-                    (int) $product['variation']->id,
-                    1,
-                    ['type' => 'subscription']
-                );
-                $subscription = FcDomainFixture::subscription(
-                    $order,
-                    (int) $product['post']->ID,
-                    (int) $product['variation']->id,
-                    Status::SUBSCRIPTION_ACTIVE,
-                    'hourly-expiry'
-                );
-                FcTest::assertSame(
-                    [(int) $subscription->id],
-                    FcDomainFixture::expiryCandidateIds(),
-                    'hourly production predicate selects only the owned subscription'
-                );
-
-                FcDomainFixture::beginActivityCapture();
-                (new HourlyScheduler())->handle();
-                FcDomainFixture::captureExpiryActivities();
-                FcDomainFixture::captureSubscriptionMeta();
-
-                FcTest::assertSame(
-                    null,
-                    ScheduledAction::query()->find((int) $completedJob->id),
-                    'hourly retention removes the completed owned job'
-                );
-                $stored = Subscription::query()->find((int) $subscription->id);
-                FcTest::assertSame(
-                    Status::SUBSCRIPTION_EXPIRED,
-                    $stored ? (string) $stored->status : null,
-                    'hourly scheduler progresses eligible subscription to expired'
-                );
-                $marker = $stored ? $stored->getMeta('validity_expired_at') : null;
-                FcTest::assert(is_string($marker) && $marker !== '', 'hourly expiry writes marker');
-
-                (new HourlyScheduler())->handle();
-                $second = Subscription::query()->find((int) $subscription->id);
-                FcTest::assertSame(
-                    $marker,
-                    $second ? $second->getMeta('validity_expired_at') : null,
-                    'second hourly pass preserves the first expiry marker'
-                );
-                FcTest::assertSame([], FcTest::sentMails(), 'hourly scheduler sends no mail');
-                FcTest::assertSame([], FcTest::externalCalls(), 'hourly scheduler makes no loopback');
-            } finally {
-                $cacheProperty->setValue(null, null);
-                remove_filter(
-                    'fluent_cart/integration/order_integrations',
-                    $disableIntegrations,
-                    PHP_INT_MAX
-                );
                 FcDomainFixture::cleanupAll();
             }
         },

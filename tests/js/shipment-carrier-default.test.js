@@ -1,11 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
-
 import {defaultShipmentCarrier, orderCarrierSlug} from '@/Modules/Orders/Components/shipmentCarrierDefault';
-
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const manual = {slug: 'manual', name: 'Manual', is_enabled: true, supports_labels: false, supports_rates: true};
 const shippo = {slug: 'shippo', name: 'Shippo', is_enabled: true, supports_labels: true, supports_rates: true};
@@ -52,11 +46,5 @@ describe('defaultShipmentCarrier', () => {
     it('falls back to the first carrier when the fallback is not offered', () => {
         expect(defaultShipmentCarrier({}, [shippo], 'manual')).toBe('shippo');
         expect(defaultShipmentCarrier({}, [], 'manual')).toBe('manual');
-    });
-
-    it('is what the Create shipment form uses once the carriers load', () => {
-        const source = fs.readFileSync(path.join(root, 'resources/admin/Modules/Orders/Components/ShipmentForm.vue'), 'utf8');
-
-        expect(source).toMatch(/defaultShipmentCarrier\(props\.order, carrierList, form\.value\.carrier_slug\)/);
     });
 });

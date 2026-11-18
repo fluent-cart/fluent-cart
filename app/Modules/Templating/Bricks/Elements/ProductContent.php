@@ -12,6 +12,8 @@ use FluentCart\App\Services\Renderer\ProductRenderer;
 
 class ProductContent extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
+
     public $category = 'fluent-cart';
     public $name = 'fct-product-content';
     public $icon = 'ion-md-list-box fluent-cart-element-icon';
@@ -95,6 +97,9 @@ class ProductContent extends Element
         }
 
         $content = $this->render_dynamic_data($content);
+        if (has_blocks($content)) {
+            $content = do_blocks($content);
+        }
         $content = Helpers::parse_editor_content($content);
         $content = str_replace(']]>', ']]&gt;', $content);
 

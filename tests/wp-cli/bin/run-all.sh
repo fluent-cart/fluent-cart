@@ -19,17 +19,11 @@
 #   tests/wp-cli/bin/run-all.sh integration
 #   tests/wp-cli/bin/run-all.sh integration customer-model-round-trip
 #   tests/wp-cli/bin/run-all.sh integration order-model-round-trip
-#   tests/wp-cli/bin/run-all.sh integration shared-activity-discriminator
 #   tests/wp-cli/bin/run-all.sh integration shared-label-discriminator
-#   tests/wp-cli/bin/run-all.sh integration shared-coupon-meta-discriminator
 #   tests/wp-cli/bin/run-all.sh integration shared-product-meta-discriminator
-#   tests/wp-cli/bin/run-all.sh integration reports-order-aggregates
 #   tests/wp-cli/bin/run-all.sh integration reports-default-sales-aggregates
 #   tests/wp-cli/bin/run-all.sh integration reports-dashboard-range-aggregates
 #   tests/wp-cli/bin/run-all.sh integration crud-customer-route-round-trip
-#   tests/wp-cli/bin/run-all.sh integration crud-order-safe-route-round-trip
-#   tests/wp-cli/bin/run-all.sh integration crud-product-safe-route-round-trip
-#   tests/wp-cli/bin/run-all.sh integration crud-coupon-route-round-trip
 #   tests/wp-cli/bin/run-all.sh integration crud-label-supported-routes
 #   tests/wp-cli/bin/run-all.sh integration background-schedulers
 #   tests/wp-cli/bin/run-all.sh integration background-renewals
@@ -40,6 +34,9 @@
 #   tests/wp-cli/bin/run-all.sh all --axis=strict-sql
 #   tests/wp-cli/bin/run-all.sh all --axis=non-utc
 #   tests/wp-cli/bin/run-all.sh all --axis=pro-absent
+#
+# A passing tier prints one summary line and this script prints one total line.
+# A failing tier prints its context lines and the failing cases before its summary.
 #
 # The plugin directory is derived from this script. The WordPress root is
 # resolved for future WP-CLI tiers without hardcoding a machine path.
@@ -83,11 +80,10 @@ if [ "$#" -gt 1 ]; then
     esac
   done
 fi
-SMOKE_FILTER="$FILTER"
-PERMISSION_FILTER="$FILTER"
-INTEGRATION_FILTER="$FILTER"
-PURE_FILTER="$FILTER"
 WP_TEST_SKIP_PLUGINS=""
+
+# Every tier reads the axis, so Pro-only cases are not registered under pro-absent.
+export WP_PLUGIN_TEST_ENVIRONMENT_AXIS="$ENVIRONMENT_AXIS"
 
 case "$ENVIRONMENT_AXIS" in
   strict-sql)
@@ -102,17 +98,10 @@ case "$ENVIRONMENT_AXIS" in
 esac
 
 RED=$'\033[31m'
-GREEN=$'\033[32m'
-BOLD=$'\033[1m'
 OFF=$'\033[0m'
 
+PASSED=0
 FAILED=0
-declare -a RESULTS=()
-
-hr()
-{
-  printf '%s\n' "------------------------------------------------------------------------"
-}
 
 wp_test()
 {
@@ -125,184 +114,104 @@ wp_test()
 
 record()
 {
-  if [ "$2" -eq 0 ]; then
-    RESULTS+=("${GREEN}PASS${OFF}  $1")
+  if [ "$1" -eq 0 ]; then
+    PASSED=$((PASSED + 1))
   else
-    RESULTS+=("${RED}FAIL${OFF}  $1")
-    FAILED=1
+    FAILED=$((FAILED + 1))
   fi
+}
+
+# A tier that exits 97 saw a protected-table count change.
+hard_failure()
+{
+  echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
+  exit 97
 }
 
 run_static()
 {
-  echo "${BOLD}Static lints${OFF}"
-  hr
-
   local static_args=()
+  # run-static.php writes one key=0|1 line per lint here, not to stdout.
+  local result_file
+  result_file="$(mktemp)"
+  static_args+=("result-file=$result_file")
   if [ "$FULL_PHP_LINT" -eq 1 ]; then
     static_args+=("full-php-lint=1")
   fi
 
-  local output
-  if [ "${#static_args[@]}" -gt 0 ]; then
-    output=$(
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-static.php" -- \
-        "${static_args[@]}" 2>&1
-    )
-  else
-    output=$(
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-static.php" 2>&1
-    )
-  fi
+  (
+    cd "$WP_ROOT" || exit 2
+    wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-static.php" -- \
+      "${static_args[@]}" 2>&1
+  )
   local code=$?
-  echo "$output"
 
-  if [ "$code" -eq 97 ] || grep -Fq 'FC_PROTECTED_FAILURE=1' <<<"$output"; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
+  if [ "$code" -eq 97 ] || grep -Fxq 'protected_failure=1' "$result_file"; then
+    rm -f "$result_file"
+    hard_failure
   fi
 
-  local marker
-  local label
-  for marker in \
-    "php-l|php -l" \
-    "raw-sql-prefix|lint: raw-sql-prefix" \
-    "route-coverage|lint: route-coverage" \
-    "permission-inventory|lint: permission-inventory" \
-    "name-mode-forms|lint: name-mode-forms" \
-    "translation-map-integrity|lint: translation-map-integrity" \
-    "state-translation-contexts|lint: state-translation-contexts" \
-    "localized-dates|lint: localized-dates" \
-    "review-layout-preset-contract|lint: review-layout-preset-contract" \
-    "lint-self-test|lint self-test"
+  # A lint missing from the file did not run, which counts as a failure.
+  local lint
+  for lint in \
+    php-l \
+    raw-sql-prefix \
+    route-coverage \
+    permission-inventory \
+    name-mode-forms \
+    translation-map-integrity \
+    state-translation-contexts \
+    localized-dates \
+    no-skip \
+    review-layout-preset-contract \
+    lint-self-test
   do
-    label="${marker#*|}"
-    marker="${marker%%|*}"
-    if grep -Fq "FC_STATIC_RESULT $marker=0" <<<"$output"; then
-      record "$label" 0
-    else
-      record "$label" 1
+    if ! grep -Fxq "$lint=0" "$result_file"; then
+      echo "static lint did not pass: $lint"
+      code=1
     fi
   done
+  rm -f "$result_file"
 
-  echo
+  record "$code"
 }
 
-run_smoke()
+# Run one runner script in the WordPress root. The runner prints its own summary
+# line, and exit code 97 means a protected-table count changed.
+run_tier()
 {
-  echo "${BOLD}REST smoke${OFF}"
-  hr
-
-  if [ -n "$SMOKE_FILTER" ]; then
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-smoke.php" -- "filter=$SMOKE_FILTER" 2>&1
-    )
-  else
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-smoke.php" 2>&1
-    )
-  fi
+  local script="$1"
+  shift
+  (
+    cd "$WP_ROOT" || exit 2
+    wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/$script" "$@" 2>&1
+  )
   local code=$?
 
   if [ "$code" -eq 97 ]; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
+    hard_failure
   fi
-  record "REST smoke" "$code"
-  echo
+  record "$code"
 }
 
-run_pure()
+# Pass the filter to the runner when one was given.
+run_filtered_tier()
 {
-  echo "${BOLD}Pure functions and provider fakes${OFF}"
-  hr
-
-  if [ -n "$PURE_FILTER" ]; then
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-pure.php" -- \
-        "filter=$PURE_FILTER" 2>&1
-    )
+  local script="$1"
+  if [ -n "$FILTER" ]; then
+    run_tier "$script" -- "filter=$FILTER"
   else
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-pure.php" 2>&1
-    )
+    run_tier "$script"
   fi
-  local code=$?
-
-  if [ "$code" -eq 97 ]; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
-  fi
-
-  record "Pure functions and provider fakes" "$code"
-  echo
-}
-
-run_permissions()
-{
-  echo "${BOLD}Permission denial${OFF}"
-  hr
-
-  if [ -n "$PERMISSION_FILTER" ]; then
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-permissions.php" -- \
-        "filter=$PERMISSION_FILTER" 2>&1
-    )
-  else
-    (
-      cd "$WP_ROOT" || exit 2
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-permissions.php" 2>&1
-    )
-  fi
-  local code=$?
-
-  if [ "$code" -eq 97 ]; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
-  fi
-
-  record "Permission denial" "$code"
-  echo
 }
 
 run_integration()
 {
-  echo "${BOLD}Real-DB integration${OFF}"
-  hr
-
   local fixture_identity
   fixture_identity="wp-plugin-phase16-$(date +%s)-$$-${RANDOM}@example.invalid"
-
-  if [ -n "$INTEGRATION_FILTER" ]; then
-    (
-      cd "$WP_ROOT" || exit 2
-      WP_PLUGIN_TEST_FIXTURE_IDENTITY="$fixture_identity" \
-        wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-integration.php" -- \
-        "filter=$INTEGRATION_FILTER" 2>&1
-    )
-  else
-    (
-      cd "$WP_ROOT" || exit 2
-      WP_PLUGIN_TEST_FIXTURE_IDENTITY="$fixture_identity" \
-        wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-integration.php" 2>&1
-    )
-  fi
-  local code=$?
-
-  if [ "$code" -eq 97 ]; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
-  fi
-
-  record "Real-DB integration" "$code"
-  echo
+  export WP_PLUGIN_TEST_FIXTURE_IDENTITY="$fixture_identity"
+  run_filtered_tier run-integration.php
+  unset WP_PLUGIN_TEST_FIXTURE_IDENTITY
 }
 
 if [ ! -d "$WP_ROOT" ]; then
@@ -311,30 +220,8 @@ if [ ! -d "$WP_ROOT" ]; then
   exit 2
 fi
 
-echo
-echo "${BOLD}Local plugin test run${OFF}  (suite: $SUITE)"
-echo "plugin: $PLUGIN_DIR"
-echo "wp:     $WP_ROOT"
 if [ -n "$ENVIRONMENT_AXIS" ]; then
-  echo "axis:   $ENVIRONMENT_AXIS (opt-in; default gate unchanged)"
-fi
-echo
-
-if [ -n "$ENVIRONMENT_AXIS" ]; then
-  echo "${BOLD}$ENVIRONMENT_AXIS preflight${OFF}"
-  hr
-  (
-    cd "$WP_ROOT" || exit 2
-    WP_PLUGIN_TEST_ENVIRONMENT_AXIS="$ENVIRONMENT_AXIS" \
-      wp_test eval-file "$PLUGIN_DIR/tests/wp-cli/bin/run-environment.php" 2>&1
-  )
-  environment_code=$?
-  if [ "$environment_code" -eq 97 ]; then
-    echo "${RED}HARD FAILURE — protected-table count changed${OFF}"
-    exit 97
-  fi
-  record "$ENVIRONMENT_AXIS preflight" "$environment_code"
-  echo
+  run_tier run-environment.php
 fi
 
 case "$SUITE" in
@@ -342,22 +229,22 @@ case "$SUITE" in
     run_static
     ;;
   pure)
-    run_pure
+    run_filtered_tier run-pure.php
     ;;
   smoke)
-    run_smoke
+    run_filtered_tier run-smoke.php
     ;;
   permissions)
-    run_permissions
+    run_filtered_tier run-permissions.php
     ;;
   integration)
     run_integration
     ;;
   all)
     run_static
-    run_pure
-    run_smoke
-    run_permissions
+    run_filtered_tier run-pure.php
+    run_filtered_tier run-smoke.php
+    run_filtered_tier run-permissions.php
     run_integration
     ;;
   *)
@@ -366,11 +253,6 @@ case "$SUITE" in
     ;;
 esac
 
-hr
-echo "${BOLD}SUMMARY${OFF}"
-for result in "${RESULTS[@]}"; do
-  echo "  $result"
-done
-hr
+echo "GATE${ENVIRONMENT_AXIS:+ ($ENVIRONMENT_AXIS)}: $PASSED tiers passed, $FAILED failed  (${SECONDS}s)"
 
-exit "$FAILED"
+[ "$FAILED" -eq 0 ]

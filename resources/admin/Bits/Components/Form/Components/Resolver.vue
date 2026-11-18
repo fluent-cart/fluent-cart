@@ -1,6 +1,6 @@
 <script setup>
 
-import {defineModel, onMounted, ref, shallowRef} from "vue";
+import {onMounted, ref, shallowRef} from "vue";
 
 const model = defineModel();
 

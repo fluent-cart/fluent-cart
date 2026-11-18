@@ -318,7 +318,7 @@ return [
                 FcTest::assertSame(4, count($report['filter_options'][0]['variations']), 'The product picker still offers every variation');
 
                 // In New York, Mar 31 23:30 and Apr 1 00:00 UTC are both Mar 31: the bars use the same store months as the filter
-                $newYork = FcReportFixture::inSiteTimezone('America/New_York', 0, function () use ($service, $range) {
+                $newYork = FcReportFixture::inSiteTimezone('America/New_York', function () use ($service, $range) {
                     $report = $service->getReport($range);
 
                     return [$report['summary']['plans_started'], array_map(function ($month) {

@@ -166,11 +166,11 @@ onUnmounted(() => {
         </div>
         <div class="title">
           {{ item.title }}
-          <el-tooltip :content="item.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+          <fct-tooltip :content="item.info" placement="top" :trigger="['hover', 'focus']">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true"/>
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </div>
     </div>
@@ -180,7 +180,7 @@ onUnmounted(() => {
     <Card.Container class="mb-0">
       <Card.Header :title="translate('Discounts Over Time')" :text="translate('Discount given, and the share of orders that used a coupon.')" title_size="small" border_bottom/>
       <Card.Body>
-        <el-skeleton v-if="loading" animated :rows="6"/>
+        <fct-skeleton v-if="loading" animated :rows="6"/>
         <el-empty v-else-if="!hasOrders" :description="translate('No orders in this date range')"/>
         <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 280px"></div>
       </Card.Body>
@@ -194,7 +194,7 @@ onUnmounted(() => {
           border_bottom
       />
       <Card.Body class="px-0 pb-0">
-        <el-skeleton v-if="loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
+        <fct-skeleton v-if="loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
         <table v-else class="w-full text-sm">
           <thead>
             <tr>
@@ -203,7 +203,7 @@ onUnmounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in comparisonRows" :key="row.label" class="border-t border-gray-100 dark:border-dark-400">
+            <tr v-for="row in comparisonRows" :key="row.label" class="[border-top-width:1px] border-gray-100 dark:border-dark-400">
               <td class="px-4 py-2 text-system-mid dark:text-gray-300">{{ row.label }}</td>
               <td v-for="group in groups" :key="group.key" class="px-4 py-2 text-system-dark dark:text-gray-200">{{ row.value(group.row) }}</td>
             </tr>

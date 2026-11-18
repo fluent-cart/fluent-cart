@@ -2,9 +2,9 @@
 /**
  * S1 — REST GET smoke runner.
  *
- * Adapted from wp-plugin-test-suite/assets/bin/run-smoke.php. Every executable
- * route is dispatched in-process with rest_do_request(); web/faker cases must
- * be explicitly skipped in the manifest and can never fall through to HTTP.
+ * Adapted from wp-plugin-test-suite/assets/bin/run-smoke.php. Every case is
+ * dispatched in-process with rest_do_request(). A case with a non-REST
+ * transport fails before any request is made.
  *
  * Usage:
  *   wp eval-file tests/wp-cli/bin/run-smoke.php
@@ -12,8 +12,14 @@
  */
 
 require_once __DIR__ . '/../lib/harness.php';
+require_once __DIR__ . '/../lib/fixtures.php';
+require_once __DIR__ . '/../lib/domain-fixtures.php';
+require_once __DIR__ . '/../lib/automation-fixtures.php';
+require_once __DIR__ . '/../lib/smoke-fixtures.php';
 
 FcTest::boot();
+FcTest::interceptCronMutations();
+FcTest::interceptActionScheduler();
 
 $manifest = require __DIR__ . '/../smoke/routes.manifest.php';
 $resolve = require __DIR__ . '/../lib/resolvers.php';
@@ -81,7 +87,6 @@ foreach ($manifest['route_files'] as $file) {
         'declarations' => 0,
         'executable'   => 0,
         'variations'   => 0,
-        'skips'        => 0,
         'known_failures' => 0,
     ];
 }
@@ -93,11 +98,7 @@ foreach ($manifest['declarations'] as $declaration) {
 }
 foreach ($manifest['cases'] as $entry) {
     $file = $entry['source_file'];
-    if (!empty($entry['skip'])) {
-        $stats[$file]['skips']++;
-    } else {
-        $stats[$file]['executable']++;
-    }
+    $stats[$file]['executable']++;
     if (!empty($entry['variation'])) {
         $stats[$file]['variations']++;
     }
@@ -108,116 +109,162 @@ foreach ($manifest['cases'] as $entry) {
 
 $cleared = FcTest::clearCaches();
 $caseCount = count($manifest['cases']);
-WP_CLI::log('FluentCart REST smoke — ' . count($manifest['declarations']) . ' declarations, '
+FcTest::note('FluentCart REST smoke — ' . count($manifest['declarations']) . ' declarations, '
     . $caseCount . ' cases'
     . ($filter ? " (filter: {$filter})" : '')
     . ' — cleared ' . $cleared . " cache entries\n");
-WP_CLI::log('Manifest inventory by configured route file:');
+FcTest::note('Manifest inventory by configured route file:');
 foreach ($stats as $file => $fileStats) {
-    WP_CLI::log(sprintf(
-        '  %s declarations=%d executable=%d variations=%d documented_skips=%d known_failures=%d',
+    FcTest::note(sprintf(
+        '  %s declarations=%d executable=%d variations=%d known_failures=%d',
         $file,
         $fileStats['declarations'],
         $fileStats['executable'],
         $fileStats['variations'],
-        $fileStats['skips'],
         $fileStats['known_failures']
     ));
 }
-WP_CLI::log('');
 
 $adminId = get_current_user_id();
 
+// A Pro-only case belongs to the runs where Pro loads, not to --axis=pro-absent.
+$selected = [];
 foreach ($manifest['cases'] as $entry) {
-    $label = isset($entry['label']) ? $entry['label'] : $entry['route'];
-    $route = $entry['route'];
-    $params = isset($entry['params']) ? $entry['params'] : [];
-    $ok = isset($entry['ok']) ? $entry['ok'] : [200];
-
-    $searchable = $label . ' ' . $route . ' '
-        . (isset($entry['source_file']) ? $entry['source_file'] : '') . ':'
-        . (isset($entry['source_line']) ? $entry['source_line'] : '');
-    if ($filter !== '' && stripos($searchable, $filter) === false) {
+    if (isset($entry['requires']) && $entry['requires'] === 'pro' && !FcTest::proExpected()) {
         continue;
     }
+    $searchable = (isset($entry['label']) ? $entry['label'] : $entry['route']) . ' ' . $entry['route'] . ' '
+        . (isset($entry['source_file']) ? $entry['source_file'] : '') . ':'
+        . (isset($entry['source_line']) ? $entry['source_line'] : '');
+    if ($filter === '' || stripos($searchable, $filter) !== false) {
+        $selected[] = $entry;
+    }
+}
 
-    FcTest::case($label, function () use (
-        $entry,
-        $route,
-        $params,
-        $ok,
-        $label,
-        $resolve,
-        $replaceTokens,
-        $containsTokens,
-        $adminId
-    ) {
-        try {
-            if (isset($entry['skip'])) {
-                FcTest::skip($entry['skip']);
-                return;
-            }
-
-            if (!isset($entry['transport']) || $entry['transport'] !== 'rest') {
-                FcTest::fail(
-                    'Manifest safety error: executable case uses non-REST transport '
-                    . (isset($entry['transport']) ? $entry['transport'] : '(missing)')
-                );
-                return;
-            }
-
-            $tokens = [];
-            foreach ((array) (isset($entry['needs']) ? $entry['needs'] : []) as $need) {
-                $resolved = $resolve($need);
-                if (!$resolved) {
-                    FcTest::skip('no safe existing ' . $need . ' fixture exists on this site');
-                    return;
-                }
-                $tokens = array_merge($tokens, $resolved);
-            }
-
-            $route = $replaceTokens($route, $tokens);
-            $params = $replaceTokens($params, $tokens);
-
-            $auth = isset($entry['auth']) ? $entry['auth'] : 'admin';
-            if ($auth === 'anonymous') {
-                wp_set_current_user(0);
-            } elseif ($auth === 'customer') {
-                if (empty($tokens['user_id'])) {
-                    FcTest::fail('Customer-auth case did not resolve a user_id.');
-                    return;
-                }
-                wp_set_current_user((int) $tokens['user_id']);
-            } elseif ($auth === 'admin') {
-                wp_set_current_user($adminId);
-            } else {
-                FcTest::fail('Unknown auth mode: ' . $auth);
-                return;
-            }
-
-            if ($containsTokens([$route, $params])) {
-                $encoded = wp_json_encode([$route, $params]);
-                FcTest::fail($label . "\n  unresolved manifest placeholder: " . $encoded);
-                return;
-            }
-
-            $result = $auth === 'customer'
-                ? FcTest::withVerifiedCustomer(function () use ($route, $params) {
-                    return FcTest::rest('GET', $route, $params);
-                })
-                : FcTest::rest('GET', $route, $params);
-
-
-            if (isset($entry['empty_response'])) {
-                $empty = $entry['empty_response'];
-                if ($result['status'] === $empty['status'] && $result['message'] === __($empty['message'], 'fluent-cart')) {
-                    $ok[] = $empty['status'];
-                }
-            }
-            FcTest::assertHealthy($result, $label . "  [GET {$route}]", $ok);
-        } finally {
-            wp_set_current_user($adminId);
+// Create the records the selected cases need before the first case runs, and delete them by exact ID after the last.
+$fixtureErrors = [];
+register_shutdown_function(static function () {
+    try {
+        FcSmokeFixture::cleanupAll();
+    } catch (\Throwable $e) {
+        WP_CLI::warning('Smoke fixture shutdown cleanup failed: ' . $e->getMessage());
+    }
+});
+$blockedTransport = static function () {
+    return count(FcTest::cronAttempts()) + count(FcTest::actionSchedulerAttempts())
+        + count(FcTest::externalCalls()) + count(FcTest::sentMails());
+};
+try {
+    $needs = [];
+    foreach ($selected as $entry) {
+        foreach ((array) (isset($entry['needs']) ? $entry['needs'] : []) as $need) {
+            $needs[] = $need;
         }
+    }
+    FcSmokeFixture::create($needs);
+    if ($blockedTransport()) {
+        throw new RuntimeException('Creating the smoke fixtures attempted blocked cron, scheduler, HTTP or mail transport.');
+    }
+} catch (\Throwable $e) {
+    $fixtureErrors[] = 'fixture creation failed: ' . $e->getMessage();
+}
+
+try {
+    foreach ($selected as $entry) {
+        $label = isset($entry['label']) ? $entry['label'] : $entry['route'];
+        $route = $entry['route'];
+        $params = isset($entry['params']) ? $entry['params'] : [];
+        $ok = isset($entry['ok']) ? $entry['ok'] : [200];
+
+        FcTest::case($label, function () use (
+            $entry,
+            $route,
+            $params,
+            $ok,
+            $label,
+            $resolve,
+            $replaceTokens,
+            $containsTokens,
+            $adminId
+        ) {
+            try {
+                if (!isset($entry['transport']) || $entry['transport'] !== 'rest') {
+                    FcTest::fail(
+                        'Manifest safety error: executable case uses non-REST transport '
+                        . (isset($entry['transport']) ? $entry['transport'] : '(missing)')
+                    );
+                    return;
+                }
+
+                $tokens = [];
+                foreach ((array) (isset($entry['needs']) ? $entry['needs'] : []) as $need) {
+                    $resolved = FcSmokeFixture::tokens($need) ?: $resolve($need);
+                    if (!$resolved) {
+                        FcTest::fail($label . "\n  no " . $need . ' record is available on this site');
+                        return;
+                    }
+                    $tokens = array_merge($tokens, $resolved);
+                }
+
+                $route = $replaceTokens($route, $tokens);
+                $params = $replaceTokens($params, $tokens);
+
+                $auth = isset($entry['auth']) ? $entry['auth'] : 'admin';
+                if ($auth === 'anonymous') {
+                    wp_set_current_user(0);
+                } elseif ($auth === 'customer') {
+                    if (empty($tokens['user_id'])) {
+                        FcTest::fail('Customer-auth case did not resolve a user_id.');
+                        return;
+                    }
+                    wp_set_current_user((int) $tokens['user_id']);
+                } elseif ($auth === 'admin') {
+                    wp_set_current_user($adminId);
+                } else {
+                    FcTest::fail('Unknown auth mode: ' . $auth);
+                    return;
+                }
+
+                if ($containsTokens([$route, $params])) {
+                    $encoded = wp_json_encode([$route, $params]);
+                    FcTest::fail($label . "\n  unresolved manifest placeholder: " . $encoded);
+                    return;
+                }
+
+                $result = $auth === 'customer'
+                    ? FcTest::withVerifiedCustomer(function () use ($route, $params) {
+                        return FcTest::rest('GET', $route, $params);
+                    })
+                    : FcTest::rest('GET', $route, $params);
+
+
+                if (isset($entry['empty_response'])) {
+                    $empty = $entry['empty_response'];
+                    if ($result['status'] === $empty['status'] && $result['message'] === __($empty['message'], 'fluent-cart')) {
+                        $ok[] = $empty['status'];
+                    }
+                }
+                FcTest::assertHealthy($result, $label . "  [GET {$route}]", $ok);
+            } finally {
+                wp_set_current_user($adminId);
+            }
+        });
+    }
+} finally {
+    try {
+        FcSmokeFixture::cleanupAll();
+        FcSmokeFixture::cleanupAll();
+        if ($blockedTransport()) {
+            throw new RuntimeException('Cleaning up the smoke fixtures attempted blocked cron, scheduler, HTTP or mail transport.');
+        }
+    } catch (\Throwable $e) {
+        $fixtureErrors[] = 'fixture cleanup failed: ' . $e->getMessage();
+    }
+}
+
+if ($fixtureErrors) {
+    FcTest::case('Smoke fixtures are created and removed cleanly', function () use ($fixtureErrors) {
+        FcTest::fail(implode("\n", $fixtureErrors));
     });
 }
 

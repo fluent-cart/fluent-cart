@@ -400,6 +400,64 @@ class CustomerAddressResourceTest extends DatabaseTestCase
         $this->assertSame('New City', $orderAddress->city);
     }
 
+    // The admin order card shows the order address, so update() returns the saved one.
+    public function test_update_with_order_id_returns_the_saved_order_address(): void
+    {
+        $customer = $this->customerFactory->create();
+        $address = $this->addressFactory->create($customer->id, [
+            'type'       => 'shipping',
+            'is_primary' => 1,
+            'email'      => $customer->email,
+        ]);
+
+        $order = Order::query()->create([
+            'customer_id'    => $customer->id,
+            'payment_status' => 'pending',
+            'total_amount'   => 1000,
+            'order_status'   => 'pending',
+            'currency'       => 'USD',
+        ]);
+
+        $orderAddress = OrderAddress::query()->create([
+            'order_id'  => $order->id,
+            'type'      => 'shipping',
+            'name'      => 'Old Name',
+            'address_1' => '999 Old St',
+            'city'      => 'Old City',
+            'country'   => 'US',
+        ]);
+
+        $result = CustomerAddressResource::update([
+            'address_1' => '12 New St',
+            'city'      => 'New City',
+            'type'      => 'shipping',
+        ], $address->id, ['order_id' => $order->id]);
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('order_address', $result);
+        $this->assertSame((int) $orderAddress->id, (int) $result['order_address']->id);
+        $this->assertSame('12 New St', $result['order_address']->address_1);
+        $this->assertSame('New City', $result['order_address']->city);
+    }
+
+    public function test_update_without_order_id_returns_no_order_address(): void
+    {
+        $customer = $this->customerFactory->create();
+        $address = $this->addressFactory->create($customer->id, [
+            'type'       => 'shipping',
+            'is_primary' => 1,
+            'email'      => $customer->email,
+        ]);
+
+        $result = CustomerAddressResource::update([
+            'city' => 'New City',
+            'type' => 'shipping',
+        ], $address->id);
+
+        $this->assertIsArray($result);
+        $this->assertArrayNotHasKey('order_address', $result);
+    }
+
     // =========================================================================
     // Spec 144: create with order_id — updates existing OrderAddress of same type
     // =========================================================================

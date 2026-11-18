@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
  * SQL fragments for deriving base-currency figures from an order's frozen
  * rate. Base values are never stored; they are ROUND(amount / rate), rounded
  * once per order so per-row values and aggregate totals agree exactly.
- * dev-docs/multi-currency/plan.md §2.5.5.
+ * dev-docs/multi-currency/07-reports.md, "Building blocks".
  *
  * One definition of "this order has a rate we may divide by" for every
  * consumer — customer LTV, converted reports — so they cannot disagree.

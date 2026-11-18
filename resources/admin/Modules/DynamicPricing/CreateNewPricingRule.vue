@@ -230,14 +230,15 @@ const createRule = () => {
                 </el-breadcrumb>
             </div>
 
-            <el-button type="primary" :loading="isSaving" @click="createRule">
+            <fct-button type="primary" :loading="isSaving" @click="createRule">
                 {{ translate("Create Rule") }}
-            </el-button>
+            </fct-button>
         </div>
 
         <div class="single-page-body">
-            <el-row :gutter="30">
-                <el-col :lg="16">
+            <!-- Was el-row :gutter="30" with el-col :lg spans (Element Plus lg = 1200px). -->
+            <div class="flex flex-wrap box-border -mx-[15px]">
+                <div class="box-border px-[15px] w-full min-[1200px]:w-2/3">
                     <Card.Container>
                         <Card.Header :title="translate('Basic Information')" border_bottom/>
                         <Card.Body>
@@ -247,7 +248,7 @@ const createRule = () => {
                                         {{ translate('Name') }}
                                     </label>
 
-                                    <el-input
+                                    <fct-input
                                         v-model="form.name"
                                         :placeholder="translate('e.g. summer-sale-10')"
                                     />
@@ -258,7 +259,7 @@ const createRule = () => {
                                         {{ translate('Display Name') }}
                                     </label>
 
-                                    <el-input
+                                    <fct-input
                                         v-model="form.display_name"
                                         :placeholder="translate('e.g. Summer Sale')"
                                     />
@@ -273,12 +274,8 @@ const createRule = () => {
                                         {{ translate('Start from a template') }}
                                     </label>
 
-                                    <el-radio-group v-model="form.rule_type" class="fct-pricing-rule-template">
-                                        <el-radio
-                                            v-for="ruleType in ruleTypes"
-                                            :key="ruleType.value"
-                                            :value="ruleType.value"
-                                        >
+                                    <fct-choice v-model="form.rule_type" type="radio" :options="ruleTypes" class="fct-pricing-rule-template">
+                                        <template #option="{option: ruleType}">
                                             <DynamicIcon
                                                 class="fct-rule-template-icon"
                                                 :name="ruleType.icon"
@@ -297,8 +294,8 @@ const createRule = () => {
                                                 class="fct-rule-template-recipe-check"
                                                 name="Check"
                                             />
-                                        </el-radio>
-                                    </el-radio-group>
+                                        </template>
+                                    </fct-choice>
                                 </div><!-- form-group -->
 
                                 <div class="fct-form-group fct-pricing-rule-form-section">
@@ -307,38 +304,28 @@ const createRule = () => {
                                             <label>
                                                 {{ translate('Price Type') }}
                                             </label>
-                                            <el-select v-model="form.price_type" class="w-full">
-                                                <el-option
-                                                    v-for="option in priceTypeOptions"
-                                                    :key="option.value"
-                                                    :value="option.value"
-                                                    :label="option.label"
-                                                    :disabled="isPriceTypeDisabled(option.value)"
-                                                />
-                                            </el-select>
+                                            <fct-select
+                                                v-model="form.price_type"
+                                                class="w-full"
+                                                :options="priceTypeOptions.map((option) => ({...option, disabled: isPriceTypeDisabled(option.value)}))"
+                                            />
                                         </div>
 
                                         <div class="fct-pricing-rule-apply-as">
                                             <label>
                                                 {{ translate('Apply as') }}
                                             </label>
-                                            <el-select v-model="form.config.apply_as" class="w-full">
-                                                <el-option
-                                                    v-for="option in applyAsOptions"
-                                                    :key="option.value"
-                                                    :value="option.value"
-                                                    :label="option.label"
-                                                />
-                                            </el-select>
+                                            <fct-select v-model="form.config.apply_as" class="w-full" :options="applyAsOptions"/>
                                         </div>
 
                                         <div class="fct-pricing-rule-amount">
                                             <label>
                                                 {{ form.config.apply_as === 'fixed' ? translate('Amount') : translate('Percent') }}
                                             </label>
-                                            <el-input
+                                            <fct-input
                                                 v-model="form.config.amount"
                                                 type="number"
+                                                :controls="false"
                                             >
                                                 <template v-if="form.config.apply_as === 'fixed'" #prepend>
                                                     {{ currencySign }}
@@ -347,7 +334,7 @@ const createRule = () => {
                                                 <template v-else #append>
                                                     %
                                                 </template>
-                                            </el-input>
+                                            </fct-input>
                                         </div>
                                     </div>
 
@@ -360,9 +347,9 @@ const createRule = () => {
                             </div>
                         </Card.Body>
                     </Card.Container>
-                </el-col>
+                </div>
 
-                <el-col :lg="8">
+                <div class="box-border px-[15px] w-full min-[1200px]:w-1/3">
                     <Card.Container>
                         <Card.Header :title="translate('Applies To')" border_bottom/>
                         <Card.Body>
@@ -390,8 +377,8 @@ const createRule = () => {
                             </div><!-- form-group -->
                         </Card.Body>
                     </Card.Container>
-                </el-col>
-            </el-row>
+                </div>
+            </div>
         </div>
         </template>
 

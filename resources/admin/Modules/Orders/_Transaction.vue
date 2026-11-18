@@ -2,24 +2,24 @@
     <div class="fct-transaction-details -mt-[1px]" v-if="transactions.length > 0">
 
         <div class="fct-table-wrap">
-            <el-table :data="transactions" class="w-full">
-                <el-table-column :label="translate('# Date')" width="auto">
+            <fct-table :data="transactions" class="w-full">
+                <fct-table-column :label="translate('# Date')" width="auto">
                     <template #default="scope">
                         <div>
                               <p class="p-0 m-0 text-xs text-gray-500">#{{ translateNumber(scope.row.id) }}</p>
                               <ConvertedTime :date-time="scope.row?.meta?.settled_at || scope.row.created_at"/>
                         </div>
                     </template>
-                </el-table-column>
-                <el-table-column :label="translate('Gateway ID')" width="160">
+                </fct-table-column>
+                <fct-table-column :label="translate('Gateway ID')" width="160">
                     <template #default="scope">
                         <span v-if="scope.row.vendor_charge_id == ''">--</span>
                         <a v-else class="text-primary-500 dark:text-gray-50 link" target="_blank" :href="scope.row.url">
                             {{ scope.row.vendor_charge_id }}
                         </a>
                     </template>
-                </el-table-column>
-                <el-table-column :label="translate('Payment Method')" width="140">
+                </fct-table-column>
+                <fct-table-column :label="translate('Payment Method')" width="140">
                     <template #default="scope">
                         <div class="flex items-center gap-2.5">
                             <div class="w-7" v-if="getCardBrand(scope.row.card_brand, scope.row.payment_method_type)">
@@ -33,8 +33,8 @@
                             </span>
                         </div>
                     </template>
-                </el-table-column>
-                <el-table-column :label="translate('Total')" width="auto">
+                </fct-table-column>
+                <fct-table-column :label="translate('Total')" width="auto">
                     <template #default="scope">
                         <template v-if="scope.row?.meta?.mor_vat_removed > 0">
                             <span>{{ formatNumberForOrder(scope.row.total - scope.row.meta.mor_vat_removed, orderCurrency) }}</span>
@@ -44,27 +44,25 @@
                         </template>
                         <span v-else>{{ formatNumberForOrder(scope.row.total, orderCurrency) }}</span>
                     </template>
-                </el-table-column>
+                </fct-table-column>
 
-                <el-table-column :label="translate('Status')" width="120">
+                <fct-table-column :label="translate('Status')" width="120">
                     <template #default="scope">
-                        <el-tooltip v-if="scope.row.transaction_type == 'dispute'"
-                            effect="dark"
+                        <fct-tooltip v-if="scope.row.transaction_type == 'dispute'"
                             :placement="'top'"
                             :content="'Transaction dispute, please resolve it from action menu. Reason: ' + scope.row?.meta?.dispute_reason"
-                            popper-class="fct-label-hint-popover fct-tooltip"
+                            popper-class="fct-label-hint-popover"
                         >
                         <Badge class="m-2 b-red"
                             status="dispute">
                             Dispute
                         </Badge>
-                        </el-tooltip>
-                        <el-tooltip
+                        </fct-tooltip>
+                        <fct-tooltip
                             v-if="scope.row?.meta?.reason"
-                            effect="dark"
                             :placement="'top'"
                             :content="translate(scope.row?.meta?.reason)"
-                            popper-class="fct-label-hint-popover fct-tooltip"
+                            popper-class="fct-label-hint-popover"
                         >
                             <Badge
                                 v-if="scope.row?.meta?.disputed == 'yes' && scope.row?.meta?.dispute_resolved == 'no'"
@@ -75,78 +73,56 @@
                             <Badge v-else :status="(scope.row.status)" kind="transaction">
                                 {{ scope.row.status }}
                             </Badge>
-                        </el-tooltip>
+                        </fct-tooltip>
                         <Badge v-else :status="(scope.row.status)" kind="transaction">
                             {{ scope.row.status }}
                         </Badge>
                     </template>
-                </el-table-column>
-                <el-table-column v-if="hasRowActions(transactions)" :label="''" width="60" align="center">
+                </fct-table-column>
+                <fct-table-column v-if="hasRowActions(transactions)" :label="''" width="60" align="center">
                     <template #default="scope">
-                        <el-dropdown
+                        <fct-dropdown
                             v-if="rowHasActions(scope.row)"
                             trigger="click"
                             class="fct-more-option-wrap"
-                            popper-class="fct-dropdown"
+                            :items="[
+                                scope.row.transaction_type == 'dispute' && scope.row.status == 'succeeded' && {command: 'dispute', label: translate('Handle dispute')},
+                                isSyncable(scope.row) && {command: 'sync', label: translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method)), disabled: syncing_transaction === scope.row.id},
+                                isResyncPending(scope.row) && {command: 'resync', label: translate('Re-sync refund'), disabled: resyncingId === scope.row.id},
+                            ].filter(Boolean)"
                             @command="(cmd) => handleRowCommand(cmd, scope.row)"
                         >
                             <span class="more-btn">
                                 <DynamicIcon name="More"/>
                             </span>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <el-dropdown-item
-                                        v-if="scope.row.transaction_type == 'dispute' && scope.row.status == 'succeeded'"
-                                        command="dispute"
-                                    >
-                                        {{ translate('Handle dispute') }}
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        v-if="isSyncable(scope.row)"
-                                        command="sync"
-                                        :disabled="syncing_transaction === scope.row.id"
-                                    >
-                                        {{ translate('Sync payment status from %1$s', paymentMethodAdminTitle(scope.row.payment_method)) }}
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        v-if="isResyncPending(scope.row)"
-                                        command="resync"
-                                        :disabled="resyncingId === scope.row.id"
-                                    >
-                                        {{ translate('Re-sync refund') }}
-                                    </el-dropdown-item>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
+                        </fct-dropdown>
                     </template>
-                </el-table-column>
-            </el-table>
+                </fct-table-column>
+            </fct-table>
         </div>
 
         <!-- dispute handle modal -->
-        <el-dialog v-model="disputeHandleModal"
+        <fct-dialog v-model="disputeHandleModal"
         :title="'Handle Dispute #' + disputeTransaction?.meta?.dispute_id" width="800px">
-            <el-form-item v-if="disputeTransaction?.meta?.dispute_reason">
+            <div v-if="disputeTransaction?.meta?.dispute_reason" class="mb-[18px]">
                     <div class="text-sm">
                     Dispute Reason:  {{ disputeTransaction?.meta?.dispute_reason }}
                     </div>
-                </el-form-item>    
-            <el-form-item>
+                </div>
+            <div class="mb-[18px]">
                 <div class="text-sm text-gray-700">
                     {{ translate('Order_Either_Counter') }}
                 </div>
-            </el-form-item>
-            <el-form :model="disputeForm" label-position="top" v-if="disputeTransaction?.meta?.is_dispute_actionable">
-                <el-form-item :label="translate('Note')" prop="dispute_note">
-                    <el-input v-model="disputeForm.dispute_note" placeholder="(optional)" type="text" />
-                </el-form-item>
-            </el-form>
-            <el-form-item v-if="disputeTransaction?.meta?.is_charge_refundable">
+            </div>
+            <div v-if="disputeTransaction?.meta?.is_dispute_actionable">
+                <fct-input v-model="disputeForm.dispute_note" :label="translate('Note')" placeholder="(optional)" type="text" />
+            </div>
+            <div v-if="disputeTransaction?.meta?.is_charge_refundable" class="mb-[18px]">
                 <div class="text-sm flex gap-2">
                     <DynamicIcon class="w-6 h-6" name="Information"/>
                     {{ translate('Order_Dispute_Refundable') }}
                 </div>
-            </el-form-item>
+            </div>
             <template #footer>
                 <a :href="disputeTransaction?.url"
                     target="_blank" 
@@ -154,14 +130,14 @@
                 >
                 {{ translate('See dispute on ') + paymentMethodAdminTitle(disputeTransaction?.payment_method) }}
                 </a>
-                <el-button v-if="disputeTransaction?.meta?.is_charge_refundable" type="primary" @click="() => $emit('triggerRefundModal')" :loading="loadingDisputeAction">
+                <fct-button v-if="disputeTransaction?.meta?.is_charge_refundable" type="primary" @click="() => $emit('triggerRefundModal')" :loading="loadingDisputeAction">
                     {{ translate('Refund customer') }}
-                </el-button>
-                <el-button v-if="disputeTransaction?.meta?.is_dispute_actionable" type="primary" @click="handleDisputeSubmit" :loading="loadingDisputeAction">
+                </fct-button>
+                <fct-button v-if="disputeTransaction?.meta?.is_dispute_actionable" type="primary" @click="handleDisputeSubmit" :loading="loadingDisputeAction">
                     {{ translate('Accept Dispute') }}
-                </el-button>
+                </fct-button>
             </template>
-        </el-dialog>
+        </fct-dialog>
     </div>
 </template>
 

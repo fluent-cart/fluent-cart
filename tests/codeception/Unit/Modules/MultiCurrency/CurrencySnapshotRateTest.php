@@ -7,7 +7,8 @@ use FluentCart\App\Modules\MultiCurrency\Services\CurrencySnapshot;
 
 /**
  * Rates are stored as 12-decimal strings so a value read back from
- * DECIMAL(24,12) compares equal to the one written (plan §11.1).
+ * DECIMAL(24,12) compares equal to the one written
+ * (dev-docs/multi-currency/08-exchange-rates.md, "Meaning and storage").
  */
 class CurrencySnapshotRateTest extends Unit
 {

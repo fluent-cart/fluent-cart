@@ -18,8 +18,6 @@ use Closure;
  * allowed, these decide whether a supplied value is acceptable. Neither fires on
  * the other's territory, so "" and null pass through here untouched and are the
  * requirement's business alone.
- *
- * See dev-docs/framework-update-2.12.6-qa.md finding 9.
  */
 class WhenFilledRule
 {

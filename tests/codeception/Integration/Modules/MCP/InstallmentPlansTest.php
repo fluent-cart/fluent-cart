@@ -11,6 +11,7 @@ use Tests\Support\DatabaseTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
 use Tests\Support\Traits\BuildsSubscriptions;
+use Tests\Support\Traits\ConfiguresStoreOrderMode;
 use Tests\Support\Traits\ReadsMcpRows;
 
 /**
@@ -27,6 +28,7 @@ use Tests\Support\Traits\ReadsMcpRows;
 class InstallmentPlansTest extends DatabaseTestCase
 {
     use BuildsSubscriptions;
+    use ConfiguresStoreOrderMode;
     use ReadsMcpRows;
 
     private int $customerId;
@@ -35,6 +37,7 @@ class InstallmentPlansTest extends DatabaseTestCase
     public function setUp(): void
     {
         parent::setUp();
+        $this->setStoreOrderMode(Status::ORDER_MODE_LIVE);
 
         // checkAndExpireSubscriptions and the MCP status aggregate scan the
         // whole fct_subscriptions table, so stray committed rows from other
@@ -90,6 +93,8 @@ class InstallmentPlansTest extends DatabaseTestCase
         $row = $this->subscriptionRowFor($recurring, $sub->id);
         $this->assertFalse($row['is_installment'], 'row is not flagged installment');
         $this->assertNull($row['total_contract_value'], 'open-ended plan has no fixed contract value');
+        $this->assertNull($row['installments_paid'], 'an open-ended plan has no installments');
+        $this->assertNull($row['installments_remaining'], 'nor installments left to pay');
     }
 
     // ---------------------------------------------------------------------

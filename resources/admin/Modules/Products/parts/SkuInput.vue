@@ -71,7 +71,7 @@ const generateSku = () => {
 
 <template>
   <div class="fct-sku-input-wrap">
-    <el-input
+    <fct-input
         v-model="value"
         size="small"
         :placeholder="translate('No SKU')"
@@ -81,7 +81,7 @@ const generateSku = () => {
     />
     <div class="fct-sku-edit-actions">
       <template v-if="dirty">
-        <el-button
+        <fct-button
             size="small"
             type="primary"
             :title="translate('Save SKU')"
@@ -90,8 +90,8 @@ const generateSku = () => {
             @click="saveSku"
         >
           <DynamicIcon name="Check" />
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             size="small"
             type="danger"
             :title="translate('Discard changes')"
@@ -99,9 +99,9 @@ const generateSku = () => {
             @click="cancelSkuEdit"
         >
           <DynamicIcon name="Close" />
-        </el-button>
+        </fct-button>
       </template>
-      <el-button
+      <fct-button
           v-else
           size="small"
           class="fct-sku-suggest-btn"
@@ -110,7 +110,7 @@ const generateSku = () => {
           @click="generateSku"
       >
         <DynamicIcon name="Generate" />
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

@@ -1,0 +1,41 @@
+// Update Payment modal (Stripe and PayPal forms)
+.fct-update-payment-gateway {
+  .dialog-footer {
+    @apply flex justify-end gap-2.5 mt-5 -mx-5 px-5 pt-5 border-0 border-t border-solid border-[color:var(--fct-customer-dashboard-row-divider-color,#EAECF0)];
+    .el-button {
+      @apply m-0;
+    }
+  }
+
+  .stripe-card-form {
+    @apply w-full mx-auto font-[sans-serif];
+  }
+
+  .stripe-element {
+    @apply border border-solid border-[color:var(--fct-customer-dashboard-input-border,#D6DAE1)] rounded-[4px] bg-[var(--fct-customer-dashboard-input-bg,#ffffff)] py-3 px-[15px];
+  }
+
+  .error-message {
+    @apply mt-2.5 text-red-600 dark:text-red-400;
+  }
+
+  .success-message {
+    @apply mt-2.5 text-green-700 dark:text-green-400;
+  }
+
+  .rate-limit-notice {
+    @apply mb-5 py-3 px-[15px] rounded-[4px] border border-solid bg-sky-50 border-sky-200 dark:bg-sky-950 dark:border-sky-800;
+  }
+
+  // Colour the <p> itself: a theme's `p { color }` beats an inherited colour.
+  .rate-limit-text {
+    @apply m-0 text-sm text-sky-700 dark:text-sky-200;
+  }
+
+  .rate-limit-notice-warning {
+    @apply bg-amber-100 border-amber-300 dark:bg-amber-950 dark:border-amber-800;
+    .rate-limit-text {
+      @apply text-amber-800 dark:text-amber-200;
+    }
+  }
+}

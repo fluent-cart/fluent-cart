@@ -6,6 +6,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\App\CPT\Pages;
 use FluentCart\App\Hooks\Handlers\GlobalPaymentHandler;
 use FluentCart\App\Models\Product;
+use FluentCart\App\Services\PluginInstaller\AddonManager;
 use FluentCart\App\Services\Widgets\DashboardWidget;
 use FluentCart\Framework\Support\Arr;
 
@@ -138,10 +139,14 @@ class DashboardController extends Controller
             }
         }
 
+        // The list without install status: get_plugins() reads every plugin header, the card checks only its matches.
+        $addons = (new ModuleSettingsController())->getRegisteredPluginAddons();
+
         return $this->response->json([
             'data' => [
-                'steps'     => $steps,
-                'completed' => $completed
+                'steps'           => $steps,
+                'completed'       => $completed,
+                'recommendations' => AddonManager::pickRecommendations($addons, AddonManager::getStoreSignals())
             ]
         ]);
     }

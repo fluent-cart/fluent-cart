@@ -75,10 +75,10 @@ defineExpose({
     />
 
     <div v-if="showSubmitButton" class="form-section-save-action">
-      <el-button @click="onSubmitBtnClick" type="primary" :loading="loading">
+      <fct-button @click="onSubmitBtnClick" type="primary" :loading="loading">
         <span v-if="!loading" class="cmd block leading-none">⌘s</span>
         {{ submitButtonText }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 

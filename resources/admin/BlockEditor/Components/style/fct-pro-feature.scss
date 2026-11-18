@@ -1,4 +1,5 @@
-@config "./fct-global-block-editor.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./fct-global-block-editor.config.mjs";
 
 // Styles for Components/Pro, in the look of the admin's Pro screens
 // (styles/tailwind/pro-feature.scss). A block using them lists this file in its

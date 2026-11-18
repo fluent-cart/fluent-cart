@@ -200,7 +200,7 @@ export default {
 </script>
 
 <template>
-  <div role="region" aria-labelledby="paypal-section-heading">
+  <div class="fct-update-payment-gateway" role="region" aria-labelledby="paypal-section-heading">
     <h2 id="paypal-section-heading" class="sr-only">{{ translate('PayPal Payment') }}</h2>
 
     <div>
@@ -216,29 +216,10 @@ export default {
       {{ successMessage }}
     </div>
     <div class="dialog-footer">
-      <el-button size="small" @click="closeUpdatePaymentModal" :aria-label="translate('Cancel')">{{ translate('Cancel') }}</el-button>
+      <fct-button size="small" @click="closeUpdatePaymentModal" :aria-label="translate('Cancel')">{{ translate('Cancel') }}</fct-button>
       <!-- <a :href="updatePaymentUrl" target="_blank" v-if="this.subscription?.current_payment_method == 'paypal'">
-          <el-button type="primary">Update in PayPal</el-button>
+          <fct-button type="primary">Update in PayPal</fct-button>
       </a> -->
     </div>
   </div>
 </template>
-
-
-<style scoped>
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-  gap: 10px;
-}
-
-.error-message {
-  color: red;
-  margin-top: 10px;
-}
-.success-message {
-  color: #67c23a;
-  margin-top: 10px;
-}
-</style>

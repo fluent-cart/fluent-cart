@@ -120,7 +120,8 @@ onBeforeMount(() => {
   </IconButton>
 
 
-  <el-drawer
+  <fct-dialog
+      drawer
       v-model="showModal"
       :title="$t('Update Upgrade Path')"
       @closed="()=>{
@@ -140,15 +141,14 @@ onBeforeMount(() => {
 
       <div class="fct-form-group">
         <label>{{ $t('To Plan(s)') }}</label>
-        <el-select :disabled="!form.from_variant" v-model="form.to_variants" multiple :placeholder="$t('Select')" clearable>
-          <el-option
-              v-for="variant in getVariantOption()"
-              :key="variant.id"
-              :label="variant.variation_title"
-              :value="variant.id"
-              :disabled="variant.id == form.from_variant"
-          />
-        </el-select>
+        <fct-select
+            :disabled="!form.from_variant"
+            v-model="form.to_variants"
+            multiple
+            :placeholder="$t('Select')"
+            clearable
+            :options="getVariantOption().map(variant => ({label: variant.variation_title, value: variant.id, disabled: variant.id == form.from_variant}))"
+        />
         <ValidationError
             v-if="validationErrors.hasOwnProperty('to_variants')"
             :validation-errors="validationErrors"
@@ -157,16 +157,16 @@ onBeforeMount(() => {
       </div>
 
       <div class="fct-form-group">
-        <el-checkbox class="m-2" true-value="1" false-value="0" v-model="form.is_prorate">
+        <fct-choice class="m-2" true-value="1" false-value="0" v-model="form.is_prorate">
           <label-hint class="flex items-center" :title="$t('Prorate')"
                       content="The prorated amount, based on the remaining days, will be credited to the new plan. Upgrading from one-time payment, the full amount will be credited.
           "/>
-        </el-checkbox>
+        </fct-choice>
       </div>
 
       <div class="fct-form-group">
         <label>{{ $t('Discount Amount') }}</label>
-        <el-input v-model="form.discount_amount" type="number" min="0" @input="handleDiscountInput"/>
+        <fct-input v-model="form.discount_amount" type="number" :controls="false" min="0" @input="handleDiscountInput"/>
 
         <ValidationError
             v-if="validationErrors.hasOwnProperty('discount_amount')"
@@ -178,16 +178,16 @@ onBeforeMount(() => {
     </div>
 
     <template #footer>
-      <el-button @click="showModal = false" size="small">
+      <fct-button @click="showModal = false" size="small">
         {{ $t('Cancel') }}
-      </el-button>
+      </fct-button>
 
-      <el-button @click="updatePath" size="small" type="primary">
+      <fct-button @click="updatePath" size="small" type="primary">
         {{ $t('Update') }}
-      </el-button>
+      </fct-button>
     </template>
 
-  </el-drawer>
+  </fct-dialog>
 
 </template>
 <style lang="scss">

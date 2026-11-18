@@ -1,9 +1,9 @@
 <template>
-  <el-button class="fct-search-guide-btn" link size="small" @click="dialogVisible = true">
+  <fct-button class="fct-search-guide-btn" link size="small" @click="dialogVisible = true">
     {{ $t('Search Help') }}
-  </el-button>
+  </fct-button>
 
-  <el-dialog
+  <fct-dialog
       v-model="dialogVisible"
       :title="$t('Search Operators Guide')"
       :append-to-body="true"
@@ -108,7 +108,7 @@
 
 
     </div>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>

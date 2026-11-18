@@ -6,6 +6,7 @@ import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SinglePro
 import ProductCarouselPreview from "./ProductCarousel.png";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import {ParentDataProvider} from "@/BlockEditor/ShopApp/Context/ProductContext";
+import {CAROUSEL_TEMPLATE as TEMPLATE} from "./carouselTemplate";
 
 const {
   InnerBlocks,
@@ -23,27 +24,6 @@ let lastChanged = '';
 
 const blockEditorData = window.fluent_cart_product_carousel_block_editor_data;
 const rest = window['fluentCartRestVars'].rest;
-
-// InnerBlocks template
-const TEMPLATE = [
-    [
-        'fluent-cart/product-carousel-loop',
-        {
-            className: 'fluent-cart-product-carousel-loop',
-            layout: {type: 'constrained'},
-            metadata: {name: 'Product Carousel Loop'},
-        },
-        [
-            ['fluent-cart/product-image'],
-            ['fluent-cart/product-title'],
-            ['fluent-cart/excerpt'],
-            ['fluent-cart/price-range'],
-            ['fluent-cart/shopapp-product-buttons'],
-        ],
-    ],
-    ['fluent-cart/product-carousel-controls'],
-    ['fluent-cart/product-carousel-pagination'],
-];
 
 
 registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {

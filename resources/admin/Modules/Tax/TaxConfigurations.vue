@@ -14,7 +14,7 @@
             <CardBody>
               <div class="fct-setting-form-row">
                 <div class="fct-setting-form-content flex gap-3.5 flex-1">
-                  <el-switch v-model="settings.enable_tax" active-value="yes" inactive-value="no"/>
+                  <fct-switch v-model="settings.enable_tax" active-value="yes" inactive-value="no"/>
                   <div>
                     <LabelHint :title="translate('Enable Tax')"/>
                     <p class="fct-inline-tip">
@@ -35,10 +35,14 @@
                     </p>
                   </div><!-- .fct-setting-form-content -->
                   <div class="fct-setting-form-fields self-center">
-                    <el-radio-group v-model="settings.tax_inclusion">
-                      <el-radio value="included">{{ translate('Included') }}</el-radio>
-                      <el-radio value="excluded">{{ translate('Excluded') }}</el-radio>
-                    </el-radio-group>
+                    <fct-choice
+                        v-model="settings.tax_inclusion"
+                        type="radio"
+                        :options="[
+                          {value: 'included', label: translate('Included')},
+                          {value: 'excluded', label: translate('Excluded')},
+                        ]"
+                    />
                     <p class="fct-inline-tip mt-2">
                       {{ translate('Tax_Shipping_Tax') }}
                     </p>
@@ -56,27 +60,22 @@
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
-                    <el-radio-group
+                    <fct-choice
                         v-model="settings.eu_vat_settings.reverse_charge_price_mode"
+                        type="radio"
                         class="fct-reverse-charge-price-mode"
+                        :options="[
+                          {value: 'fixed', label: translate('Fixed'), text: translate('Tax_Listed_Price')},
+                          {value: 'dynamic', label: translate('Dynamic'), text: translate('Tax_Vat_Stripped')},
+                        ]"
                     >
-                        <el-radio value="fixed">
+                        <template #option="{option}">
                             <div class="flex flex-col">
-                                <span class="price-mode-label">{{ translate('Fixed') }}</span>
-                                <span class="price-mode-text">
-                                    {{ translate('Tax_Listed_Price') }}
-                                </span>
+                                <span class="price-mode-label">{{ option.label }}</span>
+                                <span class="price-mode-text">{{ option.text }}</span>
                             </div>
-                        </el-radio>
-                        <el-radio value="dynamic">
-                            <div class="flex flex-col">
-                                <span class="price-mode-label">{{ translate('Dynamic') }}</span>
-                                <span class="price-mode-text">
-                                    {{ translate('Tax_Vat_Stripped') }}
-                                </span>
-                            </div>
-                        </el-radio>
-                    </el-radio-group>
+                        </template>
+                    </fct-choice>
                   </div>
                 </div><!-- .fct-setting-form-row -->
 
@@ -88,11 +87,15 @@
                     </p>
                   </div><!-- .fct-setting-form-content -->
                   <div class="fct-setting-form-fields self-center">
-                    <el-select v-model="settings.tax_calculation_basis" clearable>
-                      <el-option value="shipping" :label="translate('Customer Shipping Address')"></el-option>
-                      <el-option value="billing" :label="translate('Customer Billing Address')"></el-option>
-                      <el-option value="store" :label="translate('Store Location')"></el-option>
-                    </el-select>
+                    <fct-select
+                        v-model="settings.tax_calculation_basis"
+                        clearable
+                        :options="[
+                          {value: 'shipping', label: translate('Customer Shipping Address')},
+                          {value: 'billing', label: translate('Customer Billing Address')},
+                          {value: 'store', label: translate('Store Location')},
+                        ]"
+                    />
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
 
@@ -119,7 +122,7 @@
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
-                    <el-input v-model="settings.price_suffix_included" :placeholder="translate('e.g. (incl. tax)')"/>
+                    <fct-input v-model="settings.price_suffix_included" :placeholder="translate('e.g. (incl. tax)')"/>
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
 
@@ -131,7 +134,7 @@
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
-                    <el-input v-model="settings.price_suffix_excluded" :placeholder="translate('e.g. (+ tax)')"/>
+                    <fct-input v-model="settings.price_suffix_excluded" :placeholder="translate('e.g. (+ tax)')"/>
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
 
@@ -143,10 +146,13 @@
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
-                    <el-select v-model="settings.checkout_tax_breakdown_display">
-                      <el-option value="simplified" :label="translate('Simplified (single line + details)')"></el-option>
-                      <el-option value="itemized" :label="translate('Itemized (per-item tax + breakdown)')"></el-option>
-                    </el-select>
+                    <fct-select
+                        v-model="settings.checkout_tax_breakdown_display"
+                        :options="[
+                          {value: 'simplified', label: translate('Simplified (single line + details)')},
+                          {value: 'itemized', label: translate('Itemized (per-item tax + breakdown)')},
+                        ]"
+                    />
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
 
@@ -158,7 +164,7 @@
                     </p>
                   </div>
                   <div class="fct-setting-form-fields self-center">
-                    <el-input v-model="settings.tax_display_label" :placeholder="translate('e.g. Tax')"/>
+                    <fct-input v-model="settings.tax_display_label" :placeholder="translate('e.g. Tax')"/>
                   </div><!-- .fct-setting-form-fields -->
                 </div><!-- .fct-setting-form-row -->
 
@@ -174,7 +180,7 @@
                     <div class="fct-vat-charge-setting-wrap grid gap-5 w-full">
                         <!-- Local Reverse Charge -->
                       <div class="fct-local-reverse-charge flex gap-2 justify-items-start">
-                          <el-switch 
+                          <fct-switch 
                             v-model="settings.eu_vat_settings.local_reverse_charge" 
                             active-value="yes"
                             inactive-value="no"
@@ -200,7 +206,7 @@
                                 {{ translate('Select product categories that should NOT get VAT reverse charge !') }}
                                 </p>
 
-                                <el-select
+                                <fct-select
                                     v-model="settings.eu_vat_settings.vat_reverse_excluded_categories"
                                     v-loading="fetchingCategories"
                                     filterable
@@ -208,14 +214,8 @@
                                     clearable
                                     :placeholder="translate('Select Product Categories')"
                                     class="w-full mt-4"
-                                >
-                                <el-option
-                                    v-for="category in categories"
-                                    :key="category.value || category.term_id"
-                                    :label="category.label || category.name"
-                                    :value="category.value || category.term_id"
+                                    :options="categoryOptions"
                                 />
-                                </el-select>
                             </div>
                       </Animation>
 
@@ -281,6 +281,12 @@ export default {
         }
     },
     computed: {
+        categoryOptions() {
+            return this.categories.map(category => ({
+                label: category.label || category.name,
+                value: category.value || category.term_id,
+            }));
+        },
         handlePriceMode() {
             if(this.settings.eu_vat_settings.local_reverse_charge == 'yes') {
                 return true;

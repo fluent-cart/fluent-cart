@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <fct-dialog
      :model-value="updatedModelValue"
      :loading="cancelling"
       :title="translate('Cancel Subscription')"
@@ -11,13 +11,16 @@
       </div>
       <br/>
       <el-form-item :label="translate('Cancellation reason')" required>
-      <el-select v-model="cancelReason">
-        <el-option :label="translate('Refunded')" value="refunded"></el-option>
-        <el-option :label="translate('Customer request')" value="customer_request"></el-option>
-        <el-option :label="translate('Completed (EOT)')" value="completed"></el-option>
-        <el-option :label="translate('Fraudulent')" value="fraudulent"></el-option>
-        <el-option :label="translate('Other')" value="other"></el-option>
-      </el-select>
+      <fct-select
+          v-model="cancelReason"
+          :options="[
+            {label: translate('Refunded'), value: 'refunded'},
+            {label: translate('Customer request'), value: 'customer_request'},
+            {label: translate('Completed (EOT)'), value: 'completed'},
+            {label: translate('Fraudulent'), value: 'fraudulent'},
+            {label: translate('Other'), value: 'other'},
+          ]"
+      />
       </el-form-item>
       <el-form-item 
         v-if="cancelReason === 'other'" 
@@ -25,18 +28,18 @@
         required
         :error="otherReasonError"
       >
-        <el-input v-model="otherReason"></el-input>
+        <fct-input v-model="otherReason"/>
       </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="$emit('close')">{{translate('Cancel')}}</el-button>
-        <el-button :loading="cancelling" type="warning" @click="cancelSubscription">
+        <fct-button @click="$emit('close')">{{translate('Cancel')}}</fct-button>
+        <fct-button :loading="cancelling" type="warning" @click="cancelSubscription">
           {{translate('Cancel Subscription')}}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>
 <script setup>
 import translate from "@/utils/translator/Translator";

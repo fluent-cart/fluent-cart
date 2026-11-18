@@ -64,7 +64,7 @@ const appliedRange = computed(() => {
         <slot name="icon"></slot>
       </IconButton>
       <div class="fct-order-stats-card-head-content">
-        <el-skeleton :loading="loading" animated :rows="0"/>
+        <fct-skeleton v-if="loading" animated :rows="0"/>
 
         <span class="text">{{ stat.title }}</span>
         <div v-if="!loading" class="value">
@@ -74,11 +74,9 @@ const appliedRange = computed(() => {
     </div><!-- .fct-order-stats-card-head -->
 
     <div class="fct-order-stats-card-body">
-      <el-skeleton :loading="loading" animated>
-        <template #template>
-          <el-skeleton-item variant="p" class="w-1/2 h-4"/>
-        </template>
-      </el-skeleton>
+      <fct-skeleton v-if="loading" animated>
+        <fct-skeleton variant="p" class="w-1/2 h-4"/>
+      </fct-skeleton>
       <div v-if="!loading && currentRange!=='all_time'" class="change-wrap">
       <span :class="'change ' + getChangeBadgeBg">
         <DynamicIcon v-if="percentage !== 0" :name="percentage > 0 ? 'CaretUp' : 'CaretDown'"/>

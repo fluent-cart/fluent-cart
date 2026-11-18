@@ -150,13 +150,31 @@ class SubscriptionManager
         $vendorOrderId = Arr::get($data, 'vendorOrderId');
 
         $subscription = Subscription::query()->where('id', $subscriptionId)->first();
-        $order = Order::query()->where('id', $subscription->parent_order_id)->first();
 
         if (!$newVendorSubscriptionId || !$vendorOrderId) {
             wp_send_json([
                 'status'  => 'error',
                 'message' => __('Sorry, New Subscription ID or Vendor Order ID is not available!', 'fluent-cart'),
             ], 422);
+        }
+
+        if (!$subscription->lockPaymentMethodSwitch()) {
+            $this->sendError(__('A payment method switch is already in progress.', 'fluent-cart'), 409);
+        }
+
+        try {
+            $this->confirmSwitchLocked($subscription, $newVendorSubscriptionId);
+        } finally {
+            $subscription->unlockPaymentMethodSwitch();
+        }
+    }
+
+    private function confirmSwitchLocked(Subscription $subscription, $newVendorSubscriptionId)
+    {
+        $subscription = Subscription::query()->where('id', $subscription->id)->first();
+
+        if ($subscription->vendor_subscription_id === $newVendorSubscriptionId) {
+            $this->sendSwitchSuccess($newVendorSubscriptionId);
         }
 
         // get the subscription from paypal
@@ -179,15 +197,35 @@ class SubscriptionManager
             ], 422);
         }
 
-        // The id comes from the browser: bind it to the plan the store issued
-        // for this switch before anything is changed or cancelled.
-        $issuedPlanId = $subscription->getMeta('paypal_switch_plan_id');
-        if (!$issuedPlanId || Arr::get($paypalSubscription, 'plan_id') !== $issuedPlanId) {
-            $this->sendError(__('This PayPal subscription does not match the plan issued for this switch.', 'fluent-cart'));
+        $result = $this->finishSwitch($subscription, $paypalSubscription);
+        if (is_wp_error($result)) {
+            $this->sendError($result->get_error_message());
         }
 
-        if (!in_array(Arr::get($paypalSubscription, 'status'), ['ACTIVE', 'APPROVED'], true)) {
-            $this->sendError(__('This PayPal subscription is not active.', 'fluent-cart'));
+        $this->sendSwitchSuccess($result);
+    }
+
+    /**
+     * Binds the new PayPal subscription to the plan issued for this switch, moves the
+     * local subscription onto it and cancels the replaced one. Caller holds the switch lock.
+     *
+     * @param Subscription $subscription fresh row, read under the switch lock
+     * @param array $paypalSubscription PayPal subscription resource
+     * @return string|\WP_Error the new vendor subscription id
+     */
+    public function finishSwitch(Subscription $subscription, array $paypalSubscription)
+    {
+        $newVendorSubscriptionId = (string)Arr::get($paypalSubscription, 'id');
+
+        // The id comes from the browser or a webhook: bind it to the plan the store
+        // issued for this switch before anything is changed or cancelled.
+        $issuedPlanId = $subscription->getMeta('paypal_switch_plan_id');
+        if (!$issuedPlanId || Arr::get($paypalSubscription, 'plan_id') !== $issuedPlanId) {
+            return new \WP_Error('paypal_switch_refused', __('This PayPal subscription does not match the plan issued for this switch.', 'fluent-cart'));
+        }
+
+        if (Arr::get($paypalSubscription, 'custom_id') !== $subscription->uuid) {
+            return new \WP_Error('paypal_switch_refused', __('This PayPal subscription was not created for this subscription.', 'fluent-cart'));
         }
 
         $alreadyLinked = Subscription::query()
@@ -195,34 +233,52 @@ class SubscriptionManager
             ->where('id', '!=', $subscription->id)
             ->exists();
         if ($alreadyLinked) {
-            $this->sendError(__('This PayPal subscription is already linked to another subscription.', 'fluent-cart'));
+            return new \WP_Error('paypal_switch_refused', __('This PayPal subscription is already linked to another subscription.', 'fluent-cart'));
+        }
+
+        // From here the new PayPal subscription is ours: refuse it only after cancelling it, or it bills.
+        $paypalStatus = Arr::get($paypalSubscription, 'status');
+        if (!in_array($paypalStatus, ['ACTIVE', 'APPROVED'], true)) {
+            if (!in_array($paypalStatus, ['CANCELLED', 'EXPIRED'], true)) {
+                $this->cancelUnusedSwitchSubscription($subscription, $newVendorSubscriptionId);
+            }
+            return new \WP_Error('paypal_switch_refused', __('This PayPal subscription is not active.', 'fluent-cart'));
+        }
+
+        $nextBillingDate = Arr::get($paypalSubscription, 'billing_info.next_billing_time');
+        $nextBillingDate = $nextBillingDate ? gmdate('Y-m-d H:i:s', strtotime($nextBillingDate)) : null;
+
+        if ($nextBillingDate && $subscription->next_billing_date && substr($nextBillingDate, 0, 10) < substr(DateTime::anyTimeToGmt($subscription->next_billing_date)->format('Y-m-d H:i:s'), 0, 10)) {
+            $this->cancelUnusedSwitchSubscription($subscription, $newVendorSubscriptionId);
+            return new \WP_Error('paypal_switch_refused', __('This PayPal subscription would bill before the paid period ends.', 'fluent-cart'));
         }
 
         $oldPaymentMethod = $subscription->current_payment_method;
         $oldVendorSubscriptionId = $subscription->vendor_subscription_id;
-        $oldVendorCustomerId = $subscription->vendor_customer_id;
-        $oldVendorPlanId = $subscription->vendor_plan_id;
+        $oldSubData = [
+            'payment_method'         => $oldPaymentMethod,
+            'vendor_subscription_id' => $oldVendorSubscriptionId,
+            'vendor_customer_id'     => $subscription->vendor_customer_id,
+            'vendor_plan_id'         => $subscription->vendor_plan_id,
+            'reason'                 => 'switch_payment_method',
+            'payment_source'         => SubscriptionMeta::query()
+                ->where('subscription_id', $subscription->id)
+                ->where('meta_key', 'active_payment_method')
+                ->value('meta_value') ?: '',
+            'canceled_at'            => DateTime::gmtNow(),
+        ];
 
-        $vendorSubscriptionId = Arr::get($paypalSubscription, 'id');
-        $vendorPlanId = Arr::get($paypalSubscription, 'plan_id');
-        $vendorCustomerId = Arr::get($paypalSubscription, 'subscriber.payer_id');
+        // PayPal APPROVED is confirmed but has no local status of its own.
+        $localStatus = $paypalStatus === 'APPROVED' ? 'ACTIVE' : $paypalStatus;
 
-        $nextBillingDate = Arr::get($paypalSubscription, 'billing_info.next_billing_time') ?? null;
-        if (!empty($nextBillingDate)) {
-            $nextBillingDate = gmdate('Y-m-d H:i:s', strtotime($nextBillingDate));
-        }
-
-        // update subscription in table
-        $data = array_filter([
-            'vendor_subscription_id' => $vendorSubscriptionId,
-            'vendor_plan_id'         => $vendorPlanId,
+        Subscription::query()->where('id', $subscription->id)->update(array_filter([
+            'vendor_subscription_id' => Arr::get($paypalSubscription, 'id'),
+            'vendor_plan_id'         => Arr::get($paypalSubscription, 'plan_id'),
             'current_payment_method' => 'paypal',
-            'vendor_customer_id'     => $vendorCustomerId,
+            'vendor_customer_id'     => Arr::get($paypalSubscription, 'subscriber.payer_id'),
             'next_billing_date'      => $nextBillingDate,
-            'status'                 => $this->getCorrectSubscriptionStatus(Arr::get($paypalSubscription, 'status')),
-        ]);
-
-        Subscription::query()->where('id', $subscriptionId)->update($data);
+            'status'                 => $this->getCorrectSubscriptionStatus($localStatus),
+        ]));
         $subscription->deleteMeta('paypal_switch_plan_id');
 
         $subscription->mergeConfig(['is_trial_days_simulated' => 'yes']);
@@ -233,56 +289,53 @@ class SubscriptionManager
             'name'     => Arr::get($paypalSubscription, 'subscriber.name.given_name') . ' ' . Arr::get($paypalSubscription, 'subscriber.name.surname'),
             'address'  => Arr::get($paypalSubscription, 'subscriber.shipping_address.address')
         ]);
-        // update subscription meta for active payment method
 
         $subscription->updateMeta('active_payment_method', $billingInfo);
 
-        $gateway = App::gateway($oldPaymentMethod);
-        if ($gateway && $gateway->subscriptions) {
-            $gateway->subscriptions->cancel(
-                $oldVendorSubscriptionId,
-                [
-                    'reason' => __('Subscription switched to PayPal', 'fluent-cart'),
-                    'mode'   => $order->mode
-                ]
+        if ($oldVendorSubscriptionId) {
+            $subscription->cancelReplacedVendorSubscription(
+                (string)$oldPaymentMethod,
+                (string)$oldVendorSubscriptionId,
+                __('Subscription switched to PayPal', 'fluent-cart')
             );
         }
 
-        // add or update subscription meta of old subscriptions
-        $paymentSource = SubscriptionMeta::query()
-            ->where('subscription_id', $subscription->id)
-            ->where('meta_key', 'active_payment_method')
-            ->first();
-
-        if ($paymentSource) {
-            $paymentSource = $paymentSource->meta_value;
-        }
-
-        $oldSubData = [
-            'payment_method'         => $oldPaymentMethod,
-            'vendor_subscription_id' => $oldVendorSubscriptionId,
-            'vendor_customer_id'     => $oldVendorCustomerId,
-            'vendor_plan_id'         => $oldVendorPlanId,
-            'reason'                 => 'switch_payment_method',
-            'payment_source'         => $paymentSource ?? '',
-            'canceled_at'            => DateTime::gmtNow(),
-        ];
-
         self::addOldSubscriptionMeta($subscription, $oldSubData);
 
+        return $newVendorSubscriptionId;
+    }
+
+    private function cancelUnusedSwitchSubscription(Subscription $subscription, $vendorSubscriptionId)
+    {
+        // Same mode verifySubscription() used: the current store mode, not the order's.
+        $response = API::createResource('billing/subscriptions/' . $vendorSubscriptionId . '/cancel', [
+            'reason' => __('Payment method switch was not completed.', 'fluent-cart'),
+        ]);
+
+        if (is_wp_error($response)) {
+            $subscription->addLog(
+                __('Unused PayPal subscription was not cancelled', 'fluent-cart'),
+                /* translators: 1: PayPal subscription id, 2: error message */
+                sprintf(__('Cancel PayPal subscription %1$s at the gateway to stop it billing. Error: %2$s', 'fluent-cart'), $vendorSubscriptionId, $response->get_error_message()),
+                'error'
+            );
+        }
+    }
+
+    private function sendSwitchSuccess($vendorSubscriptionId)
+    {
         wp_send_json([
             'status'  => 'success',
             'message' => __('Subscription updated successfully', 'fluent-cart'),
             'data'    => $vendorSubscriptionId
         ], 200);
-
     }
 
     /**
-     * Confirm subscription reactivation
+     * Append the replaced vendor subscription to the subscription's old_subscriptions meta.
      *
-     * @param array $data | newVendorSubscriptionId (string) required
-     * @param int $subscriptionId
+     * @param \FluentCart\App\Models\Subscription $subscription
+     * @param array $oldSubData
      * @return void
      */
     public static function addOldSubscriptionMeta($subscription, $oldSubData)
@@ -300,21 +353,24 @@ class SubscriptionManager
         ];
         $oldSubscription = array_merge($defaults, $oldSubData);
 
-        // get if exists
-        $oldSubscriptions = SubscriptionMeta::query()
+        $existingMeta = SubscriptionMeta::query()
             ->where('subscription_id', '=', $subscription->id)
             ->where('meta_key', '=', 'old_subscriptions')
             ->first();
 
-        if ($oldSubscriptions && $oldSubscriptions->meta_value) {
-            if (is_string($oldSubscriptions->meta_value)) {
-                $oldSubscriptions = $oldSubscriptions->meta_value;
+        $oldSubscriptions = [];
+        $storedValue = $existingMeta ? $existingMeta->meta_value : null;
+
+        if (is_array($storedValue)) {
+            // Rows written before this fix wrap the model's own properties around the list.
+            foreach ($storedValue as $key => $entry) {
+                if (is_int($key) && is_array($entry)) {
+                    $oldSubscriptions[] = $entry;
+                }
             }
-            $oldSubscriptions = (array)$oldSubscriptions ?: [];
-            $oldSubscriptions[] = $oldSubscription;
-        } else {
-            $oldSubscriptions = [$oldSubscription];
         }
+
+        $oldSubscriptions[] = $oldSubscription;
 
         SubscriptionMeta::updateOrCreate([
             'subscription_id' => $subscription->id,
@@ -328,20 +384,12 @@ class SubscriptionManager
 
     public function getSubscriptionItemForUpdate($subscriptionModel, $variation)
     {
-        $trialDays = 0;
-
-        // trial days is the difference between the next billing date and the current date in days
-        $nextBillingDate = $subscriptionModel->next_billing_date;
-        $nextBillingTimestamp = strtotime($nextBillingDate);
-
-        if ($nextBillingTimestamp && $nextBillingTimestamp > time()) {
-            $trialDays = ceil(($nextBillingTimestamp - time()) / 86400);
+        $trialDays = $subscriptionModel->paymentMethodChangeTrialDays();
+        if ($trialDays <= 0) {
+            throw new \Exception(esc_html__('Could not get or create plan', 'fluent-cart'));
         }
 
         $billCount = $subscriptionModel->calculateBillCount();
-
-
-        $trialDays = SubscriptionHelper::checkTrailDaysLoopHole($subscriptionModel, $trialDays);
 
         // max trial days is 365
         if ($trialDays > 365) {
@@ -374,9 +422,7 @@ class SubscriptionManager
             'bill_times'       => $billTimes,
         ];
 
-        if ($trialDays > 0) {
-            $processedSubscriptionItem['trial_end'] = $nextBillingTimestamp;
-        }
+        $processedSubscriptionItem['trial_end'] = DateTime::anyTimeToGmt($subscriptionModel->next_billing_date)->getTimestamp();
 
         return $processedSubscriptionItem;
 

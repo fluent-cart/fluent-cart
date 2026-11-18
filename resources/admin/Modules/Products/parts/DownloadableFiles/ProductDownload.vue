@@ -50,10 +50,9 @@ const handleDropdownCommand = (command) => {
                (ProductDownloadablesController), not by flipping this switch, so
                @change only fires on a real click and there is no initial-setup
                case to guard against. -->
-          <el-switch v-if="product.detail" v-model="product.detail.manage_downloadable" active-value="1"
-                     inactive-value="0" :active-text="$t('Downloadable Asset(s)')"
-                     @change="value => productEditModel.onChangeInputField('manage_downloadable', value)">
-          </el-switch>
+          <fct-switch v-if="product.detail" v-model="product.detail.manage_downloadable" active-value="1"
+                      inactive-value="0" :active-text="$t('Downloadable Asset(s)')"
+                      @change="value => productEditModel.onChangeInputField('manage_downloadable', value)"/>
         </template>
       </Card.Header>
       <Animation :visible="product.detail?.manage_downloadable.toString() === '1'" accordion>
@@ -78,7 +77,7 @@ const handleDropdownCommand = (command) => {
                         </span>
                       </div>
 
-                      <el-popover
+                      <fct-popover
                           placement="top"
                           trigger="hover"
                           :width="200"
@@ -97,7 +96,7 @@ const handleDropdownCommand = (command) => {
                             }}
                           </div>
                         </template>
-                      </el-popover>
+                      </fct-popover>
 
                       <!-- fallback when there's nothing hidden -->
                       <div class="product-variation-title" v-else>
@@ -107,51 +106,36 @@ const handleDropdownCommand = (command) => {
                       </div>
                     </div>
                     <div class="product-details-content-second">
-                      <el-dropdown
+                      <fct-dropdown
                           trigger="click"
                           class="fct-more-option-wrap"
-                          popper-class="fct-dropdown"
                           placement="bottom-end"
                           @command="handleDropdownCommand"
+                          :items="[
+                            {name: 'edit', class: 'item-link'},
+                            {command: {action: 'copy-download-link', data: item}, label: translate('Copy Download Link'), icon: 'Copy'},
+                            {command: {action: 'delete', data: item, idx: itemIndex}, label: translate('Delete'), icon: 'Delete', danger: true}
+                          ]"
                       >
                       <span class="more-btn">
                         <DynamicIcon name="More"/>
                       </span>
 
-                        <template #dropdown>
-                          <el-dropdown-menu>
-                            <el-dropdown-item class="item-link">
-                              <ProductDownloadEditModal
-                                  :product="product"
-                                  :productDownloadableModel="productDownloadableModel"
-                                  :productEditModel="productEditModel"
-                                  :productDownloadable="item"
-                                  :index="itemIndex"
-                              />
-                            </el-dropdown-item>
-
-                            <el-dropdown-item :command="{
-                              action: 'copy-download-link',
-                              data: item
-                          }">
-                              <DynamicIcon name="Copy"/>
-                              {{ translate('Copy Download Link') }}
-                            </el-dropdown-item>
-
-                            <el-dropdown-item
-                                :command="{
-                              action: 'delete',
-                              data: item,
-                              idx: itemIndex
-                          }"
-                                class="item-destructive"
-                            >
-                              <DynamicIcon name="Delete"/>
-                              {{ translate('Delete') }}
-                            </el-dropdown-item>
-                          </el-dropdown-menu>
+                        <template #item="{item: menuItem}">
+                          <ProductDownloadEditModal
+                              v-if="menuItem.name === 'edit'"
+                              :product="product"
+                              :productDownloadableModel="productDownloadableModel"
+                              :productEditModel="productEditModel"
+                              :productDownloadable="item"
+                              :index="itemIndex"
+                          />
+                          <template v-else>
+                            <DynamicIcon :name="menuItem.icon"/>
+                            {{ menuItem.label }}
+                          </template>
                         </template>
-                      </el-dropdown>
+                      </fct-dropdown>
                     </div>
                   </div>
                 </div>

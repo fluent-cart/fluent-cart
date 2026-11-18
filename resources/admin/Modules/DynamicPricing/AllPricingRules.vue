@@ -32,13 +32,12 @@ onMounted(() => {
             <PageHeading :title="translate('Dynamic Pricing')">
                 <template #action>
                     <UserCan permission="dynamic_pricing/manage">
-                        <el-button
+                        <fct-button
                             type="primary"
-                            tag="router-link"
                             :to="{ name: 'dynamic_pricing_create' }"
                         >
                             {{ translate("Add New Rule") }}
-                        </el-button>
+                        </fct-button>
                     </UserCan>
                 </template>
             </PageHeading>

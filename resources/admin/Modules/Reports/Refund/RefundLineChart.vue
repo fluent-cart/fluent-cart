@@ -452,33 +452,25 @@ onMounted(() => {
       <Card.Header title_size="small" border_bottom>
         <template #title>
           <div class="flex items-center gap-2">
-            <h5 class="fct-card-header-title is-small">{{
+            <h2 class="fct-card-header-title is-small">{{
                 translate("Refunds Chart")
-            }}</h5>
-            <el-tooltip
-              popper-class="fct-tooltip"
+            }}</h2>
+            <fct-tooltip
               :content="tooltip"
               placement="top"
-            
               :trigger="['hover', 'focus']">
               <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')"><DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/></button>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </template>
         <template #action v-if="!isEmpty && !loading">
           <div class="fct-chart-select">
-            <el-select
-                class="el-select--x-small"
+            <fct-select
+                size="x-small"
                 v-model="selectedGroupKey"
+                :options="groupKeys"
                 @change="filterChartData"
-            >
-              <el-option
-                  v-for="groupKey in groupKeys"
-                  :key="groupKey.value"
-                  :label="groupKey.label"
-                  :value="groupKey.value"
-              />
-            </el-select>
+            />
           </div>
 
           <div class="fct-btn-group sm">
@@ -506,7 +498,7 @@ onMounted(() => {
         </template>
       </Card.Header>
       <Card.Body class="px-0">
-        <el-skeleton v-if="loading" animated :rows="7" class="p-4" />
+        <fct-skeleton v-if="loading" animated :rows="7" class="p-4" />
 
         <template v-else>
           <template v-if="!isEmpty">

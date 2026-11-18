@@ -1,5 +1,5 @@
 <template>
-    <el-select
+    <fct-select
         v-model="model"
         :multiple="field.is_multiple"
         filterable
@@ -11,14 +11,9 @@
         :size="field.size"
         :placeholder="field.placeholder || $t('Please enter a keyword')"
         :remote-method="fetchOptions"
-        v-loading="loading">
-        <el-option
-            v-for="item in options"
-            :key="item.id"
-            :label="item.title"
-            :value="item.id">
-        </el-option>
-    </el-select>
+        v-loading="loading"
+        :options="options.map((item) => ({label: item.title, value: item.id}))"
+    />
 </template>
 
 <script type="text/babel">

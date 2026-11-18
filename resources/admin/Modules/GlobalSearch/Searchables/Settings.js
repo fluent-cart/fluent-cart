@@ -22,7 +22,6 @@ const settingsRoutes = {
     '/settings/tax_settings/tax_rates':                translate('Tax Rates'),
     '/settings/tax_settings/eu':                       translate('EU VAT Settings'),
     '/settings/storage':                               translate('Storage Providers'),
-    '/settings/coupons':                               translate('Coupon Settings'),
 };
 
 let Settings = [];

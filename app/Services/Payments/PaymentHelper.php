@@ -241,13 +241,7 @@ class PaymentHelper
             ->where('status', Status::TRANSACTION_REFUNDED)
             ->get()
             ->filter(function ($refund) use ($chargeTransaction) {
-                $meta = is_array($refund->meta) ? $refund->meta : [];
-                $chargeId = Arr::get($meta, 'parent_id');
-                if (!$chargeId && $refund->payment_method === 'stripe') {
-                    // Older Stripe webhook rows link the charge as transaction_id.
-                    $chargeId = Arr::get($meta, 'transaction_id');
-                }
-                return (int) $chargeId === (int) $chargeTransaction->id;
+                return OrderTransaction::refundChargeId($refund) === (int) $chargeTransaction->id;
             })
             ->sum('total');
 

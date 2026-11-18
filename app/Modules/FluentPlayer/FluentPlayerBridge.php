@@ -203,14 +203,10 @@ class FluentPlayerBridge
 
     /**
      * A FluentPlayer failure must never break the product page, but it must not
-     * vanish either: it is logged under WP_DEBUG and exposed as an action.
+     * vanish either: it is exposed as an action.
      */
     protected static function reportFailure(string $stage, int $mediaId, \Throwable $e): void
     {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf('[FluentCart] FluentPlayer %s failed for media #%d: %s', $stage, $mediaId, $e->getMessage()));
-        }
-
         do_action('fluent_cart/fluent_player/failed', $stage, $mediaId, $e);
     }
 }

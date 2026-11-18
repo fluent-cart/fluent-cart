@@ -18,6 +18,8 @@ class SaleBadgeBlockEditor extends BlockEditor
             'fluent-cart/product-carousel',
             'fluent-cart/product-info',
             'fluent-cart/related-product',
+            // A standalone Product Card holds its own image, so the badges can be added back there.
+            'fluent-cart/product-card',
         ];
     }
 

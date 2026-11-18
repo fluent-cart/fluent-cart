@@ -1,7 +1,8 @@
 <template>
-  <el-drawer
+  <fct-dialog
+      drawer
       v-model="visible"
-      size="560px"
+      width="560px"
       append-to="#fct_admin_app_wrapper"
       :show-close="false"
       :close-on-click-modal="!submitting"
@@ -92,7 +93,7 @@
             <tr
                 v-for="item in physicalItems"
                 :key="item.id"
-                class="align-top border-t border-gray-divider dark:border-dark-500"
+                class="align-top [border-top-width:1px] border-gray-divider dark:border-dark-500"
             >
               <!-- Only the item is dimmed when shipped; the badge keeps full contrast. -->
               <td class="w-[64px] pe-3 py-3 align-top" :class="{ 'opacity-60': remaining(item) === 0 }">
@@ -146,20 +147,14 @@
 
         <div class="fct-shipment-ship-with">
           <label :for="shipWithId" class="text-sm font-medium">{{ translate('Ship with') }}</label>
-          <el-select
+          <fct-select
               :id="shipWithId"
               v-model="form.carrier_slug"
               class="w-[200px]"
               :loading="carriersLoading"
+              :options="carrierOptions"
               @change="onCarrierChange"
-          >
-            <el-option
-                v-for="option in carrierOptions"
-                :key="option.value"
-                :value="option.value"
-                :label="option.label"
-            />
-          </el-select>
+          />
         </div>
 
         <div v-if="carrierQuotesRates" class="mb-4">
@@ -264,17 +259,17 @@
         <template v-if="!carrierBuysLabel">
           <!-- A zone method brings its own name and price. -->
           <Animation :visible="!zoneMethodPicked" accordion>
-            <el-row :gutter="16">
-              <el-col v-if="form.carrier_slug === CARRIER_MANUAL" :xs="24" :sm="12">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+              <div v-if="form.carrier_slug === CARRIER_MANUAL">
                 <el-form-item :label="translate('Carrier Name')" prop="carrier_name">
-                  <el-input
+                  <fct-input
                       v-model="form.carrier_name"
                       :maxlength="100"
                       :placeholder="translate('Optional carrier name')"
                   />
                 </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12">
+              </div>
+              <div>
                 <el-form-item :label="translate('Shipping Cost')" prop="cost">
                   <PriceInput
                       v-model="form.cost"
@@ -288,23 +283,23 @@
                     </template>
                   </PriceInput>
                 </el-form-item>
-              </el-col>
-            </el-row>
+              </div>
+            </div>
           </Animation>
 
-          <el-row :gutter="16">
-            <el-col :xs="24" :sm="12">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+            <div>
               <el-form-item :label="translate('Tracking Number')" prop="tracking_number">
-                <el-input
+                <fct-input
                     v-model="form.tracking_number"
                     :maxlength="255"
                     :placeholder="translate('Enter tracking number')"
                 />
               </el-form-item>
-            </el-col>
-            <el-col :xs="24" :sm="12">
+            </div>
+            <div>
               <el-form-item :label="translate('Tracking URL')" prop="tracking_url">
-                <el-input
+                <fct-input
                     v-model="form.tracking_url"
                     :maxlength="500"
                     :placeholder="methodTrackingPattern || translate('https://example.com/track/...')"
@@ -314,8 +309,8 @@
                   <div class="el-form-item__error" role="alert">{{ error }}</div>
                 </template>
               </el-form-item>
-            </el-col>
-          </el-row>
+            </div>
+          </div>
           <p :id="trackingUrlHintId" class="fct-shipment-tracking-hint">
             {{ translate('The tracking URL fills in from the shipping method\'s pattern, when it has one.') }}
           </p>
@@ -355,7 +350,7 @@
           <button type="button" class="fct-shipment-link" @click="revealShippedAt">{{ translate('Change') }}</button>
         </div>
         <el-form-item v-else :label="translate('Shipped At')" prop="shipped_at">
-          <el-date-picker
+          <fct-date-picker
               ref="shippedAtRef"
               v-model="form.shipped_at"
               type="datetime"
@@ -372,7 +367,7 @@
         </button>
         <Animation :visible="showNote" accordion>
           <el-form-item :label="translate('Note to customer')" prop="notes">
-            <el-input
+            <fct-input
                 ref="noteRef"
                 v-model="form.notes"
                 type="textarea"
@@ -383,9 +378,9 @@
         </Animation>
 
         <el-form-item class="mb-0">
-          <el-checkbox v-model="form.notify_customer">
+          <fct-choice v-model="form.notify_customer">
             {{ translate('Notify Customer') }}
-          </el-checkbox>
+          </fct-choice>
         </el-form-item>
       </section>
     </el-form>
@@ -394,21 +389,22 @@
       <div class="flex flex-wrap items-center gap-2">
         <span class="flex-1 text-start text-sm text-system-mid dark:text-gray-300">{{ footerSummary }}</span>
 
-        <el-button v-if="step === 1" @click="closeDrawer">{{ translate('Cancel') }}</el-button>
-        <el-button v-else :disabled="submitting" @click="goToStep(step - 1)">{{ translate('Back') }}</el-button>
+        <fct-button v-if="step === 1" @click="closeDrawer">{{ translate('Cancel') }}</fct-button>
+        <fct-button v-else :disabled="submitting" @click="goToStep(step - 1)">{{ translate('Back') }}</fct-button>
 
-        <el-button
+        <fct-button
             v-if="step < 3"
             type="primary"
             :disabled="step === 2 && (carriersLoading || quoteLoading)"
             @click="next"
         >
           {{ translate('Continue') }}
-        </el-button>
+        </fct-button>
 
         <!-- A label purchase spends money, so it is confirmed with its price. -->
-        <el-popconfirm
+        <fct-popover
             v-else-if="carrierBuysLabel"
+            confirm
             :title="buyLabelConfirmTitle"
             :confirm-button-text="translate('Buy Label')"
             :cancel-button-text="translate('Cancel')"
@@ -417,16 +413,16 @@
             @confirm="submit"
         >
           <template #reference>
-            <el-button
+            <fct-button
                 type="primary"
                 :loading="submitting"
                 :disabled="submitDisabled"
             >
               {{ buyLabelButtonText }}
-            </el-button>
+            </fct-button>
           </template>
-        </el-popconfirm>
-        <el-button
+        </fct-popover>
+        <fct-button
             v-else
             type="primary"
             :loading="submitting"
@@ -434,10 +430,10 @@
             @click="submit"
         >
           {{ translate('Create Shipment') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-drawer>
+  </fct-dialog>
 </template>
 
 <script setup>

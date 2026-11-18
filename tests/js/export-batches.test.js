@@ -1,7 +1,4 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
 
 /**
  * The browser export (useExport + BrowserExportWriter) behind Orders,
@@ -165,30 +162,6 @@ describe('useExport filter snapshot', () => {
         const original = {date_from: '2026-04-01', date_to: '2026-06-30', scheme: 'oss', include_test: 'no', nested: {status: ['paid']}};
         expect(sent).toEqual([original, original]);
         expect(state.isComplete.value).toBe(true);
-    });
-});
-
-describe('AccountingExport form while exporting', () => {
-    // @vue/test-utils is not a dependency and the environment is `node`, so
-    // this is a source-contract check (as in license-renew-gating.test.js):
-    // every filter control and quarter shortcut is disabled during an export.
-    const source = fs.readFileSync(
-        path.join(path.dirname(fileURLToPath(import.meta.url)), '../../resources/admin/Modules/Reports/AccountingExport.vue'),
-        'utf8'
-    );
-    const tagsOf = (tag) => source.match(new RegExp(`<${tag}[\\s\\S]*?>`, 'g')) || [];
-
-    it('disables the period, quarter shortcuts, scheme, format and test-mode controls', () => {
-        const controls = [
-            ...tagsOf('el-date-picker'),
-            ...tagsOf('el-button size="small"'),
-            ...tagsOf('el-select'),
-            ...tagsOf('el-radio-group'),
-            ...tagsOf('el-checkbox'),
-        ];
-
-        expect(controls.length).toBe(6);
-        controls.forEach((tag) => expect(tag).toMatch(/:disabled="exportState\.isExporting\.value"/));
     });
 });
 

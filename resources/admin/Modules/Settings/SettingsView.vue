@@ -18,11 +18,11 @@
           }"
       >
         <div class="fct-settings-nav-collapse-button-wrapper">
-          <el-tooltip
+          <fct-tooltip
               :content="translate('Toggle settings')"
               placement="right"
           >
-            <el-button
+            <fct-button
                 @click="toggleCollapse"
                 :aria-label="translate('Toggle settings navigation')"
                 :aria-expanded="!isSidebarCollapsed"
@@ -32,8 +32,8 @@
               <span class="fct-menu-collapse-button-text">
                 {{ translate('Settings') }}
               </span>
-            </el-button>
-          </el-tooltip>
+            </fct-button>
+          </fct-tooltip>
         </div>
 
         <ul
@@ -98,6 +98,7 @@ import translate from "@/utils/translator/Translator";
 import Animation from "@/Bits/Components/Animation.vue";
 import AppConfig from "@/utils/Config/AppConfig";
 import Permission from "@/utils/permission/Permission";
+import {placeAddonSidebarItems} from "./addonSidebar";
 
 defineOptions({
   name: "SettingsView",
@@ -297,10 +298,13 @@ routes.value.push({
 
 
 routes.value.push({
+  key: 'compliance',
   name: translate('Compliance'),
   icon: 'Compliance',
   permission: ['store/settings'],
-  url: '/settings/compliance'
+  url: '/settings/compliance',
+  // The page's own name once add-ons nest their pages beside it.
+  ownChildName: translate('Customer Accounts')
 });
 
 const hasPro = AppConfig.get('app_config.isProActive');
@@ -313,7 +317,7 @@ if (hasPro) {
   });
 }
 
-AppConfig.get('addon_settings_sidebar', []).forEach(item => routes.value.push(item));
+placeAddonSidebarItems(routes.value, AppConfig.get('addon_settings_sidebar', []));
 
 
 /*

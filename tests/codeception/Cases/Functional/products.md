@@ -154,7 +154,7 @@
 - [ ] 116. Admin sees a downloadable file's URL expire after the configured window. (CODEX-REVIEW-NEEDED: stop-time review gate flagged the test as WEAK — only inspects signed valid_till + replicates FileDownloader inequality; never observes an expired URL be denied. Full proof requires dispatching the URL through the frontend `?fluent-cart=download-by-id` handler which is out of REST functional scope — see Tests\Functional\Rest\Products\GetProductDownloadableUrlCest::downloadableFileUrlExpiresAfterConfiguredWindow)
 - [x] 117. Admin is rejected when attaching a downloadable file with missing required fields.
 - [x] 229. Admin can attach a local downloadable file without a file_url and it succeeds.
-- [x] 117a. A product editor cannot attach a downloadable file pointing at a bucket the store has not configured — the stored bucket is the store's own. (FC-SEC-04: settings.bucket was stored verbatim and fed straight into cloud download signing; it is now resolved from driver settings)
+- [x] 117a. A product editor cannot attach a downloadable file pointing at a bucket the store has not configured — the stored bucket is the store's own. (settings.bucket was stored verbatim and fed straight into cloud download signing; it is now resolved from driver settings)
 - [x] 117b. A product editor cannot substitute an unconfigured bucket by editing an existing downloadable file either.
 - [x] 117c. A downloadable file already carrying a foreign bucket is still signed against the store's own bucket.
 - [x] 117d. A product editor cannot attach a downloadable file to a storage driver the store has not enabled.

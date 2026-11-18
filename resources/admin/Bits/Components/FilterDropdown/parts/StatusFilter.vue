@@ -1,6 +1,7 @@
 <template>
-  <el-select
+  <fct-select
       v-model="filter.data.selectedFilters[filterItemKey].value"
+      :options="filterItem.options"
       :placeholder="$t('Select Status')"
       filterable
       clearable
@@ -11,17 +12,10 @@
     <template #label="{ label }">
       <el-tag disable-transitions>{{ label }}</el-tag>
     </template>
-    <el-option
-        v-for="filterOption in filterItem.options"
-        :key="filterOption.value"
-        :label="filterOption.label"
-        :value="filterOption.value"
-    />
-  </el-select>
+  </fct-select>
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
 
 const props = defineProps({
   filterState: {

@@ -72,14 +72,4 @@ describe('admin product thumbnails use the illustration', () => {
 
         expect(offenders).toEqual([]);
     });
-
-    it.each([
-        'resources/admin/Bits/Components/Card/ProductInfo.vue',
-        'resources/admin/Modules/Reviews/SingleReview.vue',
-    ])('%s draws one thumbnail, with no dark-mode twin', (file) => {
-        const src = read(file);
-
-        expect(src).toMatch(/Asset\.productPlaceholder\(\)/);
-        expect(src).not.toMatch(/hidden dark:block/);
-    });
 });

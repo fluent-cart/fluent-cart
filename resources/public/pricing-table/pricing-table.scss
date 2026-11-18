@@ -1,4 +1,5 @@
-@config "./pricing-table.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./pricing-table.config.mjs";
 
 .entry-content > :not(.alignwide):not(.alignfull):not(.alignleft):not(.alignright):not(.wp-block-separator) {
   @apply max-w-[1240px];
@@ -68,22 +69,22 @@
     border-radius: var(--fct-container-radius, theme('borderRadius.DEFAULT'));
     button,
     .fluent-cart-direct-checkout-button {
-      @apply no-underline leading-none bg-white p-3 flex justify-center items-center font-medium text-base focus:outline-none #{!important};
+      @apply no-underline! leading-none! bg-white! p-3! flex! justify-center! items-center! font-medium! text-base! focus:outline-hidden!;
       border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT')) !important;
     }
     .fluent-cart-direct-checkout-button {
-      @apply text-white #{!important};
+      @apply text-white!;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fluent-cart-pricing-table-checkout-button-background) !important;
       box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
       &:hover {
-        @apply text-white #{!important};
+        @apply text-white!;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fluent-cart-pricing-table-checkout-button-background) !important;
         box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
       }
     }
 
     button {
-      @apply bg-[var(--fluent-cart-pricing-table-button-bg)] text-[var(--fluent-cart-pricing-table-button-color)] border-[var(--fluent-cart-pricing-table-button-border-color)] shadow-none #{!important};
+      @apply bg-[var(--fluent-cart-pricing-table-button-bg)]! text-[var(--fluent-cart-pricing-table-button-color)]! border-[var(--fluent-cart-pricing-table-button-border-color)]! shadow-none!;
     }
 
     .variant-divider {
@@ -115,7 +116,7 @@
     }
 
     .fluent-cart-pricing-table-variant-direct-checkout-button {
-      @apply text-[var(--fluent-cart-pricing-table-checkout-button-color)] #{!important};
+      @apply text-[var(--fluent-cart-pricing-table-checkout-button-color)]!;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--fluent-cart-pricing-table-checkout-button-bg) #{!important};
       box-shadow: inset 0px 0.5px 0.5px 0.5px rgba(255, 255, 255, 0.1);
     }
@@ -212,12 +213,12 @@
 .fluent-cart-pricing-table-tab-pane {
   @apply hidden;
   &.active {
-    @apply block #{!important};
+    @apply block!;
   }
 }
 
 .fluent-cart-pricing-table-variant .fct-out-of-stock-button {
-  @apply border border-solid border-red-100 text-red-500 bg-red-25 !important;
+  @apply border! border-solid! border-red-100! text-red-500! bg-red-25!;
 }
 
 @media (max-width: 1024px) {

@@ -103,18 +103,18 @@ const sections = computed(() => {
     <Card.Header title_size="small" border_bottom>
       <template #title>
         <div class="flex items-center gap-2">
-          <h5 class="fct-card-header-title is-small">{{ translate("Order mix") }}</h5>
-          <el-tooltip popper-class="fct-tooltip" placement="top"
+          <h2 class="fct-card-header-title is-small">{{ translate("Order mix") }}</h2>
+          <fct-tooltip placement="top"
                       :content="translate('OrderRpt_Orders_Orders')">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="4" />
+      <fct-skeleton v-if="loading" animated :rows="4" />
 
       <div v-else-if="!mix || !mix.total" class="text-sm text-system-light dark:text-gray-400">
         {{ translate("No orders in this period") }}
@@ -123,7 +123,7 @@ const sections = computed(() => {
       <div v-else class="fct-report-order-mix-grid" :class="'has-' + sections.length">
         <section v-for="section in sections" :key="section.key" class="fct-report-order-mix-section">
           <div class="fct-report-order-mix-head">
-            <h6 class="fct-report-order-mix-title">{{ section.title }}</h6>
+            <h3 class="fct-report-order-mix-title">{{ section.title }}</h3>
             <span v-if="section.hint" class="fct-report-order-mix-hint">{{ section.hint }}</span>
             <router-link v-else-if="section.link" :to="section.link.to" class="fct-report-order-mix-hint">{{ section.link.text }}</router-link>
           </div>

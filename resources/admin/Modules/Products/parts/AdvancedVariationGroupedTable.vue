@@ -413,7 +413,8 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
       <colgroup>
         <col width="80">
         <col width="130">
-        <col width="250">
+        <!-- No width: the Variant column takes what is left, so the table fits its card. -->
+        <col>
         <col width="150">
         <col width="180">
         <col width="100">
@@ -421,7 +422,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
       <thead>
         <tr>
           <th>
-            <el-checkbox
+            <fct-choice
                 :model-value="isAllSelected"
                 :indeterminate="isSelectionIndeterminate"
                 :aria-label="$t('Select all variants')"
@@ -453,7 +454,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
           <!-- GROUP HEADER ROW -->
           <tr class="fct-adv-group-row" :class="{ 'is-expanded': isGroupExpanded(group.termId) }" @click="toggleGroup(group.termId)">
             <td>
-                <el-checkbox
+                <fct-choice
                     @click.stop
                     :model-value="isGroupAllSelected(group)"
                     :indeterminate="isGroupIndeterminate(group)"
@@ -539,7 +540,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
                   <colgroup>
                     <col width="80">
                     <col width="130">
-                    <col width="250">
+                    <col>
                     <col width="150">
                     <col width="180">
                     <col width="100">
@@ -547,7 +548,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
                   <tbody>
                     <tr v-for="variant in visibleVariants(group)" :key="variant.id" class="fct-adv-group-child-row">
                       <td @click.stop>
-                        <el-checkbox
+                        <fct-choice
                             :model-value="selectedVariants.includes(variant.id)"
                             :aria-label="translate('Select variant %1$s', variant.variation_title)"
                             @change="(val) => toggleVariantSelection(variant.id, val)"
@@ -618,60 +619,59 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
                               <DynamicIcon name="Edit"/>
                             </IconButton>
 
-                            <el-dropdown class="fct-more-option-wrap" popper-class="fct-dropdown" trigger="click" @visible-change="(v) => v && markDropdownOpened(variant.id)"
+                            <fct-dropdown class="fct-more-option-wrap" trigger="click" @visible-change="(v) => v && markDropdownOpened(variant.id)"
+                                         :items="openedDropdowns.has(variant.id) ? [
+                                           {command: 'edit', class: 'show-on-mobile'},
+                                           {name: 'copy_id'},
+                                           {name: 'checkout', disabled: (product.post_status !== 'publish' && product.post_status !== 'private') || !variant.id},
+                                           ...(variant.id ? [{command: 'toggle_status', class: {'item-destructive': variant.item_status !== 'inactive'}}] : [])
+                                         ] : []"
                                          @command="(command) => {
-                                           if (command === 'toggle_status') {
+                                           if (command === 'edit') {
+                                             $emit('editVariant', variant);
+                                           } else if (command === 'toggle_status') {
                                              $emit('toggleStatus', variant);
                                            }
                                          }">
                               <button type="button" class="more-btn" :aria-label="translate('Variation actions')">
                                 <DynamicIcon name="More"/>
                               </button>
-                              <template #dropdown>
-                                <el-dropdown-menu>
-                                  <template v-if="openedDropdowns.has(variant.id)">
-                                  <el-dropdown-item class="show-on-mobile" @click="$emit('editVariant', variant)">
-                                    <DynamicIcon name="Edit"/>
-                                    {{ $t('Edit') }}
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item>
-                                    <CopyToClipboard
-                                        v-if="variant.id"
-                                        class="fct-copy-wrap-inline"
-                                        :text="String(variant.id)"
-                                        showMode="icon_with_text"
-                                        :buttonText="$t('Copy Variation ID')"
-                                    />
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                      :disabled="(product.post_status !== 'publish' && product.post_status !== 'private') || !variant.id">
-                                    <CopyToClipboard
-                                        v-if="(product.post_status === 'publish' || product.post_status === 'private') && variant.id"
-                                        class="fct-copy-wrap-inline"
-                                        :text="appVars?.frontend_url +'=instant_checkout&item_id=' + variant.id + '&quantity=1'"
-                                        showMode="icon_with_text"
-                                        :buttonText="$t('Direct Checkout')"
-                                        :tooltipContent="$t('Share direct checkout link to let customers buy this variation directly.')"
-                                    />
-                                    <template v-else>
-                                      <DynamicIcon name="Copy"/>
-                                      {{ $t('Direct Checkout') }}
-                                      <LabelHint
-                                          :content="$t('This product is currently in draft. You can\'t share direct checkout link')"></LabelHint>
-                                    </template>
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item v-if="variant.id" command="toggle_status"
-                                                    :class="{ 'item-destructive': variant.item_status !== 'inactive' }">
-                                    <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
-                                    {{ variant.item_status === 'inactive' ? $t('Set Active') : $t('Set Inactive') }}
-                                  </el-dropdown-item>
+                              <template #item="{item}">
+                                <template v-if="item.command === 'edit'">
+                                  <DynamicIcon name="Edit"/>
+                                  {{ $t('Edit') }}
+                                </template>
+                                <template v-else-if="item.name === 'copy_id'">
+                                  <CopyToClipboard
+                                      v-if="variant.id"
+                                      class="fct-copy-wrap-inline"
+                                      :text="String(variant.id)"
+                                      showMode="icon_with_text"
+                                      :buttonText="$t('Copy Variation ID')"
+                                  />
+                                </template>
+                                <template v-else-if="item.name === 'checkout'">
+                                  <CopyToClipboard
+                                      v-if="(product.post_status === 'publish' || product.post_status === 'private') && variant.id"
+                                      class="fct-copy-wrap-inline"
+                                      :text="appVars?.frontend_url +'=instant_checkout&item_id=' + variant.id + '&quantity=1'"
+                                      showMode="icon_with_text"
+                                      :buttonText="$t('Direct Checkout')"
+                                      :tooltipContent="$t('Share direct checkout link to let customers buy this variation directly.')"
+                                  />
+                                  <template v-else>
+                                    <DynamicIcon name="Copy"/>
+                                    {{ $t('Direct Checkout') }}
+                                    <LabelHint
+                                        :content="$t('This product is currently in draft. You can\'t share direct checkout link')"></LabelHint>
                                   </template>
-                                </el-dropdown-menu>
+                                </template>
+                                <template v-else>
+                                  <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
+                                  {{ variant.item_status === 'inactive' ? $t('Set Active') : $t('Set Inactive') }}
+                                </template>
                               </template>
-                            </el-dropdown>
+                            </fct-dropdown>
                           </div>
                         </div>
                       </td>
@@ -703,7 +703,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
       <thead>
         <tr>
           <th>
-            <el-checkbox
+            <fct-choice
                 :model-value="isAllSelected"
                 :indeterminate="isSelectionIndeterminate"
                 :aria-label="$t('Select all variants')"
@@ -733,7 +733,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
           <!-- GROUP HEADER ROW -->
           <tr class="fct-adv-group-row" :class="{ 'is-expanded': isGroupExpanded(group.termId) }" @click="toggleGroup(group.termId)">
             <td>
-                <el-checkbox
+                <fct-choice
                     @click.stop
                     :model-value="isGroupAllSelected(group)"
                     :indeterminate="isGroupIndeterminate(group)"
@@ -806,7 +806,7 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
                   <tbody>
                     <tr v-for="variant in visibleVariants(group)" :key="variant.id" class="fct-adv-group-child-row">
                       <td @click.stop>
-                        <el-checkbox
+                        <fct-choice
                             :model-value="selectedVariants.includes(variant.id)"
                             :aria-label="translate('Select variant %1$s', variant.variation_title)"
                             @change="(val) => toggleVariantSelection(variant.id, val)"
@@ -848,60 +848,59 @@ const onVariantMediaChange = (group, variant, updatedMedia, saveOptions) => {
                       <td class="is-right">
                         <div class="fct-product-pricing-table-item">
                           <div class="fct-btn-group sm justify-end">
-                            <el-dropdown class="fct-more-option-wrap" popper-class="fct-dropdown" trigger="click" @visible-change="(v) => v && markDropdownOpened(variant.id)"
+                            <fct-dropdown class="fct-more-option-wrap" trigger="click" @visible-change="(v) => v && markDropdownOpened(variant.id)"
+                                         :items="openedDropdowns.has(variant.id) ? [
+                                           {command: 'edit'},
+                                           {name: 'copy_id'},
+                                           {name: 'checkout', disabled: (product.post_status !== 'publish' && product.post_status !== 'private') || !variant.id},
+                                           ...(variant.id ? [{command: 'toggle_status', class: {'item-destructive': variant.item_status !== 'inactive'}}] : [])
+                                         ] : []"
                                          @command="(command) => {
-                                           if (command === 'toggle_status') {
+                                           if (command === 'edit') {
+                                             $emit('editVariant', variant);
+                                           } else if (command === 'toggle_status') {
                                              $emit('toggleStatus', variant);
                                            }
                                          }">
                               <button type="button" class="more-btn" :aria-label="translate('Variation actions')">
                                 <DynamicIcon name="More"/>
                               </button>
-                              <template #dropdown>
-                                <el-dropdown-menu>
-                                  <template v-if="openedDropdowns.has(variant.id)">
-                                  <el-dropdown-item @click="$emit('editVariant', variant)">
-                                    <DynamicIcon name="Edit"/>
-                                    {{ $t('Edit') }}
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item>
-                                    <CopyToClipboard
-                                        v-if="variant.id"
-                                        class="fct-copy-wrap-inline"
-                                        :text="String(variant.id)"
-                                        showMode="icon_with_text"
-                                        :buttonText="$t('Copy Variation ID')"
-                                    />
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item
-                                      :disabled="(product.post_status !== 'publish' && product.post_status !== 'private') || !variant.id">
-                                    <CopyToClipboard
-                                        v-if="(product.post_status === 'publish' || product.post_status === 'private') && variant.id"
-                                        class="fct-copy-wrap-inline"
-                                        :text="appVars?.frontend_url +'=instant_checkout&item_id=' + variant.id + '&quantity=1'"
-                                        showMode="icon_with_text"
-                                        :buttonText="$t('Direct Checkout')"
-                                        :tooltipContent="$t('Share direct checkout link to let customers buy this variation directly.')"
-                                    />
-                                    <template v-else>
-                                      <DynamicIcon name="Copy"/>
-                                      {{ $t('Direct Checkout') }}
-                                      <LabelHint
-                                          :content="$t('This product is currently in draft. You can\'t share direct checkout link')"></LabelHint>
-                                    </template>
-                                  </el-dropdown-item>
-
-                                  <el-dropdown-item v-if="variant.id" command="toggle_status"
-                                                    :class="{ 'item-destructive': variant.item_status !== 'inactive' }">
-                                    <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
-                                    {{ variant.item_status === 'inactive' ? $t('Set Active') : $t('Set Inactive') }}
-                                  </el-dropdown-item>
+                              <template #item="{item}">
+                                <template v-if="item.command === 'edit'">
+                                  <DynamicIcon name="Edit"/>
+                                  {{ $t('Edit') }}
+                                </template>
+                                <template v-else-if="item.name === 'copy_id'">
+                                  <CopyToClipboard
+                                      v-if="variant.id"
+                                      class="fct-copy-wrap-inline"
+                                      :text="String(variant.id)"
+                                      showMode="icon_with_text"
+                                      :buttonText="$t('Copy Variation ID')"
+                                  />
+                                </template>
+                                <template v-else-if="item.name === 'checkout'">
+                                  <CopyToClipboard
+                                      v-if="(product.post_status === 'publish' || product.post_status === 'private') && variant.id"
+                                      class="fct-copy-wrap-inline"
+                                      :text="appVars?.frontend_url +'=instant_checkout&item_id=' + variant.id + '&quantity=1'"
+                                      showMode="icon_with_text"
+                                      :buttonText="$t('Direct Checkout')"
+                                      :tooltipContent="$t('Share direct checkout link to let customers buy this variation directly.')"
+                                  />
+                                  <template v-else>
+                                    <DynamicIcon name="Copy"/>
+                                    {{ $t('Direct Checkout') }}
+                                    <LabelHint
+                                        :content="$t('This product is currently in draft. You can\'t share direct checkout link')"></LabelHint>
                                   </template>
-                                </el-dropdown-menu>
+                                </template>
+                                <template v-else>
+                                  <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
+                                  {{ variant.item_status === 'inactive' ? $t('Set Active') : $t('Set Inactive') }}
+                                </template>
                               </template>
-                            </el-dropdown>
+                            </fct-dropdown>
                           </div>
                         </div>
                       </td>

@@ -66,6 +66,8 @@ const stubs = {
     ElTableColumn: {render: () => null},
     RouterLink: slot('router-link'),
 };
+// The reports render core's fct-* wrappers: same stand-ins under their names
+Object.assign(stubs, {FctButton: stubs.ElButton, FctSkeleton: stubs.ElSkeleton, FctTooltip: stubs.ElTooltip, FctTable: stubs.ElTable, FctTableColumn: stubs.ElTableColumn});
 
 const deferred = () => {
     let resolve;

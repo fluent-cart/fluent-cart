@@ -429,11 +429,11 @@ class GlobalIntegrationSettingsTest extends IntegrationsTestCase
         $userId = static::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($userId);
 
-        // Capture slug passed to BackgroundInstaller via allowlist filter
-        $observed = null;
-        add_filter('fluent_cart/installable_repo_plugins', function ($plugins) use (&$observed) {
-            // Filter runs with the (already-aliased) slug held in $pluginSlug closure; can't read it here.
-            return $plugins;
+        // Stop before a real install or activation: activating the FluentCRM copy
+        // on disk would define FLUENTCRM for every later test in the process.
+        wp_cache_set('plugins', ['' => []], 'plugins');
+        add_filter('plugins_api', function () {
+            return new \WP_Error('offline', 'Plugin downloads are blocked in tests.');
         });
 
         $res = (new GlobalIntegrationSettings())->installPlugin('fluentcrm');

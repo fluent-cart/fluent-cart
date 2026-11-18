@@ -35,9 +35,9 @@ const getDefaultVariantLabel = (variant) => {
 // is deleted on an advanced-variation product, the cascade removes the
 // variants that pointed at it — but the product detail's
 // default_variation_id column still holds the now-orphan variant id.
-// Without this normalisation, the el-select below renders the raw
+// Without this normalisation, the select below renders the raw
 // numeric id (e.g. "6220") in the trigger because v-model can't find a
-// matching <el-option>. Watch both the id and the variants list so a
+// matching option. Watch both the id and the variants list so a
 // reload, a fresh save response, or any other variants mutation
 // reconciles the field.
 watch(
@@ -151,17 +151,23 @@ onMounted(() => {
                          :content="getStatusTooltip()"></LabelHint>
             </span>
             <div class="fct-product-status-chosen-wrap" id="fct-product-status-chosen-wrap">
-              <el-popover v-if="hasVariations()" trigger="click" placement="bottom-end" width="300" popper-class="filter-popover">
+              <fct-popover v-if="hasVariations()" trigger="click" placement="bottom-end" :width="300" popper-class="filter-popover">
                 <div id="fct-product-status-chosen-dropdown" class="fct-product-status-chosen-dropdown">
-                  <el-radio-group class="fct-radios-blocks" v-model="product.post_status" @change="handleStatusChange">
-                    <el-radio value="draft">{{ translate('Draft') }}</el-radio>
-                    <el-radio value="future">{{ translate('Scheduled') }}</el-radio>
-                    <el-radio value="private">{{ translate('Private (Invisible except Admin)') }}</el-radio>
-                    <el-radio value="publish">{{ translate('Publish') }}</el-radio>
-                  </el-radio-group>
+                  <fct-choice
+                      type="radio"
+                      class="fct-radios-blocks"
+                      v-model="product.post_status"
+                      :options="[
+                        {value: 'draft', label: translate('Draft')},
+                        {value: 'future', label: translate('Scheduled')},
+                        {value: 'private', label: translate('Private (Invisible except Admin)')},
+                        {value: 'publish', label: translate('Publish')}
+                      ]"
+                      @change="handleStatusChange"
+                  />
                   <div v-if="product.post_status === 'future'" style="margin-top: 20px;">
                     <h3 class="title">{{ translate('Scheduled Date') }}</h3>
-                    <el-date-picker
+                    <fct-date-picker
                         :clearable="false"
                         v-model="product.post_date"
                         type="datetime"
@@ -177,18 +183,18 @@ onMounted(() => {
                     </div>
                 </div>
                 <template #reference>
-                  <el-button id="fct-product-status-toggle" type="primary" class="is-tertiary el-button--x-small"
+                  <fct-button id="fct-product-status-toggle" type="primary" class="is-tertiary" size="x-small"
                              v-if="hasVariations()">
                     <span class="capitalize">{{
                       product.post_status === 'future' ? translate('Scheduled') : product.post_status
                     }}</span>
                     <DynamicIcon name="ChevronUpDown"/>
-                  </el-button>
+                  </fct-button>
                   <span v-else>
                     {{ Str.headline(product.post_status) }}
                   </span>
                 </template>
-              </el-popover>
+              </fct-popover>
 
 
             </div><!-- .fct-product-status-chosen-wrap -->
@@ -197,14 +203,13 @@ onMounted(() => {
             <span class="fct-admin-summary-item-title flex items-center gap-1">{{ translate('URL Slug') }} <a :href="product.view_url" class="focus:outline-none focus:shadow-none" target="_blank"><DynamicIcon name="Redirect" class="w-3 h-3 text-primary-500 dark:text-gray-200" /></a></span>
             <div class="fct-product-url-slug-container">
 
-              <el-popover trigger="click" placement="bottom-end" width="250" popper-class="filter-popover">
+              <fct-popover trigger="click" placement="bottom-end" :width="250" popper-class="filter-popover">
                 <div class="filter-popover-item fct-admin-summary-popover-item">
                   <h3 class="filter-popover-title">{{ translate('URL') }}</h3>
                   <div class="filter-popover-input-group">
                     <LabelHint :title="translate('Permalink')" :content="customizeUrlTooltip" :hideAfter="300"></LabelHint>
-                    <el-input :placeholder="translate('Slug')" type="text" v-model="product.post_name"
-                              @input="value => {productEditModel.onChangeInputField('post_name',value)}">
-                    </el-input>
+                    <fct-input :placeholder="translate('Slug')" type="text" v-model="product.post_name"
+                               @input="value => {productEditModel.onChangeInputField('post_name',value)}"/>
                   </div>
 
                   <div class="fct-product-url-label">
@@ -225,14 +230,14 @@ onMounted(() => {
 
                 </div><!-- .fct-admin-summary-popover-item -->
                 <template #reference>
-                  <el-button type="primary" class="is-tertiary el-button--x-small">
+                  <fct-button type="primary" class="is-tertiary" size="x-small">
                     <span>
                       {{ product.post_name }}
                     </span>
                     <DynamicIcon name="ChevronUpDown"/>
-                  </el-button>
+                  </fct-button>
                 </template>
-              </el-popover>
+              </fct-popover>
             </div>
           </li>
 
@@ -245,21 +250,14 @@ onMounted(() => {
             </span>
 
             <div class="fct-admin-summary-item-select">
-              <el-select
-                  class="el-select--x-small"
+              <fct-select
+                  size="x-small"
                   v-model="product.detail.default_variation_id"
                   :placeholder="translate('Select Default Variant')"
+                  :options="(product.variants || []).map(variant => ({label: getDefaultVariantLabel(variant), value: variant.id.toString()}))"
                   @change="value => {productEditModel.onChangeInputField('default_variation_id',value)}"
                   clearable
-              >
-                <el-option
-                    v-for="(variant) in product.variants"
-                    :key="variant.id"
-                    :label="getDefaultVariantLabel(variant)"
-                    :value="variant.id.toString()"
-                >
-                </el-option>
-              </el-select>
+              />
             </div>
           </li>
           
@@ -272,24 +270,25 @@ onMounted(() => {
             </span>
 
             <div class="fct-admin-summary-item-select" v-if="product.detail">
-              <el-select
-                class="el-select--x-small"
+              <fct-select
+                size="x-small"
                 clearable
-                v-model="product.detail.other_info.group_pricing_by" 
+                v-model="product.detail.other_info.group_pricing_by"
                 :placeholder="translate('Pricing Table Layout')"
+                :options="[
+                  {label: translate('Payment Term'), value: 'payment_type'},
+                  {label: translate('Repeat Interval'), value: 'repeat_interval'},
+                  {label: translate('None'), value: 'none'}
+                ]"
                 @change="value => {productEditModel.onChangeInputField('group_pricing_by',value)}"
-              >
-                    <el-option :label="translate('Payment Term')" value="payment_type"/>
-                    <el-option :label="translate('Repeat Interval')" value="repeat_interval"/>
-                    <el-option :label="translate('None')" value="none"/>
-                </el-select>
+              />
             </div>
           </li>
         </ul>
           <div class="mt-4 pt-4 space-y-2" v-if="product.detail">
-              <el-checkbox @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
+              <fct-choice @change="value => {productEditModel.onChangeInputField('sold_individually',value)}" v-model="product.detail.other_info.sold_individually" true-value="yes" false-value="no">
                   {{ translate('Limit purchases to 1 item per order') }}
-              </el-checkbox>
+              </fct-choice>
               <!-- One-way :model-value, not v-model: onChangeInputField() already writes
                    product.detail.other_info.reviews_enabled itself, so binding v-model here
                    would mutate the prop redundantly. The sibling above still uses v-model
@@ -298,9 +297,9 @@ onMounted(() => {
                    checked = disabled. Storage stays reviews_enabled yes/no — the
                    inverted true-value/false-value pair does the mapping, so every
                    backend consumer of the flag is untouched. -->
-              <el-checkbox v-if="reviewsModuleActive" @change="value => {productEditModel.onChangeInputField('reviews_enabled',value)}" :model-value="product.detail.other_info.reviews_enabled" true-value="no" false-value="yes">
+              <fct-choice v-if="reviewsModuleActive" @change="value => {productEditModel.onChangeInputField('reviews_enabled',value)}" :model-value="product.detail.other_info.reviews_enabled" true-value="no" false-value="yes">
                   {{ translate('Disable reviews for this product') }}
-              </el-checkbox>
+              </fct-choice>
           </div>
       </Card.Body>
     </Card.Container>

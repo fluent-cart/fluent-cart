@@ -95,7 +95,7 @@ class ProductDescriptionBlockEditor extends BlockEditor
 
     public function render(array $shortCodeAttribute, $block = null)
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
 
         $productId = absint(Arr::get($shortCodeAttribute, 'product_id', 0));
 

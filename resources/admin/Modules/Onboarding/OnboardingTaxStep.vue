@@ -108,7 +108,7 @@ defineExpose({onNextStep, getFormData: () => ({...taxFormData.value})})
         <!-- Toggle row -->
         <div class="fct-tax-step-toggle-row">
             <span class="fct-tax-step-toggle-row__label">{{ translate('Collect taxes for my store') }}</span>
-            <el-switch
+            <fct-switch
                 :model-value="taxFormData.collectTaxes"
                 @update:model-value="update({collectTaxes: $event})"
             />
@@ -247,7 +247,7 @@ defineExpose({onNextStep, getFormData: () => ({...taxFormData.value})})
                         {{ vatLabel }}
                         <span class="fct-tax-step-optional">{{ translate('(optional)') }}</span>
                     </label>
-                    <el-input
+                    <fct-input
                         :model-value="taxFormData.vatNumber"
                         @update:model-value="update({vatNumber: $event})"
                         :placeholder="isEuCountry ? 'DE123456789' : ''"
@@ -256,7 +256,7 @@ defineExpose({onNextStep, getFormData: () => ({...taxFormData.value})})
                 </div>
 
                 <!-- Info notice -->
-                <Alert icon="Info">
+                <Alert icon="Information">
                     <template #content>
                         <div class="fct-alert-content">
                             <p class="fct-alert-text">{{ noticeText }}</p>

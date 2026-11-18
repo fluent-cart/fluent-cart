@@ -7,6 +7,6 @@
     @apply text-primary-600 border-primary-600 shadow-none dark:text-white dark:border-white;
   }
   &:focus-visible{
-    @apply outline outline-2 outline-offset-2 outline-primary-500;
+    @apply outline-solid outline-2 outline-offset-2 outline-primary-500;
   }
 }

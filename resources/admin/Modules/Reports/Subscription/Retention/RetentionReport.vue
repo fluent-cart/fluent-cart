@@ -3,30 +3,25 @@
         <div class="fct-retention-report-page">
           <PageHeading>
             <template #title>
-              <h1 class="page-title">
+              <h2 class="page-title">
                 {{ translate('Subscription Retention') }}
 
-                <el-tooltip popper-class="fct-tooltip"
+                <fct-tooltip
                             :content="translate('SubRpt_Retention_Compares')"
                             placement="top">
                   <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this report')">
                     <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
                   </button>
-                </el-tooltip>
-              </h1>
+                </fct-tooltip>
+              </h2>
             </template>
             <template #action>
               <div class="flex items-center gap-3">
                 <!-- Mixed stores read each billing interval apart: a monthly plan churns monthly, a yearly one at renewal -->
-                <el-select v-if="intervals.length > 1" v-model="billingInterval" size="small" class="w-[160px]"
-                           :aria-label="translate('Billing interval')" @change="refetch">
-                  <el-option value="all" :label="translate('All intervals')" />
-                  <el-option v-for="key in intervals" :key="key" :value="key" :label="intervalLabel(key)" />
-                </el-select>
-                <el-radio-group v-model="period" size="small" @change="refetch">
-                  <el-radio-button value="month">{{ translate("Monthly") }}</el-radio-button>
-                  <el-radio-button value="year">{{ translate("Yearly") }}</el-radio-button>
-                </el-radio-group>
+                <fct-select v-if="intervals.length > 1" v-model="billingInterval" size="small" class="w-[160px]"
+                           :aria-label="translate('Billing interval')" @change="refetch"
+                           :options="[{label: translate('All intervals'), value: 'all'}, ...intervals.map(key => ({label: intervalLabel(key), value: key}))]"/>
+                <fct-choice v-model="period" size="small" @change="refetch" type="radio" button :options="[{label: translate('Monthly'), value: 'month'}, {label: translate('Yearly'), value: 'year'}]"/>
               </div>
             </template>
           </PageHeading>
@@ -59,7 +54,7 @@
                 :text="translate('This report could not be loaded.')"
                 class="fct-report-empty-state"
             />
-            <el-button size="small" @click="retry">{{ translate('Retry') }}</el-button>
+            <fct-button size="small" @click="retry">{{ translate('Retry') }}</fct-button>
           </div>
         </div>
 

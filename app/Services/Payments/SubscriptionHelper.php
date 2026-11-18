@@ -161,6 +161,10 @@ class SubscriptionHelper
                 break;
         }
 
+        if (!$billingIntervalInDays) {
+            return $trialDays;
+        }
+
         // get the days from now to the created at date - original trial days,
         $daysSinceCreated = ceil(ceil((time() - strtotime($subscription->created_at)) / 86400)) - intval($subscription->trial_days);
         $expectedBillCount = floor($daysSinceCreated / $billingIntervalInDays);

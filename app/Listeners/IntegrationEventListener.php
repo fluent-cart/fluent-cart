@@ -195,7 +195,7 @@ class IntegrationEventListener
             }
 
             $backgroundData = [
-                'scheduled_at' => current_time('mysql'),
+                'scheduled_at' => current_time('mysql', true),
                 'action'       => 'fluent_cart/integration/run_order_actions',
                 'status'       => 'pending',
                 'group'        => 'order_integration',
@@ -359,7 +359,7 @@ class IntegrationEventListener
 
         $action->status = 'completed';
         $action->response_note = 'Integration actions completed successfully.';
-        $action->completed_at = current_time('mysql');
+        $action->completed_at = current_time('mysql', true);
         $action->save();
     }
 

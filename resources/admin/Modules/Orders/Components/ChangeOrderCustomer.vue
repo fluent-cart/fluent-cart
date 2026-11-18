@@ -113,22 +113,22 @@ const handleBack = () => {
   <div class="fct-customer-edit-modal">
 
     <div v-if="showCreateCustomerForm" @click="handleBack" style="margin-bottom: 10px">
-      <el-button text style="margin-top: 0;">
+      <fct-button text style="margin-top: 0;">
         <DynamicIcon name="ArrowLeft" class="fct-address-back-icon"/>
         {{ translate('Back') }}
-      </el-button>
+      </fct-button>
     </div>
 
     <div v-if="!showCreateCustomerForm" class="fct-form-group">
       <label class="label">
         {{ translate('Select Customer') }}
-        <el-button text class="fct-create-customer-btn" @click.prevent="handleShowCreateCustomerForm">
+        <fct-button text class="fct-create-customer-btn" @click.prevent="handleShowCreateCustomerForm">
           <DynamicIcon name="Plus"/>
           {{ translate('Add New Customer') }}
-        </el-button>
+        </fct-button>
       </label>
       <div style="display: flex; align-items: center; gap: 10px;">
-        <el-select
+        <fct-select
             v-model="selectedUser"
             :remote="true"
             :remote-method="searchUsers"
@@ -137,20 +137,15 @@ const handleBack = () => {
             clearable
             :placeholder="translate('Type to search user')"
             style="width: 100%"
-
+            :options="customers.map((customer) => ({label: customer.full_name, value: customer.id, email: customer.email}))"
         >
-          <el-option
-              v-for="customer in customers"
-              :key="customer.id"
-              :label="customer.full_name"
-              :value="customer.id"
-          >
+          <template #option="{option}">
             <div class="select-use-option">
-              <span>{{ customer.full_name }}</span>
-              <span>{{ customer.email }}</span>
+              <span>{{ option.label }}</span>
+              <span>{{ option.email }}</span>
             </div>
-          </el-option>
-        </el-select>
+          </template>
+        </fct-select>
       </div>
     </div>
 
@@ -192,14 +187,14 @@ const handleBack = () => {
         />
 
         <div style="margin-top: 20px">
-          <el-checkbox
+          <fct-choice
               true-value="yes"
               false-value="no"
               v-model="editableCustomer.wp_user"
           >
             <LabelHint :title="translate('Create as wordpress user')"
                        :content="translate('Order_Create_New')"/>
-          </el-checkbox>
+          </fct-choice>
         </div>
 
         <div class="form-error-wrap">
@@ -209,22 +204,22 @@ const handleBack = () => {
       </div>
 
       <div class="dialog-footer">
-        <el-button @click="$emit('close')">
+        <fct-button @click="$emit('close')">
           {{ translate("Cancel") }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             type="primary"
             @click="createCustomer"
         >
           {{ translate('Create & Attach Customer') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
 
     <div v-if="!showCreateCustomerForm" class="dialog-footer">
-      <el-button type="primary" @click="changeCustomer">
+      <fct-button type="primary" @click="changeCustomer">
         {{ translate('Create & Attach Customer') }}
-      </el-button>
+      </fct-button>
     </div>
   </div>
 </template>

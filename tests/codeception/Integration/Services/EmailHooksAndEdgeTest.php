@@ -12,7 +12,6 @@ use FluentCart\App\Services\Email\EmailPreviewService;
 use FluentCart\App\Services\Email\Mailer;
 use FluentCart\App\Services\ShortCodeParser\Parsers\OrderParser;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
-use FluentCart\App\Services\ShortCodeParser\SmartCodeParser;
 use lucatume\WPBrowser\TestCase\WPTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\EmailNotificationConfigFactory;
@@ -398,13 +397,6 @@ class EmailHooksAndEdgeTest extends WPTestCase
     // =========================================================================
     // Spec 265: BlockEditorHelper::getThemePrefScheme cache survives within request
     // =========================================================================
-
-    public function test_theme_pref_scheme_cache_within_request(): void
-    {
-        $first = BlockEditorHelper::getThemePrefScheme();
-        $second = BlockEditorHelper::getThemePrefScheme();
-        $this->assertSame($first, $second);
-    }
 
     // =========================================================================
     // Spec 266: PDF unlink runs even when wp_mail returns false

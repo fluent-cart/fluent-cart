@@ -5,6 +5,7 @@ namespace Tests\Functional\Rest\Orders;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\Status;
 use PHPUnit\Framework\Assert;
+use Tests\Support\Doubles\FailingQueries;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
 use Tests\Support\Factory\OrderItemFactory;
@@ -564,15 +565,7 @@ class RefundOrderCest
             'total'  => 30000,
         ]);
 
-        $failed = false;
-        $failFirstItemUpdate = function ($query) use (&$failed) {
-            if (!$failed && preg_match('/^update `[^`]*fct_order_items`/i', $query)) {
-                $failed = true;
-                return 'SELECT * FROM fct_missing_table_for_test';
-            }
-            return $query;
-        };
-        add_filter('query', $failFirstItemUpdate);
+        $failFirstItemUpdate = FailingQueries::matching('/^update `[^`]*fct_order_items`/i', 1);
 
         try {
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund', [
@@ -586,10 +579,10 @@ class RefundOrderCest
                 ],
             ]);
         } finally {
-            remove_filter('query', $failFirstItemUpdate);
+            $failFirstItemUpdate->remove();
         }
 
-        Assert::assertTrue($failed, 'the first item update must have been failed by the test');
+        Assert::assertSame(1, $failFirstItemUpdate->hits(), 'the first item update must have been failed by the test');
         Assert::assertSame(200, $status, 'Body: ' . wp_json_encode($body));
 
         global $wpdb;
@@ -627,7 +620,7 @@ class RefundOrderCest
             'total'  => 10000,
         ]);
 
-        $failRefundInserts = $this->failRefundInserts();
+        $failRefundInserts = FailingQueries::matching('/^insert into `[^`]*fct_order_transactions`/i');
 
         try {
             [$status, $body] = $I->post('/fluent-cart/v2/orders/' . (int) $order->id . '/refund', [
@@ -637,7 +630,7 @@ class RefundOrderCest
                 ],
             ]);
         } finally {
-            remove_filter('query', $failRefundInserts);
+            $failRefundInserts->remove();
         }
 
         Assert::assertSame(422, $status, 'an unrecorded refund must not answer 200. Body: ' . wp_json_encode($body));

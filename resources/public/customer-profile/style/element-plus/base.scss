@@ -28,6 +28,8 @@
 @import '../../../../node_modules/element-plus/theme-chalk/el-radio-group.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-radio.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-switch.css';
+// fct-date-picker is registered on the portal too, so its panel needs Element Plus's panel styles.
+@import '../../../../node_modules/element-plus/theme-chalk/el-date-picker-panel.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-radio-button.css';
 @import '../../../../node_modules/element-plus/theme-chalk/el-tabs.css';
 /*@import '../../../../node_modules/element-plus/theme-chalk/el-tab-pane.css';*/

@@ -54,8 +54,8 @@ class OrderTools
 
         return [
             'fluent-cart/list-orders' => [
-                'label'       => __('List Orders', 'fluent-cart'),
-                'description' => __('Find and filter orders. Returns compact rows (id, number, customer, total, statuses, date, plus an items list: each line item\'s product, title and quantity) — call get-order for the full money/refund breakdown. All filters optional; combine freely. For one customer\'s orders, pass customer_email or customer_id here. Money filters are in store currency (e.g. 49.99), not cents. For conditions these flat filters cannot express (OR groups, relative dates, transaction/UTM/label/license properties) pass advanced_filters — call get-search-schema entity=orders first (Pro).', 'fluent-cart'),
+                'label'       => 'List Orders',
+                'description' => 'Find and filter orders. Returns compact rows (id, number, customer, total, statuses, date, plus an items list: each line item\'s product, title and quantity) — call get-order for the full money/refund breakdown. All filters optional; combine freely. For one customer\'s orders, pass customer_email or customer_id here. Money filters are in store currency (e.g. 49.99), not cents. For conditions these flat filters cannot express (OR groups, relative dates, transaction/UTM/label/license properties) pass advanced_filters — call get-search-schema entity=orders first (Pro).',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -71,8 +71,8 @@ class OrderTools
                         'currency'        => ['type' => 'string', 'description' => 'ISO currency code.'],
                         'min_total'       => ['type' => 'number', 'description' => 'Minimum order total in store currency.'],
                         'max_total'       => ['type' => 'number', 'description' => 'Maximum order total in store currency.'],
-                        'created_after'   => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
-                        'created_before'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, UTC.'],
+                        'created_after'   => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
+                        'created_before'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
                         'mode'            => ['type' => 'string', 'enum' => ['live', 'test'], 'description' => 'Defaults to all modes.'],
                         'search'          => ['type' => 'string', 'description' => 'Matches invoice/receipt number, order uuid, and customer name/email.'],
                         'advanced_filters' => ['type' => 'array', 'items' => ['type' => ['object', 'array']], 'description' => 'Pro: condition groups {property, operator, value} — outer array = OR groups, inner = AND. Call get-search-schema entity=orders FIRST for properties/operators/format. AND-combines with the other filters here. An empty array means no advanced filter.'],
@@ -91,10 +91,9 @@ class OrderTools
             ],
 
             'fluent-cart/get-order' => [
-                'label'       => __('Get Order', 'fluent-cart'),
+                'label'       => 'Get Order',
                 'description' => sprintf(
-                    /* translators: %1$s: comma-separated include[] section names */
-                    __('Full detail for one order: money breakdown, line items, and customer by default. Add include[] for any of: %1$s. Identify the order by order_id (numeric, from list-orders) OR uuid OR invoice_no.', 'fluent-cart'),
+                    'Full detail for one order: money breakdown, line items, and customer by default. Add include[] for any of: %1$s. Identify the order by order_id (numeric, from list-orders) OR uuid OR invoice_no.',
                     implode(', ', self::includeSections())
                 ),
                 'input_schema' => [
@@ -119,8 +118,8 @@ class OrderTools
             ],
 
             'fluent-cart/get-order-activity' => [
-                'label'       => __('Get Order Activity', 'fluent-cart'),
-                'description' => __('Audit timeline for one order — status changes, payments, refunds, notes, emails sent: who did what and when. Refund and payment rows carry the amount (backfilled onto activity rows from the matching transaction), so you need not cross-reference. Use after get-order when you need history, not just current state.', 'fluent-cart'),
+                'label'       => 'Get Order Activity',
+                'description' => 'Audit timeline for one order: who did what and when. Covers status changes, payments, refunds, notes and emails sent. Refund and payment rows carry the amount (backfilled onto activity rows from the matching transaction), so you need not cross-reference. Use after get-order when you need history, not just current state.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -137,8 +136,8 @@ class OrderTools
             ],
 
             'fluent-cart/change-order-status' => [
-                'label'       => __('Change Order Status', 'fluent-cart'),
-                'description' => __('Change an order status or shipping status. Pass order_id and at least one of order_status or shipping_status. A no-op is returned if the order is already in that status. To refund, use refund-order instead.', 'fluent-cart'),
+                'label'       => 'Change Order Status',
+                'description' => 'Change an order status or shipping status. Pass order_id and at least one of order_status or shipping_status. A no-op is returned if the order is already in that status. To refund, use refund-order instead.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -159,8 +158,8 @@ class OrderTools
             ],
 
             'fluent-cart/add-order-note' => [
-                'label'       => __('Add Order Note', 'fluent-cart'),
-                'description' => __('Add an internal note to an order activity log. Visible to staff, not the customer.', 'fluent-cart'),
+                'label'       => 'Add Order Note',
+                'description' => 'Add an internal note to an order activity log. Visible to staff, not the customer.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -179,8 +178,8 @@ class OrderTools
             ],
 
             'fluent-cart/refund-order' => [
-                'label'       => __('Refund Order', 'fluent-cart'),
-                'description' => __('Refund an order through its gateway. ALWAYS call dry_run:true first to preview the refundable amount and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute — without the key a repeated execute could double-refund. amount is in the order\'s currency (e.g. 49.99), not cents. Omit to refund what the selected charge can still refund. The preview reports payment_mode and live_gateway_action; a LIVE refund requires operator opt-in, and test-mode always works.', 'fluent-cart'),
+                'label'       => 'Refund Order',
+                'description' => 'Refund an order through its gateway. ALWAYS call dry_run:true first to preview the refundable amount and get a confirm_token, then call again with that confirm_token plus an idempotency_key to execute — without the key a repeated execute could double-refund. amount is in the order\'s currency (e.g. 49.99), not cents. Omit to refund what the selected charge can still refund. The preview reports payment_mode and live_gateway_action; a LIVE refund requires operator opt-in, and test-mode always works.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -271,8 +270,7 @@ class OrderTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: number of matching orders */
-                _n('%d order found.', '%d orders found.', $total, 'fluent-cart'),
+                $total === 1 ? '%d order found.' : '%d orders found.',
                 $total
             ),
             ['orders' => $rows],
@@ -339,11 +337,15 @@ class OrderTools
             $query->where('total_amount', '<=', Helper::toCent($params['max_total']));
         }
 
+        $reversed = MCPHelper::reversedBoundsError((array) $params, ['created_after' => 'created_before']);
+        if ($reversed) {
+            return $reversed;
+        }
         foreach (['created_after' => '>=', 'created_before' => '<='] as $field => $op) {
             if (empty($params[$field])) {
                 continue;
             }
-            $date = self::toDbDate($params[$field]);
+            $date = MCPHelper::storeDateBound($params[$field], $op === '<=');
             if ($date === null) {
                 return self::invalidDateError($field);
             }
@@ -457,12 +459,11 @@ class OrderTools
     private static function label($order, $customer)
     {
         $number = $order->invoice_no ? $order->invoice_no : ('#' . $order->id);
-        $name   = $customer ? MCPHelper::personName($customer) : __('Guest', 'fluent-cart');
+        $name   = $customer ? MCPHelper::personName($customer) : 'Guest';
         $total  = MCPHelper::displayAmount((int) $order->total_amount, $order->currency);
 
         return sprintf(
-            /* translators: 1: order number, 2: customer name, 3: order total, 4: payment status */
-            __('Order %1$s — %2$s — %3$s — %4$s', 'fluent-cart'),
+            'Order %1$s — %2$s — %3$s — %4$s',
             $number,
             $name,
             $total,
@@ -583,14 +584,14 @@ class OrderTools
             $order = Order::query()->where('invoice_no', sanitize_text_field($params['invoice_no']))->first();
         } else {
             return MCPHelper::error(
-                'missing_identifier',
-                __('Provide order_id, uuid, or invoice_no.', 'fluent-cart'),
+                'invalid_param',
+                'Provide order_id, uuid, or invoice_no.',
                 ['fields' => ['order_id', 'uuid', 'invoice_no'], 'hint' => 'Use list-orders to find an order_id.']
             );
         }
 
         if (!$order) {
-            return MCPHelper::error('order_not_found', __('No order found for the given identifier.', 'fluent-cart'));
+            return MCPHelper::error('order_not_found', 'No order found for the given identifier.');
         }
 
         return $order;
@@ -747,7 +748,7 @@ class OrderTools
     public static function getOrderActivity($params = [])
     {
         if (empty($params['order_id'])) {
-            return MCPHelper::error('missing_identifier', __('order_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'order_id is required.');
         }
 
         $orderId = (int) $params['order_id'];
@@ -755,7 +756,7 @@ class OrderTools
 
         $order = Order::query()->where('id', $orderId)->first();
         if (!$order) {
-            return MCPHelper::error('order_not_found', __('No order found for the given order_id.', 'fluent-cart'));
+            return MCPHelper::error('order_not_found', 'No order found for the given order_id.');
         }
 
         $events = [];
@@ -854,8 +855,7 @@ class OrderTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: number of timeline entries, 2: order id */
-                _n('%1$d timeline entry for order #%2$d.', '%1$d timeline entries for order #%2$d.', count($events), 'fluent-cart'),
+                count($events) === 1 ? '%1$d timeline entry for order #%2$d.' : '%1$d timeline entries for order #%2$d.',
                 count($events),
                 $orderId
             ),
@@ -938,17 +938,14 @@ class OrderTools
     /** Human-readable title for a transaction timeline entry. */
     private static function txnTitle($type, $txn)
     {
-        $method = $txn->payment_method ? $txn->payment_method : __('gateway', 'fluent-cart');
+        $method = $txn->payment_method ? $txn->payment_method : 'gateway';
         if ($type === 'refund') {
-            /* translators: 1: payment method, 2: status */
-            return sprintf(__('Refund via %1$s — %2$s', 'fluent-cart'), $method, $txn->status);
+            return sprintf('Refund via %1$s — %2$s', $method, $txn->status);
         }
         if ($type === 'charge') {
-            /* translators: 1: payment method, 2: status */
-            return sprintf(__('Payment via %1$s — %2$s', 'fluent-cart'), $method, $txn->status);
+            return sprintf('Payment via %1$s — %2$s', $method, $txn->status);
         }
-        /* translators: 1: transaction type, 2: payment method, 3: status */
-        return sprintf(__('%1$s via %2$s — %3$s', 'fluent-cart'), $type, $method, $txn->status);
+        return sprintf('%1$s via %2$s — %3$s', $type, $method, $txn->status);
     }
 
     // -----------------------------------------------------------------
@@ -958,19 +955,19 @@ class OrderTools
     public static function changeOrderStatus($params = [])
     {
         if (empty($params['order_id'])) {
-            return MCPHelper::error('missing_identifier', __('order_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'order_id is required.');
         }
         $orderId = (int) $params['order_id'];
         $order   = Order::query()->where('id', $orderId)->first();
         if (!$order) {
-            return MCPHelper::error('order_not_found', __('No order found for the given order_id.', 'fluent-cart'));
+            return MCPHelper::error('order_not_found', 'No order found for the given order_id.');
         }
 
         $targetOrderStatus = isset($params['order_status']) ? sanitize_text_field($params['order_status']) : null;
         $targetShipStatus  = isset($params['shipping_status']) ? sanitize_text_field($params['shipping_status']) : null;
 
         if ($targetOrderStatus === null && $targetShipStatus === null) {
-            return MCPHelper::error('missing_param', __('Provide order_status and/or shipping_status.', 'fluent-cart'), ['fields' => ['order_status', 'shipping_status']]);
+            return MCPHelper::error('invalid_param', 'Provide order_status and/or shipping_status.', ['fields' => ['order_status', 'shipping_status']]);
         }
 
         // Validate server-side against the statuses core actually accepts, so a
@@ -981,8 +978,7 @@ class OrderTools
             return MCPHelper::error(
                 'invalid_param',
                 sprintf(
-                    /* translators: 1: rejected status, 2: allowed statuses */
-                    __('order_status "%1$s" cannot be set manually. Allowed: %2$s.', 'fluent-cart'),
+                    'order_status "%1$s" cannot be set manually. Allowed: %2$s.',
                     $targetOrderStatus,
                     implode(', ', $editableOrder)
                 ),
@@ -994,8 +990,7 @@ class OrderTools
             return MCPHelper::error(
                 'invalid_param',
                 sprintf(
-                    /* translators: 1: rejected status, 2: allowed statuses */
-                    __('shipping_status "%1$s" is not settable. Allowed: %2$s.', 'fluent-cart'),
+                    'shipping_status "%1$s" is not settable. Allowed: %2$s.',
                     $targetShipStatus,
                     implode(', ', $editableShip)
                 ),
@@ -1047,8 +1042,7 @@ class OrderTools
                         return MCPHelper::error(
                             'partial_failure',
                             sprintf(
-                                /* translators: 1: fields already changed, 2: error message */
-                                __('Applied %1$s, but the shipping status change failed: %2$s. Do not re-run the whole call — retry only shipping_status.', 'fluent-cart'),
+                                'Applied %1$s, but the shipping status change failed: %2$s. Do not re-run the whole call — retry only shipping_status.',
                                 implode(', ', $changed),
                                 $res->get_error_message()
                             ),
@@ -1076,12 +1070,11 @@ class OrderTools
 
         $summary = $changed
             ? sprintf(
-                /* translators: 1: fields changed, 2: order id */
-                __('Updated %1$s on order #%2$d.', 'fluent-cart'),
+                'Updated %1$s on order #%2$d.',
                 implode(', ', $changed),
                 $orderId
             )
-            : __('No change — the order is already in the requested status.', 'fluent-cart');
+            : 'No change — the order is already in the requested status.';
 
         return MCPHelper::envelope($summary, [
             'order_id'        => $orderId,
@@ -1100,17 +1093,18 @@ class OrderTools
     public static function addOrderNote($params = [])
     {
         if (empty($params['order_id']) || empty($params['note'])) {
-            return MCPHelper::error('missing_param', __('order_id and note are required.', 'fluent-cart'), ['fields' => ['order_id', 'note']]);
+            return MCPHelper::error('invalid_param', 'order_id and note are required.', ['fields' => ['order_id', 'note']]);
         }
         $orderId = (int) $params['order_id'];
         $order   = Order::query()->where('id', $orderId)->first();
         if (!$order) {
-            return MCPHelper::error('order_not_found', __('No order found for the given order_id.', 'fluent-cart'));
+            return MCPHelper::error('order_not_found', 'No order found for the given order_id.');
         }
 
         $note = wp_kses_post($params['note']);
 
         $log = fluent_cart_add_log(
+            // Stored in the order activity log, which staff read in the admin: translated
             __('Note added via AI assistant', 'fluent-cart'),
             $note,
             'info',
@@ -1126,15 +1120,14 @@ class OrderTools
         if (is_wp_error($log) || !is_object($log) || empty($log->id)) {
             return MCPHelper::error(
                 'note_not_added',
-                __('The note could not be saved to the order activity log.', 'fluent-cart'),
+                'The note could not be saved to the order activity log.',
                 ['order_id' => $orderId, 'retryable' => true]
             );
         }
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: %d: order id */
-                __('Note added to order #%d.', 'fluent-cart'),
+                'Note added to order #%d.',
                 $orderId
             ),
             ['order_id' => $orderId, 'note_id' => (int) $log->id, 'note' => MCPHelper::htmlToText($note)]
@@ -1148,7 +1141,7 @@ class OrderTools
     public static function refundOrder($params = [])
     {
         if (empty($params['order_id'])) {
-            return MCPHelper::error('missing_identifier', __('order_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'order_id is required.');
         }
 
         if (!empty($params['dry_run'])) {
@@ -1161,8 +1154,7 @@ class OrderTools
 
             return MCPHelper::envelope(
                 sprintf(
-                    /* translators: 1: amount to refund, 2: remaining refundable, 3: order id */
-                    __('Preview: refund %1$s of %2$s remaining on order #%3$d.', 'fluent-cart'),
+                    'Preview: refund %1$s of %2$s remaining on order #%3$d.',
                     MCPHelper::displayAmount($amountCents, $order->currency),
                     MCPHelper::displayAmount($remaining, $order->currency),
                     (int) $order->id
@@ -1184,7 +1176,7 @@ class OrderTools
         });
 
         if (is_wp_error($result) && $result->get_error_code() === 'refund_lock_timeout') {
-            return new \WP_Error('refund_in_progress', __('Another refund is currently being processed for this order. Please try again in a moment.', 'fluent-cart'));
+            return new \WP_Error('refund_in_progress', 'Another refund is currently being processed for this order. Please try again in a moment.');
         }
 
         if (is_wp_error($result)) {
@@ -1195,8 +1187,7 @@ class OrderTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: refunded amount, 2: order id */
-                __('Refunded %1$s on order #%2$d.', 'fluent-cart'),
+                'Refunded %1$s on order #%2$d.',
                 MCPHelper::displayAmount($result['amount_cents'], $order->currency),
                 (int) $order->id
             ),
@@ -1217,15 +1208,15 @@ class OrderTools
     {
         $order = Order::query()->where('id', (int) $params['order_id'])->first();
         if (!$order) {
-            return MCPHelper::error('order_not_found', __('No order found for the given order_id.', 'fluent-cart'));
+            return MCPHelper::error('order_not_found', 'No order found for the given order_id.');
         }
         if (!$order->canBeRefunded()) {
-            return MCPHelper::error('not_refundable', __('This order cannot be refunded in its current state.', 'fluent-cart'), ['current_state' => ['payment_status' => $order->payment_status]]);
+            return MCPHelper::error('not_refundable', 'This order cannot be refunded in its current state.', ['current_state' => ['payment_status' => $order->payment_status]]);
         }
 
         $remaining = Refund::netPaidAmount($order);
         if ($remaining <= 0) {
-            return MCPHelper::error('nothing_to_refund', __('There is no remaining refundable balance on this order.', 'fluent-cart'));
+            return MCPHelper::error('nothing_to_refund', 'There is no remaining refundable balance on this order.');
         }
 
         if (!empty($params['transaction_id'])) {
@@ -1247,20 +1238,19 @@ class OrderTools
                 ->first();
         }
         if (!$txn) {
-            return MCPHelper::error('transaction_not_found', __('No refundable charge transaction was found on this order.', 'fluent-cart'));
+            return MCPHelper::error('transaction_not_found', 'No refundable charge transaction was found on this order.');
         }
 
         $txnRefundable = $txn->getMaxRefundableAmount();
         $amountCents = isset($params['amount']) ? Helper::toCent($params['amount']) : ($txnRefundable > 0 ? min($remaining, $txnRefundable) : $remaining);
         if ($amountCents <= 0) {
-            return MCPHelper::error('invalid_amount', __('Refund amount must be greater than zero.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'Refund amount must be greater than zero.');
         }
         if ($amountCents > $remaining) {
             return MCPHelper::error(
                 'refund_exceeds_remaining',
                 sprintf(
-                    /* translators: 1: requested amount, 2: remaining refundable */
-                    __('Refund %1$s exceeds the remaining refundable balance %2$s.', 'fluent-cart'),
+                    'Refund %1$s exceeds the remaining refundable balance %2$s.',
                     MCPHelper::displayAmount($amountCents, $order->currency),
                     MCPHelper::displayAmount($remaining, $order->currency)
                 ),
@@ -1281,7 +1271,7 @@ class OrderTools
         if (is_array($unrecorded) && !self::unrecordedRefundIsRecorded($order, $unrecorded)) {
             return MCPHelper::error(
                 'unrecorded_refund_pending',
-                __('An earlier refund on this order went through the payment gateway but was not recorded in FluentCart. A store admin must record or reconcile it before another refund is made.', 'fluent-cart'),
+                'An earlier refund on this order went through the payment gateway but was not recorded in FluentCart. A store admin must record or reconcile it before another refund is made.',
                 ['current_state' => ['unrecorded_refund' => $unrecorded], 'hint' => 'Ask a person to check the order in the FluentCart admin.']
             );
         }
@@ -1391,24 +1381,12 @@ class OrderTools
         return MCPHelper::paginatorTotal($paginator);
     }
 
-    private static function toDbDate($value)
-    {
-        try {
-            return (new \DateTime((string) $value, new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-        } catch (\Exception $e) {
-            // Return null so callers reject the input. An epoch fallback would
-            // silently turn a typo'd date bound into an unbounded "match all".
-            return null;
-        }
-    }
-
     private static function invalidDateError($field)
     {
         return MCPHelper::error(
-            'invalid_date',
+            'invalid_param',
             sprintf(
-                /* translators: 1: field name */
-                __('%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.', 'fluent-cart'),
+                '%1$s is not a valid date. Use YYYY-MM-DD or ISO 8601.',
                 $field
             ),
             ['fields' => [$field]]

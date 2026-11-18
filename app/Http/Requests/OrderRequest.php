@@ -79,6 +79,9 @@ class OrderRequest extends RequestGuard
             "discount.action" => 'nullable|sanitizeText|maxLength:100',
 
             'shipping'                => 'nullable|array',
+            'shipping_method_id'      => 'nullable|integer|min:0',
+            'shipping.id'             => 'nullable|sanitizeText|maxLength:100',
+            'shipping.title'          => 'nullable|sanitizeText|maxLength:255',
             "shipping.*.type"         => 'nullable|sanitizeText|maxLength:100',
             "shipping.*.rate_name"    => 'nullable|sanitizeText|maxLength:100',
             "shipping.*.custom_price" => 'nullable|numeric',
@@ -207,6 +210,7 @@ class OrderRequest extends RequestGuard
             "order_items.*.post_id"         => 'intval',
             "order_items.*.object_id"       => 'intval',
             "order_items.*.payment_type"    => 'sanitize_text_field',
+            "order_items.*.fulfillment_type" => 'sanitize_text_field',
             "order_items.*.quantity"        => 'intval',
             "order_items.*.post_title"      => 'sanitize_text_field',
             "order_items.*.title"           => 'sanitize_text_field',
@@ -236,8 +240,11 @@ class OrderRequest extends RequestGuard
             "discount.action" => 'sanitize_text_field',
 
             "shipping.*.type"         => 'sanitize_text_field',
+            'shipping_method_id'      => 'intval',
             "shipping.*.rate_name"    => 'sanitize_text_field',
             "shipping.*.custom_price" => 'floatval',
+            'shipping.id'             => 'sanitize_text_field',
+            'shipping.title'          => 'sanitize_text_field',
 
             "deletedItems"      => function ($value) {
                 return is_array($value) ? $value : [];

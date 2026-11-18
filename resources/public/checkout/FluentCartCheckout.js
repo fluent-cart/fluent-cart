@@ -2,6 +2,8 @@ import FluentCartCheckoutHandler from './FluentCartCheckoutHandler';
 import CheckoutHelper from "./CheckoutHelper";
 import TurnstileHandler from "./TurnstileHandler";
 
+CheckoutHelper.initLineItemTooltips();
+
 // Expose CheckoutHelper to window for payment gateway JS files
 window.CheckoutHelper = CheckoutHelper;
 
@@ -28,6 +30,10 @@ let fluentCheckout = {
 // const turnstileHandler = new TurnstileHandler();
 
 window.addEventListener('load', function () {
+    const syncAllLineItemsScrollState = () => document.querySelectorAll('.fct_line_items').forEach(CheckoutHelper.syncLineItemsScrollState);
+    syncAllLineItemsScrollState();
+    window.addEventListener('resize', syncAllLineItemsScrollState, {passive: true});
+
     const wrapper = document.querySelector('[data-fluent-cart-checkout-item-wrapper]');
     const subtotalWrapper = document.querySelector('[data-fluent-cart-checkout-subtotal]');
     const estimatedTotalWrappers = document.querySelectorAll('[data-fluent-cart-checkout-estimated-total]');

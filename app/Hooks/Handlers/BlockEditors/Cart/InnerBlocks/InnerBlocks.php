@@ -148,6 +148,7 @@ class InnerBlocks
 
         ob_start();
         $this->getRenderer()->renderItems();
+        $this->getRenderer()->renderAfterItems($this->getCart());
 
         return ob_get_clean();
     }

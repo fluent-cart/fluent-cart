@@ -1,11 +1,12 @@
 <script setup>
-import { defineModel, onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed } from "vue";
 import translate from "@/utils/translator/Translator";
 import Badge from "@/Bits/Components/Badge.vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import ClipBoard from "@/utils/Clipboard";
 import Alert from "@/Bits/Components/Alert.vue";
+import McpHubConnect from "@/Bits/Components/Form/Components/McpHubConnect.vue";
 
 // MCP's on/off lives under the `mcp.active` key of the shared modules blob.
 // We keep this model in sync with our own status/toggle endpoints so the page's
@@ -53,7 +54,8 @@ const status = ref({
     tools_count: 0,
     app_passwords_url: '',
     current_user_login: '',
-    is_local_dev: false
+    is_local_dev: false,
+    hub: null
 });
 const mcpEnabled = ref('no');
 const installing = ref(false);
@@ -68,6 +70,24 @@ const localDevOverride = ref(false);
 const localDevInitialized = ref(false);
 
 const isEnabled = computed(() => mcpEnabled.value === 'yes');
+
+// The FluentHub one-URL connection (null without FluentHub). When it is usable it leads,
+// and the application-password way folds behind a link.
+const hub = computed(() => status.value.hub || null);
+const hubUsable = computed(() => !!hub.value && !!hub.value.ready && !!hub.value.user_can_connect);
+const showAppPassword = ref(false);
+const enabling = ref('');
+
+const enableHub = (target) => {
+    enabling.value = target;
+    Rest.post('settings/mcp/enable-hub', { target })
+        .then((response) => {
+            status.value.hub = response.hub || null;
+            Notify.success(response.message);
+        })
+        .catch((errors) => Notify.error(errors))
+        .finally(() => { enabling.value = ''; });
+};
 
 // Without the MCP adapter (FluentHub) the endpoint can't respond, so the
 // on/off toggle would be misleading — the card then shows only "Configure",
@@ -134,6 +154,7 @@ const toggleMcp = (value) => {
         .then((response) => {
             Notify.success(response.message);
             status.value.mcp_enabled = !!response.mcp_enabled;
+            status.value.hub = response.hub || null;
             syncModel(!!response.mcp_enabled);
             if (isEnabled.value && drawerVisible.value) {
                 loadSnippets();
@@ -229,7 +250,7 @@ onMounted(() => {
         <div class="min-w-0">
             <div class="fct-content-card-list-head">
                 <div class="flex items-start gap-2 flex-row">
-                    <h4 class="mb-0">{{ field.title }}</h4>
+                    <h3 class="mb-0 text-sm">{{ field.title }}</h3>
                     <Badge size="small" :type="badgeType" :hide-icon="true">
                         {{ badgeLabel }}
                     </Badge>
@@ -241,12 +262,12 @@ onMounted(() => {
         </div>
 
         <div class="flex items-center gap-3 shrink-0">
-            <el-button v-if="!adapterReady || isEnabled" size="small" @click="openDrawer">
+            <fct-button v-if="!adapterReady || isEnabled" size="small" @click="openDrawer">
                 {{ translate('Configure') }}
-            </el-button>
+            </fct-button>
             <!-- Always shown, adapter or not: the "no adapter" admin notice links
                  here so MCP can be switched off without installing anything. -->
-            <el-switch
+            <fct-switch
                 active-value="yes"
                 inactive-value="no"
                 v-model="mcpEnabled"
@@ -255,11 +276,11 @@ onMounted(() => {
             />
         </div>
 
-        <el-drawer
+        <fct-dialog
+            drawer
             v-model="drawerVisible"
             :title="translate('MCP Connection')"
-            :aria-label="translate('MCP Connection')"
-            size="640px"
+            width="640px"
             append-to="#fct_admin_app_wrapper"
             :close-on-click-modal="true"
             class="fct-mcp-settings-drawer"
@@ -291,15 +312,15 @@ onMounted(() => {
                     </p> 
                     
                     <div class="fct-mcp-content-box-action">
-                        <el-button
+                        <fct-button
                             v-if="status.can_auto_install"
                             :loading="installing"
                             @click="installAdapter"
                         >
                             {{ status.toolkit_installed ? translate('Activate FluentHub') : translate('Install FluentHub') }}
-                        </el-button>
+                        </fct-button>
 
-                        <el-button
+                        <fct-button
                             v-else
                             tag="a"
                             :href="status.toolkit_download_url"
@@ -307,7 +328,7 @@ onMounted(() => {
                             rel="noopener noreferrer"
                         >
                             {{ translate('Download FluentHub') }}
-                        </el-button>
+                        </fct-button>
                     </div>
                 </div>
 
@@ -351,6 +372,15 @@ onMounted(() => {
                 <!-- Connection details only make sense once the adapter is live and
                      MCP is enabled; before that the drawer is a setup prompt. -->
                 <template v-if="status.adapter_available && isEnabled">
+                <McpHubConnect v-if="hub" :hub="hub" :enabling="enabling" @enable="enableHub"/>
+
+                <div v-if="hubUsable && !showAppPassword">
+                    <fct-button text size="small" data-testid="mcp-app-password-toggle" @click="showAppPassword = true">
+                        {{ translate('Use an application password instead') }}
+                    </fct-button>
+                </div>
+
+                <template v-if="!hubUsable || showAppPassword">
                 <div class="fct-mcp-agents-text">
                     <span class="tools-count">
                         {{ status.tools_count }}
@@ -360,11 +390,11 @@ onMounted(() => {
 
                 <div class="fct-form-group">
                     <label>{{ translate('Endpoint URL') }}</label>
-                    <el-input v-model="status.endpoint_url" readonly>
+                    <fct-input v-model="status.endpoint_url" readonly>
                         <template #append>
-                            <el-button @click="copyEndpoint">{{ translate('Copy') }}</el-button>
+                            <fct-button @click="copyEndpoint">{{ translate('Copy') }}</fct-button>
                         </template>
-                    </el-input>
+                    </fct-input>
                 </div>
 
                 <div class="fct-form-group">
@@ -377,11 +407,11 @@ onMounted(() => {
                     </p>
 
                     <div class="grid gap-3 md:grid-cols-2 mb-3">
-                        <el-input
+                        <fct-input
                             v-model="username"
                             :placeholder="translate('WordPress username')"
                         />
-                        <el-input
+                        <fct-input
                             v-model="appPassword"
                             type="password"
                             show-password
@@ -399,9 +429,9 @@ onMounted(() => {
                     </el-tabs>
 
                     <div v-if="activeClient === 'claude-desktop'" class="mb-3">
-                        <el-checkbox v-model="localDevOverride" @change="onLocalDevChange">
+                        <fct-choice v-model="localDevOverride" @change="onLocalDevChange">
                             {{ translate('Local/self-signed site (disable TLS verification)') }}
-                        </el-checkbox>
+                        </fct-choice>
                     </div>
 
                     <p v-if="activeSnippet && activeSnippet.instructions" class="form-note mb-2">
@@ -414,15 +444,16 @@ onMounted(() => {
                             class="fct-mcp-snippet-code"
                         >{{renderedSnippet}}</pre>
                         <div class="mt-2 flex justify-end">
-                            <el-button type="primary" :disabled="!renderedSnippet" @click="copySnippet">
+                            <fct-button type="primary" :disabled="!renderedSnippet" @click="copySnippet">
                                 {{ translate('Copy snippet') }}
-                            </el-button>
+                            </fct-button>
                         </div>
                     </div>
                 </div>
                 </template>
+                </template>
 
             </div>
-        </el-drawer>
+        </fct-dialog>
     </div>
 </template>

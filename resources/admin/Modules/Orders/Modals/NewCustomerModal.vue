@@ -1,5 +1,5 @@
 <template>
-  <el-dialog
+  <fct-dialog
       v-model="customerModalInfos.showModal"
       :title="customerModalInfos.title"
       @close="() => {
@@ -47,13 +47,13 @@
         />
 
         <div v-if="customerModalInfos.action === 'create'" class="mt-5">
-          <el-checkbox
+          <fct-choice
               true-value="yes"
               false-value="no"
               v-model="customerModalInfos.manageWpUser"
           >
             <LabelHint :title="getWpUserCheckboxLabel" :content="translate('Order_Create_New')" />
-          </el-checkbox>
+          </fct-choice>
         </div>
 
         <div class="form-error-wrap" v-if="Object.keys(validationErrors).length">
@@ -64,28 +64,28 @@
       </div>
 
       <div class="dialog-footer">
-        <el-button @click="handleCloseModal">
+        <fct-button @click="handleCloseModal">
           {{ translate("Cancel") }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             v-if="customerModalInfos.action === 'edit'"
             :loading="loading"
             type="primary"
             @click="updateCustomer()"
         >
           {{ getActionButtonLabel }}
-        </el-button>
-        <el-button
+        </fct-button>
+        <fct-button
             v-else
             type="primary"
             :loading="loading"
             @click="createCustomer()"
         >
           {{ getActionButtonLabel }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
-  </el-dialog>
+  </fct-dialog>
 </template>
 
 <script setup>

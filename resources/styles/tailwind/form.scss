@@ -24,6 +24,15 @@
     @apply dark:text-gray-300;
 }
 
+// fct-* input with a label (resources/admin/Bits/Components/Fct/Field.vue): same look and spacing as a top-aligned form item.
+.fct-form-field {
+    @apply block mb-[18px];
+    // A flex row, so LabelHint's inline icon can't stretch the 22px line.
+    &__label {
+        @apply flex items-center min-h-[22px] mb-2 text-sm font-medium leading-[22px] text-system-dark dark:text-gray-50;
+    }
+}
+
 @keyframes fct-highlight-bg {
     0%, 20% { background-color: color-mix(in srgb, theme('colors.gray.100') 60%, transparent); }
     100%     { background-color: transparent; }

@@ -25,8 +25,8 @@ class DynamicData
         });
 
         add_filter('bricks/dynamic_data/render_tag', [$this, 'renderValue'], 20, 3);
-        add_filter('bricks/dynamic_data/render_content', [$this, 'renderValue'], 20, 3);
-        add_filter('bricks/frontend/render_data', [$this, 'renderValue'], 20, 3);
+        add_filter('bricks/dynamic_data/render_content', [$this, 'renderContent'], 20, 3);
+        add_filter('bricks/frontend/render_data', [$this, 'renderContent'], 20, 3);
     }
 
     public function getTagsPairs()
@@ -37,8 +37,23 @@ class DynamicData
             'fct_product_excerpt'      => __('Product Excerpt', 'fluent-cart'),
             'fct_product_price'        => __('Product Price', 'fluent-cart'),
             'fct_product_button'       => __('Product Button', 'fluent-cart'),
+            'fct_product_rating'       => __('Product Rating', 'fluent-cart'),
+            'fct_product_quick_view'   => __('Product Quick View', 'fluent-cart'),
             'fct_product_view_button'  => __('Product Button', 'fluent-cart'), // Legacy alias for backward compatibility
         ];
+    }
+
+    public function renderContent($content, $post, $context = 'text')
+    {
+        if (!is_string($content) || strpos($content, '{fct_product_') === false) {
+            return $content;
+        }
+
+        $rendered = preg_replace_callback('/\{fct_product_[a-z_]+(?::[^{}:\s]+)*\}/', function ($matches) use ($post, $context) {
+            return (string) $this->renderValue($matches[0], $post, $context);
+        }, $content);
+
+        return $rendered === null ? $content : $rendered;
     }
 
     public function renderValue($tag, $post, $context = 'text')
@@ -97,13 +112,23 @@ class DynamicData
                 if ($productModel) {
                     // Price markup relies on the .fct-sr-only rule shipped with the
                     // single product styles; without it the labels render visibly.
-                    AssetLoader::loadSingleProductAssets();
+                    AssetLoader::loadSingleProductAssetsWithoutReviews();
                     ob_start();
                     (new ProductCardRender($productModel))->renderPrices();
                     $content = ob_get_clean();
                     return '<span data-fct-field="product-price">' . $content . '</span>';
                 }
                 break;
+            case 'fct_product_rating':
+            case 'fct_product_quick_view':
+                $productModel = ProductDataSetup::getProductModel($post->ID);
+                if ($productModel) {
+                    // The Products element's Product Rating or Quick View settings, while its card renders.
+                    $part = $tagName === 'fct_product_rating' ? 'rating' : 'quick_view';
+                    $content = (new ProductCardRender($productModel))->renderCardPart($part, LayoutCardControls::classicPartSettings((array) BricksHelper::$imageBadgeSettings, $part));
+                    return '<span data-fct-field="product-' . esc_attr(str_replace('_', '-', $part)) . '">' . $content . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered block markup
+                }
+                return '';
             case 'fct_product_view_button': // Legacy alias for backward compatibility
             case 'fct_product_button':
                 $productModel = ProductDataSetup::getProductModel($post->ID);

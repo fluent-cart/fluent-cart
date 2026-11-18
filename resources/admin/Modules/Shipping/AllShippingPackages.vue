@@ -129,6 +129,12 @@ const confirmDeletePackage = (pkg) => {
   }).catch(() => {});
 };
 
+const packageActions = (pkg) => [
+  {command: 'edit', label: translate('Edit')},
+  ...(pkg.is_default ? [] : [{command: 'default', label: translate('Set as default')}]),
+  {command: 'delete', label: translate('Delete'), danger: true},
+];
+
 const formatDimensions = (pkg) => {
   if (pkg.type === 'envelope') {
     return pkg.length + ' × ' + pkg.width + ' ' + pkg.dimension_unit;
@@ -169,7 +175,7 @@ onMounted(() => {
       <div v-loading="loading" class="fct-packages-list">
         <div v-if="loadError && !loading" class="fct-packages-empty">
           <p class="text-gray-500">{{ translate('Failed to load packages.') }}</p>
-          <el-button type="primary" size="small" class="mt-3" @click="fetchPackages">{{ translate('Retry') }}</el-button>
+          <fct-button type="primary" size="small" class="mt-3" @click="fetchPackages">{{ translate('Retry') }}</fct-button>
         </div>
 
         <div v-else-if="packages.length === 0 && !loading" class="fct-packages-empty">
@@ -198,10 +204,10 @@ onMounted(() => {
               <el-tag v-if="pkg.is_default" type="info" size="small" effect="plain">
                 {{ translate('Store default') }}
               </el-tag>
-              <el-dropdown 
+              <fct-dropdown
                 class="fct-more-option-wrap"
-                popper-class="fct-dropdown"
-                trigger="click" 
+                trigger="click"
+                :items="packageActions(pkg)"
                 @command="(cmd) => {
                     if (cmd === 'edit') openEditDialog(pkg);
                     else if (cmd === 'default') setAsDefault(pkg);
@@ -209,24 +215,11 @@ onMounted(() => {
                 }"
               >
 
-                <el-button class="more-btn" :aria-label="translate('Package actions')">
+                <fct-button class="more-btn" :aria-label="translate('Package actions')">
                     <DynamicIcon name="More"/>
-                </el-button>
+                </fct-button>
 
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="edit">
-                        {{ translate('Edit') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="!pkg.is_default" command="default">
-                        {{ translate('Set as default') }}
-                    </el-dropdown-item>
-                    <el-dropdown-item command="delete" class="item-destructive">
-                      {{ translate('Delete') }}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              </fct-dropdown>
             </div>
           </div>
         </div>

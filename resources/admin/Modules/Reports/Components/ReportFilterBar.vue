@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import translate, { translateNumber } from "@/utils/translator/Translator";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
@@ -116,6 +117,13 @@ const compareRangeText = (type) => {
   return range?.start && range?.end ? formatRange(String(range.start).slice(0, 10), String(range.end).slice(0, 10)) : "";
 };
 
+const compareItems = computed(() => compareOptions.value.map(option => ({
+  command: option.value,
+  label: option.label,
+  range: compareRangeText(option.value),
+  class: ['fct-report-filter-compare-item', {'is-active': compareType.value === option.value}]
+})));
+
 const compareLabel = computed(() => {
   const option = compareOptions.value.find(item => item.value === compareType.value);
   if (!option || compareType.value === "no_comparison") {
@@ -128,6 +136,13 @@ const compareLabel = computed(() => {
 
 const realCurrencies = computed(() => filter.currencies.filter(currency => currency.value !== "__all__"));
 
+// A report that lists its filters in meta.report_filters reads currency only when it lists it
+const route = useRoute();
+const currencyAllowed = computed(() => {
+  const allowed = route.meta?.report_filters;
+  return !Array.isArray(allowed) || allowed.includes("currency");
+});
+
 const currencyItem = computed(() => filter.data.selectedFilters.currency);
 
 const onCurrencyChange = (value) => {
@@ -137,14 +152,14 @@ const onCurrencyChange = (value) => {
 
 <template>
   <div class="fct-report-filter-bar">
-    <el-popover v-if="showDate" v-model:visible="dateOpen" placement="bottom-end" :width="customOpen ? 'auto' : 220" trigger="click" popper-class="fct-report-filter-popover"
+    <fct-popover v-if="showDate" v-model:visible="dateOpen" placement="bottom-end" :width="customOpen ? 'auto' : 220" trigger="click" popper-class="fct-report-filter-popover"
         @after-leave="customOpen = false">
       <template #reference>
-        <el-button size="small" class="fct-report-filter-bar-button" :aria-label="dateAriaLabel" :title="activePreset ? dateLabel : ''">
+        <fct-button size="small" class="fct-report-filter-bar-button" :aria-label="dateAriaLabel" :title="activePreset ? dateLabel : ''">
           <DynamicIcon name="Calendar" class="w-4 h-4" />
           <span>{{ dateText }}</span>
           <DynamicIcon name="ChevronDown" class="w-3.5 h-3.5" />
-        </el-button>
+        </fct-button>
       </template>
 
       <ul v-if="!customOpen" class="fct-report-filter-menu">
@@ -159,7 +174,7 @@ const onCurrencyChange = (value) => {
       </ul>
 
       <div v-else class="fct-report-filter-custom">
-        <el-date-picker
+        <fct-date-picker
             v-model="customRange"
             type="daterange"
             size="small"
@@ -169,31 +184,27 @@ const onCurrencyChange = (value) => {
             :teleported="false"
         />
         <div class="fct-report-filter-custom-actions">
-          <el-button size="small" text @click="customOpen = false">{{ translate('Back') }}</el-button>
-          <el-button size="small" type="primary" :disabled="!customRange || customRange.length !== 2" @click="applyRange(customRange, 'custom')">
+          <fct-button size="small" text @click="customOpen = false">{{ translate('Back') }}</fct-button>
+          <fct-button size="small" type="primary" :disabled="!customRange || customRange.length !== 2" @click="applyRange(customRange, 'custom')">
             {{ translate('Apply') }}
-          </el-button>
+          </fct-button>
         </div>
       </div>
       <p class="fct-report-filter-note">{{ storeTimeNote() }}</p>
-    </el-popover>
+    </fct-popover>
 
-    <el-dropdown v-if="showCompare" trigger="click" placement="bottom-end" :disabled="!hasPro" @command="(value) => (compareType = value)">
-      <el-button size="small" class="fct-report-filter-bar-button">
+    <fct-dropdown v-if="showCompare" trigger="click" placement="bottom-end" :disabled="!hasPro" :items="compareItems" @command="(value) => (compareType = value)">
+      <fct-button size="small" class="fct-report-filter-bar-button">
         <span>{{ compareLabel }}</span>
         <DynamicIcon name="ChevronDown" class="w-3.5 h-3.5" />
-      </el-button>
-      <template #dropdown>
-        <el-dropdown-menu class="fct-report-filter-compare-menu">
-          <el-dropdown-item v-for="option in compareOptions" :key="option.value" :command="option.value" :class="{'is-active': compareType === option.value}">
-            <span class="fct-report-filter-compare-label">{{ option.label }}</span>
-            <span v-if="compareRangeText(option.value)" class="fct-report-filter-compare-range">{{ compareRangeText(option.value) }}</span>
-          </el-dropdown-item>
-        </el-dropdown-menu>
+      </fct-button>
+      <template #item="{item}">
+        <span class="fct-report-filter-compare-label">{{ item.label }}</span>
+        <span v-if="item.range" class="fct-report-filter-compare-range">{{ item.range }}</span>
       </template>
-    </el-dropdown>
+    </fct-dropdown>
 
-    <el-date-picker
+    <fct-date-picker
         v-if="showCompare && compareType === 'custom'"
         v-model="compareDate"
         type="date"
@@ -203,7 +214,7 @@ const onCurrencyChange = (value) => {
     />
 
     <CurrencyFilter
-        v-if="realCurrencies.length > 1"
+        v-if="realCurrencies.length > 1 && currencyAllowed"
         v-model="filter.data.currency"
         :aria-label="translate('Currency')"
         :currencies="filter.currencies"

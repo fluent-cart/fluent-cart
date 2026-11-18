@@ -6,6 +6,7 @@ use FluentCart\Api\StoreSettings;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Helpers\CartCheckoutHelper;
+use FluentCart\App\Helpers\CartHelper;
 use FluentCart\App\Models\Product;
 
 class CartRenderer
@@ -36,7 +37,11 @@ class CartRenderer
                 <?php esc_html_e('Your Shopping Cart', 'fluent-cart'); ?>
             </h2>
 
+            <?php static::renderPageLoader(); ?>
+
             <?php $this->renderItems(); ?>
+
+            <?php $this->renderAfterItems(); ?>
 
             <?php $this->renderTotal(); ?>
 
@@ -61,6 +66,27 @@ class CartRenderer
 
         <?php
 
+    }
+
+    // Same markup as the drawer loader; static so the block's regions layout can print it too.
+    public static function renderPageLoader()
+    {
+        ?>
+        <div class="fct-loader-wrap" data-fluent-cart-cart-page-loader aria-hidden="true">
+            <div class="fct-loader-spinner"></div>
+        </div>
+        <?php
+    }
+
+    // Cart page only (the drawer has its own); the wrapper always prints so a fragment can fill it later.
+    public function renderAfterItems($cart = null)
+    {
+        $cart = $cart ?: CartHelper::getCart();
+        ?>
+        <div data-fluent-cart-page-after-items>
+            <?php do_action('fluent_cart/cart_page/after_items', ['cart' => $cart ?: null]); ?>
+        </div>
+        <?php
     }
 
     public function renderDummyItems()

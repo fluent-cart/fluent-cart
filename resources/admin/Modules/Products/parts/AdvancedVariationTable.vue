@@ -1081,12 +1081,12 @@ const handleVariantNavCommand = (command, item) => {
           </button>
 
           <!-- Expanded: cancel button -->
-          <el-button
+          <fct-button
               v-else
               @click="cancelFiltersPanel"
           >
             {{ translate('Cancel') }}
-          </el-button>
+          </fct-button>
         </div>
     </div>
 
@@ -1100,7 +1100,7 @@ const handleVariantNavCommand = (command, item) => {
     >
     <div v-if="filtersExpanded" class="fct-adv-filters-panel-wrap">
       <div class="fct-adv-variant-search-row">
-        <el-input
+        <fct-input
             v-model="variantSearch"
             :placeholder="translate('Search variants')"
             size="small"
@@ -1109,12 +1109,12 @@ const handleVariantNavCommand = (command, item) => {
           <template #prefix>
             <DynamicIcon name="Search"/>
           </template>
-        </el-input>
+        </fct-input>
       </div>
 
       <!-- Per-attribute filter chips -->
       <div v-if="filterChipGroups.length > 0" class="fct-adv-variant-filters">
-        <el-popover
+        <fct-popover
           v-for="group in filterChipGroups"
           :key="group.id"
           placement="bottom-start"
@@ -1153,16 +1153,16 @@ const handleVariantNavCommand = (command, item) => {
           </div>
           <ul class="fct-adv-filter-options__list">
             <li v-for="term in group.terms" :key="term.id">
-              <el-checkbox
+              <fct-choice
                   :model-value="isTermActive(group.id, term.id)"
                   @change="toggleTermFilter(group.id, term.id)"
               >
                 {{ term.title }}
-              </el-checkbox>
+              </fct-choice>
             </li>
           </ul>
         </div>
-      </el-popover>
+      </fct-popover>
 
       <span
           v-if="hasAnyActiveFilter && !isFilteredEmpty"
@@ -1198,9 +1198,9 @@ const handleVariantNavCommand = (command, item) => {
       <DynamicIcon name="Search"/>
       <p class="fct-adv-variant-empty__title">{{ translate('No variants match your filters') }}</p>
       <p class="fct-adv-variant-empty__hint">{{ translate('Try a different search term or clear some filters.') }}</p>
-      <el-button size="small" @click="clearAllFilters">
+      <fct-button size="small" @click="clearAllFilters">
         {{ translate('Clear filters') }}
-      </el-button>
+      </fct-button>
     </div>
 
     <!-- Top-level skeleton during any mutation — owns the table slot so
@@ -1362,7 +1362,8 @@ const handleVariantNavCommand = (command, item) => {
                 <IconButton size="small" tag="button" @click="openEditDrawer(variant)">
                   <DynamicIcon name="Edit"/>
                 </IconButton>
-                <el-dropdown class="fct-more-option-wrap" popper-class="fct-dropdown" trigger="click"
+                <fct-dropdown class="fct-more-option-wrap" trigger="click"
+                             :items="[{name: 'copy_id'}, ...(variant.id ? [{command: 'toggle_status', class: {'item-destructive': variant.item_status !== 'inactive'}}] : [])]"
                              @command="(command) => {
                                if (command === 'toggle_status') {
                                  toggleVariantStatus(variant);
@@ -1371,26 +1372,22 @@ const handleVariantNavCommand = (command, item) => {
                   <button type="button" class="more-btn" :aria-label="translate('Variation actions')">
                     <DynamicIcon name="More"/>
                   </button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item>
-                        <CopyToClipboard
-                            v-if="variant.id"
-                            class="fct-copy-wrap-inline"
-                            :text="String(variant.id)"
-                            showMode="icon_with_text"
-                            :buttonText="translate('Copy Variation ID')"
-                        />
-                      </el-dropdown-item>
-                      <el-dropdown-item v-if="variant.id"
-                                        command="toggle_status"
-                                        :class="{ 'item-destructive': variant.item_status !== 'inactive' }">
-                        <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
-                        {{ variant.item_status === 'inactive' ? translate('Set Active') : translate('Set Inactive') }}
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
+                  <template #item="{item}">
+                    <template v-if="item.name === 'copy_id'">
+                      <CopyToClipboard
+                          v-if="variant.id"
+                          class="fct-copy-wrap-inline"
+                          :text="String(variant.id)"
+                          showMode="icon_with_text"
+                          :buttonText="translate('Copy Variation ID')"
+                      />
+                    </template>
+                    <template v-else>
+                      <DynamicIcon :name="variant.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
+                      {{ variant.item_status === 'inactive' ? translate('Set Active') : translate('Set Inactive') }}
+                    </template>
                   </template>
-                </el-dropdown>
+                </fct-dropdown>
               </div>
             </div>
           </div>
@@ -1400,10 +1397,11 @@ const handleVariantNavCommand = (command, item) => {
     <!-- Edit Variant Drawer — uses the shared layout (left variant nav + right form),
          matching the simple-variation drawer. Advanced variants are auto-generated, so
          the "Add more" affordance is intentionally omitted. -->
-    <el-drawer
+    <fct-dialog
+        drawer
         v-model="showSharedDrawer"
         :title="translate('Pricing')"
-        :size="sharedDrawerSize"
+        :width="sharedDrawerSize"
         :append-to-body="true"
         :close-on-click-modal="true"
         :close-on-press-escape="false"
@@ -1429,12 +1427,12 @@ const handleVariantNavCommand = (command, item) => {
             </p>
             <ul class="fct-group-edit-aside__list">
               <li v-for="item in editingGroupData?.items" :key="item.key" class="fct-group-edit-aside__item">
-                <el-checkbox
+                <fct-choice
                   :model-value="groupIncludedKeys.has(item.key)"
                   @change="toggleGroupItem(item.key)"
                 >
                   {{ item.label }}
-                </el-checkbox>
+                </fct-choice>
               </li>
             </ul>
           </div>
@@ -1449,7 +1447,7 @@ const handleVariantNavCommand = (command, item) => {
                narrows the grouped nav consistently. Kept compact for the narrow
                sidebar — search is full-width, chips wrap underneath. -->
           <div class="fct-shared-variant-nav__filters">
-            <el-input
+            <fct-input
                 v-model="variantSearch"
                 :placeholder="translate('Search variants')"
                 size="small"
@@ -1459,10 +1457,10 @@ const handleVariantNavCommand = (command, item) => {
               <template #prefix>
                 <DynamicIcon name="Search"/>
               </template>
-            </el-input>
+            </fct-input>
 
             <div v-if="filterChipGroups.length > 0" class="fct-shared-variant-nav__chips">
-              <el-popover
+              <fct-popover
                   v-for="group in filterChipGroups"
                   :key="'nav-chip-' + group.id"
                   placement="bottom-start"
@@ -1501,16 +1499,16 @@ const handleVariantNavCommand = (command, item) => {
                   </div>
                   <ul class="fct-adv-filter-options__list">
                     <li v-for="term in group.terms" :key="term.id">
-                      <el-checkbox
+                      <fct-choice
                           :model-value="isTermActive(group.id, term.id)"
                           @change="toggleTermFilter(group.id, term.id)"
                       >
                         {{ term.title }}
-                      </el-checkbox>
+                      </fct-choice>
                     </li>
                   </ul>
                 </div>
-              </el-popover>
+              </fct-popover>
             </div>
 
             <button
@@ -1558,12 +1556,12 @@ const handleVariantNavCommand = (command, item) => {
 
             <ul class="fct-compact-group-edit-summary__list">
               <li v-for="item in editingGroupData?.items" :key="item.key">
-                <el-checkbox
+                <fct-choice
                   :model-value="groupIncludedKeys.has(item.key)"
                   @change="toggleGroupItem(item.key)"
                 >
                   {{ item.label }}
-                </el-checkbox>
+                </fct-choice>
               </li>
             </ul>
           </div>
@@ -1625,12 +1623,12 @@ const handleVariantNavCommand = (command, item) => {
           </div>
         </div>
       </div>
-    </el-drawer>
+    </fct-dialog>
 
     <!-- Unsaved-changes guard for the edit drawer. Opened by
          handleSharedDrawerBeforeClose when the merchant tries to close the
          drawer (backdrop / form Cancel) with a dirty variant form. -->
-    <el-dialog
+    <fct-dialog
         v-model="showDirtyDraftDialog"
         :close-on-click-modal="false"
         :close-on-press-escape="!dirtyDialogSubmitting"
@@ -1648,18 +1646,18 @@ const handleVariantNavCommand = (command, item) => {
 
       <div class="dialog-footer">
         <div class="fct-btn-group sm">
-          <el-button :disabled="dirtyDialogSubmitting" size="small" @click="handleContinueEditing">
+          <fct-button :disabled="dirtyDialogSubmitting" size="small" @click="handleContinueEditing">
             {{ translate('Continue editing') }}
-          </el-button>
-          <el-button :disabled="dirtyDialogSubmitting" size="small" @click="handleDiscardDirtyDrafts">
+          </fct-button>
+          <fct-button :disabled="dirtyDialogSubmitting" size="small" @click="handleDiscardDirtyDrafts">
             {{ translate('Discard') }}
-          </el-button>
-          <el-button type="primary" :loading="dirtyDialogSubmitting" size="small" @click="handleSaveDirtyDraft">
+          </fct-button>
+          <fct-button type="primary" :loading="dirtyDialogSubmitting" size="small" @click="handleSaveDirtyDraft">
             {{ translate('Save') }}
-          </el-button>
+          </fct-button>
         </div>
       </div>
-    </el-dialog>
+    </fct-dialog>
 
   </div>
 </template>

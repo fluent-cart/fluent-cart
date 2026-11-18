@@ -82,7 +82,8 @@ class CartLoader
         }
 
         (new CartDrawerRenderer($cartItems, [
-            'item_count' => $itemCount
+            'item_count' => $itemCount,
+            'cart'       => $cart ?: null
         ]))->render();
     }
 

@@ -1,26 +1,25 @@
 <template>
     <div class="fct-integration-container fct-layout-width">
         <div class="fct-add-integration py-7.5">
-            <el-skeleton
-                :loading="loading_app"
+            <fct-skeleton
+                v-if="loading_app"
                 class="bg-white rounded p-6 mb-7.5 dark:bg-dark-700"
                 animated
             >
-                <template #template>
-                    <el-skeleton-item variant="h3" class="w-[150px] mb-5"/>
-                    <div class="grid gap-5">
-                        <div>
-                            <el-skeleton-item variant="h3" class="w-[50px] mb-3"/>
-                            <el-skeleton-item variant="p"/>
-                        </div>
-                        <div>
-                            <el-skeleton-item variant="h3" class="w-[50px] mb-3"/>
-                            <el-skeleton-item variant="p"/>
-                        </div>
+                <fct-skeleton variant="h3" class="w-[150px] mb-5"/>
+                <div class="grid gap-5">
+                    <div>
+                        <fct-skeleton variant="h3" class="w-[50px] mb-3"/>
+                        <fct-skeleton variant="p"/>
                     </div>
-                </template>
-            </el-skeleton>
+                    <div>
+                        <fct-skeleton variant="h3" class="w-[50px] mb-3"/>
+                        <fct-skeleton variant="p"/>
+                    </div>
+                </div>
+            </fct-skeleton>
 
+            <!-- Kept: add-on render_template markup may use el-form-item and needs this form's top labels. -->
             <el-form
                 v-if="!loading_app"
                 label-position="top"
@@ -49,30 +48,23 @@
                                 </div><!-- .fct-setting-form-content -->
                                 <div class="fct-setting-form-fields">
                                     <template v-if="field.component === 'text'">
-                                        <el-input
+                                        <fct-input
                                             :placeholder="field.placeholder"
                                             v-model="settings[field.key]"
                                             :class="errors.errors[field.key] ? 'is-error' : ''"
-                                        ></el-input>
+                                        />
                                         <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'list_ajax_options'">
-                                        <el-select
+                                        <fct-select
                                             v-loading="loading_list"
                                             @change="loadMergeFields()"
                                             v-model="settings.list_id"
                                             :placeholder="field.placeholder"
                                             clearable
-                                        >
-                                            <el-option
-                                                v-for="(list_name, list_key) in field.options"
-                                                :key="list_key"
-                                                :value="list_key"
-                                                :label="list_name"
-                                            >
-                                            </el-option>
-                                        </el-select>
+                                            :options="toOptions(field.options)"
+                                        />
                                         <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
@@ -90,70 +82,48 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'select'">
-                                        <el-select
+                                        <fct-select
                                             filterable
                                             clearable
                                             :multiple="field.is_multiple"
                                             v-model="settings[field.key]"
                                             :placeholder="field.placeholder"
-                                        >
-                                            <el-option
-                                                v-for="(list_name, list_key) in field.options"
-                                                :key="list_key"
-                                                :value="list_key"
-                                                :label="list_name"
-                                            ></el-option>
-                                        </el-select>
+                                            :options="toOptions(field.options)"
+                                        />
                                         <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
 
                                     <template v-else-if="field.component === 'checkbox-single'">
-                                        <el-checkbox v-model="settings[field.key]">
+                                        <fct-choice v-model="settings[field.key]">
                                             {{ field.checkbox_label }}
-                                        </el-checkbox>
+                                        </fct-choice>
                                         <p class="fct-inline-tip pl-6" v-if="field.inline_tip"
                                            v-html="field.inline_tip"></p>
                                     </template>
 
                                     <template v-else-if="field.component === 'yes-no-checkbox'">
-                                        <el-checkbox true-value="yes" false-value="no" v-model="settings[field.key]">
+                                        <fct-choice true-value="yes" false-value="no" v-model="settings[field.key]">
                                             {{ field.checkbox_label }}
-                                        </el-checkbox>
+                                        </fct-choice>
                                         <p class="fct-inline-tip pl-6" v-if="field.inline_tip"
                                            v-html="field.inline_tip"></p>
                                     </template>
 
                                     <template v-else-if="field.component === 'checkbox-multiple'">
-                                        <el-checkbox-group v-model="settings[field.key]">
-                                            <el-checkbox
-                                                v-for="(fieldValue, i) in field.options"
-                                                :key="i"
-                                                :label="Number(i)"
-                                            >{{ fieldValue }}
-                                            </el-checkbox>
-                                        </el-checkbox-group>
+                                        <fct-choice
+                                            v-model="settings[field.key]"
+                                            :options="toOptions(field.options).map((option) => ({...option, value: Number(option.value)}))"
+                                        />
                                     </template>
 
                                     <template v-else-if="field.component === 'selection_group'">
-                                        <el-select
+                                        <fct-select
                                             v-model="settings[field.key]"
                                             :placeholder="field.placeholder"
                                             multiple
                                             :class="errors.errors[field.key] ? 'is-error' : ''"
-                                        >
-                                            <el-option-group
-                                                v-for="(field, fieldKey) in field.options"
-                                                :key="fieldKey"
-                                                :label="field.label"
-                                            >
-                                                <el-option
-                                                    v-for="option in field.options"
-                                                    :key="option.value"
-                                                    :label="option.label"
-                                                    :value="option.value"
-                                                />
-                                            </el-option-group>
-                                        </el-select>
+                                            :options="Object.values(field.options || {})"
+                                        />
 
                                         <ErrorView :field="field.key" :errors="errors"></ErrorView>
                                     </template>
@@ -208,20 +178,14 @@
                                     </template>
 
                                     <template v-else-if="field.component === 'radio_choice'">
-                                        <el-radio-group v-model="settings[field.key]">
-                                            <el-radio
-                                                v-for="(fieldLabel, fieldValue) in field.options"
-                                                :key="fieldValue"
-                                                :value="fieldValue"
-                                            >{{ fieldLabel }}
-                                            </el-radio>
-                                        </el-radio-group>
+                                        <fct-choice type="radio" v-model="settings[field.key]" :options="toOptions(field.options)"/>
                                     </template>
                                     <template v-else-if="field.component === 'number'">
-                                        <el-input-number
+                                        <fct-input
+                                            type="number"
                                             size="default"
                                             v-model="settings[field.key]"
-                                        ></el-input-number>
+                                        />
                                     </template>
 
                                     <template v-else-if="field.component === 'chained_fields'">
@@ -276,20 +240,14 @@
                                     </div>
                                 </div>
                                 <div class="fct-setting-form-fields">
-                                    <el-select
+                                    <fct-select
                                         filterable
                                         clearable
                                         :multiple="true"
                                         v-model="settings.conditional_variation_ids"
                                         :placeholder="$t('Leave empty for all the variations')"
-                                    >
-                                        <el-option
-                                            v-for="variant in product_variations"
-                                            :key="variant.id"
-                                            :value="variant.id"
-                                            :label="variant.title"
-                                        ></el-option>
-                                    </el-select>
+                                        :options="product_variations.map((variant) => ({label: variant.title, value: variant.id}))"
+                                    />
                                     <p class="fct-inline-tip pl-6">
                                         {{ $t('Leave empty to run this feed for all variations') }}</p>
                                 </div>
@@ -300,13 +258,13 @@
                 </CardContainer>
 
                 <div class="setting-save-action" v-if="maybeShowSaveButton">
-                    <el-button type="primary" :loading="saving" @click="saveNotification">
+                    <fct-button type="primary" :loading="saving" @click="saveNotification">
                         {{
                             integration_id
                                 ? `Update ${settings_fields.integration_title} Feed`
                                 : `Create ${settings_fields.integration_title} Feed`
                         }}
-                    </el-button>
+                    </fct-button>
                 </div>
             </el-form>
         </div>
@@ -357,7 +315,8 @@ export default {
     },
     data() {
         return {
-            loading_app: false,
+            // True until the first load, so the header never renders with empty settings.
+            loading_app: true,
             loading_list: false,
             errors: new Errors(),
             integration_id: parseInt(this.$route.params.integration_id),
@@ -399,6 +358,10 @@ export default {
     },
     methods: {
       translate,
+        // Object (value => label) or array (index => label) options, as the old v-for read them.
+        toOptions(options) {
+            return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+        },
         loadIntegrationSettings() {
             if (this.$route.name === 'product_integration_feed_editor') {
                 this.loading_app = true;

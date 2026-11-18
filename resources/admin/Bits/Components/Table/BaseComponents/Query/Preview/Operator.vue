@@ -52,14 +52,9 @@ const getOperatorTitle = () => {
       <span v-if="getOperatorTitle()">{{ getOperatorTitle() }}</span>
       <span v-else>{{ $t('Select') }}</span>
 
-      <el-select popper-class="operator-popover" v-model="operator.operator" filterable>
-        <el-option
-            v-for="(operator, index) in Object.values(queryState.operatorList)"
-            :key="operator.operator"
-            :label="operator.title"
-            :value="operator.operator"
-        />
-      </el-select>
+      <fct-select popper-class="operator-popover" v-model="operator.operator" filterable
+          :options="Object.values(queryState.operatorList).map(operator => ({label: operator.title, value: operator.operator}))"
+      />
     </span>
 
     <span v-if="isOperatorNull()">
@@ -71,17 +66,11 @@ const getOperatorTitle = () => {
 
       <span v-if="getColumnTitle()">{{ getColumnTitle() }}</span>
       <span v-else>{{ $t('Select') }}</span>
-      <el-select
+      <fct-select
           popper-class="operator-popover"
           v-model="operator.column"
-      >
-        <el-option
-            v-for="column in columns"
-            :key="column.name"
-            :label="column.title"
-            :value="column.name"
-        />
-      </el-select>
+          :options="columns.map(column => ({label: column.title, value: column.name}))"
+      />
     </div>
 
     <span class="text-system-dark dark:text-gray-50" v-if="isOperatorNull()">

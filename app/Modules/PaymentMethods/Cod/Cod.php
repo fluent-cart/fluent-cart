@@ -151,6 +151,12 @@ class Cod extends AbstractPaymentGateway
         ];
     }
 
+    public function getCheckoutSkeleton(): string
+    {
+        // Its script only enables the button; the instructions are server-rendered.
+        return '';
+    }
+
     public function getLocalizeData(): array
     {
         return [

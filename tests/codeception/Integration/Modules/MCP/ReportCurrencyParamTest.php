@@ -26,7 +26,7 @@ class ReportCurrencyParamTest extends DatabaseTestCase
             foreach (['__all__', 'US'] as $currency) {
                 $res = $call($currency);
                 $this->assertTrue(is_wp_error($res), "call {$i} with {$currency}");
-                $this->assertSame('invalid_currency', $res->get_error_code());
+                $this->assertSame('invalid_param', $res->get_error_code());
             }
             $this->assertFalse(is_wp_error($call('usd')), "call {$i} accepts a lower-case code");
         }
@@ -45,7 +45,7 @@ class ReportCurrencyParamTest extends DatabaseTestCase
         ];
         foreach ($calls as $i => $call) {
             $res = $call('US');
-            $this->assertSame('invalid_currency', is_wp_error($res) ? $res->get_error_code() : null, "call {$i}");
+            $this->assertSame('invalid_param', is_wp_error($res) ? $res->get_error_code() : null, "call {$i}");
             $this->assertFalse(is_wp_error($call('__all__')), "call {$i} converts __all__");
         }
     }
@@ -54,7 +54,7 @@ class ReportCurrencyParamTest extends DatabaseTestCase
     {
         foreach (['US', '__all__'] as $currency) {
             $res = ReportTools::getReport(['report' => 'cohorts', 'currency' => $currency]);
-            $this->assertSame('invalid_currency', is_wp_error($res) ? $res->get_error_code() : null, $currency);
+            $this->assertSame('invalid_param', is_wp_error($res) ? $res->get_error_code() : null, $currency);
         }
     }
 }

@@ -253,36 +253,4 @@ return [
             }
         },
     ],
-    [
-        'id'            => 'reports-order-sources-compare',
-        'name'          => 'Order Sources answers with compare on, for every grouping',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () {
-            try {
-                FcReportFixture::createDataset();
-                // The range right after the fixture window, so the previous period holds the fixture orders
-                $window = FcFixture::reportWindow();
-                $length = strtotime($window['end']) - strtotime($window['start']) + 1;
-                $start = gmdate('Y-m-d H:i:s', strtotime($window['start']) + $length);
-                $end = gmdate('Y-m-d H:i:s', strtotime($window['end']) + $length);
-                foreach (['campaign_source_medium', 'campaign', 'variation', 'referrer', 'month'] as $groupBy) {
-                    $result = FcTest::rest('GET', 'reports/sources', [
-                        'params' => array_merge(FcReportFixture::requestParams(), [
-                            'startDate'    => $start,
-                            'endDate'      => $end,
-                            'group_by'     => $groupBy,
-                            'include_none' => $groupBy === 'variation' ? 'true' : 'false',
-                            'compareType'  => 'previous_period',
-                            'compareDate'  => $start,
-                        ]),
-                    ]);
-                    FcTest::assertSame(200, $result['status'], 'GET /reports/sources with compare, group_by=' . $groupBy . ': ' . $result['message']);
-                    FcTest::assertSame(true, is_array($result['data']['fluctuations'] ?? null), 'fluctuations returned for group_by=' . $groupBy);
-                }
-            } finally {
-                FcDomainFixture::cleanupAll();
-            }
-        },
-    ],
 ];

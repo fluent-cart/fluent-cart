@@ -221,9 +221,9 @@
 
           <div class="fct-card-body">
             <div v-show="currentStep === 1" class="fct-step-content-box space-y-4">
-                <h4 class="fct-step-content-box-heading">
+                <h2 class="fct-step-content-box-heading">
                     {{ translate('Verify Access Keys') }}
-                </h4>
+                </h2>
               <ul class="fct-coverage-selector">
                 <li
                   :class="{ active: form.auth_method === 'define' }"
@@ -304,9 +304,9 @@
             </div>
 
             <div v-show="currentStep === 2" class="fct-step-content-box space-y-4">
-                <h4 class="fct-step-content-box-heading">
+                <h2 class="fct-step-content-box-heading">
                     {{ translate('Choose where files live') }}
-                </h4>
+                </h2>
 
               <ul class="fct-coverage-selector">
                 <li :class="{ active: bucketAction === 'existing' }" @click="bucketAction = 'existing'">
@@ -456,9 +456,9 @@
             </div>
 
             <div v-show="currentStep === 3" class="fct-step-content-box space-y-4">
-                <h4 class="fct-step-content-box-heading">
+                <h2 class="fct-step-content-box-heading">
                     {{ translate('Review protection settings') }}
-                </h4>
+                </h2>
               <div class="space-y-4">
                 <div class="config-snippet config-snippet-white">
                   <div class="flex items-start justify-between gap-4">

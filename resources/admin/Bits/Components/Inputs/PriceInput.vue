@@ -1,7 +1,8 @@
 <template>
   <!-- el-input reads its slots in computeds that never re-run, so remount it when one comes or goes.
        Read in the template: a computed here would cache the slots the same way. -->
-  <el-input
+  <fct-input
+      ref="inputRef"
       :key="`${showCurrencySign}-${!!$slots.suffix}-${!!$slots.append}`"
       :class="errorClass"
       :id="id"
@@ -22,20 +23,18 @@
     <template v-if="$slots.append" #append>
       <slot name="append"/>
     </template>
-  </el-input>
+  </fct-input>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import AppConfig from "@/utils/Config/AppConfig";
 import {
   resolveSeparators,
-  stripLeadingZeros,
-  sanitizeInput,
-  normalizeTypingValue as normalizeTypingValueCore,
   parseNormalizedValue as parseNormalizedValueCore,
   dollarsToCents,
   centsToDollarValue,
+  editPriceValue,
 } from "@/Bits/moneyInput";
 
 /**
@@ -162,8 +161,6 @@ const onKeydown = (event) => {
 // Thin wrappers so the shop's thousands separator does not have to be threaded
 // through every call site below. The parsing itself lives in Bits/moneyInput.js,
 // shared with the CSV importer so both boundaries read a value the same way.
-const normalizeTypingValue = (value) => normalizeTypingValueCore(value, shopThousandSeparator.value);
-
 const parseNormalizedValue = (value) => parseNormalizedValueCore(value, shopThousandSeparator.value);
 
 const formatViewValue = (value) => {
@@ -180,23 +177,10 @@ const formatViewValue = (value) => {
 };
 
 const formatMaskedValue = (value) => {
-  if (!value) {
-    return '';
-  }
-
-  const hasTrailingSeparator = value.endsWith('.');
-  const [integerPart = '', decimalPart = ''] = value.split('.');
-  const maskedInteger = (integerPart || '0').replace(/\B(?=(\d{3})+(?!\d))/g, shopThousandSeparator.value);
-
-  if (hasTrailingSeparator) {
-    return `${maskedInteger}${shopDecimalSeparator.value}`;
-  }
-
-  if (decimalPart) {
-    return `${maskedInteger}${shopDecimalSeparator.value}${decimalPart}`;
-  }
-
-  return maskedInteger;
+  if (!value) return '';
+  const [integer, fraction] = value.split('.');
+  const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, shopThousandSeparator.value);
+  return fraction === undefined ? grouped : `${grouped}${shopDecimalSeparator.value}${fraction}`;
 };
 
 const toNormalizedModelValue = (value, applyMin = false) => {
@@ -233,6 +217,19 @@ const displayValue = ref('');
 const internalRaw = ref('');
 // Track whether the user is actively editing (between first input and blur)
 const dirty = ref(false);
+const inputRef = ref(null);
+let typedValue = '';
+let pendingEdit = null;
+const onBeforeInput = (event) => {
+  pendingEdit = {value: event.target.value, start: event.target.selectionStart, end: event.target.selectionEnd, inputType: event.inputType};
+};
+// fct-input forwards neither beforeinput nor the native input ref.
+watch(inputRef, (field, previous, onCleanup) => {
+  const root = field?.$el;
+  root?.addEventListener('beforeinput', onBeforeInput);
+  onCleanup(() => root?.removeEventListener('beforeinput', onBeforeInput));
+}, {flush: 'post'});
+const getNativeInput = () => inputRef.value?.$el?.querySelector('input');
 
 const syncFromModel = (value) => {
   const normalizedValue = toNormalizedModelValue(centsToDollarValue(value));
@@ -240,18 +237,34 @@ const syncFromModel = (value) => {
   if (!normalizedValue) {
     displayValue.value = '';
     internalRaw.value = '';
+    typedValue = '';
     return;
   }
 
   displayValue.value = formatViewValue(normalizedValue);
+  typedValue = displayValue.value.split(shopThousandSeparator.value).join('');
   internalRaw.value = normalizedValue;
 };
 
 const onInput = (value) => {
-  const normalizedTypingValue = normalizeTypingValue(value);
+  // Composition can change native text before el-input emits. A selection
+  // captured against that text cannot be applied to the previous display.
+  const edit = pendingEdit?.value === displayValue.value ? pendingEdit : null;
+  const nativeInput = getNativeInput();
+  const cursor = nativeInput?.value === value ? nativeInput.selectionStart : undefined;
+  const edited = editPriceValue(value, displayValue.value, typedValue, shopThousandSeparator.value, edit, cursor);
+  pendingEdit = null;
+  const normalizedTypingValue = edited.normalized;
 
   internalRaw.value = normalizedTypingValue;
+  typedValue = edited.typed;
   displayValue.value = formatMaskedValue(normalizedTypingValue);
+  let caret = 0, significant = 0;
+  while (caret < displayValue.value.length && significant < edited.caret) {
+    if (displayValue.value[caret++] !== shopThousandSeparator.value) significant++;
+  }
+  if (displayValue.value[caret] === shopThousandSeparator.value) caret++;
+  nextTick(() => getNativeInput()?.setSelectionRange(caret, caret));
   dirty.value = true;
 
   if (normalizedTypingValue === '') {
@@ -311,6 +324,8 @@ const onBlur = () => {
   }
 
   dirty.value = false;
+  typedValue = displayValue.value.split(shopThousandSeparator.value).join('');
+  pendingEdit = null;
   valueAtFocus.value = '';
 
   emit('blur', committedCents);

@@ -9,7 +9,7 @@
                     <span>{{ integration_title }}</span>
                 </el-breadcrumb-item>
             </el-breadcrumb>
-            <el-switch
+            <fct-switch
                 v-model="settings.enabled"
                 active-value="yes"
                 inactive-value="no"

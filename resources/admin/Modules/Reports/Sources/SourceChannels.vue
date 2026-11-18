@@ -153,11 +153,11 @@ onUnmounted(() => {
         border_bottom
     >
       <template #action>
-        <el-button size="small" @click="rulesOpen = true">{{ translate('Channel rules') }}</el-button>
+        <fct-button size="small" @click="rulesOpen = true">{{ translate('Channel rules') }}</fct-button>
       </template>
     </Card.Header>
     <Card.Body>
-      <el-skeleton v-if="loading" animated :rows="6"/>
+      <fct-skeleton v-if="loading" animated :rows="6"/>
       <el-empty v-else-if="!channels.length" :description="translate('No new customers in this date range')"/>
       <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 300px"></div>
     </Card.Body>
@@ -171,32 +171,32 @@ onUnmounted(() => {
         border_bottom
     />
     <Card.Body class="px-0 pb-0">
-      <el-skeleton v-if="loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
-      <el-table v-else :data="channels" :default-sort="{prop: 'customers', order: 'descending'}">
-        <el-table-column :label="translate('Channel')" min-width="170">
+      <fct-skeleton v-if="loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
+      <fct-table v-else :data="channels" :default-sort="{prop: 'customers', order: 'descending'}">
+        <fct-table-column :label="translate('Channel')" min-width="170">
           <template #default="{row}">
             <span class="inline-block w-2.5 h-2.5 rounded-full me-2" :style="{backgroundColor: colors[row.key]}" aria-hidden="true"></span>{{ labels[row.key] }}
           </template>
-        </el-table-column>
-        <el-table-column prop="customers" :label="translate('New customers')" min-width="130" sortable>
+        </fct-table-column>
+        <fct-table-column prop="customers" :label="translate('New customers')" min-width="130" sortable>
           <template #default="{row}">{{ formatNumber(row.customers) }} <span class="text-xs text-gray-500">({{ row.share }}%)</span></template>
-        </el-table-column>
-        <el-table-column prop="first_net" :label="translate('First orders')" min-width="130" sortable>
+        </fct-table-column>
+        <fct-table-column prop="first_net" :label="translate('First orders')" min-width="130" sortable>
           <template #default="{row}">{{ money(row.first_net) }}</template>
-        </el-table-column>
-        <el-table-column prop="average_ltv" :label="translate('Average lifetime value')" min-width="160" sortable>
+        </fct-table-column>
+        <fct-table-column prop="average_ltv" :label="translate('Average lifetime value')" min-width="160" sortable>
           <template #default="{row}">{{ money(row.average_ltv) }}</template>
-        </el-table-column>
-        <el-table-column prop="repeat_rate" :label="translate('Bought again')" min-width="120" sortable>
+        </fct-table-column>
+        <fct-table-column prop="repeat_rate" :label="translate('Bought again')" min-width="120" sortable>
           <template #default="{row}">{{ row.repeat_rate }}%</template>
-        </el-table-column>
-        <el-table-column prop="refund_rate" :label="translate('Refund rate')" min-width="110" sortable>
+        </fct-table-column>
+        <fct-table-column prop="refund_rate" :label="translate('Refund rate')" min-width="110" sortable>
           <template #default="{row}">{{ row.refund_rate }}%</template>
-        </el-table-column>
+        </fct-table-column>
         <template #empty>
           <el-empty :description="translate('No new customers in this date range')"/>
         </template>
-      </el-table>
+      </fct-table>
     </Card.Body>
   </Card.Container>
   <ExtensionComponent name="reports.sources.channel_rules" v-model="rulesOpen" @saved="fetchData()">

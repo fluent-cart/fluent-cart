@@ -86,11 +86,12 @@ import AppConfig from "@/utils/Config/AppConfig";
 import BulkInsert from "@/Modules/Products/BulkInsert/BulkInsert.vue";
 import BulkEdit from "@/Modules/Products/BulkEdit/BulkEdit.vue";
 
-const PaymentChildRoutes = AppConfig.get('payment_routes');
-
-for (const route of PaymentChildRoutes) {
-    route.props = true;
-}
+// Plain copies: the config is reactive, and a component stored on it would be made reactive too
+const PaymentChildRoutes = AppConfig.get('payment_routes').map((route) => ({
+    ...route,
+    props: true,
+    component: GlobalPaymentComponents,
+}));
 
 const StorageDriverChildRoutes = AppConfig.get('storage_driver_routes');
 
@@ -98,6 +99,8 @@ const genericDriverRoutes = (StorageDriverChildRoutes || []).filter((route) => r
 
 for (const route of genericDriverRoutes) {
     route.props = true;
+    // The parent picks the driver screen by route name; Vue Router still wants a component.
+    route.component = GlobalStorageComponents;
 }
 
 export var routes = {
@@ -666,7 +669,6 @@ export var routes = {
             },
             {
                 name: 'gateway',
-                component: GlobalPaymentComponents,
                 path: 'payments',
                 children: PaymentChildRoutes,
                 props: true,
@@ -747,16 +749,6 @@ export var routes = {
                 meta: {
                     active_menu: 'settings',
                     title: translate('Features & addon'),
-                    permission: "is_super_admin"
-                },
-            },
-            {
-                name: 'coupons',
-                path: 'coupons',  // Fixed: removed the leading '/'
-                component: AllCoupons,
-                meta: {
-                    active_menu: 'coupons',
-                    title: translate('Coupons Settings'),
                     permission: "is_super_admin"
                 },
             },
@@ -925,7 +917,6 @@ export var routes = {
                 name: 'view_review',
                 path: ':review_id(\\d+)/view',
                 component: SingleReview,
-                props: true,
                 meta: {
                     active_menu: 'products',
                     title: translate('View Review'),

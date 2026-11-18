@@ -38,6 +38,8 @@
 
 
 <style scoped lang="scss">
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "../../../../tailwind.config.mjs";
 .fct-animated-icon-wrap {
   position: fixed;
   width: calc(100% - 160px);

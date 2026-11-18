@@ -28,7 +28,7 @@ const dialog = vi.hoisted(() => ({save: null}));
 
 vi.mock('@/utils/http/Rest', () => ({default: rest}));
 vi.mock('@/utils/Notify', () => ({default: {success: vi.fn(), error: vi.fn()}}));
-vi.mock('@/utils/translator/Translator', () => ({default: text => text, translateNumber: value => value}));
+vi.mock('@/utils/translator/Translator', () => ({default: text => text, _x: text => text, translateNumber: value => value}));
 vi.mock('element-plus', () => ({ElMessage: vi.fn(), ElMessageBox: {confirm: vi.fn()}}));
 vi.mock('@/Modules/Shipping/Components/PackageDialog.vue', () => ({
     default: defineComponent({
@@ -78,6 +78,10 @@ const elementStubs = {
     'el-option': {
         props: ['value', 'label'],
         setup: (props) => () => h('div', {class: 'package-option', 'data-value': props.value}, props.label),
+    },
+    'fct-select': {
+        props: ['options'],
+        setup: (props) => () => h('div', {class: 'fct-select'}, (props.options || []).map(option => h('div', {class: 'package-option', 'data-value': option.value}, option.label))),
     },
 };
 

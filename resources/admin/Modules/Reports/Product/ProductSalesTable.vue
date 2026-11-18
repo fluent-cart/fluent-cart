@@ -98,7 +98,7 @@ const exportRows = computed(() => sorted.value.flatMap(product => [product, ...p
     >
       <template #action>
         <div class="flex items-center gap-2">
-          <el-input
+          <fct-input
               v-model="search"
               size="small"
               clearable
@@ -111,51 +111,51 @@ const exportRows = computed(() => sorted.value.flatMap(product => [product, ...p
       </template>
     </Card.Header>
     <Card.Body class="px-0 pb-0">
-      <el-skeleton v-if="loading" animated :rows="6" class="px-4 pt-4 pb-4"/>
+      <fct-skeleton v-if="loading" animated :rows="6" class="px-4 pt-4 pb-4"/>
       <template v-else>
-        <el-table
+        <fct-table
             :data="rows"
             row-key="product_id"
             :default-sort="{prop: 'net', order: 'descending'}"
             @sort-change="onSort"
         >
-          <el-table-column type="expand" width="40">
+          <fct-table-column type="expand" width="40">
             <template #default="{row}">
-              <el-table :data="row.variations" class="fct-product-variants" :show-header="true">
-                <el-table-column :label="translate('Variant')" min-width="220">
+              <fct-table :data="row.variations" class="fct-product-variants" :show-header="true">
+                <fct-table-column :label="translate('Variant')" min-width="220">
                   <template #default="{row: variation}">
                     {{ variation.variation_title }}
                     <span class="text-gray-500 text-xs">(#{{ variation.variation_id }})</span>
                   </template>
-                </el-table-column>
-                <el-table-column :label="translate('Net sales')" min-width="120">
+                </fct-table-column>
+                <fct-table-column :label="translate('Net sales')" min-width="120">
                   <template #default="{row: variation}">{{ money(variation.net) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('New sales')" min-width="120">
+                </fct-table-column>
+                <fct-table-column :label="translate('New sales')" min-width="120">
                   <template #default="{row: variation}">{{ money(variation.new_net) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('Renewals')" min-width="120">
+                </fct-table-column>
+                <fct-table-column :label="translate('Renewals')" min-width="120">
                   <template #default="{row: variation}">{{ money(variation.renewal_net) }}</template>
-                </el-table-column>
-                <el-table-column v-if="hasInstallments" :label="translate('Installment payments')" min-width="130">
+                </fct-table-column>
+                <fct-table-column v-if="hasInstallments" :label="translate('Installment payments')" min-width="130">
                   <template #default="{row: variation}">{{ money(variation.installment_net) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('Units')" min-width="80">
+                </fct-table-column>
+                <fct-table-column :label="translate('Units')" min-width="80">
                   <template #default="{row: variation}">{{ formatNumber(variation.units) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('Orders')" min-width="80">
+                </fct-table-column>
+                <fct-table-column :label="translate('Orders')" min-width="80">
                   <template #default="{row: variation}">{{ formatNumber(variation.orders) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('New customers')" min-width="120">
+                </fct-table-column>
+                <fct-table-column :label="translate('New customers')" min-width="120">
                   <template #default="{row: variation}">{{ formatNumber(variation.new_customers) }}</template>
-                </el-table-column>
-                <el-table-column :label="translate('Refund rate')" min-width="100">
+                </fct-table-column>
+                <fct-table-column :label="translate('Refund rate')" min-width="100">
                   <template #default="{row: variation}">{{ variation.refund_rate }}%</template>
-                </el-table-column>
-              </el-table>
+                </fct-table-column>
+              </fct-table>
             </template>
-          </el-table-column>
-          <el-table-column prop="product_title" :label="translate('Product')" min-width="200">
+          </fct-table-column>
+          <fct-table-column prop="product_title" :label="translate('Product')" min-width="200">
             <template #default="{row}">
               <button type="button" class="fct-link-button p-0 bg-transparent border-0 cursor-pointer text-left text-primary-500 hover:underline" @click="emit('open', row)">
                 {{ row.product_title }}
@@ -164,47 +164,47 @@ const exportRows = computed(() => sorted.value.flatMap(product => [product, ...p
                 {{ variantCount(row.variations.length) }}
               </div>
             </template>
-          </el-table-column>
-          <el-table-column prop="net" :label="translate('Net sales')" min-width="125" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="net" :label="translate('Net sales')" min-width="125" sortable="custom">
             <template #default="{row}">
               <div>{{ money(row.net) }}</div>
               <!-- translators: %1$s - a percentage -->
               <div class="text-gray-500 text-xs">{{ translate('%1$s of sales', share(row.net) + '%') }}</div>
             </template>
-          </el-table-column>
-          <el-table-column v-if="hasCompare" prop="change" :label="_x('Change', 'Report column: difference from the previous period')" min-width="95" sortable="custom">
+          </fct-table-column>
+          <fct-table-column v-if="hasCompare" prop="change" :label="_x('Change', 'Report column: difference from the previous period')" min-width="95" sortable="custom">
             <template #default="{row}">
               <span v-if="change(row) === null" class="text-gray-500">{{ row.net > 0 ? translate('New') : '—' }}</span>
               <span v-else :class="change(row) >= 0 ? 'text-success-500' : 'text-red-500'" dir="ltr">
                 {{ change(row) > 0 ? '+' : '' }}{{ change(row) }}%
               </span>
             </template>
-          </el-table-column>
-          <el-table-column prop="new_net" :label="translate('New sales')" min-width="120" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="new_net" :label="translate('New sales')" min-width="120" sortable="custom">
             <template #default="{row}">{{ money(row.new_net) }}</template>
-          </el-table-column>
-          <el-table-column prop="renewal_net" :label="translate('Renewals')" min-width="120" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="renewal_net" :label="translate('Renewals')" min-width="120" sortable="custom">
             <template #default="{row}">{{ money(row.renewal_net) }}</template>
-          </el-table-column>
-          <el-table-column v-if="hasInstallments" prop="installment_net" :label="translate('Installment payments')" min-width="130" sortable="custom">
+          </fct-table-column>
+          <fct-table-column v-if="hasInstallments" prop="installment_net" :label="translate('Installment payments')" min-width="130" sortable="custom">
             <template #default="{row}">{{ money(row.installment_net) }}</template>
-          </el-table-column>
-          <el-table-column prop="units" :label="translate('Units')" min-width="85" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="units" :label="translate('Units')" min-width="85" sortable="custom">
             <template #default="{row}">{{ formatNumber(row.units) }}</template>
-          </el-table-column>
-          <el-table-column prop="orders" :label="translate('Orders')" min-width="90" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="orders" :label="translate('Orders')" min-width="90" sortable="custom">
             <template #default="{row}">{{ formatNumber(row.orders) }}</template>
-          </el-table-column>
-          <el-table-column prop="new_customers" :label="translate('New customers')" min-width="125" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="new_customers" :label="translate('New customers')" min-width="125" sortable="custom">
             <template #default="{row}">{{ formatNumber(row.new_customers) }}</template>
-          </el-table-column>
-          <el-table-column prop="refund_rate" :label="translate('Refund rate')" min-width="110" sortable="custom">
+          </fct-table-column>
+          <fct-table-column prop="refund_rate" :label="translate('Refund rate')" min-width="110" sortable="custom">
             <template #default="{row}">{{ row.refund_rate }}%</template>
-          </el-table-column>
+          </fct-table-column>
           <template #empty>
             <el-empty :description="search ? translate('No products match this search') : translate('No sales in this date range')"/>
           </template>
-        </el-table>
+        </fct-table>
         <div v-if="sorted.length > perPage" class="flex justify-end px-4 py-3">
           <el-pagination
               v-model:current-page="page"

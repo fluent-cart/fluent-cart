@@ -3,6 +3,8 @@
 namespace FluentCart\App\Hooks\Handlers;
 
 use FluentCart\Api\ModuleSettings;
+use FluentCart\App\Http\Controllers\ModuleSettingsController;
+use FluentCart\App\Services\PluginInstaller\AddonManager;
 use FluentCart\App\App;
 use FluentCart\App\Services\Renderer\CheckoutFieldsSchema;
 use FluentCart\App\Vite;
@@ -664,6 +666,11 @@ class MenuHandler
         $appConfig['permissions'] = PermissionManager::getUserPermissions();
         $appConfig['isProActive'] = App::isProActive();
         $appConfig['proVersion'] = defined('FLUENTCART_PRO_PLUGIN_VERSION') ? FLUENTCART_PRO_PLUGIN_VERSION : null;
+        // Customer Rights 1.0.0 ships its own withdrawal screen; older releases expected core's.
+        $appConfig['customerRightsUpdate'] = defined('FLUENT_CART_CUSTOMER_RIGHTS_VERSION')
+            && version_compare(FLUENT_CART_CUSTOMER_RIGHTS_VERSION, '1.0.0', '<')
+            ? ['installed' => FLUENT_CART_CUSTOMER_RIGHTS_VERSION, 'required' => '1.0.0']
+            : null;
         $appConfig['fluentPlayer'] = FluentPlayerBridge::adminAppConfig();
 
         $appConfig['logos'] = [
@@ -715,6 +722,8 @@ class MenuHandler
             'variation_terms'                  => AttributeTerm::query()->get()->keyBy('id'),
             'product_image_base_uri'           => Helper::getProductImageBaseUri(),
             'add_on_modules'                   => AddOnModule::showAddOns(),
+            // Product edit notice; the add-on list is only built when a builder lacks its add-on.
+            'builder_addons'                   => self::getBuilderAddons(),
             'stock_statuses'                   => Status::getStockStatuses(),
             'fulfillment_types'                => Helper::getFulfilmentTypes(),
             'variation_types'                  => Helper::getVariationTypes(),
@@ -840,4 +849,14 @@ class MenuHandler
         return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 
+
+    private static function getBuilderAddons()
+    {
+        $missing = AddonManager::getBuilderSignals();
+        if (!$missing) {
+            return [];
+        }
+
+        return AddonManager::pickBuilderAddons((new ModuleSettingsController())->getRegisteredPluginAddons(), $missing);
+    }
 }

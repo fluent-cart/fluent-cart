@@ -337,7 +337,10 @@ class CartItemRenderer
             <div class="fct-bundle-products-list">
                 <?php foreach (array_slice($childVariants, 0, 2) as $childVariant): ?>
                     <p>
-                        <?php echo esc_html(Arr::get($childVariant, 'post_title')) . ' - ' . esc_html(Arr::get($childVariant, 'variation_title')); ?>
+                        <?php echo esc_html(Helper::formatBundleChildTitle(
+                            Arr::get($childVariant, 'post_title', ''),
+                            Arr::get($childVariant, 'variation_title', '')
+                        )); ?>
                     </p>
                 <?php endforeach; ?>
 
@@ -346,7 +349,10 @@ class CartItemRenderer
                         <div class="fct-bundle-products-more-list">
                             <?php foreach (array_slice($childVariants, 2) as $childVariant): ?>
                                 <p>
-                                    <?php echo esc_html(Arr::get($childVariant, 'post_title')) . ' - ' . esc_html(Arr::get($childVariant, 'variation_title')); ?>
+                                    <?php echo esc_html(Helper::formatBundleChildTitle(
+                                        Arr::get($childVariant, 'post_title', ''),
+                                        Arr::get($childVariant, 'variation_title', '')
+                                    )); ?>
                                 </p>
                             <?php endforeach; ?>
                         </div>

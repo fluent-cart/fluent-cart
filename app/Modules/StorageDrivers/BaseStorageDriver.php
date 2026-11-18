@@ -191,8 +191,10 @@ abstract class BaseStorageDriver implements BaseStorageInterface
 
         if ($this->hasSettingsTemplate()) {
             $response['template'] = $this->getSettingsTemplate();
-            $response['template_payload'] = $this->getSettingsTemplatePayload($response);
         }
+
+        // Also for a plugin's own Vue screen (storage_<driver>_settings), which has no template.
+        $response['template_payload'] = $this->getSettingsTemplatePayload($response);
 
         $response = apply_filters('fluent_cart/storage/settings_response', $response, $this);
 

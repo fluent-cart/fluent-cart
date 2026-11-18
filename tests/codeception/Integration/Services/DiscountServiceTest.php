@@ -202,6 +202,92 @@ class DiscountServiceTest extends DatabaseTestCase
         $this->assertInstanceOf(\WP_Error::class, $result);
     }
 
+    public function test_accepts_scheduled_coupon_after_its_start_and_stores_active(): void
+    {
+        $item = CartFactory::makeCartItem(['unit_price' => 5000, 'subtotal' => 5000, 'line_total' => 5000]);
+        $cart = $this->cartFactory->withCartItems([$item])->create();
+        $coupon = $this->couponFactory->create([
+            'code'       => 'STARTED',
+            'status'     => 'scheduled',
+            'start_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+            'end_date'   => gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS),
+        ]);
+
+        $result = (new DiscountService($cart))->applyCouponCodes(['STARTED']);
+
+        $this->assertIsArray($result, 'The start time has passed: no admin has to open the coupon list first');
+        $this->assertContains('STARTED', $result['applied_coupon_codes']);
+        $this->assertSame('active', Coupon::query()->find($coupon->id)->status, 'The stored status follows');
+    }
+
+    public function test_rejects_a_scheduled_coupon_that_started_and_already_ended_without_a_write(): void
+    {
+        $item = CartFactory::makeCartItem(['unit_price' => 5000, 'subtotal' => 5000, 'line_total' => 5000]);
+        $cart = $this->cartFactory->withCartItems([$item])->create();
+        $coupon = $this->couponFactory->create([
+            'code'       => 'OVER',
+            'status'     => 'scheduled',
+            'start_date' => gmdate('Y-m-d H:i:s', time() - 2 * DAY_IN_SECONDS),
+            'end_date'   => gmdate('Y-m-d H:i:s', time() - DAY_IN_SECONDS),
+        ]);
+
+        $result = (new DiscountService($cart))->applyCouponCodes(['OVER']);
+
+        $this->assertInstanceOf(\WP_Error::class, $result);
+        $this->assertSame('coupon_expired', array_values($result->get_error_data())[0]['error_code']);
+        $this->assertSame('scheduled', Coupon::query()->find($coupon->id)->status, 'An ended coupon is not marked active');
+    }
+
+    public function test_a_started_virtual_scheduled_coupon_is_active_for_later_filters_and_is_not_stored(): void
+    {
+        $item = CartFactory::makeCartItem(['unit_price' => 5000, 'subtotal' => 5000, 'line_total' => 5000]);
+        $cart = $this->cartFactory->withCartItems([$item])->create();
+
+        // An add-on resolves a code to an unsaved coupon, as a wallet or store-credit integration does
+        $virtual = new Coupon();
+        $virtual->forceFill([
+            'code' => 'VIRTUAL', 'title' => 'Virtual', 'type' => 'fixed', 'amount' => 500, 'status' => 'scheduled',
+            'stackable' => 'no', 'priority' => 1, 'conditions' => [],
+            'start_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+        $resolve = function ($coupons) use ($virtual) {
+            return $coupons->push($virtual);
+        };
+        $seen = null;
+        $spy  = function ($canUse, $data) use (&$seen) {
+            $seen = $data['coupon']->status;
+            return $canUse;
+        };
+        add_filter('fluent_cart/coupon/resolve_coupons', $resolve);
+        add_filter('fluent_cart/coupon/can_use_coupon', $spy, 10, 2);
+        try {
+            $result = (new DiscountService($cart))->applyCouponCodes(['VIRTUAL']);
+        } finally {
+            remove_filter('fluent_cart/coupon/resolve_coupons', $resolve);
+            remove_filter('fluent_cart/coupon/can_use_coupon', $spy, 10);
+        }
+
+        $this->assertIsArray($result);
+        $this->assertSame('active', $seen, 'The filter sees the status checkout used');
+        $this->assertFalse(Coupon::query()->where('code', 'VIRTUAL')->exists(), 'A virtual coupon has no row to write');
+    }
+
+    public function test_rejects_scheduled_coupon_before_its_start(): void
+    {
+        $item = CartFactory::makeCartItem(['unit_price' => 5000, 'subtotal' => 5000, 'line_total' => 5000]);
+        $cart = $this->cartFactory->withCartItems([$item])->create();
+        $coupon = $this->couponFactory->create([
+            'code'       => 'NOTYET',
+            'status'     => 'scheduled',
+            'start_date' => gmdate('Y-m-d H:i:s', time() + HOUR_IN_SECONDS),
+        ]);
+
+        $result = (new DiscountService($cart))->applyCouponCodes(['NOTYET']);
+
+        $this->assertInstanceOf(\WP_Error::class, $result);
+        $this->assertSame('scheduled', Coupon::query()->find($coupon->id)->status);
+    }
+
     public function test_rejects_expired_coupon(): void
     {
         $item = CartFactory::makeCartItem(['unit_price' => 5000, 'subtotal' => 5000, 'line_total' => 5000]);
@@ -943,5 +1029,23 @@ class DiscountServiceTest extends DatabaseTestCase
 
         $this->assertContains('STK-ONE', $result['applied_coupon_codes'], 'the first stackable coupon must stay');
         $this->assertContains('STK-TWO', $result['applied_coupon_codes'], 'a later stackable coupon must stack on a stackable first');
+    }
+
+    /**
+     * Two lines of one variation share an `id`; the coupon must not copy the
+     * first line over the second, or the shipping shares stop summing to 1250.
+     */
+    public function test_coupon_keeps_each_line_when_variation_is_on_two_lines(): void
+    {
+        $variation = CartFactory::makeCartItem(['unit_price' => 1000, 'fulfillment_type' => 'physical']);
+        $first = $variation + ['itemwise_shipping_charge' => 417];
+        $other = CartFactory::makeCartItem(['unit_price' => 1000, 'fulfillment_type' => 'physical', 'itemwise_shipping_charge' => 417]);
+        $second = array_merge($variation, ['itemwise_shipping_charge' => 416]);
+        $cart = $this->cartFactory->withCartItems([$first, $other, $second])->create();
+        $this->couponFactory->createPercentage(['code' => 'PCT10DUP', 'amount' => 10]);
+
+        $result = (new DiscountService($cart))->applyCouponCodes(['PCT10DUP']);
+
+        $this->assertSame(1250, array_sum(array_column($result['cart_items'], 'itemwise_shipping_charge')));
     }
 }

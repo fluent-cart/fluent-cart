@@ -11,7 +11,7 @@
             <tbody>
             <tr v-for="(item, itemIndex) in settings[field.key]" :key="'item_'+itemIndex">
                 <td>
-                    <el-input :placeholder="field.field_label || 'Field Label'" v-model="item.label"></el-input>
+                    <fct-input :placeholder="field.field_label || 'Field Label'" v-model="item.label"/>
                 </td>
                 <td>
                     <FieldGeneral
@@ -21,8 +21,8 @@
                 </td>
                 <td>
                     <el-button-group>
-                        <el-button type="success" @click="addItemAfter(itemIndex)">+</el-button>
-                        <el-button type="danger" :disabled="settings[field.key].length == 1" @click="removeItem(itemIndex)">-</el-button>
+                        <fct-button type="success" @click="addItemAfter(itemIndex)">+</fct-button>
+                        <fct-button type="danger" :disabled="settings[field.key].length == 1" @click="removeItem(itemIndex)">-</fct-button>
                     </el-button-group>
                 </td>
             </tr>

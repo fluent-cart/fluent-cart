@@ -1,21 +1,7 @@
 <template>
     <div v-loading="loading" class="fluent_cart_chained_filter">
-        <el-select @change="handleCategoryChange()" clearable v-model="chained_settings.category" :placeholder="field.category_label">
-            <el-option
-                v-for="item in categories"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value">
-            </el-option>
-        </el-select>
-        <el-select v-show="chained_settings.category" v-model="chained_settings.sub_category" clearable :placeholder="field.subcategory_label">
-            <el-option
-                v-for="item in subcategories"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value">
-            </el-option>
-        </el-select>
+        <fct-select @change="handleCategoryChange()" clearable v-model="chained_settings.category" :placeholder="field.category_label" :options="categories"/>
+        <fct-select v-show="chained_settings.category" v-model="chained_settings.sub_category" clearable :placeholder="field.subcategory_label" :options="subcategories"/>
     </div>
 </template>
 <script type="text/babel">

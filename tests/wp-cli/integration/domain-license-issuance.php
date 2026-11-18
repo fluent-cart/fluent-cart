@@ -9,13 +9,12 @@ return [
         'name'          => 'Purchase-success license issuance creates one exact owned license',
         'kind'          => 'behavior',
         'known_failure' => false,
+        'requires'      => 'pro',
         'run'           => function () {
             try {
                 $handlerClass = FcDomainFixture::licenseHandlerClass();
                 if ($handlerClass === null) {
-                    FcTest::skip(
-                        'FluentCart Pro licensing handler is inactive on this local install.'
-                    );
+                    FcTest::fail('FluentCart Pro is expected active, but its licensing handler is not loaded.');
                     return;
                 }
 

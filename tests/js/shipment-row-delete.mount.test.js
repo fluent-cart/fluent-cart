@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {defineComponent, h, nextTick} from 'vue';
 import ElementPlus, {ID_INJECTION_KEY} from 'element-plus';
+import {fctPlugin} from './support/fct-stubs.js';
 
 /**
  * Delete sits in the ⋯ menu and asks inside the menu before it deletes. The
@@ -51,6 +52,7 @@ const mountRow = async (shipment) => {
         .use(ElementPlus)
         .component('ElDropdown', {render: () => null})
         .component('ElPopover', PopoverStub)
+        .use(fctPlugin({FctDropdown: {render: () => null}, FctPopover: PopoverStub}))
         .provide(ID_INJECTION_KEY, {prefix: 1, current: 0})
         .mount(root);
     await flush();

@@ -7,9 +7,9 @@
           {{ data.message }}
         </h5>
         <p>{{ translate('NotFound_Check_Url') }}</p>
-        <el-button tag="router-link" type="primary" :to="data.route">
+        <fct-button type="primary" :to="data.route">
           {{ data.buttonText }}
-        </el-button>
+        </fct-button>
       </div>
     </div>
   </div>
@@ -42,17 +42,17 @@ const props = defineProps({
   }
 })
 
-const data = ref({});
-
 const route = useRoute();
 const router = useRouter();
 
+// Read the query before the first render, so the button never gets an empty route
+const data = ref({
+  buttonText: route.query.buttonText || props.buttonText,
+  route: route.query.route || props.route,
+  message: route.query.message || props.message
+});
+
 onMounted(() => {
-  data.value = {
-    buttonText: route.query.buttonText || props.buttonText,
-    route: route.query.route || props.route,
-    message: route.query.message || props.message
-  };
   router.replace({ query: {} });
 })
 

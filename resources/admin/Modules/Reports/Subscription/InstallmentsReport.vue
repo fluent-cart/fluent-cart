@@ -409,7 +409,7 @@ onUnmounted(() => {
       <PageHeading>
         <template #title>
           <div>
-            <h1 class="page-title">{{ translate('Installments') }}</h1>
+            <h2 class="page-title">{{ translate('Installments') }}</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-0">
               {{ startedRange
                 ? translate('Plans started from %1$s to %2$s, as they stand today.', formatDay(startedRange[0]), formatDay(startedRange[1]))
@@ -424,7 +424,7 @@ onUnmounted(() => {
           <!-- Wraps on a narrow screen rather than running out of the title bar -->
           <div v-if="filterOptions.length" class="flex flex-wrap items-center justify-end gap-2">
           <div class="flex-none" style="width: 260px">
-            <el-date-picker
+            <fct-date-picker
                 size="small"
                 v-model="startedRange"
                 type="daterange"
@@ -438,7 +438,7 @@ onUnmounted(() => {
                 @change="fetchData"
             />
           </div>
-          <el-select
+          <fct-select
               v-model="selectedVariations"
               size="small"
               multiple
@@ -450,20 +450,8 @@ onUnmounted(() => {
               :placeholder="translate('All products')"
               :aria-label="translate('Filter by product')"
               @change="fetchData"
-          >
-            <el-option-group
-                v-for="product in filterOptions"
-                :key="product.product_id"
-                :label="product.product_title"
-            >
-              <el-option
-                  v-for="variation in product.variations"
-                  :key="variation.id"
-                  :label="variation.title"
-                  :value="variation.id"
-              />
-            </el-option-group>
-          </el-select>
+              :options="filterOptions.map(product => ({label: product.product_title, options: product.variations.map(variation => ({label: variation.title, value: variation.id}))}))"
+          />
           </div>
       </Teleport>
 
@@ -479,9 +467,9 @@ onUnmounted(() => {
             </div>
             <div class="title">
               {{ card.title }}
-              <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark">
+              <fct-tooltip :content="card.info" placement="top">
                 <DynamicIcon class="text-gray-500 w-4 h-4 cursor-help" name="InformationFill"/>
-              </el-tooltip>
+              </fct-tooltip>
             </div>
             <div v-if="card.note" class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ card.note }}</div>
           </div>
@@ -497,7 +485,7 @@ onUnmounted(() => {
               border_bottom
           />
           <Card.Body>
-            <el-skeleton v-if="loading" animated :rows="6"/>
+            <fct-skeleton v-if="loading" animated :rows="6"/>
             <el-empty v-else-if="!data.starts.length" :description="translate('No installment plans yet')"/>
             <div v-else ref="startsChartRef" class="fct-chart-wrap" style="height: 320px"></div>
           </Card.Body>
@@ -515,17 +503,17 @@ onUnmounted(() => {
                 <span class="text-sm text-system-dark dark:text-gray-200 whitespace-nowrap">{{ translate('Collection rate') }}</span>
                 <el-slider v-model="collectionRate" style="width: 160px" :min="0" :max="100" :step="1" :show-tooltip="false" :aria-label="translate('Collection rate')"/>
                 <span class="text-sm font-medium text-system-dark dark:text-gray-100 w-10">{{ collectionRate }}%</span>
-                <el-tooltip popper-class="fct-tooltip" placement="top" :content="collectionRateInfo">
+                <fct-tooltip placement="top" :content="collectionRateInfo">
                   <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this setting')">
                     <DynamicIcon name="InformationFill" class="w-4 text-gray-500" aria-hidden="true"/>
                   </button>
-                </el-tooltip>
-                <el-button size="small" :disabled="collectionRate === historyRate()" @click="collectionRate = historyRate()">{{ translate('Reset') }}</el-button>
+                </fct-tooltip>
+                <fct-button size="small" :disabled="collectionRate === historyRate()" @click="collectionRate = historyRate()">{{ translate('Reset') }}</fct-button>
               </div>
             </template>
           </Card.Header>
           <Card.Body>
-            <el-skeleton v-if="loading" animated :rows="6"/>
+            <fct-skeleton v-if="loading" animated :rows="6"/>
             <el-empty v-else-if="!data.schedule.length" :description="translate('No payments left on active or overdue plans')"/>
             <div v-else ref="chartRef" class="fct-chart-wrap" style="height: 320px"></div>
           </Card.Body>
@@ -562,7 +550,7 @@ onUnmounted(() => {
             <p v-if="activeTab !== 'variations' && !loading" class="fct-card-header-text mt-2 mb-0">{{ atRiskText }}</p>
           </template>
           <template #action v-if="activeTab !== 'variations'">
-            <el-input
+            <fct-input
                 v-model="atRiskSearch"
                 style="width: 240px"
                 size="small"
@@ -592,46 +580,46 @@ onUnmounted(() => {
             </ExtensionComponent>
           </template>
           <template v-else>
-            <el-skeleton v-if="atRisk.loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
-            <el-table v-else :data="atRisk.data">
-              <el-table-column :label="translate('Customer')" min-width="220">
+            <fct-skeleton v-if="atRisk.loading" animated :rows="5" class="px-4 pt-4 pb-4"/>
+            <fct-table v-else :data="atRisk.data">
+              <fct-table-column :label="translate('Customer')" min-width="220">
                 <template #default="{row}">
                   <router-link :to="{name: 'view_subscription', params: {subscription_id: row.subscription_id}}">
                     {{ row.customer_name || row.email }}
                   </router-link>
                   <div class="text-gray-500 text-xs">{{ row.email }}</div>
                 </template>
-              </el-table-column>
-              <el-table-column :label="translate('Product')" min-width="220">
+              </fct-table-column>
+              <fct-table-column :label="translate('Product')" min-width="220">
                 <template #default="{row}">
                   <div>{{ row.product_title }}</div>
                   <div class="text-gray-500 text-xs">{{ row.variation_title }} (#{{ row.variation_id }})</div>
                 </template>
-              </el-table-column>
-              <el-table-column :label="translate('Status')" min-width="110">
+              </fct-table-column>
+              <fct-table-column :label="translate('Status')" min-width="110">
                 <template #default="{row}">{{ row.status }}</template>
-              </el-table-column>
-              <el-table-column :label="translate('Paid')" min-width="90">
+              </fct-table-column>
+              <fct-table-column :label="translate('Paid')" min-width="90">
                 <template #default="{row}">{{ row.bill_count }} / {{ row.bill_times }}</template>
-              </el-table-column>
-              <el-table-column :label="translate('Collected')" min-width="120">
+              </fct-table-column>
+              <fct-table-column :label="translate('Collected')" min-width="120">
                 <template #default="{row}">{{ money(row.collected) }}</template>
-              </el-table-column>
-              <el-table-column :label="translate('Left')" min-width="120">
+              </fct-table-column>
+              <fct-table-column :label="translate('Left')" min-width="120">
                 <template #default="{row}">{{ money(row.left_amount) }}</template>
-              </el-table-column>
-              <el-table-column :label="translate('Reactivation')" min-width="140">
+              </fct-table-column>
+              <fct-table-column :label="translate('Reactivation')" min-width="140">
                 <template #default="{row}">
-                  <el-button v-if="row.reactivate_url" size="small" text @click="copyReactivationLink(row)">
+                  <fct-button v-if="row.reactivate_url" size="small" text @click="copyReactivationLink(row)">
                     {{ translate('Copy link') }}
-                  </el-button>
+                  </fct-button>
                   <span v-else class="text-gray-500 text-xs">{{ translate('Not available') }}</span>
                 </template>
-              </el-table-column>
+              </fct-table-column>
               <template #empty>
                 <el-empty :description="atRiskSearch ? translate('No plans match this search') : (activeTab === 'overdue' ? translate('No overdue plans') : translate('No lapsed plans'))"/>
               </template>
-            </el-table>
+            </fct-table>
             <Pagination
                 v-if="atRiskPaging.total"
                 :pagination="atRiskPaging"

@@ -141,6 +141,8 @@ class StripeSwitchPaymentMethodCurrencyTest extends WPTestCase
             'currency'               => 'EUR',
             'recurring_total'        => 2000,
             'current_payment_method' => 'offline_payment',
+            // A switch needs paid days left, so the new vendor subscription trials until this date.
+            'next_billing_date'      => gmdate('Y-m-d H:i:s', strtotime('+10 days')),
             'status'                 => 'active',
         ]);
     }

@@ -8,24 +8,17 @@
               <label class="fluent_cart_inline">
                 {{ labels.input_label }}
               </label>
-              <el-input
+              <fct-input
                 v-if="input_type == 'text'"
                 :placeholder="labels.input_placeholder"
                 v-model="routing.input_value"
               />
-              <el-select
+              <fct-select
                 v-else-if="input_type == 'select'"
                 v-model="routing.input_value"
                 :placeholder="labels.input_placeholder"
-              >
-                <el-option
-                  v-for="(item, itemValue) in input_options"
-                  :key="itemValue"
-                  :label="item"
-                  :value="itemValue"
-                >
-                </el-option>
-              </el-select>
+                :options="toOptions(input_options)"
+              />
             </td>
             <td>If</td>
             <td>
@@ -50,57 +43,23 @@
               </el-select> -->
             </td>
             <td>
-              <el-select v-model="routing.operator" class="w-[100px]">
-                <el-option value="=" label="equal"></el-option>
-                <el-option value="!=" label="not equal"></el-option>
-                <el-option value=">" label="greater than"></el-option>
-                <el-option value="<" label="less than"></el-option>
-                <el-option value=">=" label="greater than or equal"></el-option>
-                <el-option value="<=" label="less than or equal"></el-option>
-                <template
-                  v-if="
-                    fields[routing.field] &&
-                    !Object.keys(fields[routing.field].options).length
-                  "
-                >
-                  <el-option value=">" label="greater than"></el-option>
-                  <el-option value="<" label="less than"></el-option>
-                  <el-option
-                    value=">="
-                    label="greater than or equal"
-                  ></el-option>
-                  <el-option value="<=" label="less than or equal"></el-option>
-                  <el-option value="contains" label="contains"></el-option>
-                  <el-option
-                    value="doNotContains"
-                    label="do not contains"
-                  ></el-option>
-                  <el-option value="startsWith" label="starts with"></el-option>
-                  <el-option value="endsWith" label="ends with"></el-option>
-                </template>
-              </el-select>
+              <fct-select v-model="routing.operator" class="w-[100px]" :options="operatorOptions(routing)"/>
             </td>
             <td>
-              <el-select
+              <fct-select
                 v-if="
                   fields[routing.field] &&
                   Object.keys(fields[routing.field].options).length
                 "
                 v-model="routing.value"
                 style="width: 100%"
-              >
-                <el-option
-                  v-for="(label, value) in fields[routing.field].options"
-                  :key="value"
-                  :label="label"
-                  :value="value"
-                ></el-option>
-              </el-select>
-              <el-input
+                :options="toOptions(fields[routing.field].options)"
+              />
+              <fct-input
                 v-else
                 :placeholder="$t('Enter a value')"
                 v-model="routing.value"
-              ></el-input>
+              />
             </td>
             <td>
               <div class="action-btns">
@@ -198,6 +157,33 @@ export default {
     }
   },
   methods: {
+    operatorOptions(routing) {
+      const options = [
+        {value: "=", label: "equal"},
+        {value: "!=", label: "not equal"},
+        {value: ">", label: "greater than"},
+        {value: "<", label: "less than"},
+        {value: ">=", label: "greater than or equal"},
+        {value: "<=", label: "less than or equal"},
+      ];
+      const field = this.fields[routing.field];
+      if (field && !Object.keys(field.options).length) {
+        options.push(
+          {value: ">", label: "greater than"},
+          {value: "<", label: "less than"},
+          {value: ">=", label: "greater than or equal"},
+          {value: "<=", label: "less than or equal"},
+          {value: "contains", label: "contains"},
+          {value: "doNotContains", label: "do not contains"},
+          {value: "startsWith", label: "starts with"},
+          {value: "endsWith", label: "ends with"},
+        );
+      }
+      return options;
+    },
+    toOptions(options) {
+      return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+    },
     add(index) {
       this.routings.splice(index + 1, 0, { ...this.defaultRules });
     },

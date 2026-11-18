@@ -111,25 +111,47 @@ return [
         'name'          => 'License summary counts inactive licenses as inactive and disabled ones separately',
         'kind'          => 'behavior',
         'known_failure' => false,
+        'requires'      => 'pro',
         'run'           => function () {
-            global $wpdb;
-            if (!$wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $wpdb->prefix . 'fct_licenses'))) {
-                FcTest::assertSame(true, true, 'No licenses table on this store');
+            $licenseClass = 'FluentCartPro\\App\\Modules\\Licensing\\Models\\License';
+            if (!class_exists($licenseClass)) {
+                FcTest::fail('FluentCart Pro is expected active, but its licensing models are not loaded.');
                 return;
             }
             $count = function ($status) {
                 return (int) App::db()->table('fct_licenses')->where('status', $status)->count();
             };
-            if (!$count('inactive') || $count('inactive') === $count('disabled')) {
-                FcTest::assertSame(true, true, 'Skipped: this store has no inactive licenses that differ in number from disabled ones');
-                return;
+            try {
+                $product = FcDomainFixture::product(['payment_type' => 'onetime']);
+                $order = FcDomainFixture::orderWithItem((int) $product['post']->ID, (int) $product['variation']->id, 1);
+                // One disabled license, and one or two inactive ones so the two store-wide counts always differ.
+                $statuses = ['disabled', 'inactive'];
+                if ($count('inactive') === $count('disabled')) {
+                    $statuses[] = 'inactive';
+                }
+                foreach ($statuses as $index => $status) {
+                    $licenseClass::query()->create([
+                        'status'           => $status,
+                        'limit'            => 1,
+                        'activation_count' => 0,
+                        'license_key'      => 'AUDIT-' . strtoupper(substr(hash('sha256', FcFixture::identity()), 0, 12)) . '-' . $index,
+                        'product_id'       => (int) $product['post']->ID,
+                        'variation_id'     => (int) $product['variation']->id,
+                        'order_id'         => (int) $order->id,
+                        'customer_id'      => (int) $order->customer_id,
+                    ]);
+                }
+                FcDomainFixture::captureLicensesForOrder((int) $order->id);
+
+                $summary = (new LicenseReportService())->getSummary(null, null)['summaryData'];
+                FcTest::assertSame(
+                    [$count('inactive'), $count('disabled')],
+                    [(int) $summary['totalInactiveLicense'], (int) $summary['totalDisabledLicense']],
+                    'Inactive means status inactive; disabled has its own count'
+                );
+            } finally {
+                FcDomainFixture::cleanupAll();
             }
-            $summary = (new LicenseReportService())->getSummary(null, null)['summaryData'];
-            FcTest::assertSame(
-                [$count('inactive'), $count('disabled')],
-                [(int) $summary['totalInactiveLicense'], (int) $summary['totalDisabledLicense']],
-                'Inactive means status inactive; disabled has its own count'
-            );
         },
     ],
     [

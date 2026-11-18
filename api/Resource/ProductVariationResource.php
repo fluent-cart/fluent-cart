@@ -110,6 +110,8 @@ class ProductVariationResource extends BaseResourceApi
                 'tax_exempt',
                 'tax_inclusion',
                 'package_slug',
+                'is_bundle_product',
+                'bundle_child_ids',
                 'weight',
                 'weight_unit',
                 'length',

@@ -19,16 +19,12 @@ const formattedAmount = computed(() => {
 </script>
 
 <template>
-  <el-tooltip
-      effect="dark"
-      :placement="placement"
-      popper-class="fct-tooltip"
-  >
+  <fct-tooltip :placement="placement">
     <template #content>
       <span>{{ formattedAmount }}</span>
     </template>
     <span class="cursor-pointer">{{ formattedAmount }}</span>
-  </el-tooltip>
+  </fct-tooltip>
 </template>
 
 <style scoped>

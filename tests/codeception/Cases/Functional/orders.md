@@ -71,20 +71,37 @@
 - [x] 41. Admin is rejected when marking a canceled order as paid.
 - [x] 42. Admin sees an "order paid" notification triggered when an order is marked as paid.
 - [x] 43. Admin sees a digital-only order automatically advance to "completed" after being marked as paid.
-- [x] 43a. Two simultaneous admin mark-as-paid requests record exactly one succeeded charge; one request is rejected as already paid and the amount paid never exceeds the order total. (FC-SEC-03)
-- [x] 43b. Order-paid listeners run only after the mark-as-paid database transaction has committed, so third-party hooks never execute while the order row is locked. (FC-SEC-03 review)
+- [x] 43a. Two simultaneous admin mark-as-paid requests record exactly one succeeded charge; one request is rejected as already paid and the amount paid never exceeds the order total.
+- [x] 43b. Order-paid listeners run only after the mark-as-paid database transaction has committed, so third-party hooks never execute while the order row is locked.
+- [x] 43c. Admin confirming an open Stripe charge that Stripe already collected gets "Stripe already received this payment", and no second charge is recorded.
+- [x] 43d. Admin confirming a processing PayPay charge settles that same row (gateway, method type and payment ID kept, check and note saved), and a late Stripe success adds nothing.
+- [x] 43e. Admin marking an order with an open gateway charge must choose to confirm it or record a separate payment.
+- [x] 43f. Admin confirming an open gateway charge is rejected when the submitted method or reference differs from the charge.
+- [x] 43g. Admin can confirm an open gateway charge when the gateway cannot be reached; the row is settled and the failed check is recorded.
+- [x] 43h. Admin confirming a failed gateway charge settles that same row and keeps its gateway.
+- [x] 43i. Admin recording a separate payment leaves the gateway charge open; if the gateway collects it later, the order shows overpaid with one warning in its activity.
+- [x] 43j. Admin confirming with several open gateway charges must pick one; only the picked charge is settled.
+- [x] 43k. Admin marking an order whose charge already succeeded only syncs the order to paid, records no charge, and runs the order-paid hooks once.
+- [x] 43l. Admin confirming an open charge that the gateway collected only in part is told the balance still due, and the order shows partially paid.
+- [x] 43m. Admin is rejected from confirming a gateway charge whose amount is not the amount due.
+- [x] 43n. Admin marking an order paid reuses its pending charge that has no payment ID.
+- [x] 43o. Admin marking a raised order paid records a charge for the raised part only.
+- [x] 43p. Admin marking a canceled order paid is rejected even when a settled charge already covers it.
+- [x] 43q. Admin confirming an open payment is rejected when the gateway reports a different currency.
+- [x] 43r. Admin confirming an open subscription payment is rejected; a separate payment is required.
+- [x] 43s. Admin confirming an open payment on a canceled order is rejected before the gateway is asked.
 
 ## Updating order statuses
 - [x] 44. Admin can change an order's overall status or shipping status through the dedicated statuses action; the payment-status action is clearly rejected because payment transitions flow through their dedicated endpoints. (contract decision 2026-08-06: statuses endpoint is order/shipping-only — payment transitions use mark-as-paid, transaction status updates, refunds, and gateway webhooks so money state stays consistent with transactions)
 - [x] 45. Admin sees an "order status updated" notification triggered when the order status changes.
 - [x] 46. Admin sees an order's completion timestamp recorded automatically when the order moves to "completed".
-- [x] 47. Admin sees an order's refund timestamp recorded automatically when the order is fully refunded through the refund action. (2026-08-25, FC-SEC-09: the transaction-status action no longer changes a succeeded charge)
+- [x] 47. Admin sees an order's refund timestamp recorded automatically when the order is fully refunded through the refund action. (2026-08-25: the transaction-status action no longer changes a succeeded charge)
 - [x] 48. Admin can resync an order's status from its latest payment when the two are out of step.
 - [x] 118. Admin trying to change the status of an already-canceled order is rejected with a client error, not a server error.
 
 ## Updating an order's transaction payment status
-- [x] 49. Admin can change a specific transaction's payment status, and the order's payment status and paid total reflect the new state. (TC-053 / FC-SEC-09 resolved 2026-08-25)
-- [x] 49a. Admin is rejected when trying to change a succeeded transaction to another status. (FC-SEC-09)
+- [x] 49. Admin can change a specific transaction's payment status, and the order's payment status and paid total reflect the new state. (TC-053)
+- [x] 49a. Admin is rejected when trying to change a succeeded transaction to another status.
 - [x] 50. Admin is rejected when changing a transaction's status to the same status it already has.
 - [x] 51. Admin is rejected when the chosen transaction does not belong to the chosen order.
 
@@ -116,7 +133,7 @@
 - [x] 73. Admin is rejected when running a bulk action without selecting any orders.
 - [x] 74. Admin is rejected when running a bulk action with an unknown action name.
 - [x] 75. Admin bulk-deleting a mix of deletable and undeletable orders deletes the deletable ones and is told which ones could not be deleted.
-- [x] 75a. A store manager who can manage orders but cannot delete them is rejected when bulk-deleting orders, and the selected orders survive. (FC-SEC-01: POST /orders/do-bulk-action declared orders/manage while every action it accepts deletes orders; the route now declares orders/delete)
+- [x] 75a. A store manager who can manage orders but cannot delete them is rejected when bulk-deleting orders, and the selected orders survive. (POST /orders/do-bulk-action declared orders/manage while every action it accepts deletes orders; the route now declares orders/delete)
 - [x] 75b. A store manager who can manage orders but cannot delete them is rejected when bulk-deleting test-mode orders, and those orders survive.
 - [x] 75c. A store manager with the "delete orders" permission can still bulk-delete orders.
 

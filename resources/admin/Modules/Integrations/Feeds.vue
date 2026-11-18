@@ -9,37 +9,21 @@
                         v-if="hasActiveIntegrations"
                         class="integration-actions"
                     >
-                        <el-dropdown
+                        <fct-dropdown
+                            :items="integrationItems"
                             @command="add"
                             trigger="click"
-                            popper-class="fct-dropdown"
                         >
-                            <el-button type="info" plain size="small">
+                            <fct-button type="info" plain size="small">
                                 {{ $t("Add Integration") }}
                                 <DynamicIcon name="ChevronDown"/>
-                            </el-button>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <template
-                                        v-for="(
-                      integration, integration_name
-                    ) in available_integrations"
-                                        :key="integration_name"
-                                    >
-                                        <el-dropdown-item
-                                            :command="integration_name"
-                                        >
-                                            {{ integration.title }}
-                                        </el-dropdown-item>
-                                    </template>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
+                            </fct-button>
+                        </fct-dropdown>
                     </div>
                 </template>
             </Card.Header>
             <Card.Body class="px-0 pb-0 pt-4">
-                <el-skeleton class="px-5 pb-5" :loading="loading" animated :rows="6"/>
+                <fct-skeleton v-if="loading" class="px-5 pb-5" animated :rows="6"/>
 
                 <template v-if="!loading">
 
@@ -50,20 +34,20 @@
                                 $t('Integration_Don_Integration')
                             }}
                         </p>
-                        <el-button
+                        <fct-button
                             tag="a"
                             type="primary"
                             :href="all_module_config_url"
                         >{{ $t("Configure Modules") }}
-                        </el-button
+                        </fct-button
                         >
                     </div>
 
                     <div v-else class="fct-integrations-table-wrap">
-                        <el-table v-loading="loading" :data="feeds">
-                            <el-table-column :label="$t('Enabled')" :width="60">
+                        <fct-table :loading="loading" :data="feeds">
+                            <fct-table-column :label="$t('Enabled')" :width="60">
                                 <template #default="scope">
-                                    <el-switch
+                                    <fct-switch
                                         active-value="yes"
                                         inactive-value="no"
                                         @change="handleActive(scope.row)"
@@ -71,9 +55,9 @@
                                     />
 
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="120" :label="$t('Integration')">
+                            <fct-table-column :width="120" :label="$t('Integration')">
                                 <template #default="scope">
                                     <div class="fct-integration-logo-wrap">
                                         <img
@@ -88,17 +72,17 @@
                                         </span>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="220" :label="$t('Title')">
+                            <fct-table-column :width="220" :label="$t('Title')">
                                 <template #default="scope">
                                     <a class="fct-action-link-btn" @click.prevent="edit(scope.row)" href="#">
                                         {{ scope.row.name }}
                                     </a>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="160" :label="$t('Triggers')">
+                            <fct-table-column :width="160" :label="$t('Triggers')">
                                 <template #default="scope">
                                     <div class="fct-event-triggers">
                                         <el-tag
@@ -108,7 +92,7 @@
                                             {{ Str.headline(event) }}
                                         </el-tag>
 
-                                        <el-popover
+                                        <fct-popover
                                             v-if="(scope.row.feed.event_trigger || []).length > 2"
                                             placement="bottom"
                                             width="300"
@@ -129,19 +113,17 @@
                                                     {{ Str.headline(event) }}
                                                 </el-tag>
                                             </div>
-                                        </el-popover>
+                                        </fct-popover>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
-                            <el-table-column :width="80">
+                            <fct-table-column :width="80">
                                 <template #default="scope">
                                     <div class="fct-btn-group sm">
-                                        <el-tooltip
-                                            effect="dark"
+                                        <fct-tooltip
                                             :content="$t('Edit')"
                                             placement="top"
-                                            popper-class="fct-tooltip"
                                         >
                                             <IconButton
                                                 tag="button"
@@ -151,26 +133,24 @@
                                             >
                                                 <DynamicIcon name="Edit"/>
                                             </IconButton>
-                                        </el-tooltip>
+                                        </fct-tooltip>
 
-                                        <el-tooltip
-                                            effect="dark"
+                                        <fct-tooltip
                                             :content="$t('Delete')"
                                             placement="top"
-                                            popper-class="fct-tooltip"
                                         >
                                             <IconButton
                                                 tag="button"
                                                 size="x-small"
-                                                @click="removeFeed(scope.row.id, scope)"
+                                                @click="removeFeed(scope.row.id, scope.index)"
                                                 hover="danger"
                                             >
                                                 <DynamicIcon name="Delete"/>
                                             </IconButton>
-                                        </el-tooltip>
+                                        </fct-tooltip>
                                     </div>
                                 </template>
-                            </el-table-column>
+                            </fct-table-column>
 
                             <template #empty>
                                 <Empty
@@ -178,7 +158,7 @@
                                     :text="$t('You did not add any integration actions yet.')"
                                 />
                             </template>
-                        </el-table>
+                        </fct-table>
                     </div>
 
                     <div v-if="!feeds.length" class="fct-integration-table-footer">
@@ -218,6 +198,9 @@ export default {
         };
     },
     computed: {
+        integrationItems() {
+            return Object.keys(this.available_integrations).map((name) => ({command: name, label: this.available_integrations[name].title}));
+        },
         hasActiveIntegrations() {
             return Object.values(this.available_integrations).some(
                 (integration) => integration.enabled
@@ -257,8 +240,7 @@ export default {
                 });
         },
 
-        removeFeed(id, scope) {
-            let $index = scope.$index;
+        removeFeed(id, $index) {
             this.$confirm(
                 "Are you sure you want to delete this integration?",
                 "Confirm Delete!",

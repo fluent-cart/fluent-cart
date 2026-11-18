@@ -7,13 +7,13 @@
     <div class="setting-fields-inner" :class="{'inline-field' : isInlineComponent}">
       <label class="setting-label">{{ field.label }}</label>
 
-      <el-switch active-value="yes" inactive-value="no" v-model="settings[index]" v-if="field.type === 'switch'"/>
+      <fct-switch active-value="yes" inactive-value="no" v-model="settings[index]" v-if="field.type === 'switch'"/>
 
-      <el-input :type="field.type" :placeholder="field.placeholder" v-model="settings[index]"
+      <fct-input :type="field.type === 'email' ? 'email' : 'text'" :placeholder="field.placeholder" v-model="settings[index]"
                 v-if="field.type === 'input' || field.type === 'email'"/>
 
 
-      <el-select
+      <fct-select
           v-if="field.type === 'search_select'"
           v-model="settings[index]"
           filterable
@@ -21,17 +21,12 @@
           :placeholder="translate('Please enter a keyword')"
           :remote-method="query => getSelectOptions({query, index})"
           :loading="searching"
-      >
-        <el-option v-for="item in field.options" :key="item.value" :label="item.label" :value="item.value"/>
-      </el-select>
+          :options="Object.values(field.options || {})"
+      />
 
-      <el-select v-model="settings[index]" filterable placeholder="Select" v-if="field.type === 'select'">
-        <el-option v-for="(opt, index) in field.options" :key="index" :label="opt.label" :value="opt.value"/>
-      </el-select>
+      <fct-select v-model="settings[index]" filterable placeholder="Select" v-if="field.type === 'select'" :options="Object.values(field.options || {})"/>
 
-      <el-checkbox-group v-model="settings[index]" v-if="field.type === 'checkbox_group'">
-        <el-checkbox v-for="(opt, ind) in field.options" :label="ind" :key="ind">{{ opt }}</el-checkbox>
-      </el-checkbox-group>
+      <fct-choice v-model="settings[index]" v-if="field.type === 'checkbox_group'" :options="toOptions(field.options)"/>
 
       <div v-if="field.type === 'media'">
         <MediaInput :multiple="!!field.multiple" v-model="settings[index]"/>
@@ -88,6 +83,9 @@ const getSelectOptions = (data) => {
         searching.value = false;
       })
 }
+
+// Same values v-for gave: array index or object key.
+const toOptions = (options) => Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
 
 const isInlineComponent = computed(() => {
   return ['switch', 'checkbox_group'].includes(props.field.type);

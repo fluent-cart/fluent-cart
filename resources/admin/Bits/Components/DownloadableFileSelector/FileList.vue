@@ -150,81 +150,77 @@ const deleteFile = async (file, index) => {
   <template v-if="!storageDriverModel.needsReconfigure(driver)">
 
     <div class="fct-file-upload-search-wrap">
-      <el-input v-model="searchQuery" class="fct-file-search-input" :placeholder="translate('Search and hit enter')" clearable
+      <fct-input v-model="searchQuery" class="fct-file-search-input" :placeholder="translate('Search and hit enter')" clearable
                  @keyup.enter="()=>{
                   getFileList()
               }"/>
     </div>
 
     <div v-if="loading">
-      <el-table :data="[1,2,3,4,5]">
-        <el-table-column type="selection" width="45"/>
-        <el-table-column :label="translate('File Name')">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item varient="p" class="max-w-[190px]"/>
-            </template>
-          </el-skeleton>
-        </el-table-column>
+      <fct-table :data="[1,2,3,4,5]">
+        <fct-table-column type="selection" width="45"/>
+        <fct-table-column :label="translate('File Name')">
+          <fct-skeleton animated>
+            <fct-skeleton variant="p" class="max-w-[190px]"/>
+          </fct-skeleton>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Size')" width="150">
-          <el-skeleton animated>
-            <template #template>
-              <el-skeleton-item varient="p" class="max-w-[100px]"/>
-            </template>
-          </el-skeleton>
-        </el-table-column>
-      </el-table>
+        <fct-table-column :label="translate('Size')" width="150">
+          <fct-skeleton animated>
+            <fct-skeleton variant="p" class="max-w-[100px]"/>
+          </fct-skeleton>
+        </fct-table-column>
+      </fct-table>
     </div>
     <div v-if="!loading" class="fct-file-upload-list">
 
-      <el-table
+      <fct-table
           v-if="!hasError"
           ref="tableRef"
           :data="fileList.filter(file => file.size > 0)"
           @selection-change="onSelectFile"
       >
         <!-- Multiple selection (checkboxes) -->
-        <el-table-column
+        <fct-table-column
             v-if="multiple"
             type="selection"
             width="45"
             :selectable="(row) => !row.deleting && row.size > 0"
-            @selection-change="onSelectFile"
         />
 
         <!-- Single selection (custom radio) -->
-        <el-table-column v-else label="" width="45">
+        <fct-table-column v-else label="" width="45">
           <template #default="scope">
-            <el-radio
+            <fct-choice
+                type="radio"
                 v-model="singleSelected"
-                :label="scope.row"
-                :disabled="scope.row.size == 0"
+                :options="[{value: scope.row, disabled: scope.row.size == 0}]"
                 @change="onSelectFile([scope.row])"
             />
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('File Name')">
+        <fct-table-column :label="translate('File Name')">
           <template #default="scope">
             <span class="file-name">{{ getFileName(scope.row.path || scope.row.name) }}</span>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Size')" width="150">
+        <fct-table-column :label="translate('Size')" width="150">
           <template #default="scope">
             <span>{{ Storage.readableFileSizeFromBytes(scope.row.size) }}</span>
           </template>
-        </el-table-column>
+        </fct-table-column>
 
-        <el-table-column :label="translate('Actions')" width="80">
+        <fct-table-column :label="translate('Actions')" width="80">
           <template #default="scope">
 
-            <el-popconfirm
+            <fct-popover
+                confirm
                 :title="translate('Are you sure you want to delete this file? This action is not recoverable.')"
                 :confirm-button-text="translate('Yes, Confirm!')"
                 :cancel-button-text="translate('Cancel')"
-                @confirm="deleteFile(scope.row, scope.$index)"
+                @confirm="deleteFile(scope.row, scope.index)"
                 width="250"
                 popper-class="fct-delete-confirm-popover"
             >
@@ -233,15 +229,15 @@ const deleteFile = async (file, index) => {
                   <DynamicIcon name="Delete"/>
                 </IconButton>
               </template>
-            </el-popconfirm>
+            </fct-popover>
 
           </template>
-        </el-table-column>
+        </fct-table-column>
 
         <template #empty>
           <span>{{ translate('No file found.') }}</span>
         </template>
-      </el-table>
+      </fct-table>
       <div v-else>
         <p>{{ translate('Error: Unable to load the file list.') }}</p>
       </div>

@@ -334,4 +334,46 @@ class AbstractPaymentGatewayTest extends WPTestCase
         $content = $this->cod->paymentFailedNote('', ['request' => $request]);
         $this->assertStringContainsString('Transaction not found', $content);
     }
+
+    // =========================================================================
+    // Checkout skeleton: default only for gateways that load a checkout script
+    // =========================================================================
+
+    private function scriptGateway(array $scripts): AbstractPaymentGateway
+    {
+        return new class(new CodSettingsBase(), $scripts) extends AbstractPaymentGateway {
+            private array $scripts;
+            public array $supportedFeatures = ['payment'];
+            public function __construct($settings, array $scripts) { parent::__construct($settings); $this->scripts = $scripts; }
+            public function meta(): array { return ['slug' => 'test_gw_skel', 'route' => 'test_gw_skel', 'upcoming' => false]; }
+            public function makePaymentFromPaymentInstance($p) { return []; }
+            public function handleIPN() {}
+            public function getOrderInfo(array $d) {}
+            public function fields() { return []; }
+            public function getEnqueueScriptSrc($hasSubscription): array { return $this->scripts; }
+        };
+    }
+
+    public function test_default_skeleton_is_rendered_for_a_gateway_with_a_checkout_script(): void
+    {
+        $gateway = $this->scriptGateway([['handle' => 'fct-test-skel', 'src' => 'https://example.com/skel.js']]);
+        $gateway->beforeRenderPaymentMethod(false);
+
+        $this->assertStringContainsString('fct-payment-skeleton__bar', $gateway->getCheckoutSkeleton());
+    }
+
+    public function test_no_skeleton_for_a_gateway_without_a_checkout_script(): void
+    {
+        $gateway = $this->scriptGateway([]);
+        $gateway->beforeRenderPaymentMethod(false);
+
+        $this->assertSame('', $gateway->getCheckoutSkeleton());
+    }
+
+    public function test_cod_has_no_skeleton_although_it_loads_a_script(): void
+    {
+        $this->cod->beforeRenderPaymentMethod(false);
+
+        $this->assertSame('', $this->cod->getCheckoutSkeleton());
+    }
 }

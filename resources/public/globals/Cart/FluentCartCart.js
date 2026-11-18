@@ -61,6 +61,42 @@ export default class FluentCartCart {
         };
     }
 
+    // Counts, badges and total, shared by the update, cross-tab and refresh paths.
+    #syncCartCounts(cartData) {
+        const { distinctCount, totalQty } = this.#deriveCartCounts(cartData);
+        if (window.fluentcart_drawer_vars) {
+            window.fluentcart_drawer_vars.cart_item_count = distinctCount;
+            window.fluentcart_drawer_vars.cart_total_quantity = totalQty;
+        }
+        this.#updateBadgeCounts(distinctCount, totalQty);
+        this.updateCartTotalPrice(cartData);
+        return distinctCount;
+    }
+
+    // The cart page prints its own loader, the same markup as the drawer's.
+    // Counts running updates on the element (shared with add-ons), so the loader hides only when none are left.
+    #setPageLoading(isLoading) {
+        const loader = document.querySelector('.fct-cart-page [data-fluent-cart-cart-page-loader]');
+        if (!loader) {
+            return;
+        }
+
+        const pending = Math.max(0, (parseInt(loader.dataset.pending, 10) || 0) + (isLoading ? 1 : -1));
+        loader.dataset.pending = String(pending);
+        loader.classList.toggle('show', pending > 0);
+    }
+
+    #notifyCartChanged(cartData) {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (!searchParams.has('fct_cart_hash')) {
+            window.dispatchEvent(new CustomEvent('fluentCartNotifyCartDrawerItemChanged', {
+                detail: {
+                    response: cartData
+                }
+            }));
+        }
+    }
+
     #deriveCartCounts(cartData) {
         return {
             distinctCount: cartData.length,
@@ -71,14 +107,13 @@ export default class FluentCartCart {
     #applyCrossTabUpdate(payload) {
         if (payload.type === 'cart_updated' && Array.isArray(payload.fragments)) {
             const cartData = Array.isArray(payload.cart_data) ? payload.cart_data : [];
-            const { distinctCount, totalQty } = this.#deriveCartCounts(cartData);
 
-            if (window.fluentcart_drawer_vars) {
-                window.fluentcart_drawer_vars.cart_item_count = distinctCount;
-                window.fluentcart_drawer_vars.cart_total_quantity = totalQty;
-            }
-            this.updateCartTotalPrice(cartData);
-            this.#updateBadgeCounts(distinctCount, totalQty);
+            // The drawer container is kept in this mode, so un-hide blocks an emptied cart hid.
+            document.querySelectorAll('[data-fluent-cart-hide-when-empty]').forEach(el => {
+                el.style.display = '';
+            });
+
+            const distinctCount = this.#syncCartCounts(cartData);
             document.querySelectorAll('.fct-cart-badge-count').forEach(el => {
                 el.textContent = distinctCount.toString();
             });
@@ -204,6 +239,41 @@ export default class FluentCartCart {
     }
 
 
+    // Re-render the drawer from the server after an add-on changes the cart server-side.
+    async refreshDrawer() {
+        const headers = {'Content-Type': 'application/json'};
+        const nonce = window.fluentCartRestVars?.rest?.nonce;
+        if (nonce) {
+            headers['X-WP-Nonce'] = nonce;
+        }
+        const wasOpen = !!document.querySelector('[data-fluent-cart-cart-drawer].' + this.#cartDrawerToggleClass);
+        const params = '&with_fragments=1&is_admin_bar_enabled=' + (this.#isAdminBarEnabled ? 1 : 0) + (wasOpen ? '&open_cart=1' : '');
+        const response = await fetch(this.#baseUrl + this.#statusUrl + params, {method: 'GET', headers});
+        if (!response.ok) {
+            throw new Error('refresh_failed');
+        }
+        const data = await response.json();
+        if (!Array.isArray(data?.fragments)) {
+            throw new Error('refresh_failed');
+        }
+
+        // Same state sync as a normal cart update, from the status response's cart_data.
+        const cartData = Array.isArray(data.cart_data) ? data.cart_data : [];
+        this.#syncCartCounts(cartData);
+
+        this.#applyFragments(data.fragments);
+        this.#cartData = cartData;
+        if (wasOpen) {
+            this.openModal();
+        }
+
+        // Empty-cart cleanup (totals, checkout buttons, add-on blocks), then tell other tabs
+        // and the page's other cart consumers.
+        this.#renderView();
+        FluentCartCart.broadcastCartUpdate(cartData, data.fragments);
+        this.#notifyCartChanged(cartData);
+    }
+
     async addProduct(productId, quantity = 1, byInput = false, openCart = false, isCustom = false) {
         return this.#updateCart(productId, quantity, byInput, openCart, isCustom);
     }
@@ -266,6 +336,18 @@ export default class FluentCartCart {
             }
         }
         const ref = this;
+        const fromPage = !(drawer && drawer.classList.contains(this.#cartDrawerToggleClass)) && !!document.querySelector('.fct-cart-page');
+        let pageLoaderOn = fromPage;
+        if (fromPage) {
+            this.#setPageLoading(true);
+        }
+        // Released once per update, whichever path ends it.
+        const releasePageLoader = () => {
+            if (pageLoaderOn) {
+                pageLoaderOn = false;
+                this.#setPageLoading(false);
+            }
+        };
         let params = {
             item_id: productId,
             quantity: quantity,
@@ -285,7 +367,7 @@ export default class FluentCartCart {
         let capturedFragments = null;
         let capturedIsCartResponse = false;
 
-        let data = await new Promise((resolve, reject) => {
+        const request = new Promise((resolve, reject) => {
             const url = new URL(this.#baseUrl + this.#cartUpdateUrl);
 
             Object.entries(params).forEach(([key, value]) => {
@@ -307,11 +389,7 @@ export default class FluentCartCart {
 
                             const cartData = response.data?.cart?.cart_data;
                             if (Array.isArray(cartData)) {
-                                const { distinctCount, totalQty } = ref.#deriveCartCounts(cartData);
-                                window.fluentcart_drawer_vars.cart_item_count = distinctCount;
-                                window.fluentcart_drawer_vars.cart_total_quantity = totalQty;
-                                ref.#updateBadgeCounts(distinctCount, totalQty);
-                                ref.updateCartTotalPrice(cartData);
+                                ref.#syncCartCounts(cartData);
                             }
 
                             if (response?.fragments) {
@@ -345,6 +423,7 @@ export default class FluentCartCart {
                             if (drawerLoader) {
                                 drawerLoader.classList.remove('show');
                             }
+                            releasePageLoader();
                         } else {
                             const errorMsg = xhr.responseText
                                 ? (JSON.parse(xhr.responseText).message || "An error occurred")
@@ -360,6 +439,7 @@ export default class FluentCartCart {
                             if (drawerLoader) {
                                 drawerLoader.classList.remove('show');
                             }
+                            releasePageLoader();
                             reject(new Error(errorMsg));
                         }
                     } catch (errors) {
@@ -376,12 +456,25 @@ export default class FluentCartCart {
                         if (drawerLoader) {
                             drawerLoader.classList.remove('show');
                         }
+                        releasePageLoader();
                         reject(errors);
                     }
                 }
             };
             xhr.send();
         });
+
+        let data;
+        try {
+            data = await request;
+        } catch (error) {
+            // A throw before the request starts would otherwise leave the loaders on.
+            if (drawerLoader) {
+                drawerLoader.classList.remove('show');
+            }
+            releasePageLoader();
+            throw error;
+        }
 
         if (data.length === 0) {
             // return data;
@@ -393,14 +486,7 @@ export default class FluentCartCart {
             FluentCartCart.broadcastCartUpdate(data, capturedFragments);
         }
 
-        const searchParams = new URLSearchParams(window.location.search);
-        if (!searchParams.has('fct_cart_hash')) {
-            window.dispatchEvent(new CustomEvent('fluentCartNotifyCartDrawerItemChanged', {
-                detail: {
-                    response: data
-                }
-            }));
-        }
+        this.#notifyCartChanged(data);
         return data;
     }
 
@@ -498,6 +584,10 @@ export default class FluentCartCart {
             if (expandButtons) {
                 expandButtons.forEach(el => el.classList.add('is-hidden'));
             }
+            // Add-on blocks (e.g. order bump offers) that only make sense with items in the cart.
+            document.querySelectorAll('[data-fluent-cart-hide-when-empty]').forEach(el => {
+                el.style.display = 'none';
+            });
 
             setTimeout(() => {
                 this.closeModal();

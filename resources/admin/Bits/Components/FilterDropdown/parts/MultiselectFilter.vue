@@ -1,5 +1,5 @@
 <template>
-  <el-select
+  <fct-select
       v-model="orderTypes"
       :placeholder="$t('Select Order Type')"
       multiple
@@ -7,21 +7,16 @@
       clearable
       popper-class="fct-dropdown-compact fct-multi-select-filter"
       size="small"
+      :options="filterItem.options.map((filterOption) => ({label: filterOption.label, value: filterOption}))"
   >
     <template #tag="{ data }">
       <el-tag v-for="item in data" :key="item.value" disable-transitions>{{ item.currentLabel }}</el-tag>
     </template>
-    <el-option
-        v-for="filterOption in filterItem.options"
-        :key="filterOption.value"
-        :label="filterOption.label"
-        :value="filterOption"
-    />
-  </el-select>
+  </fct-select>
 </template>
 
 <script setup>
-import {computed, defineProps} from 'vue';
+import {computed} from 'vue';
 
 const props = defineProps({
   filterState: {

@@ -16,7 +16,7 @@
       {{ translate('Review_Short_Review') }}
     </p>
 
-    <el-button
+    <fct-button
         tag="a"
         :href="REVIEW_URL"
         target="_blank"
@@ -25,7 +25,7 @@
     >
       {{ translate('Share your feedback') }}
       <DynamicIcon name="External" class="ml-1.5 w-3.5 h-3.5"/>
-    </el-button>
+    </fct-button>
   </div>
 </template>
 

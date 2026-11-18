@@ -24,7 +24,7 @@ import Fluctuation from '@/Bits/Components/Fluctuation.vue';
 
 const render = (props) => {
     const app = createSSRApp({render: () => h(Fluctuation, props)});
-    app.component('el-tooltip', {setup: (_, {slots}) => () => h('div', [slots.content(), slots.default()])});
+    app.component('fct-tooltip', {setup: (_, {slots}) => () => h('div', [slots.content(), slots.default()])});
     return renderToString(app);
 };
 

@@ -107,31 +107,6 @@ describe('extension component fallback', () => {
     });
 });
 
-describe('core screens take the license table from the seam, or explain why it is missing', () => {
-    it.each([
-        'resources/admin/Modules/Orders/SingleOrder.vue',
-        'resources/admin/Modules/Subscriptions/SingleSubscription.vue',
-        'resources/admin/Modules/Customers/SingleCustomer.vue',
-    ])('%s', (file) => {
-        const source = read(file);
-
-        expect(source).not.toMatch(/licensing\/components/);
-        expect(source).toMatch(/<ExtensionComponent\s+v-if="hasLicenseTable"\s+name="license_table"/);
-        // Old Pro has license data but no table: keep the card and say what's needed.
-        expect(source).not.toMatch(/licenses && hasLicenseTable/);
-        // License rows are licenses/view data, even when the record itself is viewable.
-        expect(source).toMatch(/licenses && canViewLicenses"/);
-        expect(source).toMatch(/Permission\.has\('licenses\/view'\)/);
-        expect(source).toMatch(/<LicensingUnavailable\s+v-else\s*\/>/);
-        expect(source).toMatch(/import LicensingUnavailable from "@\/Modules\/Licensing\/LicensingUnavailable\.vue"/);
-    });
-
-    it('no core bundle imports licensing sources any more', () => {
-        expect(fs.existsSync(path.join(ROOT, 'resources/licensing'))).toBe(false);
-        expect(read('vite.config.mjs')).not.toContain('resources/licensing');
-    });
-});
-
 describe('shared module entries', () => {
     const SHARED = ['vue', 'dayjs', 'echarts', 'ui'];
 
@@ -164,16 +139,6 @@ describe('shared module entries', () => {
         expect(read(`resources/admin/shared/module-${name}.js`)).not.toMatch(/export\s*\*/);
     });
 
-    it('drops the specifiers add-ons do not need', () => {
-        const map = read('app/Hooks/Handlers/ModuleImportMap.php');
-
-        // Element Plus and the router are registered on core's app; icons are bundled by the add-on.
-        expect(map).not.toMatch(/@fluent-cart\/(element-plus|vue-router)/);
-        ['vue-router', 'element-plus', 'element-plus-icons'].forEach((name) => {
-            expect(fs.existsSync(path.join(ROOT, `resources/admin/shared/module-${name}.js`))).toBe(false);
-        });
-    });
-
     it('keeps every name the Pro licensing bundle imports from @fluent-cart/ui', () => {
         const source = read('resources/admin/shared/module-ui.js');
         const exported = new Set();
@@ -195,12 +160,62 @@ describe('shared module entries', () => {
             'PageHeading', 'Pagination', 'ProductInfo', 'ProductSalesChart', 'ReportSummary', 'RouteCell', 'Screenshot', 'SummaryLoader',
             'TableWrapper', 'UpgradePlan', 'UserCan',
             'WpEditor',
+            // R2 storage settings (Pro resources/storage, FLUENTCART_MODULE_API 3).
+            'Animation', 'StepIndicator',
         ];
         exported.add('Card'); // export const Card = {Container, Header, Body, Footer}
 
         expect(helpersUsedByPro.filter((name) => !exported.has(name))).toEqual([]);
         expect(componentsUsedByPro.filter((name) => !exported.has(name))).toEqual([]);
         expect(source).not.toMatch(/export const Fct\b/);
+
+        // Compiled helpers Pro's R2 storage screen needs: long static markup and v-show.
+        const vue = read('resources/admin/shared/module-vue.js');
+        ['createStaticVNode', 'vShow'].forEach((name) => expect(vue).toMatch(new RegExp(`\\b${name},`)));
+    });
+
+    it('exports the keyboard-accessible Alert and FluidTab for add-ons', () => {
+        const source = read('resources/admin/shared/module-ui.js');
+
+        expect(source).toMatch(/export\s*\{[^}]*\bAlert\b/);
+        expect(source).toMatch(/export const FluidTab = \{Tab: FluidTabContainer, Item: FluidTabItem\};/);
+    });
+
+    it('keeps the public layout components (dev-docs/admin-design-system/spec.md)', () => {
+        const source = read('resources/admin/shared/module-ui.js');
+        const exported = new Set();
+        for (const [, list] of source.matchAll(/export\s*\{([^}]+)\}/g)) {
+            list.split(',').map((part) => part.trim()).filter(Boolean).forEach((name) => exported.add(name));
+        }
+
+        // Third-party add-ons build on these; removing one needs FLUENTCART_MODULE_API bumped.
+        const layout = ['DetailLayout', 'EmptyState', 'KeyValue', 'KeyValueList', 'List', 'ListItem', 'Page', 'Section', 'SettingRow', 'SortableList', 'StatGrid', 'StatTile', 'Title', 'CoreUpdateCard'];
+
+        expect(layout.filter((name) => !exported.has(name))).toEqual([]);
+
+        // Add-ons gate on API 3 before importing these names.
+        const api = Number(read('fluent-cart.php').match(/define\('FLUENTCART_MODULE_API',\s*(\d+)\)/)[1]);
+        expect(api).toBeGreaterThanOrEqual(3);
+    });
+
+    it('keeps every name the Customer Rights withdrawal bundle imports from @fluent-cart/ui', () => {
+        const source = read('resources/admin/shared/module-ui.js');
+        const exported = new Set();
+        for (const [, list] of source.matchAll(/export\s*\{([^}]+)\}/g)) {
+            list.split(',').map((part) => part.trim().split(/\s+as\s+/).pop()).filter(Boolean).forEach((name) => exported.add(name));
+        }
+
+        // fluent-cart-customer-rights resources/admin-modules/withdrawals (FLUENTCART_MODULE_API 3).
+        const usedByCustomerRights = [
+            'Badge', 'CurrencyFormatter', 'DynamicIcon', 'Empty', 'IconButton', 'Notify', 'PageHeading', 'Rest',
+            'Table', 'TableWrapper', 'UserCan', 'translate',
+        ];
+
+        expect(usedByCustomerRights.filter((name) => !exported.has(name))).toEqual([]);
+
+        // Its table's compiled v-loading directive.
+        const vue = read('resources/admin/shared/module-vue.js');
+        ['resolveDirective', 'withDirectives'].forEach((name) => expect(vue).toMatch(new RegExp(`\\b${name},`)));
     });
 });
 

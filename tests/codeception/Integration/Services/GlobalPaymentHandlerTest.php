@@ -22,11 +22,6 @@ class GlobalPaymentHandlerTest extends WPTestCase
     // Spec 174: Core gateways registered by init
     // =========================================================================
 
-    public function test_core_gateway_offline_payment_is_registered(): void
-    {
-        $this->assertTrue(GatewayManager::has('offline_payment'));
-    }
-
     public function test_core_gateway_stripe_is_registered(): void
     {
         $this->assertTrue(

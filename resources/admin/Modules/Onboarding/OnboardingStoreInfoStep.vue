@@ -67,36 +67,28 @@ defineExpose({onNextStep, getFormData: () => ({...formData.value})})
 <template>
     <div class="fct-form-group">
         <label for="store-country">{{ translate('Store Country') }}</label>
-        <el-select
+        <fct-select
             v-model="formData.store_country"
             :placeholder="translate('Store Country')"
+            :options="countries.map(country => ({label: country.name, value: country.value}))"
             @change="onCountryChange"
             filterable
-        >
-            <el-option
-                v-for="(country, index) in countries"
-                :key="index"
-                :label="country.name"
-                :value="country.value"
-            />
-        </el-select>
+        />
     </div>
 
     <div class="fct-form-group">
         <label>{{ translate('Shop Name') }}</label>
-        <el-input v-model="formData.store_name" />
+        <fct-input v-model="formData.store_name" />
     </div>
 
     <div class="fct-form-group">
         <label>{{ translate('Store Currency') }}</label>
-        <el-select v-model="formData.currency" filterable :placeholder="translate('Select')">
-            <el-option
-                v-for="(currency, index) in currencies"
-                :key="index"
-                :label="currency.label"
-                :value="currency.value"
-            />
-        </el-select>
+        <fct-select
+            v-model="formData.currency"
+            filterable
+            :placeholder="translate('Select')"
+            :options="Object.values(currencies).map(currency => ({label: currency.label, value: currency.value}))"
+        />
     </div>
 
     <div class="fct-form-group">

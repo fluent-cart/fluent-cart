@@ -1,5 +1,5 @@
 <script setup>
-import {computed, defineModel, onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import translate from "@/utils/translator/Translator";
 import MaterialSelect from "@/Bits/Components/MaterialSelect.vue";

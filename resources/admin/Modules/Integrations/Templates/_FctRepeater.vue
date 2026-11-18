@@ -4,21 +4,21 @@
         <div v-for="(item, index) in items" :key="index" class="repeater-item">
             <slot name="item" :item="item" :index="index" :removeItem="removeItem">
                 <div class="flex items-center gap-2">
-                    <el-input v-model="item.name" placeholder="Name" class="flex-grow" />
-                    <el-input v-model="item.value" placeholder="Value" class="flex-grow" />
-                    <el-button type="danger" @click="removeItem(index)"></el-button>
+                    <fct-input v-model="item.name" placeholder="Name" class="flex-grow" />
+                    <fct-input v-model="item.value" placeholder="Value" class="flex-grow" />
+                    <fct-button type="danger" @click="removeItem(index)"></fct-button>
                 </div>
             </slot>
         </div>
         <!-- Render actions slot or default button -->
         <div class="repeater-actions">
             <slot name="actions">
-                <el-button type="primary" plain @click="addItem">
+                <fct-button type="primary" plain @click="addItem">
                     <IconButton size="small" tag="button">
                         <DynamicIcon name="Plus"/>
                         <span>{{ addButtonText }}</span>
                     </IconButton>
-                </el-button>
+                </fct-button>
             </slot>
         </div>
     </div>

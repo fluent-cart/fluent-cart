@@ -7,8 +7,11 @@ import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
 import {ParentDataProvider} from "@/BlockEditor/ShopApp/Context/ProductContext";
 import apiFetch from "@wordpress/api-fetch";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import CardLayoutSettings from "@/BlockEditor/ShopApp/InnerBlocks/Components/CardLayoutSettings";
+import {cardLayoutName, isGridOnlyLayout, productsLayoutCard} from "@/BlockEditor/ShopApp/InnerBlocks/ProductCardLayoutPresets";
 
 const {registerBlockType} = wp.blocks;
+const {useSelect, useDispatch} = wp.data;
 const {useEffect, useState, Component, useMemo, createContext} = wp.element;
 const ServerSideRender = wp.serverSideRender;
 
@@ -82,11 +85,7 @@ const DEFAULT_TEMPLATE = [
                     metadata: {name: 'Product Loop'},
                 },
                 [
-                    ['fluent-cart/product-image'],
-                    ['fluent-cart/product-title'],
-                    ['fluent-cart/product-rating'],
-                    ['fluent-cart/price-range'],
-                    ['fluent-cart/shopapp-product-buttons'],
+                    ['fluent-cart/product-card', {template_version: 1, card_width: '100%'}],
                 ],
             ],
             [
@@ -204,7 +203,19 @@ registerBlockType(blockName, {
         },
         ...DefaultData, // Spread additional attributes after specific ones
     },
-    edit: ({attributes, setAttributes}) => {
+    edit: ({attributes, setAttributes, clientId}) => {
+        // The Product Card in this block's loop: its Layout panel shows here, not on the card.
+        const cardId = useSelect((select) => productsLayoutCard(select('core/block-editor'), clientId), [clientId]);
+        const cardAttributes = useSelect((select) => cardId ? select('core/block-editor').getBlockAttributes(cardId) : null, [cardId]);
+        const gridOnly = isGridOnlyLayout(cardAttributes);
+        const {__unstableMarkNextChangeAsNotPersistent: markNotPersistent} = useDispatch('core/block-editor');
+        // The storefront shows a grid-only layout as a grid, and View Mode is hidden then, so the preview follows.
+        // A sync, not an edit: no undo step and no unsaved-changes prompt.
+        useEffect(() => {
+            if (!gridOnly || attributes.view_mode === 'grid') return;
+            markNotPersistent?.();
+            setAttributes({view_mode: 'grid'});
+        }, [gridOnly, attributes.view_mode]);
 
         // const blockType = wp.blocks.getBlockType('core/paragraph'); // or 'core/paragraph'
         // const blockType2 = wp.blocks.getBlockType('fluent/product-title'); // or 'core/paragraph'
@@ -257,7 +268,16 @@ registerBlockType(blockName, {
                             attributes={attributes}
                             setAttributes={setAttributes}
                             blockEditorData={blockEditorData}
+                            hideViewMode={gridOnly}
                         />
+
+                        {cardId && cardAttributes && <CardLayoutSettings
+                            key={cardId}
+                            clientId={cardId}
+                            layout={cardLayoutName(cardAttributes)}
+                            masonry={!!cardAttributes.masonry}
+                            onMasonry={(masonry) => wp.data.dispatch('core/block-editor').updateBlockAttributes(cardId, {masonry})}
+                        />}
 
                         {/*<ServerSidePreview*/}
                         {/*    key='shop-app-preview'*/}

@@ -1,4 +1,8 @@
 actor: IntegrationTester
+# Removes rows that code under test committed, so they do not leak into later tests.
+extensions:
+  enabled:
+    - Tests\Support\Extension\HealCommittedRowsExtension
 bootstrap: _bootstrap.php
 modules:
   enabled:

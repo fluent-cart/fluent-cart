@@ -235,6 +235,28 @@ class CouponResourceTest extends DatabaseTestCase
         $this->assertSame('active', $reloaded->getStatus());
     }
 
+    /**
+     * @dataProvider inactiveCouponStartOffsets
+     */
+    public function test_update_status_keeps_an_inactive_coupon_off(int $startOffset): void
+    {
+        // "inactive" is how the MCP manage-coupon tool turned a coupon off before it wrote "disabled"
+        $coupon = $this->couponFactory->create([
+            'status'     => 'inactive',
+            'start_date' => gmdate('Y-m-d H:i:s', time() + $startOffset),
+            'end_date'   => gmdate('Y-m-d H:i:s', time() + 30 * DAY_IN_SECONDS),
+        ]);
+
+        CouponHelper::updateCouponStatus($coupon);
+
+        $this->assertSame('inactive', Coupon::query()->find($coupon->id)->getStatus(), 'The dates must not switch it back on');
+    }
+
+    public function inactiveCouponStartOffsets(): array
+    {
+        return ['started yesterday' => [-DAY_IN_SECONDS], 'starts tomorrow' => [DAY_IN_SECONDS]];
+    }
+
     // =========================================================================
     // Spec 95-97: CouponHelper::checkStackability
     // =========================================================================

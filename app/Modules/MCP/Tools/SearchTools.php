@@ -27,10 +27,9 @@ class SearchTools
 
         return [
             'fluent-cart/get-search-schema' => [
-                'label'       => __('Get Advanced Search Schema', 'fluent-cart'),
+                'label'       => 'Get Advanced Search Schema',
                 'description' => sprintf(
-                    /* translators: %1$s: searchable entity names */
-                    __('The reference for the advanced_filters parameter — the same condition-group search the admin "advanced filter" UI offers. Returns every filterable property of one entity (operators, value types, enum options), the payload format, and a worked example. Call this once before passing advanced_filters to a list tool. Entities: %1$s. Requires FluentCart Pro.', 'fluent-cart'),
+                    'The reference for the advanced_filters parameter of the list tools. It is the same condition-group search the admin "advanced filter" UI offers. Returns every filterable property of one entity (operators, value types, enum options), the payload format, and a worked example. Call this once before passing advanced_filters to a list tool. Entities: %1$s. Requires FluentCart Pro.',
                     implode(', ', $entities)
                 ),
                 'input_schema' => [
@@ -62,8 +61,7 @@ class SearchTools
             return MCPHelper::error(
                 'unknown_entity',
                 sprintf(
-                    /* translators: 1: entity name, 2: valid entity names */
-                    __('Unknown entity "%1$s". Valid entities: %2$s.', 'fluent-cart'),
+                    'Unknown entity "%1$s". Valid entities: %2$s.',
                     $entity,
                     implode(', ', array_keys($entities))
                 ),
@@ -78,8 +76,7 @@ class SearchTools
             return MCPHelper::error(
                 'forbidden',
                 sprintf(
-                    /* translators: 1: entity name, 2: required permission */
-                    __('Your role cannot read %1$s (requires %2$s).', 'fluent-cart'),
+                    'Your role cannot read %1$s (requires %2$s).',
                     $entity,
                     $permission
                 ),
@@ -92,7 +89,7 @@ class SearchTools
         if (!App::isProActive()) {
             return MCPHelper::error(
                 'pro_required',
-                __('Advanced search requires FluentCart Pro. The named filters on the list tools remain available.', 'fluent-cart'),
+                'Advanced search requires FluentCart Pro. The named filters on the list tools remain available.',
                 ['entity' => $entity]
             );
         }
@@ -106,13 +103,7 @@ class SearchTools
 
         return MCPHelper::envelope(
             sprintf(
-                /* translators: 1: number of filterable properties, 2: entity name, 3: list tool name */
-                _n(
-                    '%1$d filterable property for %2$s — pass conditions via advanced_filters on %3$s.',
-                    '%1$d filterable properties for %2$s — pass conditions via advanced_filters on %3$s.',
-                    $count,
-                    'fluent-cart'
-                ),
+                $count === 1 ? '%1$d filterable property for %2$s — pass conditions via advanced_filters on %3$s.' : '%1$d filterable properties for %2$s — pass conditions via advanced_filters on %3$s.',
                 $count,
                 $entity,
                 Arr::get($entities[$entity], 'list_tool', 'the list tool')

@@ -128,8 +128,8 @@ class RetentionSnapshotsMigrator extends Migrator
     }
 
     /**
-     * Snapshots are per currency (multi-currency plan §3 Phase 2, decision
-     * #5): add the column, then swap the unique key to include it. Existing
+     * Snapshots are per currency (dev-docs/multi-currency/02-database-schema.md):
+     * add the column, then swap the unique key to include it. Existing
      * rows keep '' and are replaced on the next snapshot run, which
      * truncates and rebuilds the table.
      */

@@ -4,13 +4,13 @@ import {formatNumber} from "@/Bits/productService";
 import {getMargin, getProfit} from "@/Bits//productService";
 import ValidationError from "@/Bits/Components/Inputs/ValidationError.vue";
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
-import LabelHint from "@/Bits/Components/LabelHint.vue";
 import Animation from "@/Bits/Components/Animation.vue";
 import VariantItemCollapse from "@/Modules/Products/parts/VariantItemCollapse.vue";
 import translate from "@/utils/translator/Translator";
 import AppConfig from "@/utils/Config/AppConfig";
 import SharedVariantItemBox from "@/Modules/Products/parts/SharedVariantItemBox.vue";
 import PriceInput from "@/Bits/Components/Inputs/PriceInput.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 const props = defineProps({
     variant: Object,
@@ -48,7 +48,7 @@ watch(() => props.variant?.id, () => {
 
 watch(() => props.variant?.other_info?.payment_type, (newVal) => {
     if (newVal === 'subscription') {
-        activeCollapse.value = '1';
+        activeCollapse.value = ['1'];
     }
 });
 
@@ -63,7 +63,7 @@ watch(() => props.productEditModel?.validationErrors, (errors) => {
     });
 
     if (hasCollapseError) {
-        activeCollapse.value = '1';
+        activeCollapse.value = ['1'];
     }
 }, { deep: true });
 
@@ -114,6 +114,13 @@ const totalPrice = computed(() => {
     return price * times;
 });
 
+// el-row / el-col stand-ins, styled in shared-variant-modal.scss (the drawer renders outside the Tailwind wrapper).
+const ROW = 'fct-variant-row';
+const GUTTER_ROW = 'fct-variant-row is-guttered';
+const col = (lg) => ['fct-variant-col', lg && lg !== 24 ? 'is-lg-' + lg : ''];
+// Stands in for an unlabelled el-form-item: same flex content row and 18px gap.
+const PLAIN_ITEM = 'fct-variant-plain-item';
+
 const getIntervalShortcode = (interval) => {
     const found = subscriptionIntervals.value.find(i => i.value === interval);
     if (!found?.label && !interval) return '';
@@ -137,7 +144,7 @@ const getIntervalShortcode = (interval) => {
                     <span class="fct-shared-variant-item-box__hint">
                         {{ translate('Subscription') }}
                     </span>
-                    <el-switch
+                    <fct-switch
                         size="small"
                         :model-value="variant.other_info.payment_type === 'subscription'"
                         @change="(val) => {
@@ -148,7 +155,7 @@ const getIntervalShortcode = (interval) => {
                                 nextTick(() => {
                                     variant.other_info.repeat_interval = 'yearly';
                                     if (variant.other_info.times == '') {
-                                        inputSubscriptionTimesRef.value?.focus();
+                                        inputSubscriptionTimesRef?.focus();
                                     }
                                 });
                             }
@@ -159,7 +166,7 @@ const getIntervalShortcode = (interval) => {
                 <div v-else class="fct-inline-select-wrap">
                     <label>{{ translate('Payment Type') }}:</label>
 
-                    <el-select
+                    <fct-select
                         size="small"
                         v-model="variant.other_info.payment_type"
                         popper-class="fct-group-select-popper"
@@ -170,71 +177,66 @@ const getIntervalShortcode = (interval) => {
                         }"
                         class="fct-inline-select"
                         placement="bottom"
-                    >
-                        <el-option 
-                            value="__unchanged__" 
-                            :label="translate('Unchanged')" 
-                        />
-                        <el-option 
-                            value="subscription" 
-                            :label="translate('Subscription')"
-                        />
-                        <el-option 
-                            value="onetime" 
-                            :label="translate('One-time')"
-                        />
-                    </el-select>
+                        :options="[
+                            {value: '__unchanged__', label: translate('Unchanged')},
+                            {value: 'subscription', label: translate('Subscription')},
+                            {value: 'onetime', label: translate('One-time')},
+                        ]"
+                    />
                 </div>
             </div>
          </template>
 
          <div class="fct-price-with-inclusion">
-            <el-form-item class="fct-price-with-inclusion__price">
-                <template #label >
-                    {{ variant?.other_info?.installment === 'yes' ? translate('Installment Price') : translate('Price') }}
-                    <span class="fct-required" v-if="!isGroupMode">*</span>
-                </template>
+            <div class="fct-price-with-inclusion__price">
+                <Field
+                    :id="`${fieldKey}.item_price`"
+                    :label="variant?.other_info?.installment === 'yes' ? translate('Installment Price') : translate('Price')"
+                    :required="!isGroupMode"
+                >
+                    <div class="fct-admin-input-wrapper">
+                        <PriceInput
+                            :error-class="productEditModel.hasValidationError(`${fieldKey}.item_price`) ? 'is-error' : ''"
+                            :id="`${fieldKey}.item_price`"
+                            :placeholder="isGroupMode ? translate('Unchanged') : (variant?.other_info?.installment === 'yes' ? translate('Installment Price') : translate('Price'))"
+                            :model-value="variant.item_price"
+                            @update:model-value="value => {
+                                variant.item_price = value;
+                                productEditModel.updatePricingValue('item_price', value, fieldKey, variant, modeType);
+                            }"
+                        >
+                            <template #suffix>
+                                <span v-if="variant?.other_info?.installment === 'yes'">
+                                    x {{ variant?.other_info?.times }}
+                                </span>
+                            </template>
+                        </PriceInput>
 
-                <div class="fct-admin-input-wrapper">
-                    <PriceInput
-                        :error-class="productEditModel.hasValidationError(`${fieldKey}.item_price`) ? 'is-error' : ''"
-                        :id="`${fieldKey}.item_price`"
-                        :placeholder="isGroupMode ? translate('Unchanged') : (variant?.other_info?.installment === 'yes' ? translate('Installment Price') : translate('Price'))"
-                        :model-value="variant.item_price"
-                        @update:model-value="value => {
-                            variant.item_price = value;
-                            productEditModel.updatePricingValue('item_price', value, fieldKey, variant, modeType);
-                        }"
-                    >
-                        <template #suffix>
-                            <span v-if="variant?.other_info?.installment === 'yes'">
-                                x {{ variant?.other_info?.times }}
-                            </span>
-                        </template>
-                    </PriceInput>
+                        <ValidationError :validation-errors="productEditModel.validationErrors" :field-key="`${fieldKey}.item_price`"/>
+                    </div><!-- .fct-admin-input-wrapper-->
+                </Field>
+            </div>
 
-                    <ValidationError :validation-errors="productEditModel.validationErrors" :field-key="`${fieldKey}.item_price`"/>
-                </div><!-- .fct-admin-input-wrapper-->
-            </el-form-item>
-
-            <el-form-item
+            <div
                 v-if="productEditModel.isTaxEnabled()"
                 class="fct-price-with-inclusion__tax"
             >
-                <template #label>{{ translate('Tax') }}</template>
                 <!-- Group mode: null = Unchanged, no Store-default option -->
-                <el-select
+                <fct-select
                     v-if="isGroupMode"
+                    :label="translate('Tax')"
                     v-model="variant.other_info.tax_inclusion"
                     popper-class="fct-group-select-popper"
-                >
-                    <el-option value="__unchanged__" :label="translate('Unchanged')" />
-                    <el-option value="included" :label="translate('Tax included')" />
-                    <el-option value="excluded" :label="translate('Tax excluded')" />
-                </el-select>
+                    :options="[
+                        {value: '__unchanged__', label: translate('Unchanged')},
+                        {value: 'included', label: translate('Tax included')},
+                        {value: 'excluded', label: translate('Tax excluded')},
+                    ]"
+                />
                 <!-- Normal mode -->
-                <el-select
+                <fct-select
                     v-else
+                    :label="translate('Tax')"
                     :model-value="variant?.other_info?.tax_inclusion || '_default_'"
                     @change="(value) => {
                         const persistValue = value === '_default_' ? '' : value;
@@ -243,12 +245,13 @@ const getIntervalShortcode = (interval) => {
                         }
                         productEditModel.updatePricingOtherValue('tax_inclusion', persistValue, fieldKey, variant, modeType);
                     }"
-                >
-                    <el-option value="_default_" :label="translate('Store default')" />
-                    <el-option value="included" :label="translate('Tax included')" />
-                    <el-option value="excluded" :label="translate('Tax excluded')" />
-                </el-select>
-            </el-form-item>
+                    :options="[
+                        {value: '_default_', label: translate('Store default')},
+                        {value: 'included', label: translate('Tax included')},
+                        {value: 'excluded', label: translate('Tax excluded')},
+                    ]"
+                />
+            </div>
         </div><!-- .fct-price-with-inclusion -->
 
         <!-- collapsible area -->
@@ -297,16 +300,14 @@ const getIntervalShortcode = (interval) => {
             </template>
 
             <div class="fct-shared-variant-pricing-additional">
-                <el-row :gutter="15">
-                    <el-col :lg="12">
+                <div :class="GUTTER_ROW">
+                    <div :class="col(12)">
                         <div class="fct-admin-input-wrapper">
-                            <el-form-item>
-                                <template #label>
-                                    <LabelHint
-                                        :title="translate('Compare at price')"
-                                        :content="translate('Product_Set_Higher')"
-                                    />
-                                </template>
+                            <Field
+                                :id="`${fieldKey}.compare_price`"
+                                :label="translate('Compare at price')"
+                                :tooltip="translate('Product_Set_Higher')"
+                            >
                                 <PriceInput
                                     :error-class="productEditModel.hasValidationError(`${fieldKey}.compare_price`) ? 'is-error' : ''"
                                     :id="`${fieldKey}.compare_price`"
@@ -322,71 +323,59 @@ const getIntervalShortcode = (interval) => {
                                     :validation-errors="productEditModel.validationErrors"
                                     :field-key="`${fieldKey}.compare_price`"
                                 />
-                            </el-form-item>
+                            </Field>
                         </div><!-- .fct-admin-input-wrapper -->
-                    </el-col>
+                    </div>
 
                     <template v-if="hasSubscriptionPayment()">
-                        <el-col :lg="12">
+                        <div :class="col(12)">
                             <div class="fct-admin-input-wrapper">
-                                <el-form-item :label="translate('Interval')" required>
-                                    <el-select class="fct-repeat-payment-every-select"
-                                            :class="productEditModel.hasValidationError(`${fieldKey}.other_info.repeat_interval`) ? 'is-error' : ''"
-                                            :id="`${fieldKey}.other_info.repeat_interval`"
-                                            v-model="variant.other_info.repeat_interval" :placeholder="translate('Interval')"
-                                            @change="value => {productEditModel.updatePricingOtherValue('repeat_interval', value, fieldKey, variant, modeType);
-                                                }">
-                                        <el-option
-                                            v-for="interval in subscriptionIntervals"
-                                            :key="interval.value"
-                                            :label="interval.label"
-                                            :value="interval.value"/>
-                                    </el-select>
-                                    <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                    :field-key="`${fieldKey}.other_info.repeat_interval`"/>
-                                </el-form-item>
+                                <fct-select
+                                    :label="translate('Interval')"
+                                    required
+                                    class="fct-repeat-payment-every-select"
+                                    :class="productEditModel.hasValidationError(`${fieldKey}.other_info.repeat_interval`) ? 'is-error' : ''"
+                                    :id="`${fieldKey}.other_info.repeat_interval`"
+                                    v-model="variant.other_info.repeat_interval" :placeholder="translate('Interval')"
+                                    :options="subscriptionIntervals"
+                                    :validation-errors="productEditModel.validationErrors"
+                                    :field-key="`${fieldKey}.other_info.repeat_interval`"
+                                    @change="value => {productEditModel.updatePricingOtherValue('repeat_interval', value, fieldKey, variant, modeType);
+                                        }"
+                                />
                             </div><!-- .fct-admin-input-wrapper -->
-                        </el-col>
+                        </div>
 
-                        <el-col :lg="12">
-                            <el-form-item class="has-tooltip">
-                                <template #label>
-                                    <LabelHint :title="translate('Trial Days')"
-                                            :content="translate('Product_Enter_Number')"/>
-                                </template>
-
-                                <el-input
-                                    :class="productEditModel.hasValidationError(`${fieldKey}.other_info.trial_days`) ? 'is-error' : ''"
-                                    :id="`${fieldKey}.other_info.trial_days`"
-                                    :placeholder="translate('Trial Days')"
-                                    type="number"
-                                    :min="1"
-                                    :max="365"
-                                    v-model.number="variant.other_info.trial_days"
-                                    autofocus
-                                    @input="value => {productEditModel.updatePricingOtherValue('trial_days', value, fieldKey, variant, modeType);}"
-                                >
-                                </el-input>
-
-                                <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                :field-key="`${fieldKey}.other_info.trial_days`"/>
-                            </el-form-item>
-                        </el-col>
+                        <div :class="col(12)">
+                            <fct-input
+                                :label="translate('Trial Days')"
+                                :tooltip="translate('Product_Enter_Number')"
+                                :class="productEditModel.hasValidationError(`${fieldKey}.other_info.trial_days`) ? 'is-error' : ''"
+                                :id="`${fieldKey}.other_info.trial_days`"
+                                :placeholder="translate('Trial Days')"
+                                type="number"
+                                :controls="false"
+                                :min="1"
+                                :max="365"
+                                v-model.number="variant.other_info.trial_days"
+                                autofocus
+                                :validation-errors="productEditModel.validationErrors"
+                                :field-key="`${fieldKey}.other_info.trial_days`"
+                                @input="value => {productEditModel.updatePricingOtherValue('trial_days', value, fieldKey, variant, modeType);}"
+                            />
+                        </div>
                     </template>
-                </el-row>
+                </div>
 
 
-                <el-row v-if="hasSubscriptionPayment()">
-                    <el-col :lg="24">
-                        <el-form-item>
-                            <el-checkbox
+                <div v-if="hasSubscriptionPayment()" :class="ROW">
+                    <div :class="col(24)">
+                        <div :class="PLAIN_ITEM">
+                            <fct-choice
                                 true-value="yes"
                                 false-value="no"
-                                :label="translate('Enable installment payment')"
                                 :class="productEditModel.hasValidationError(`${fieldKey}.other_info.installment`) ? 'is-error' : ''"
                                 :id="`${fieldKey}.other_info.installment`"
-                                :placeholder="translate('Occurrence')"
-                                type="number"
                                 v-model.number="variant.other_info.installment"
                                 :disabled="!hasPro"
                                 @change="value => {
@@ -401,146 +390,140 @@ const getIntervalShortcode = (interval) => {
                                     }
 
                                 }"
-                                autofocus
                             >
-                            </el-checkbox>
+                                {{ translate('Enable installment payment') }}
+                            </fct-choice>
                             <template v-if="!hasPro">
-                                <el-tooltip
-                                    popper-class="fct-tooltip">
+                                <fct-tooltip>
                                     <template #content>
                                         {{ translate('This feature is available in pro version only.') }}
                                     </template>
 
                                     <DynamicIcon name="Crown" class="fct-pro-icon" style="margin-inline-start: 5px;"/>
-                                </el-tooltip>
+                                </fct-tooltip>
                             </template>
                             <ValidationError :validation-errors="productEditModel.validationErrors"
                                             :field-key="`${fieldKey}.other_info.times`"/>
-                        </el-form-item>
-                    </el-col>
+                        </div>
+                    </div>
 
                     <Animation :visible="variant.other_info?.installment === 'yes'" accordion>
-                        <el-row :gutter="15">
-                            <el-col :lg="12">
-                                <el-form-item required class="has-tooltip-and-required">
-                                    <template #label>
-                                        <LabelHint :title="translate('Installment Count')"
-                                                :content="translate('Number of payments to split the price over the installment period.')"/>
-                                    </template>
-                                    <el-input
-                                        :class="productEditModel.hasValidationError(`${fieldKey}.other_info.times`) ? 'is-error' : ''"
-                                        :id="`${fieldKey}.other_info.times`"
-                                        :placeholder="translate('Installment Count')"
-                                        type="number"
-                                        :min="MIN_INSTALLMENT_TIMES"
-                                        v-model.number="variant.other_info.times"
-                                        @input="value => {
-                                            updatePrice('times', value, fieldKey, variant);
-                                        }"
-                                        @change="value => {
-                                            clampInstallmentTimes(value, fieldKey, variant);
-                                        }"
-                                        autofocus ref="inputSubscriptionTimesRef"
-                                    >
-                                    </el-input>
-                                    <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                    :field-key="`${fieldKey}.other_info.times`"/>
-                                </el-form-item>
-                            </el-col>
-                            <el-col :lg="12" v-if="variant.other_info?.installment === 'yes'">
-                                <el-form-item>
-                                    <template #label>
-                                        <LabelHint :title="translate('Total Price')"
-                                                :content="translate('Final price after all installments, excluding any fees.')"/>
-                                    </template>
+                        <div :class="GUTTER_ROW">
+                            <div :class="col(12)">
+                                <fct-input
+                                    :label="translate('Installment Count')"
+                                    :tooltip="translate('Number of payments to split the price over the installment period.')"
+                                    required
+                                    :class="productEditModel.hasValidationError(`${fieldKey}.other_info.times`) ? 'is-error' : ''"
+                                    :id="`${fieldKey}.other_info.times`"
+                                    :placeholder="translate('Installment Count')"
+                                    type="number"
+                                    :controls="false"
+                                    :min="MIN_INSTALLMENT_TIMES"
+                                    v-model.number="variant.other_info.times"
+                                    :validation-errors="productEditModel.validationErrors"
+                                    :field-key="`${fieldKey}.other_info.times`"
+                                    @input="value => {
+                                        updatePrice('times', value, fieldKey, variant);
+                                    }"
+                                    @change="value => {
+                                        clampInstallmentTimes(value, fieldKey, variant);
+                                    }"
+                                    autofocus ref="inputSubscriptionTimesRef"
+                                />
+                            </div>
+                            <div :class="col(12)" v-if="variant.other_info?.installment === 'yes'">
+                                <Field
+                                    :id="`${fieldKey}.total_price`"
+                                    :label="translate('Total Price')"
+                                    :tooltip="translate('Final price after all installments, excluding any fees.')"
+                                    :validation-errors="productEditModel.validationErrors"
+                                    :field-key="`${fieldKey}.other_info.times`"
+                                >
                                     <PriceInput
                                         :id="`${fieldKey}.total_price`"
                                         disabled
                                         :model-value="totalPrice"
                                     />
-
-                                    <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                    :field-key="`${fieldKey}.other_info.times`"/>
-                                </el-form-item>
-                            </el-col>
-                        </el-row>
-                    </Animation>
-                </el-row>
-
-                <el-row v-if="hasSubscriptionPayment()" :gutter="15">
-                    <el-col :lg="24">
-                        <div class="fct-admin-input-wrapper">
-                            <el-form-item :label="isGroupMode ? translate('Setup fee') : undefined" :class="isGroupMode ? 'fct-group-select-label' : ''">
-                                <!-- Group mode: select so "Unchanged" is available -->
-                                <el-select
-                                    v-if="isGroupMode"
-                                    size="small"
-                                    v-model="variant.other_info.manage_setup_fee"
-                                    style="width: 160px"
-                                    popper-class="fct-group-select-popper"
-                                >
-                                    <el-option value="__unchanged__" :label="translate('Unchanged')" />
-                                    <el-option value="yes" :label="translate('Setup fee: Yes')" />
-                                    <el-option value="no" :label="translate('Setup fee: No')" />
-                                </el-select>
-                                <!-- Normal mode: switch -->
-                                <template v-else>
-                                    <el-switch
-                                        size="small"
-                                        :disabled="!hasPro"
-                                        v-model="variant.other_info.manage_setup_fee" active-value="yes"
-                                        inactive-value="no"
-                                        @change="changeSetupFee"
-                                        :active-text="translate('Setup fee')"
-                                    >
-                                    </el-switch>
-
-                                    <span v-if="!hasPro">
-                                        <el-tooltip popper-class="fct-tooltip">
-                                            <template #content>
-                                                {{ translate('This feature is available in pro version only.') }}
-                                            </template>
-
-                                            <DynamicIcon
-                                                name="Crown"
-                                                class="fct-pro-icon"
-                                                style="margin-inline-start: 5px;"
-                                            />
-                                        </el-tooltip>
-                                    </span>
-                                </template>
-                            </el-form-item>
+                                </Field>
+                            </div>
                         </div>
-                    </el-col>
+                    </Animation>
+                </div>
+
+                <div v-if="hasSubscriptionPayment()" :class="GUTTER_ROW">
+                    <div :class="col(24)">
+                        <div class="fct-admin-input-wrapper" :class="isGroupMode ? 'fct-group-select-label' : ''">
+                            <!-- Group mode: select so "Unchanged" is available -->
+                            <fct-select
+                                v-if="isGroupMode"
+                                :label="translate('Setup fee')"
+                                size="small"
+                                v-model="variant.other_info.manage_setup_fee"
+                                style="width: 160px"
+                                popper-class="fct-group-select-popper"
+                                :options="[
+                                    {value: '__unchanged__', label: translate('Unchanged')},
+                                    {value: 'yes', label: translate('Setup fee: Yes')},
+                                    {value: 'no', label: translate('Setup fee: No')},
+                                ]"
+                            />
+                            <!-- Normal mode: switch -->
+                            <div v-else :class="PLAIN_ITEM">
+                                <fct-switch
+                                    size="small"
+                                    :disabled="!hasPro"
+                                    v-model="variant.other_info.manage_setup_fee" active-value="yes"
+                                    inactive-value="no"
+                                    @change="changeSetupFee"
+                                    :active-text="translate('Setup fee')"
+                                />
+
+                                <span v-if="!hasPro">
+                                    <fct-tooltip>
+                                        <template #content>
+                                            {{ translate('This feature is available in pro version only.') }}
+                                        </template>
+
+                                        <DynamicIcon
+                                            name="Crown"
+                                            class="fct-pro-icon"
+                                            style="margin-inline-start: 5px;"
+                                        />
+                                    </fct-tooltip>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
 
                     <Animation :visible="variant?.other_info?.manage_setup_fee == 'yes'" accordion>
-                        <el-row :gutter="15" class="fct-setup-fee-wrap px-[7.5px]">
-                            <el-col :lg="12">
+                        <div :class="GUTTER_ROW" class="fct-setup-fee-wrap px-[7.5px]">
+                            <div :class="col(12)">
                                 <div class="fct-admin-input-wrapper">
-                                    <el-form-item required class="has-tooltip-and-required">
-                                        <template #label>
-                                            <LabelHint :title="translate('Setup fee label')"
-                                                    :content="translate('Name the one-time setup fee (e.g., Initial Setup)')"/>
-                                        </template>
-                                        <el-input
-                                            :class="productEditModel.hasValidationError(`${fieldKey}.other_info.signup_fee_name`) ? 'is-error' : ''"
-                                            :id="`${fieldKey}.other_info.signup_fee_name`"
-                                            :placeholder="translate('Setup fee name')" type="text"
-                                            v-model="variant.other_info.signup_fee_name"
-                                            @input="value => {productEditModel.updatePricingOtherValue('signup_fee_name', value, fieldKey, variant, modeType)}">
-                                        </el-input>
-                                        <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                        :field-key="`${fieldKey}.other_info.signup_fee_name`"/>
-                                    </el-form-item>
+                                    <fct-input
+                                        :label="translate('Setup fee label')"
+                                        :tooltip="translate('Name the one-time setup fee (e.g., Initial Setup)')"
+                                        required
+                                        :class="productEditModel.hasValidationError(`${fieldKey}.other_info.signup_fee_name`) ? 'is-error' : ''"
+                                        :id="`${fieldKey}.other_info.signup_fee_name`"
+                                        :placeholder="translate('Setup fee name')" type="text"
+                                        v-model="variant.other_info.signup_fee_name"
+                                        :validation-errors="productEditModel.validationErrors"
+                                        :field-key="`${fieldKey}.other_info.signup_fee_name`"
+                                        @input="value => {productEditModel.updatePricingOtherValue('signup_fee_name', value, fieldKey, variant, modeType)}"
+                                    />
                                 </div><!-- .fct-admin-input-wrapper -->
-                            </el-col>
-                            <el-col :lg="12">
+                            </div>
+                            <div :class="col(12)">
                                 <div class="fct-admin-input-wrapper">
-                                    <el-form-item required class="has-tooltip-and-required">
-                                        <template #label>
-                                            <LabelHint :title="translate('Setup fee amount')"
-                                                    :content="translate('Product_Set_Time')"/>
-                                        </template>
+                                    <Field
+                                        :id="`${fieldKey}.other_info.signup_fee`"
+                                        :label="translate('Setup fee amount')"
+                                        :tooltip="translate('Product_Set_Time')"
+                                        required
+                                        :validation-errors="productEditModel.validationErrors"
+                                        :field-key="`${fieldKey}.other_info.signup_fee`"
+                                    >
                                         <PriceInput
                                             :error-class="productEditModel.hasValidationError(`${fieldKey}.other_info.signup_fee`) ? 'is-error' : ''"
                                             :id="`${fieldKey}.other_info.signup_fee`"
@@ -551,36 +534,34 @@ const getIntervalShortcode = (interval) => {
                                                 productEditModel.updatePricingOtherValue('signup_fee', value, fieldKey, variant, modeType);
                                             }"
                                         />
-
-                                        <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                        :field-key="`${fieldKey}.other_info.signup_fee`"/>
-                                    </el-form-item>
+                                    </Field>
                                 </div><!-- .fct-admin-input-wrapper -->
-                            </el-col>
-                        </el-row>
+                            </div>
+                        </div>
                     </Animation>
 
-                </el-row>
+                </div>
 
-                <el-row :gutter="15">
-                    <el-col :lg="24" v-if="variant.manage_cost || isGroupMode" class="fct-manage-cost-col">
-                        <div class="fct-admin-input-wrapper">
-                            <el-form-item :label="isGroupMode ? translate('Calculate profit/cost') : undefined" :class="isGroupMode ? 'fct-group-select-label' : ''">
-                                <!-- Group mode: select so "Unchanged" is available -->
-                                <el-select
-                                    v-if="isGroupMode"
-                                    size="small"
-                                    v-model="variant.manage_cost"
-                                    style="width: 200px"
-                                    popper-class="fct-group-select-popper"
-                                >
-                                    <el-option value="__unchanged__" :label="translate('Unchanged')" />
-                                    <el-option value="true" :label="translate('Enable')" />
-                                    <el-option value="false" :label="translate('Disable')" />
-                                </el-select>
-                                <!-- Normal mode -->
-                                <el-switch
-                                    v-else
+                <div :class="GUTTER_ROW">
+                    <div :class="col(24)" v-if="variant.manage_cost || isGroupMode" class="fct-manage-cost-col">
+                        <div class="fct-admin-input-wrapper" :class="isGroupMode ? 'fct-group-select-label' : ''">
+                            <!-- Group mode: select so "Unchanged" is available -->
+                            <fct-select
+                                v-if="isGroupMode"
+                                :label="translate('Calculate profit/cost')"
+                                size="small"
+                                v-model="variant.manage_cost"
+                                style="width: 200px"
+                                popper-class="fct-group-select-popper"
+                                :options="[
+                                    {value: '__unchanged__', label: translate('Unchanged')},
+                                    {value: 'true', label: translate('Enable')},
+                                    {value: 'false', label: translate('Disable')},
+                                ]"
+                            />
+                            <!-- Normal mode -->
+                            <div v-else :class="PLAIN_ITEM">
+                                <fct-switch
                                     size="small"
                                     v-model="variant.manage_cost" active-value="true"
                                     inactive-value="false"
@@ -595,20 +576,22 @@ const getIntervalShortcode = (interval) => {
                                         isUpdatedOnce = true;
                                     }"
                                     :active-text="translate('Calculate profit/cost')"
-                                >
-                                </el-switch>
-                            </el-form-item>
+                                />
+                            </div>
                         </div>
-                    </el-col>
+                    </div>
 
                     <Animation :visible="variant.manage_cost === 'true'" accordion>
-                        <el-row :gutter="15" class="fct-cost-profit-wrap">
-                            <el-col :lg="isGroupMode ? 24 : (product.detail?.variation_type === 'simple_variations' ? 12 : 8)">
+                        <div :class="GUTTER_ROW" class="fct-cost-profit-wrap">
+                            <div :class="col(isGroupMode ? 24 : (product.detail?.variation_type === 'simple_variations' ? 12 : 8))">
                                 <div class="fct-admin-input-wrapper">
-                                    <el-form-item>
-                                        <template #label>
-                                            <LabelHint :title="translate('Cost per item')" :content="translate('Customers won\'t see this')"/>
-                                        </template>
+                                    <Field
+                                        :id="`${fieldKey}.item_cost`"
+                                        :label="translate('Cost per item')"
+                                        :tooltip="translate('Customers won\'t see this')"
+                                        :validation-errors="productEditModel.validationErrors"
+                                        :field-key="`${fieldKey}.item_cost`"
+                                    >
                                         <PriceInput
                                             :error-class="productEditModel.hasValidationError(`${fieldKey}.item_cost`) ? 'is-error' : ''"
                                             :id="`${fieldKey}.item_cost`"
@@ -619,46 +602,39 @@ const getIntervalShortcode = (interval) => {
                                                 productEditModel.updatePricingValue('item_cost', value, fieldKey, variant, modeType);
                                             }"
                                         />
-                                        <ValidationError :validation-errors="productEditModel.validationErrors"
-                                                        :field-key="`${fieldKey}.item_cost`"/>
-                                    </el-form-item>
+                                    </Field>
                                 </div><!-- .fct-admin-input-wrapper -->
-                            </el-col>
+                            </div>
 
-                            <el-col v-if="!isGroupMode" :lg="product.detail?.variation_type === 'simple_variations' ? 6 : 8">
+                            <div v-if="!isGroupMode" :class="col(product.detail?.variation_type === 'simple_variations' ? 6 : 8)">
                                 <div class="fct-admin-input-wrapper">
-                                    <el-form-item :label="translate('Profit')">
-                                        <el-input disabled class="fct-profit-display"
-                                                    :value="getProfit(variant)"/>
-                                    </el-form-item>
+                                    <fct-input :label="translate('Profit')" disabled class="fct-profit-display"
+                                                :model-value="getProfit(variant)"/>
                                 </div><!-- .fct-admin-input-wrapper -->
-                            </el-col>
+                            </div>
 
-                            <el-col v-if="!isGroupMode" :lg="product.detail?.variation_type === 'simple_variations' ? 6 : 8">
+                            <div v-if="!isGroupMode" :class="col(product.detail?.variation_type === 'simple_variations' ? 6 : 8)">
                                 <div class="fct-admin-input-wrapper">
-                                    <el-form-item :label="translate('Margin')">
-                                        <el-input disabled class="fct-margin-display"
-                                                    :value="getMargin(variant)"/>
-                                    </el-form-item>
+                                    <fct-input :label="translate('Margin')" disabled class="fct-margin-display"
+                                                :model-value="getMargin(variant)"/>
                                 </div><!-- .fct-admin-input-wrapper -->
-                            </el-col>
-                        </el-row>
+                            </div>
+                        </div>
                     </Animation>
 
-                    <el-col :lg="24">
+                    <div :class="col(24)">
                         <div class="fct-admin-input-wrapper">
-                            <el-form-item v-if="variant.other_info && false">
-                                <el-switch v-model="variant.other_info.purchasable" active-value="yes" inactive-value="no" @change="value => {
+                            <div v-if="variant.other_info && false" :class="PLAIN_ITEM">
+                                <fct-switch v-model="variant.other_info.purchasable" active-value="yes" inactive-value="no" @change="value => {
                                     if(isUpdatedOnce){
                                         productEditModel.updatePricingOtherValue('purchasable', value, fieldKey, variant, modeType)
                                     }
                                     isUpdatedOnce = true;
-                                }" :active-text="translate('Purchasable')">
-                                </el-switch>
-                            </el-form-item>
+                                }" :active-text="translate('Purchasable')"/>
+                            </div>
                         </div>
-                    </el-col>
-                </el-row>
+                    </div>
+                </div>
             </div>
 
         </VariantItemCollapse>

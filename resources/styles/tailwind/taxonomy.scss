@@ -359,6 +359,38 @@ body.fluent_theme_dark {
     .postbox-header {
          background-color: #1a2430 !important;
     }
-    
-    
+
+    // The table is painted as a panel here, so its cells need side padding.
+    .wrap > form .form-table > tbody > tr > th {
+        padding-inline-start: 20px;
+    }
+    .wrap > form .form-table > tbody > tr > td {
+        padding-inline-end: 20px;
+    }
+    @media screen and (max-width: 782px) {
+        .wrap > form .form-table > tbody > tr > td {
+            padding-inline-start: 20px;
+        }
+    }
+}
+
+// The .wrap input rules above (and their dark variants) would draw a second box inside the select.
+.wrap .fct-term-products-field .el-select__wrapper input.el-select__input {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+// Line the field up with the other term inputs, which WP sizes at 95%.
+.wrap .fct-term-products-field .el-select {
+    width: 95%;
+}
+.wrap .fct-term-products-field .el-select__selection {
+    padding-inline-start: 0;
+}
+.wrap .fct-term-products-field .el-select__placeholder {
+    inset-inline-start: 0;
 }

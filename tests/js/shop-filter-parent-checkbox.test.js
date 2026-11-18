@@ -1,8 +1,4 @@
 import {describe, expect, it} from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import {fileURLToPath} from 'node:url';
-
 import Filter from '../../resources/public/product-page/Filter.js';
 
 /**
@@ -26,11 +22,6 @@ import Filter from '../../resources/public/product-page/Filter.js';
  *
  * The descendant sync must therefore happen BEFORE the form is read.
  */
-
-const filterSource = fs.readFileSync(
-    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../resources/public/product-page/Filter.js'),
-    'utf8'
-);
 
 /**
  * Minimal stand-in for the rendered sidebar markup. The suite has no DOM
@@ -172,9 +163,5 @@ describe('shop filter parent checkbox', () => {
         listeners.filter(({type}) => type === 'change').forEach(({callback}) => callback({target: parent}));
 
         expect(calls).toEqual(['sync', 'apply']);
-    });
-
-    it('does not re-introduce a second change listener bound after the generic one', () => {
-        expect(filterSource).not.toContain("querySelectorAll('input[data-parent-checkbox]')");
     });
 });

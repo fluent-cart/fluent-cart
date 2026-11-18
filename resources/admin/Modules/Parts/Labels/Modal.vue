@@ -33,7 +33,7 @@ const emit = defineEmits(['update:update-label', 'close-label-modal'])
 const selectedLabels = ref([]);
 const newlyAddedLabels = ref([]);
 const tempSelectedLabels = ref([]);
-const inputRef = ref();
+const inputWrapRef = ref();
 const labelName = ref('');
 const labels = ref([]);
 const searchableLabels = ref([]);
@@ -192,7 +192,7 @@ const hideSuggestionsOnOutsideClick = (event) => {
   if (
       showSuggestions.value &&
       // Check if the click target is outside the input element
-      !inputRef.value.$el.contains(event.target) &&
+      !inputWrapRef.value.contains(event.target) &&
       // Check if the click target is outside the suggestions list
       !suggestionsRef.value.contains(event.target)
   ) {
@@ -281,18 +281,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="fct-term-container">
-    <div class="fct-term-input-wrap">
-      <el-input ref="inputRef" v-model="labelName" @keydown.enter="onEnter" v-if="shouldEnableEditing"/>
+    <div ref="inputWrapRef" class="fct-term-input-wrap">
+      <fct-input v-model="labelName" @keydown.enter="onEnter" v-if="shouldEnableEditing"/>
 
       <div class="fct-term-search-result" v-if="showSuggestions" ref="suggestionsRef"
            :style="labelName == '' ? 'display: none' : ''">
 
         <!-- Only show this button if there is no exact match with labelName and labelName is not empty -->
         <div v-if="labelName !== '' && !exactMatchExists" class="fct-term-search-result-button-wrap mb-1.5">
-          <el-button type="info" plain @click="addLabels" size="small">
+          <fct-button type="info" plain @click="addLabels" size="small">
             <DynamicIcon name="PlusCircle"/>
             {{ $t('Add') }} <span class="search-text">"{{ labelName }}"</span>
-          </el-button>
+          </fct-button>
         </div>
 
         <ul class="fct-term-search-result-list is-scrollable" v-if="searchableLabels.length > 0">
@@ -317,23 +317,23 @@ onBeforeUnmount(() => {
       </li>
     </ul>
 
-    <el-dialog :before-close="handleLabelModalClose" :append-to-body="true" width="45%" v-model="labelModalIsOpen"
+    <fct-dialog :before-close="handleLabelModalClose" :append-to-body="true" width="45%" v-model="labelModalIsOpen"
                :title="$t('Add labels')" class="fct-add-labels-modal">
       <div class="fct-term-list-header">
         <div class="fct-term-input-inline-wrap">
-          <el-input v-model="searchQuery" :placeholder="$t('Search to find or create labels')">
+          <fct-input v-model="searchQuery" :placeholder="$t('Search to find or create labels')">
             <template #prefix>
               <DynamicIcon name="Search"/>
             </template>
-          </el-input>
+          </fct-input>
         </div>
 
         <!-- Only show this button if there is no exact match with searchQuery and searchQuery is not empty -->
         <div v-if="searchQuery !== '' && !exactMatchExists" class="fct-term-list-header-button-wrap">
-          <el-button type="info" plain @click="addLabels('insideModal')" size="small">
+          <fct-button type="info" plain @click="addLabels('insideModal')" size="small">
             <DynamicIcon name="PlusCircle"/>
             {{ $t('Add') }} <span class="search-text">"{{ searchQuery }}"</span>
-          </el-button>
+          </fct-button>
         </div>
       </div><!-- .fct-term-list-header -->
 
@@ -388,13 +388,13 @@ onBeforeUnmount(() => {
       </div><!-- .fct-term-list-wrap -->
 
       <div class="dialog-footer">
-        <el-button @click="handleLabelModalClose">
+        <fct-button @click="handleLabelModalClose">
           {{ $t('Cancel') }}
-        </el-button>
-        <el-button type="primary" @click="handleSaveSelectedLabels">
+        </fct-button>
+        <fct-button type="primary" @click="handleSaveSelectedLabels">
           {{ $t('Done') }}
-        </el-button>
+        </fct-button>
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>

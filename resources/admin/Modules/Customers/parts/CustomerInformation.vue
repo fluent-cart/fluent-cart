@@ -7,30 +7,19 @@
           border_bottom
       >
         <template #action>
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
               class="fct-more-option-wrap"
-              popper-class="fct-dropdown"
+              :items="[
+                {command: 'edit_customer_information', label: $t('Edit customer information')},
+                {command: 'manage_shipping_address', label: $t('Manage shipping address')},
+                {command: 'manage_billing_address', label: $t('Manage billing address')},
+                {command: 'recalculate_ltv', label: $t('Recalculate lifetime value'), disabled: recalculatingLtv}
+              ]"
               @command="handleCustomerBulkCommand"
           >
             <span class="more-btn"><DynamicIcon name="More"/></span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="edit_customer_information">
-                  {{ $t("Edit customer information") }}
-                </el-dropdown-item>
-                <el-dropdown-item command="manage_shipping_address">
-                  {{ $t("Manage shipping address") }}
-                </el-dropdown-item>
-                <el-dropdown-item command="manage_billing_address">
-                  {{ $t("Manage billing address") }}
-                </el-dropdown-item>
-                <el-dropdown-item command="recalculate_ltv" :disabled="recalculatingLtv">
-                  {{ $t("Recalculate lifetime value") }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </fct-dropdown>
         </template>
       </Card.Header>
       <Card.Body>
@@ -84,7 +73,8 @@
               </el-tag>
 
               <UserCan permission="customers/manage">
-                <el-popconfirm
+                <fct-popover
+                    confirm
                     :width="300"
                     :confirm-button-text="translate('Mark verified')"
                     :cancel-button-text="translate('Cancel')"
@@ -92,16 +82,17 @@
                     @confirm="markEmailVerified"
                 >
                   <template #reference>
-                    <el-button link type="primary" size="small" :loading="verifyingEmail">
+                    <fct-button link type="primary" size="small" :loading="verifyingEmail">
                       {{ translate('Mark verified') }}
-                    </el-button>
+                    </fct-button>
                   </template>
-                </el-popconfirm>
+                </fct-popover>
               </UserCan>
             </template>
 
-            <el-popconfirm
+            <fct-popover
                 v-if="false"
+                confirm
                 :width="235"
                 :confirm-button-text="translate('Yes')"
                 :cancel-button-text="translate('No, Thanks')"
@@ -110,7 +101,7 @@
                 @confirm="handleDetachUser"
             >
               <template #reference>
-                <el-button
+                <fct-button
                     class="flex items-center gap-1 underline cursor-pointer"
                     v-loading="detaching"
                     :title="translate('Detach User')"
@@ -119,9 +110,9 @@
                 >{{translate('Detach User')}}
                   <DynamicIcon class="w-4" name="Unlink"
                   />
-                </el-button>
+                </fct-button>
               </template>
-            </el-popconfirm>
+            </fct-popover>
           </div>
 
           <div v-else>
@@ -131,7 +122,7 @@
         <!-- .fct-admin-sidebar-item wp-user-manage-->
 
         <div class="fct-admin-sidebar-item mt-5">
-          <h4 class="sidebar-title">{{ $t("Contact Information") }}</h4>
+          <h3 class="sidebar-title">{{ $t("Contact Information") }}</h3>
           <ul class="fct-contact-info-list">
             <li>
               <div class="flex items-center justify-between gap-2">
@@ -150,12 +141,12 @@
         <!-- .fct-admin-sidebar-item -->
 
         <div class="fct-admin-sidebar-item mt-5">
-          <h4 class="sidebar-title">
+          <h3 class="sidebar-title">
             {{ $t("Shipping Address") }}
             <el-tag type="info" round v-if="hasPrimaryShipping != -1">
               {{ $t("Default") }}
             </el-tag>
-          </h4>
+          </h3>
 
           <template v-for="(address, id) in shippingAddress">
             <div class="fct-address-copy-wrap" v-if="address.is_primary === '1'">
@@ -189,12 +180,12 @@
         </div>
 
         <div class="fct-admin-sidebar-item mt-5">
-          <h4 class="sidebar-title">
+          <h3 class="sidebar-title">
             {{ $t("Billing Address") }}
             <el-tag type="info" round v-if="hasPrimaryBilling != -1">
               {{ $t("Default") }}
             </el-tag>
-          </h4>
+          </h3>
 
           <template v-for="(address, id) in billingAddress">
             <div class="fct-address-copy-wrap" v-if="address.is_primary === '1'">
@@ -250,7 +241,7 @@
     />
 
     <!-- add address modal -->
-    <el-dialog
+    <fct-dialog
         :show-close="true"
         v-model="addOrEditAddress"
         :append-to-body="true"
@@ -260,7 +251,7 @@
         }"
     >
       <div class="fct-customer-address-wrap">
-        <el-button
+        <fct-button
             text
             @click="
             () => {
@@ -273,7 +264,7 @@
             <Back/>
           </el-icon>
           {{ $t("Manage address") }}
-        </el-button>
+        </fct-button>
         <AddOrEditAddressModal
             @update:refresh-address="refresh"
             :customer_id="customer_id"
@@ -286,7 +277,7 @@
             :closing_modal="closingModal"
         />
       </div>
-    </el-dialog>
+    </fct-dialog>
   </div>
 </template>
 

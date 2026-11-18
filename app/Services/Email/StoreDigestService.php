@@ -367,7 +367,7 @@ class StoreDigestService
             'endDate'       => ReportHelper::toGmt(ReportHelper::siteDay($endDate)),
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
             // The digest is formatted in the base currency, so it sums only
-            // base-currency orders (multi-currency plan §13)
+            // base-currency orders
             'currency'      => BaseCurrency::get(),
             'variationIds'  => [],
             'paymentStatus' => Status::getReportStatuses(),
@@ -386,7 +386,7 @@ class StoreDigestService
             'endDate'       => ReportHelper::toGmt(ReportHelper::siteDay($endDate)),
             'groupKey'      => 'daily', // concrete key: totals are summed regardless of grouping, and avoids defineGroupKey() which needs DateTime objects
             // The digest is formatted in the base currency, so it sums only
-            // base-currency orders (multi-currency plan §13)
+            // base-currency orders
             'currency'      => BaseCurrency::get(),
             'variationIds'  => [],
             'paymentStatus' => Status::getReportStatuses(),

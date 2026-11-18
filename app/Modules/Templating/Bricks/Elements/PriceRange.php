@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 class PriceRange extends Element
 {
+    use \FluentCart\App\Modules\Templating\Bricks\MovingToBricksAddonNotice;
 
     public $category = 'fluent-cart';
     public $name = 'fct-price-range';
@@ -20,7 +21,7 @@ class PriceRange extends Element
 
     public function enqueue_scripts()
     {
-        AssetLoader::loadSingleProductAssets();
+        AssetLoader::loadSingleProductAssetsWithoutReviews();
     }
 
     public function get_label()

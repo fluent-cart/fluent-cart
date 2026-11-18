@@ -23,6 +23,19 @@ const props = defineProps({
     canCopyDirectCheckout: Function,
 });
 
+const navMenuItems = (item) => {
+    const variationType = props.product.detail?.variation_type;
+    const isInactive = item.variant?.item_status === 'inactive';
+    return [
+        !['simple', 'advanced_variations'].includes(variationType) && {command: 'duplicate', label: translate('Duplicate'), icon: 'Duplicate'},
+        {command: 'copy_variation_id', label: translate('Copy Variation ID'), icon: 'Copy'},
+        {command: 'copy_direct_checkout', label: translate('Direct Checkout'), icon: 'Copy', disabled: !props.canCopyDirectCheckout(item)},
+        // Advanced variations toggle active/inactive instead of delete: their set comes from the attribute config.
+        item.variant?.id && variationType === 'advanced_variations' && {command: 'toggle_status', label: isInactive ? translate('Set Active') : translate('Set Inactive'), icon: isInactive ? 'CheckCircle' : 'InActive', danger: !isInactive},
+        variationType !== 'advanced_variations' && props.productEditModel.variantsLength() > 1 && {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+    ].filter(Boolean);
+};
+
 const isButtonDisabled = (item) => {
     const isDirtyAndNotActive = props.isDirty && props.activeKey !== item.key;
     const isCreateModeAndNotDraft = props.drawerMode === 'create' && item.key !== 'draft-variation';
@@ -210,14 +223,14 @@ onBeforeUnmount(() => {
                             <DynamicIcon v-else name="Loading" class="fct-rotation-icon"/>
                         </button>
 
-                        <el-dropdown
+                        <fct-dropdown
                             v-if="!item.isDraft"
                             trigger="click"
                             placement="bottom-end"
-                            popper-class="fct-dropdown"
                             class="fct-shared-variant-nav__menu fct-more-option-wrap"
                             :disabled="isButtonDisabled(item)"
                             @command="command => !isButtonDisabled(item) && emit('command', command, item)"
+                            :items="navMenuItems(item)"
                         >
                             <button
                                 type="button"
@@ -231,48 +244,7 @@ onBeforeUnmount(() => {
                                     <DynamicIcon name="More"/>
                                 </span>
                             </button>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <el-dropdown-item
-                                        command="duplicate"
-                                        v-if="!['simple', 'advanced_variations'].includes(product.detail?.variation_type)"
-                                    >
-                                        <DynamicIcon name="Duplicate"/>
-                                        {{ translate('Duplicate') }}
-                                    </el-dropdown-item>
-                                    <el-dropdown-item command="copy_variation_id">
-                                        <DynamicIcon name="Copy"/>
-                                        {{ translate('Copy Variation ID') }}
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        command="copy_direct_checkout"
-                                        :disabled="!canCopyDirectCheckout(item)"
-                                    >
-                                        <DynamicIcon name="Copy"/>
-                                        {{ translate('Direct Checkout') }}
-                                    </el-dropdown-item>
-                                    <!-- Advanced variations manage their combination set via the
-                                         attribute config, so the per-row action is an active/inactive
-                                         toggle (no delete). Simple / variable variations keep delete. -->
-                                    <el-dropdown-item
-                                        command="toggle_status"
-                                        v-if="item.variant?.id && product.detail?.variation_type === 'advanced_variations'"
-                                        :class="{ 'item-destructive': item.variant?.item_status !== 'inactive' }"
-                                    >
-                                        <DynamicIcon :name="item.variant?.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
-                                        {{ item.variant?.item_status === 'inactive' ? translate('Set Active') : translate('Set Inactive') }}
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        command="delete"
-                                        class="item-destructive"
-                                        v-if="product.detail?.variation_type !== 'advanced_variations' && productEditModel.variantsLength() > 1"
-                                    >
-                                        <DynamicIcon name="Delete"/>
-                                        {{ translate('Delete') }}
-                                    </el-dropdown-item>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
+                        </fct-dropdown>
                     </div>
                 </div>
                 </Animation>
@@ -341,14 +313,14 @@ onBeforeUnmount(() => {
                     <DynamicIcon v-else name="Loading" class="fct-rotation-icon"/>
                 </button>
 
-                <el-dropdown
+                <fct-dropdown
                     v-if="!item.isDraft"
                     trigger="click"
                     placement="bottom-end"
-                    popper-class="fct-dropdown"
                     class="fct-shared-variant-nav__menu fct-more-option-wrap"
                     :disabled="isButtonDisabled(item)"
                     @command="command => !isButtonDisabled(item) && emit('command', command, item)"
+                    :items="navMenuItems(item)"
                 >
                     <button
                         type="button"
@@ -362,48 +334,7 @@ onBeforeUnmount(() => {
                             <DynamicIcon name="More"/>
                         </span>
                     </button>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item
-                                command="duplicate"
-                                v-if="!['simple', 'advanced_variations'].includes(product.detail?.variation_type)"
-                            >
-                                <DynamicIcon name="Duplicate"/>
-                                {{ translate('Duplicate') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item command="copy_variation_id">
-                                <DynamicIcon name="Copy"/>
-                                {{ translate('Copy Variation ID') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item
-                                command="copy_direct_checkout"
-                                :disabled="!canCopyDirectCheckout(item)"
-                            >
-                                <DynamicIcon name="Copy"/>
-                                {{ translate('Direct Checkout') }}
-                            </el-dropdown-item>
-                            <!-- Advanced variations manage their combination set via the
-                                 attribute config, so the per-row action is an active/inactive
-                                 toggle (no delete). Simple / variable variations keep delete. -->
-                            <el-dropdown-item
-                                command="toggle_status"
-                                v-if="item.variant?.id && product.detail?.variation_type === 'advanced_variations'"
-                                :class="{ 'item-destructive': item.variant?.item_status !== 'inactive' }"
-                            >
-                                <DynamicIcon :name="item.variant?.item_status === 'inactive' ? 'CheckCircle' : 'InActive'"/>
-                                {{ item.variant?.item_status === 'inactive' ? translate('Set Active') : translate('Set Inactive') }}
-                            </el-dropdown-item>
-                            <el-dropdown-item
-                                command="delete"
-                                class="item-destructive"
-                                v-if="product.detail?.variation_type !== 'advanced_variations' && productEditModel.variantsLength() > 1"
-                            >
-                                <DynamicIcon name="Delete"/>
-                                {{ translate('Delete') }}
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
+                </fct-dropdown>
             </div>
         </template>
     </div>

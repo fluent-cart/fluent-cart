@@ -62,7 +62,7 @@
         }
     }
     .email-template-content{
-        @apply w-full #{!important};
+        @apply w-full!;
     }
     &.fct-file-upload-dialog{
         .el-dialog{
@@ -112,6 +112,19 @@
     .dialog-footer {
         @apply mt-0;
     }
+    // The dialog is appended to body, outside the scope Tailwind utilities need.
+    &__row {
+        display: grid;
+        column-gap: 20px;
+        @media (min-width: 768px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    &__reason {
+        @media (min-width: 768px) and (max-width: 991px) {
+            width: 50%;
+        }
+    }
 }
 .fct-discount-modal .el-select,
 .fct-order-bulk-action-modal .el-select {
@@ -119,7 +132,7 @@
 }
 /*===== fct-file-upload-dialog =====*/
 .fct-file-upload-dialog{
-    @apply z-[9999] #{!important};
+    @apply z-[9999]!;
     .el-dialog__body{
         @apply p-0;
     }
@@ -135,7 +148,7 @@
 }
 
 .el-dialog.country-heat-map-dialog{
-    @apply w-[70%] #{!important};
+    @apply w-[70%]!;
 }
 .fct-congrats-modal {
     @apply overflow-hidden;

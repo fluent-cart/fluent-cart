@@ -535,7 +535,8 @@ class SubscriptionReportService extends ReportService
 
             $data[] = [
                 'day'                       => $labelDate,
-                'week'                      => date('Y-W', strtotime($labelDate)),
+                // "o" is the ISO year the week belongs to: Dec 31 can fall in week 01 of the next year
+                'week'                      => date('o-W', strtotime($labelDate)),
                 'group'                     => $dt->format($keyFormat),
                 'year'                      => $dt->format('Y'),
                 // Only a whole, ended period compares with others: not one still running, nor one the range cuts at either end

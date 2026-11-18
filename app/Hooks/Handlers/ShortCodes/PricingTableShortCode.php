@@ -25,7 +25,7 @@ class PricingTableShortCode extends ShortCode
             if (App::request()->get('action') === 'elementor') {
                 return;
             }
-            if (has_shortcode(get_the_content(), static::SHORT_CODE) || has_block('fluent-cart/product-pricing-table')) {
+            if (has_shortcode(static::currentPostContent(), static::SHORT_CODE) || has_block('fluent-cart/product-pricing-table')) {
                 (new static())->enqueueStyles();
             }
         },10);

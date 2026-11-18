@@ -60,6 +60,5 @@ class FluentCommunityConnectTest extends WPTestCase
 
         // dispatch is safe no-op (other listeners may still exist; we only assert this provider is not invoked)
         do_action('fluent_cart/integration/run/fluent_community', ['order' => null]);
-        $this->assertTrue(true); // no fatal
     }
 }

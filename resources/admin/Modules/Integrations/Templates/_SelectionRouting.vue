@@ -1,11 +1,11 @@
 <template>
     <div class="fluent_cart_field_routing">
       <div class="mb-4">
-        <el-checkbox v-model="settings[field.routing_key]" true-value="routing" false-value="simple">{{field.labels.choice_label}}</el-checkbox>
+        <fct-choice v-model="settings[field.routing_key]" true-value="routing" false-value="simple">{{field.labels.choice_label}}</fct-choice>
       </div>
 
         <div>
-            <el-select
+            <fct-select
                 v-if="field.simple_component == 'select'"
                 :disabled="settings[field.routing_key] != 'simple'"
                 filterable
@@ -13,19 +13,13 @@
                 :multiple="field.is_multiple"
                 v-model="settings[field.key]"
                 :placeholder="field.placeholder"
-                >
-                <el-option
-                    v-for="(list_name, list_key) in field.options"
-                    :key="list_key"
-                    :value="list_key"
-                    :label="list_name"
-                ></el-option>
-            </el-select>
-            <el-input
+                :options="toOptions(field.options)"
+            />
+            <fct-input
                 :disabled="settings[field.routing_key] != 'simple'"
                 v-model="settings[field.key]"
                 :placeholder="field.placeholder"
-                v-else-if="field.simple_component == 'text'"></el-input>
+                v-else-if="field.simple_component == 'text'"/>
             <FiledGeneral
                 v-else-if="field.simple_component == 'value_text' && settings[field.routing_key] == 'simple'"
                 :editorShortcodes="editorShortcodes"
@@ -57,7 +51,12 @@
             RoutingFilterFields,
             FiledGeneral
         },
-        props: ['field', 'settings', 'inputs', 'editorShortcodes']
+        props: ['field', 'settings', 'inputs', 'editorShortcodes'],
+        methods: {
+            toOptions(options) {
+            return Object.entries(options || {}).map(([value, label]) => ({value: Array.isArray(options) ? Number(value) : value, label}));
+        }
+        }
     }
 </script>
 <style lang="scss">

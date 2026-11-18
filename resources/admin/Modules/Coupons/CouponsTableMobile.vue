@@ -21,11 +21,10 @@
               {{isExpired(row.end_date) ? _x('Expired', 'Coupon status') : row.status }}
             </Badge>
 
-            <el-tooltip
+            <fct-tooltip
                 v-if="row.status === 'scheduled'"
-                effect="dark"
                 placement="top"
-                popper-class="fct-label-hint-popover fct-tooltip"
+                popper-class="fct-label-hint-popover"
                 :show-after="400"
                 :hide-after="0"
             >
@@ -33,7 +32,7 @@
                 {{ translate('Available On: %s', formatDate(row.start_date, true)) }}
               </template>
               <DynamicIcon name="InformationFill" class="w-4 h-4 flex-none"/>
-            </el-tooltip>
+            </fct-tooltip>
           </div><!-- fct-table-status-col -->
 
           <div class="fct-table-usage-col" @click="$router.push({ name: 'add_or_edit_coupon', params: { coupon_id: row.id } })">
@@ -47,45 +46,17 @@
         </div>
 
         <div class="fct-table-action-col" v-if="table.isColumnVisible('actions')">
-          <el-dropdown
+          <fct-dropdown
               trigger="click"
               class="fct-more-option-wrap"
-              popper-class="fct-dropdown"
-              @command="handleCommand"
+              :items="rowActions(row)"
+              @command="(command) => handleCommand(command, row)"
               placement="bottom-end"
           >
             <span class="more-btn pr-0">
               <DynamicIcon name="More"/>
             </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item class="item-link" v-if="row.id">
-                  <router-link
-                      :to="{
-                        name: 'add_or_edit_coupon',
-                        params: {
-                          coupon_id: row.id,
-                          action: 'edit',
-                        },
-                      }"
-                  >
-                    <DynamicIcon name="Edit"/>
-                    {{ translate("Edit") }}
-                  </router-link>
-                </el-dropdown-item>
-                <el-dropdown-item
-                    :command="{
-                      action: 'delete',
-                      coupon: row,
-                    }"
-                    class="item-destructive"
-                >
-                  <DynamicIcon name="Delete"/>
-                  {{ translate("Delete") }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          </fct-dropdown>
         </div>
 
 
@@ -159,6 +130,7 @@ import Notify from "@/utils/Notify";
 import Clipboard from "@/utils/Clipboard";
 import ConvertedTime from "@/Bits/Components/ConvertedTime.vue";
 import {formatNumber} from "@/Bits/productService";
+import {useRouter} from "vue-router";
 
 const props = defineProps({
   table: {
@@ -171,6 +143,7 @@ const props = defineProps({
   }
 });
 
+const router = useRouter();
 
 const isExpired = (endDate) => {
   if (!endDate || endDate === '0000-00-00 00:00:00') {
@@ -186,20 +159,25 @@ const isExpired = (endDate) => {
   return end.isBefore(dayjs());
 };
 
-const handleCommand = (command) => {
+const rowActions = (row) => [
+  row.id && {command: 'edit', label: translate('Edit'), icon: 'Edit', href: router.resolve({name: 'add_or_edit_coupon', params: {coupon_id: row.id}}).href},
+  {command: 'delete', label: translate('Delete'), icon: 'Delete', danger: true},
+].filter(Boolean);
+
+const handleCommand = (command, coupon) => {
   /* translators: %s - coupon title */
   let deleteMessage = translate(
       "Are you sure you want to delete this %s coupon. This action is not recoverable",
-      command.coupon.title
+      coupon.title
   );
 
-  if (command.action === "delete") {
+  if (command === "delete") {
     $confirm(deleteMessage, translate("Confirm Delete!"), {
       confirmButtonText: translate("Yes, Delete!"),
       cancelButtonText: translate("Cancel"),
       type: "warning",
     }).then(() => {
-          Rest.delete("coupons/" + command.coupon.id)
+          Rest.delete("coupons/" + coupon.id)
               .then((response) => {
                 Notify.success(response.message);
                 props.table.fetch();

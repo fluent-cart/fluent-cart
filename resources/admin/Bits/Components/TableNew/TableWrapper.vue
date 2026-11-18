@@ -131,12 +131,10 @@ const confirmSaveView = () => {
               />
 
               <div class="fct-btn-group sm">
-                <el-tooltip
-                    effect="light"
+                <fct-tooltip
                     :content="$t('Search')"
                     placement="top"
                     v-if="!table.isSearching() && !table.useFullWidthSearch()"
-                    popper-class="fct-tooltip"
                 >
                   <IconButton tag="button"
                               @click.prevent="openSearch"
@@ -144,7 +142,7 @@ const confirmSaveView = () => {
                   >
                     <DynamicIcon name="Search"/>
                   </IconButton>
-                </el-tooltip>
+                </fct-tooltip>
 
                 <ColumnVisibility v-if="table.getToggleableColumns().length" :table="table"/>
                 <ColumnSort v-if="table.getSortOptions().length" :table="table"/>
@@ -154,7 +152,7 @@ const confirmSaveView = () => {
 
             <div v-if="table.useFullWidthSearch() && !table.isUsingAdvanceFilter()">
               <div :class="`search-bar is-transparent ${table.isUsingAdvanceFilter() ? 'is-unable-advanced-filter' : ''}`">
-                <el-input
+                <fct-input
                     :placeholder="$t('Search')"
                     ref="search-input"
                     @clear="()=>{
@@ -170,7 +168,7 @@ const confirmSaveView = () => {
                   <template #prefix>
                     <DynamicIcon name="Search"/>
                   </template>
-                </el-input>
+                </fct-input>
 
               </div>
               <div class="flex items-center justify-between pt-1">
@@ -178,15 +176,15 @@ const confirmSaveView = () => {
                   {{ table.getSearchHint() }}
                   <SearchGuide :table="table" v-if="table.getSearchGuideOptions()?.length" />
                 </div>
-                <el-button
+                <fct-button
                     text
-                    class="el-button--x-small"
+                    size="x-small"
                     @click="saveView"
                     :disabled="!table.data.search"
                 >
                   <DynamicIcon name="Plus"/>
                   {{ $t('Save as view') }}
-                </el-button>
+                </fct-button>
               </div>
             </div>
           </div>
@@ -195,7 +193,7 @@ const confirmSaveView = () => {
             <div
                 v-if="table.isAdvanceFilterEnabled()"
                 class="fct-advanced-filter-toggle-wrapper">
-              <el-switch
+              <fct-switch
                   class="fct-advanced-filter-toggle"
                   @change="(filterType)=>{
                   table.onFilterTypeChanged(filterType)
@@ -209,19 +207,17 @@ const confirmSaveView = () => {
             </div>
 
             <div class="fct-btn-group sm hidden md:flex">
-              <el-tooltip
-                  effect="light"
+              <fct-tooltip
                   :content="$t('Search')"
                   placement="top"
                   v-if="!table.isSearching() && !table.useFullWidthSearch()"
-                  popper-class="fct-tooltip"
               >
                 <IconButton tag="button"
                             @click.prevent="openSearch"
                             :disabled="!table.isUsingSimpleFilter()">
                   <DynamicIcon name="Search"/>
                 </IconButton>
-              </el-tooltip>
+              </fct-tooltip>
 
               <ColumnVisibility v-if="table.getToggleableColumns().length" :table="table"/>
               <ColumnSort v-if="table.getSortOptions().length" :table="table"/>
@@ -241,7 +237,7 @@ const confirmSaveView = () => {
         >
         <div class="filter-search-wrap" v-if="table.isSearching() && !table.useFullWidthSearch()">
           <div class="search-bar">
-            <el-input
+            <fct-input
                 ref="search-input"
                 @clear="()=>{
                 table.search()
@@ -257,29 +253,29 @@ const confirmSaveView = () => {
               <template #prefix>
                 <DynamicIcon name="Search"/>
               </template>
-            </el-input>
+            </fct-input>
             <div class="flex items-center justify-between pt-2">
               <div class="text-xs text-system-light dark:text-gray-300">
                 {{ table.getSearchHint() }}
                 <SearchGuide :table="table"/>
               </div>
-              <el-button
+              <fct-button
                   text
-                  class="el-button--x-small"
+                  size="x-small"
                   @click="saveView"
                   :disabled="!table.data.search"
               >
                 <DynamicIcon name="Plus"/>
                 {{ $t('Save as view') }}
-              </el-button>
+              </fct-button>
             </div>
           </div>
 
-          <el-button text @click="()=>{
+          <fct-button text @click="()=>{
             table.closeSearch();
           }">
             {{ $t('Cancel') }}
-          </el-button>
+          </fct-button>
         </div>
         </Transition>
 
@@ -311,43 +307,39 @@ const confirmSaveView = () => {
     </div><!-- end of card -->
 
     <!-- Save View Dialog -->
-    <el-dialog
+    <fct-dialog
         v-model="table.data.showSaveViewDialog"
         :title="$t('Save View')"
         width="420px"
         :close-on-click-modal="false"
         append-to="#fct_admin_app_wrapper"
     >
-      <el-form label-position="top" @submit.prevent="confirmSaveView">
-        <el-form-item :label="$t('Name')">
-          <el-input
-              v-model="saveViewForm.name"
-              :placeholder="$t('View name')"
-              maxlength="50"
-          />
-        </el-form-item>
-        <el-form-item :label="$t('Description')">
-          <el-input
-              v-model="saveViewForm.description"
-              :placeholder="$t('Optional description')"
-              type="textarea"
-              :rows="2"
-          />
-        </el-form-item>
-        <el-form-item>
-          <div class="flex items-center gap-2">
-            <el-switch v-model="saveViewForm.is_public" size="small" />
-            <span class="text-sm text-system-mid dark:text-gray-300">{{ $t('Make public (visible to all users)') }}</span>
-          </div>
-        </el-form-item>
-      </el-form>
+      <form @submit.prevent="confirmSaveView">
+        <fct-input
+            v-model="saveViewForm.name"
+            :label="$t('Name')"
+            :placeholder="$t('View name')"
+            maxlength="50"
+        />
+        <fct-input
+            v-model="saveViewForm.description"
+            :label="$t('Description')"
+            :placeholder="$t('Optional description')"
+            type="textarea"
+            :rows="2"
+        />
+        <div class="flex items-center gap-2 mb-[18px]">
+          <fct-switch v-model="saveViewForm.is_public" size="small" />
+          <span class="text-sm text-system-mid dark:text-gray-300">{{ $t('Make public (visible to all users)') }}</span>
+        </div>
+      </form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="table.data.showSaveViewDialog = false">{{ $t('Cancel') }}</el-button>
-          <el-button type="primary" @click="confirmSaveView">{{ $t('Save') }}</el-button>
+          <fct-button @click="table.data.showSaveViewDialog = false">{{ $t('Cancel') }}</fct-button>
+          <fct-button type="primary" @click="confirmSaveView">{{ $t('Save') }}</fct-button>
         </div>
       </template>
-    </el-dialog>
+    </fct-dialog>
 
   </div>
 </template>

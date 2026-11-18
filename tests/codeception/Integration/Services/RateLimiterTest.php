@@ -7,6 +7,20 @@ use Tests\Support\DatabaseTestCase;
 
 class RateLimiterTest extends DatabaseTestCase
 {
+    private bool $hadExtObjectCache;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->hadExtObjectCache = (bool) wp_using_ext_object_cache();
+    }
+
+    public function tearDown(): void
+    {
+        wp_using_ext_object_cache($this->hadExtObjectCache);
+        parent::tearDown();
+    }
+
     // =========================================================================
     // Spec 179: Allows up to $limit requests
     // =========================================================================
@@ -44,9 +58,7 @@ class RateLimiterTest extends DatabaseTestCase
 
     public function test_is_spamming_blocks_the_request_over_the_limit_without_ext_object_cache(): void
     {
-        if (wp_using_ext_object_cache()) {
-            $this->markTestSkipped('This case covers the stores that have no external object cache.');
-        }
+        wp_using_ext_object_cache(false);
 
         $uniqueKey = 'test_over_' . uniqid('', true);
         for ($i = 0; $i < 5; $i++) {

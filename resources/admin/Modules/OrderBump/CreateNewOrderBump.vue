@@ -3,9 +3,14 @@ import {ref} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
+import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import ProductVariationSelector from "@/Bits/Components/ProductVariationSelector.vue";
+import Field from "@/Bits/Components/Fct/Field.vue";
 
 import {useRouter} from "vue-router";
+
+// The example price uses the store's own currency sign, like $150 or £150.
+const titlePlaceholder = translate('e.g. Add socks for %s', CurrencyFormatter.currencySign + '150');
 
 const router = useRouter();
 
@@ -54,42 +59,38 @@ const modalClose = () => {
 </script>
 
 <template>
-  <el-button type="primary" @click="showDialog = true">
+  <fct-button type="primary" @click="showDialog = true">
     {{ translate('Add New') }}
-  </el-button>
+  </fct-button>
 
-  <el-dialog
+  <fct-dialog
       v-model="showDialog"
       :title="translate('Create New Order Bump')"
       @close="modalClose"
       modal-class="fct-create-new-order-bump-modal"
       :append-to-body="true"
   >
-    <el-form label-position="top" require-asterisk-position="right">
-      <el-form-item :label="translate('Bump Name')" required>
-        <el-input v-model="formData.title" :placeholder="translate('Enter bump name')"/>
-        <div class="form-note">
-          <p>{{ translate('Will be shown as the title of the offer') }}</p>
-        </div>
-      </el-form-item>
-      <el-form-item :label="translate('Order Bump Price')" required>
+    <div class="fct-create-new-order-bump-form">
+      <fct-input v-model="formData.title" :placeholder="titlePlaceholder" :label="translate('Offer title')" required :help="translate('Shoppers see this above the product.')"/>
+      <Field :label="translate('Offer product')" required>
         <ProductVariationSelector v-model="formData.src_object_id" :is_multiple="false"
+                                  :placeholder="translate('Search a product or variation')"
                                   popoverClass="fct-create-new-order-bump-modal-popover"/>
         <div class="form-note">
-          <p>{{ translate('This is the product for the bump.') }}</p>
+          <p>{{ translate('The product the shopper can add with one click.') }}</p>
         </div>
-      </el-form-item>
-    </el-form>
+      </Field>
+    </div>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="showDialog = false">
+        <fct-button @click="showDialog = false">
           {{ translate('Cancel') }}
-        </el-button>
-        <el-button type="primary" @click="createBump" :loading="creating">
+        </fct-button>
+        <fct-button type="primary" @click="createBump" :loading="creating">
           {{ creating ? translate('Creating') : translate('Create') }}
-        </el-button>
+        </fct-button>
       </div>
     </template>
-  </el-dialog>
+  </fct-dialog>
 </template>

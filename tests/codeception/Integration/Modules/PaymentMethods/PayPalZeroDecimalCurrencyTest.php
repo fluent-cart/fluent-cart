@@ -24,6 +24,20 @@ class PayPalZeroDecimalCurrencyTest extends WPTestCase
         $this->assertSame(['HUF', 'JPY', 'TWD'], PayPalHelper::ZERO_DECIMAL_CURRENCIES);
     }
 
+    public function test_supported_set_matches_paypal_documentation(): void
+    {
+        $documented = [
+            'AUD', 'BRL', 'CAD', 'CNY', 'CZK', 'DKK', 'EUR', 'HKD', 'HUF', 'ILS', 'JPY', 'MYR', 'MXN',
+            'TWD', 'NZD', 'NOK', 'PHP', 'PLN', 'GBP', 'RUB', 'SGD', 'SEK', 'CHF', 'THB', 'USD',
+        ];
+        $supported = PayPal::getPaypalSupportedCurrency();
+        sort($documented);
+        sort($supported);
+
+        $this->assertSame($documented, $supported);
+        $this->assertNotContains('COP', $supported);
+    }
+
     public function test_every_zero_decimal_currency_is_a_supported_currency(): void
     {
         foreach (PayPalHelper::ZERO_DECIMAL_CURRENCIES as $currency) {

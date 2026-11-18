@@ -11,6 +11,7 @@ use FluentCart\App\Modules\MCP\Support\MCPHelper;
 use FluentCart\App\Modules\MCP\Support\PermissionGate;
 use FluentCart\App\Modules\MCP\Support\ProductFinancialsCalculator as Calc;
 use FluentCart\App\Services\Report\ProductReportService;
+use FluentCart\App\Services\Payments\SubscriptionHelper;
 
 /**
  * get-product-financials — the one honest financial picture for a single
@@ -40,17 +41,17 @@ class ProductFinancialsTools
     {
         return [
             'fluent-cart/get-product-financials' => [
-                'label'       => __('Get Product Financials', 'fluent-cart'),
-                'description' => __('One product\'s complete financials in a call: one-time revenue (cash collected, tax included, minus refunds), finite split-pay commitments (bill_times > 0), and perpetual run-rate (MRR/ARR) with a forward payment_schedule. Never sums across currencies. KEY: the time window (range/date_from/date_to + date_basis) applies ONLY to the one_time block — subscriptions.*, payment_schedule and totals are point-in-time as of as_of (lifetime-to-date or forward), so "revenue in the last 30 days" must read one_time.* only and never folds in contract value or MRR. For a windowed time series use get-sales-report with interval; for renewal cash in a period use query-products with order_type=renewal. totals.total_contracted is null while any perpetual subscription is active — read recurring.mrr/arr and payment_schedule instead, and meta.notes says why. Single currency: store default, other currencies for the product listed in meta.other_currencies. Money is {amount, amount_cents, currency, display}.', 'fluent-cart'),
+                'label'       => 'Get Product Financials',
+                'description' => 'One product\'s money: one-time revenue, installment commitments, MRR/ARR and a payment_schedule. One-time revenue is cash collected, tax included, minus refunds; split-pay plans have bill_times > 0. Never sums across currencies. one_time.aov = gross_collected / orders for the one-time lines of this product (cash, tax included), not the net-sales aov of get-sales-report. KEY: the time window (range/date_from/date_to + date_basis) applies ONLY to the one_time block — subscriptions.*, payment_schedule and totals are point-in-time as of as_of (lifetime-to-date or forward), so "revenue in the last 30 days" must read one_time.* only and never folds in contract value or MRR. For a windowed time series use get-sales-report with interval; for renewal cash in a period use query-products with order_type=renewal. totals.collected_to_date is always lifetime (all-time one-time net + all subscription payments), whatever the window. totals.total_contracted is null while any perpetual subscription is active — read recurring.mrr/arr and payment_schedule instead, and meta.notes says why. Other currencies of the product are listed in meta.other_currencies.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'product_id'   => ['type' => 'integer', 'description' => 'Product to report on.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Restrict to one variation.'],
-                        'currency'     => ['type' => 'string', 'description' => 'ISO currency for the (single-currency) report. Defaults to store currency.'],
-                        'range'        => ['type' => 'string', 'enum' => ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'mtd', 'qtd', 'ytd', 'last_quarter', 'last_year', 'all_time', 'since_launch'], 'default' => 'all_time', 'description' => 'Window for the one_time block only, in store days. all_time (alias: since_launch) spans all data.'],
-                        'date_from'    => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, store timezone unless an offset is given. Overrides range.'],
-                        'date_to'      => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601, store timezone unless an offset is given. Overrides range.'],
+                        'currency'     => ['type' => 'string', 'description' => 'One currency; no __all__.'],
+                        'range'        => ['type' => 'string', 'enum' => ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'mtd', 'qtd', 'ytd', 'last_quarter', 'last_year', 'all_time', 'since_launch'], 'default' => 'all_time', 'description' => 'Standard window, for the one_time block only. Default all_time.'],
+                        'date_from'    => ['type' => 'string', 'description' => 'Window start: ISO 8601 or YYYY-MM-DD, store timezone unless it has an offset. With date_to; overrides range. one_time block only.'],
+                        'date_to'      => ['type' => 'string', 'description' => 'Window end, same format as date_from.'],
                         'date_basis'   => ['type' => 'string', 'enum' => ['created_at', 'paid_at'], 'default' => 'paid_at', 'description' => 'One-time window basis: paid_at = order completed_at (cash received); created_at = order placed. Does not affect forward fields.'],
                         'as_of'        => ['type' => 'string', 'description' => 'ISO 8601, store timezone unless an offset is given. Point-in-time for forward metrics. Default now.'],
                         'horizon'      => ['type' => 'string', 'enum' => ['3m', '6m', '12m'], 'default' => '12m', 'description' => 'How far to project payment_schedule.'],
@@ -80,19 +81,24 @@ class ProductFinancialsTools
     public static function getProductFinancials($params = [])
     {
         if (empty($params['product_id'])) {
-            return MCPHelper::error('missing_identifier', __('product_id is required.', 'fluent-cart'));
+            return MCPHelper::error('invalid_param', 'product_id is required.');
         }
         $productId = (int) $params['product_id'];
 
         $product = Product::query()->where('ID', $productId)->first();
         if (!$product) {
-            return MCPHelper::error('product_not_found', __('No product found for the given product_id.', 'fluent-cart'));
+            return MCPHelper::error('product_not_found', 'No product found for the given product_id.');
         }
 
         $variationId = !empty($params['variation_id']) ? (int) $params['variation_id'] : null;
         $currency    = ReportTools::currency($params);
         if (is_wp_error($currency)) {
             return $currency;
+        }
+
+        $badDate = MCPHelper::unreadableDateError($params, ['date_from', 'date_to', 'as_of']);
+        if ($badDate) {
+            return $badDate;
         }
 
         $window  = self::resolveWindow($params);
@@ -113,14 +119,25 @@ class ProductFinancialsTools
         list($kept, $otherCurrencies) = Calc::filterByCurrency($subLoad['rows'], $currency);
 
         // ---- Pure computation ----
-        $result = Calc::compute($kept, [
+        $opts = [
             'as_of'            => $asOf,
             'horizon_months'   => $horizon,
             'bucket'           => $bucket,
             'forward_statuses' => $forward,
             'include_schedule' => in_array('schedule', $include, true),
             'one_time'         => $oneTime,
-        ]);
+            // Store days, as the reports bucket
+            'bucket_timezone'  => wp_timezone(),
+        ];
+
+        // totals.* are lifetime, so a windowed one_time block cannot feed them.
+        $isWindowed = !in_array($window['range'], ['all_time', 'since_launch'], true);
+        if ($isWindowed) {
+            $allTime = self::loadOneTime($productId, $variationId, $currency, self::resolveWindow(['range' => 'all_time', 'date_basis' => $window['basis']]));
+            $opts['one_time_lifetime_net'] = $allTime['gross'] - $allTime['refunds'];
+        }
+
+        $result = Calc::compute($kept, $opts);
 
         $data = self::formatData($product, $currency, $asOf, $window, $result);
 
@@ -133,10 +150,12 @@ class ProductFinancialsTools
             ],
             'notes'            => $result['meta_notes'],
         ];
+        if ($isWindowed) {
+            $meta['notes'][] = 'The date window applies to one_time only. totals.collected_to_date is lifetime: all-time one-time net plus all subscription payments. For money in the window read one_time.net_collected.';
+        }
         if ($subLoad['truncated']) {
             $meta['warnings'] = [sprintf(
-                /* translators: %1$d: subscription load cap */
-                __('More than %1$d subscriptions exist for this product; figures use the first %1$d and may be incomplete.', 'fluent-cart'),
+                'More than %1$d subscriptions exist for this product; figures use the first %1$d and may be incomplete.',
                 self::MAX_SUBS
             )];
         }
@@ -244,6 +263,7 @@ class ProductFinancialsTools
                 'bill_times'        => (int) $sub->bill_times,
                 'status'            => (string) $sub->status,
                 'next_billing_date' => $sub->next_billing_date,
+                'billing_schedule'  => SubscriptionHelper::getBillingSchedule($sub),
             ];
         }
 
@@ -370,8 +390,7 @@ class ProductFinancialsTools
 
         if ($result['has_perpetual']) {
             return sprintf(
-                /* translators: 1: product title, 2: collected to date, 3: MRR, 4: ARR */
-                __('%1$s — %2$s collected to date; MRR %3$s (ARR %4$s). No single total_contracted: this product has perpetual subscriptions.', 'fluent-cart'),
+                '%1$s — %2$s collected to date (lifetime); MRR %3$s (ARR %4$s). No single total_contracted: this product has perpetual subscriptions.',
                 $product->post_title,
                 $collected,
                 MCPHelper::displayAmount($result['totals']['mrr'], $currency),
@@ -384,8 +403,7 @@ class ProductFinancialsTools
             : MCPHelper::displayAmount($result['totals']['total_contracted'], $currency);
 
         return sprintf(
-            /* translators: 1: product title, 2: collected to date, 3: total contracted */
-            __('%1$s — %2$s collected to date; total contracted %3$s (all one-time and/or finite split-pay).', 'fluent-cart'),
+            '%1$s — %2$s collected to date (lifetime); total contracted %3$s (all one-time and/or finite split-pay).',
             $product->post_title,
             $collected,
             $contracted
@@ -398,14 +416,7 @@ class ProductFinancialsTools
 
     private static function resolveAsOf($params)
     {
-        if (!empty($params['as_of'])) {
-            try {
-                return (new \DateTime((string) $params['as_of'], wp_timezone()))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-            } catch (\Exception $e) {
-                // fall through to now
-            }
-        }
-        return gmdate('Y-m-d H:i:s');
+        return !empty($params['as_of']) ? MCPHelper::storeDateBound($params['as_of']) : gmdate('Y-m-d H:i:s');
     }
 
     private static function resolveHorizonMonths($params)
@@ -443,15 +454,14 @@ class ProductFinancialsTools
      */
     private static function resolveWindow($params)
     {
-        $tz    = wp_timezone();
         $basis = (isset($params['date_basis']) && $params['date_basis'] === 'created_at') ? 'created_at' : 'paid_at';
 
         // Explicit custom dates take precedence.
         if (!empty($params['date_from']) || !empty($params['date_to'])) {
-            $from = self::dayBound(!empty($params['date_from']) ? $params['date_from'] : '1970-01-01', $tz, false);
-            $to   = self::dayBound(!empty($params['date_to']) ? $params['date_to'] : 'now', $tz, true);
-            if ($from === null || $to === null) {
-                return MCPHelper::error('invalid_date', __('date_from / date_to must be YYYY-MM-DD or ISO 8601.', 'fluent-cart'), ['fields' => ['date_from', 'date_to']]);
+            $from = !empty($params['date_from']) ? MCPHelper::storeDateBound($params['date_from']) : '1970-01-01 00:00:00';
+            $to   = !empty($params['date_to']) ? MCPHelper::storeDateBound($params['date_to'], true) : gmdate('Y-m-d H:i:s');
+            if ($from > $to) {
+                return ReportTools::reversedRangeError($from, $to, ['date_from', 'date_to']);
             }
             return ['from' => $from, 'to' => $to, 'range' => 'custom', 'basis' => $basis];
         }
@@ -467,27 +477,5 @@ class ProductFinancialsTools
         $resolved = ReportTools::resolveRange(['range' => $range]);
 
         return ['from' => $resolved['start'], 'to' => $resolved['end'], 'range' => $range, 'basis' => $basis];
-    }
-
-    /** Parse a date bound (store timezone unless it has an offset) to a UTC 'Y-m-d H:i:s'; null on failure. */
-    private static function dayBound($value, $tz, $endOfDay)
-    {
-        try {
-            $dt = new \DateTime((string) $value, $tz);
-        } catch (\Exception $e) {
-            return null;
-        }
-        if ($endOfDay) {
-            // Only pin to end-of-day for date-only input; keep explicit times intact.
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $value))) {
-                $dt->setTime(23, 59, 59);
-            }
-        } else {
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim((string) $value))) {
-                $dt->setTime(0, 0, 0);
-            }
-        }
-        $dt->setTimezone(new \DateTimeZone('UTC'));
-        return $dt->format('Y-m-d H:i:s');
     }
 }

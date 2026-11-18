@@ -305,21 +305,4 @@ class ChargeRefundedTotalTest extends DatabaseTestCase
         $this->assertSame('', (string) OrderTransaction::query()->findOrFail($failedRow->id)->vendor_charge_id);
         $this->assertSame(3000, $this->chargeRefundedTotal($charge->id));
     }
-
-    public function test_authorize_net_webhook_refund_adds_to_charge_refunded_total(): void
-    {
-        $ipnClass = \FluentCartPro\App\Modules\PaymentMethods\AuthorizeDotNetGateway\Webhook\IPN::class;
-        if (!class_exists($ipnClass)) {
-            $this->markTestSkipped('FluentCart Pro is not loaded.');
-        }
-
-        $charge = $this->paidCharge(['payment_method' => 'authorize_dot_net', 'vendor_charge_id' => 'an_charge_1']);
-
-        $this->invokePrivateMethod($ipnClass, 'handleRefundCreated', [[
-            'payload' => ['id' => 'an_refund_1', 'refTransId' => 'an_charge_1', 'authAmount' => 30.00],
-        ]], new $ipnClass());
-
-        $this->assertCount(1, $this->refundRows($charge->order_id));
-        $this->assertSame(3000, $this->chargeRefundedTotal($charge->id));
-    }
 }

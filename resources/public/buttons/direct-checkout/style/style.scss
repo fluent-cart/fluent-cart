@@ -1,4 +1,5 @@
-@config "./style.config.js";
+@import "tailwindcss/theme.css" theme(reference inline);
+@config "./style.config.mjs";
 
 :root {
   --fct-direct-btn-bg-color: var(--fct-btn-bg-color, #253241);
@@ -19,7 +20,7 @@
   padding-right: var(--fct-btn-padding-x, theme('spacing.5'));
   border-radius: var(--fct-btn-radius, theme('borderRadius.DEFAULT'));
 
-  @apply no-underline !important;
+  @apply no-underline!;
 
   &.is-hidden {
     @apply hidden;

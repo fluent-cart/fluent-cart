@@ -32,7 +32,7 @@
   @apply flex items-center gap-2.5 px-3 py-3 cursor-pointer bg-white transition-colors duration-150 hover:bg-gray-50 dark:bg-dark-600 dark:hover:bg-dark-500;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-[-2px] outline-blue-500;
+    @apply [outline-width:2px] outline-offset-[-2px] outline-blue-500;
   }
 }
 
@@ -417,7 +417,7 @@ html body {
   @apply cursor-pointer text-gray-400 leading-none hover:text-system-dark dark:hover:text-gray-50;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 }
 
@@ -478,7 +478,7 @@ html body .fct-option-name-select {
     @apply text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer bg-transparent border-0 underline me-auto;
 
     &:focus-visible {
-      @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+      @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
     }
   }
   .el-select {
@@ -568,7 +568,7 @@ html body .fct-option-name-select {
   @apply text-blue-400 text-xs cursor-pointer bg-transparent border-0 p-0 font-normal hover:underline;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 }
 
@@ -711,14 +711,20 @@ html body .fct-option-name-select {
        branch (└ instead of ├). */
     &::before {
       content: '';
-      @apply absolute start-[52px] top-0 bottom-0 border-0 border-s border-solid border-gray-outline dark:border-dark-400;
+      @apply absolute start-[52px] top-0 bottom-0 border-0 border-s border-solid border-gray-outline;
+    }
+    .fluent_theme_dark &::before {
+        @apply border-dark-400;
     }
 
     /* Horizontal branch — links the trunk across to the row's image. Reaches a
        little past the col1/col2 boundary so it meets the 16px-nudged child image. */
     &::after {
       content: '';
-      @apply absolute start-[52px] top-1/2 w-[44px] border border-x-0 border-b-0 border-solid border-gray-outline dark:border-dark-400;
+      @apply absolute start-[52px] top-1/2 w-[44px] border border-x-0 border-b-0 border-solid border-gray-outline;
+    }
+    .fluent_theme_dark &::after {
+        @apply border-dark-400;
     }
   }
 
@@ -742,10 +748,11 @@ html body .fct-option-name-select {
 }
 
 .fct-adv-group-header {
-  @apply flex items-center gap-2 cursor-pointer rounded;
+  /* Wraps so a narrow Variant column moves the count below the name, not over the price. */
+  @apply flex flex-wrap items-center gap-x-2 gap-y-1 cursor-pointer rounded;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 
   strong {
@@ -754,7 +761,7 @@ html body .fct-option-name-select {
 }
 
 .fct-adv-group-count {
-  @apply inline-flex items-center text-[12px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-system-mid dark:bg-dark-500 dark:text-gray-300;
+  @apply shrink-0 whitespace-nowrap inline-flex items-center text-[12px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-system-mid dark:bg-dark-500 dark:text-gray-300;
 }
 
 /* Infinite-scroll sentinel — when this thin row scrolls into view the table
@@ -786,7 +793,7 @@ html body .fct-option-name-select {
 }
 
 .fct-adv-group-chevron-btn {
-  @apply appearance-none outline-none inline-flex items-center justify-center rounded-xs cursor-pointer bg-transparent border-0 text-gray-500 transition-colors;
+  @apply appearance-none outline-hidden inline-flex items-center justify-center rounded-xs cursor-pointer bg-transparent border-0 text-gray-500 transition-colors;
   width: 20px;
   height: 20px;
 
@@ -795,7 +802,7 @@ html body .fct-option-name-select {
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 bg-gray-100 text-gray-900;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 bg-gray-100 text-gray-900;
   }
 
   svg {
@@ -815,7 +822,10 @@ html body .fct-option-name-select {
 .el-input.fct-adv-group-price-input {
   .el-input__wrapper .el-input__inner {
     &::placeholder, &::-webkit-input-placeholder {
-      @apply text-system-dark font-medium opacity-100 dark:text-gray-50 !important;
+      @apply text-system-dark! font-medium! opacity-100!;
+    }
+    .fluent_theme_dark &::placeholder, .fluent_theme_dark &::-webkit-input-placeholder {
+      @apply text-gray-50!;
     }
   }
 }
@@ -839,7 +849,7 @@ html body .fct-option-name-select {
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 
   svg {
@@ -868,7 +878,7 @@ html body .fct-option-name-select {
   }
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500;
   }
 
   &.is-active {
@@ -891,7 +901,7 @@ html body .fct-option-name-select {
   @apply inline-flex items-center px-2 py-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline cursor-pointer bg-transparent border-0;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 }
 
@@ -928,7 +938,7 @@ html body .fct-option-name-select {
   @apply text-blue-600 hover:text-blue-700 dark:text-blue-400 normal-case font-normal cursor-pointer bg-transparent border-0 flex-shrink-0 whitespace-nowrap;
 
   &:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500 rounded-sm;
+    @apply [outline-width:2px] outline-offset-2 outline-blue-500 rounded-sm;
   }
 }
 

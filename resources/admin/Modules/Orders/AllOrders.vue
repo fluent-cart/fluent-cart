@@ -9,6 +9,7 @@ import {ArrowDown} from '@element-plus/icons-vue';
 import {ElMessageBox} from 'element-plus';
 import OrderTableComponent from "@/Modules/Orders/Components/OrdersTable.vue";
 import UserCan from "@/Bits/Components/Permission/UserCan.vue";
+import Permission from "@/utils/permission/Permission";
 import OrdersLoader from "@/Modules/Orders/Components/OrdersLoader.vue";
 import OrdersLoaderMobile from "@/Modules/Orders/Components/OrdersLoaderMobile.vue";
 import translate from "@/utils/translator/Translator";
@@ -137,7 +138,37 @@ const resetDeleteTestOrdersState = () => {
   deleteTestOrdersMessage.value = '';
 }
 
+// Same checks as the UserCan wrappers the menu items had.
+const moreActionItems = computed(() => {
+  const items = [];
+  if (Permission.has('reports/view')) {
+    items.push(showOrderStats.value
+        ? {command: 'show_order_stats', label: translate('Hide Order Stats'), icon: 'EyeOff'}
+        : {command: 'show_order_stats', label: translate('Show Order Stats'), icon: 'Eye'});
+    items.push(orderTable.data.showDeleteBulkAction
+        ? {command: 'hide_delete_bulk_action', label: translate('Hide Bulk Actions'), icon: 'EyeOff'}
+        : {command: 'show_delete_bulk_action', label: translate('Show Bulk Actions'), icon: 'Eye'});
+  }
+  if (Permission.has('orders/delete')) {
+    items.push({
+      command: 'delete_test_orders',
+      label: isDeletingTestOrders.value ? translate('Deleting Test Orders...') : translate('Delete Test Orders'),
+      icon: 'Delete',
+      disabled: isDeletingTestOrders.value,
+      danger: true,
+    });
+  }
+  if (Permission.has('orders/export')) {
+    items.push({command: 'export_orders', label: translate('Export Orders'), icon: 'Download'});
+  }
+  return items;
+});
+
 const handleShowOrderStats = (command) => {
+  if (command === "export_orders") {
+    isExportDialogVisible.value = true;
+  }
+
   if (command === "show_order_stats") {
     Storage.set('show_order_stats', !showOrderStats.value);
     showOrderStats.value = !showOrderStats.value;
@@ -273,67 +304,25 @@ onUnmounted(() => {
     <PageHeading :title="translate('Orders')">
       <template #action>
         <UserCan :permission="['reports/view', 'orders/manage', 'orders/export', 'orders/delete']">
-          <el-dropdown trigger="click" popper-class="fct-dropdown" @command="handleShowOrderStats"
-                       placement="bottom-end">
-            <el-button>
+          <fct-dropdown trigger="click" placement="bottom-end" :items="moreActionItems" @command="handleShowOrderStats">
+            <fct-button>
               {{ translate('More actions') }}
               <el-icon>
                 <ArrowDown/>
               </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <UserCan permission="reports/view">
-                  <el-dropdown-item command="show_order_stats">
-                    <template v-if="!showOrderStats">
-                      <DynamicIcon name="Eye"/>
-                      {{translate('Show Order Stats')}}
-                    </template>
-                    <template v-else>
-                      <DynamicIcon name="EyeOff"/>
-                      {{translate('Hide Order Stats')}}
-                    </template>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="!orderTable.data.showDeleteBulkAction" command="show_delete_bulk_action">
-                    <DynamicIcon name="Eye"/>
-                    {{ translate('Show Bulk Actions') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="orderTable.data.showDeleteBulkAction" command="hide_delete_bulk_action">
-                    <DynamicIcon name="EyeOff"/>
-                    {{ translate('Hide Bulk Actions') }}
-                  </el-dropdown-item>
-                </UserCan>
-                <UserCan permission="orders/delete">
-                  <el-dropdown-item
-                      command="delete_test_orders"
-                      :disabled="isDeletingTestOrders"
-                      class="item-destructive"
-                  >
-                    <DynamicIcon name="Delete"/>
-                    {{ isDeletingTestOrders ? translate('Deleting Test Orders...') : translate('Delete Test Orders') }}
-                  </el-dropdown-item>
-                </UserCan>
-
-                <UserCan permission="orders/export">
-                  <el-dropdown-item @click="isExportDialogVisible = true">
-                    <DynamicIcon name="Download"/>
-                    {{ translate('Export Orders') }}
-                  </el-dropdown-item>
-                </UserCan>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+            </fct-button>
+          </fct-dropdown>
         </UserCan>
         <UserCan permission="orders/create">
-          <el-button tag="router-link" type="primary" :to="{ name: 'add_order' }">
+          <fct-button type="primary" :to="{ name: 'add_order' }">
             {{ translate('Create Order') }}
-          </el-button>
+          </fct-button>
         </UserCan>
       </template>
     </PageHeading>
 
     <!-- Delete Test Orders Dialog -->
-    <el-dialog
+    <fct-dialog
         v-model="showDeleteTestOrdersDialog"
         :title="translate('Delete Test Orders')"
         :append-to-body="true"
@@ -385,7 +374,7 @@ onUnmounted(() => {
         </div>
 
         <Animation :visible="isDeletingTestOrders" fade :duration="300">
-          <el-progress
+          <fct-progress
               :percentage="deleteTestOrdersProgress"
               :stroke-width="6"
               striped
@@ -440,12 +429,12 @@ onUnmounted(() => {
 
       <template #footer>
         <div v-if="!isDeletingTestOrders" class="dialog-footer">
-          <el-button type="primary" @click="closeDeleteTestOrdersDialog">
+          <fct-button type="primary" @click="closeDeleteTestOrdersDialog">
             {{ translate('Done') }}
-          </el-button>
+          </fct-button>
         </div>
       </template>
-    </el-dialog>
+    </fct-dialog>
 
     <UserCan permission="reports/view">
       <OrderStatBar v-if="showOrderStats"/>

@@ -227,4 +227,49 @@ class SaveProductIntegrationCest
             'rejected save must not persist any product_integration row for an unknown provider'
         );
     }
+
+    /**
+     * API callers may send the feed settings as a JSON object instead of a JSON string.
+     */
+    public function adminCanSaveIntegrationFeedSentAsAnObject(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $product = (new ProductFactory())->create(['post_title' => 'IntegObject']);
+        $providerKey = $this->registerStubProductIntegration('stub_object');
+
+        [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/integrations', [
+            'integration_name' => $providerKey,
+            'integration'      => [
+                'name'    => 'Object feed',
+                'enabled' => 'yes',
+                'list_id' => 'LOBJ',
+            ],
+        ]);
+
+        Assert::assertSame(200, $status, 'a feed sent as an object must save like one sent as a JSON string');
+        Assert::assertSame('LOBJ', $body['feedData']['list_id'] ?? null);
+        Assert::assertSame(
+            1,
+            ProductMeta::query()->where('object_id', $product->ID)->where('object_type', 'product_integration')->count()
+        );
+    }
+
+    public function adminGetsAFieldErrorWhenIntegrationIsNotAnObject(FunctionalTester $I): void
+    {
+        $I->loginAsSuperAdmin();
+        $product = (new ProductFactory())->create(['post_title' => 'IntegNotObject']);
+        $providerKey = $this->registerStubProductIntegration('stub_not_object');
+
+        [$status, $body] = $I->post('/fluent-cart/v2/products/' . $product->ID . '/integrations', [
+            'integration_name' => $providerKey,
+            'integration'      => 'not json',
+        ]);
+
+        Assert::assertSame(422, $status, 'settings that are not an object must be rejected, not crash');
+        Assert::assertArrayHasKey('integration', (array) ($body['errors'] ?? []));
+        Assert::assertSame(
+            0,
+            ProductMeta::query()->where('object_id', $product->ID)->where('object_type', 'product_integration')->count()
+        );
+    }
 }

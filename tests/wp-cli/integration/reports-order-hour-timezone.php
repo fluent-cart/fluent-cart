@@ -68,10 +68,10 @@ return [
                     return [$hours, $cells];
                 };
 
-                FcTest::assertSame([[22 => 10.0, 23 => 20.0], ['Sunday 22', 'Sunday 23']], FcReportFixture::inSiteTimezone('America/New_York', 0, $buckets),
+                FcTest::assertSame([[22 => 10.0, 23 => 20.0], ['Sunday 22', 'Sunday 23']], FcReportFixture::inSiteTimezone('America/New_York', $buckets),
                     'A daylight-saving store: each order in the offset of its own date');
 
-                FcTest::assertSame([[9 => 30.0], ['Monday 9']], FcReportFixture::inSiteTimezone('', 6, $buckets), 'A manual-offset store: UTC+6');
+                FcTest::assertSame([[9 => 30.0], ['Monday 9']], FcReportFixture::inManualOffset(6, $buckets), 'A manual-offset store: UTC+6');
             } finally {
                 FcDomainFixture::cleanupAll();
             }

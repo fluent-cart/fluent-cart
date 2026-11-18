@@ -42,7 +42,7 @@ onMounted(async () => {
     steps.value = response.data.steps
     completed.value = response.data.completed
     shouldShowOnboardings.value = Object.keys(steps.value).length !== completed.value;
-    emit('status', {completed: !shouldShowOnboardings.value});
+    emit('status', {completed: !shouldShowOnboardings.value, recommendations: response.data.recommendations || []});
     loading.value = false;    
 
     let pageSetupCompleted = steps.value.page_setup?.completed || false;
@@ -65,7 +65,7 @@ onMounted(async () => {
 
 <template>
   <div v-if="shouldShowOnboardings">
-    <el-skeleton v-if="loading" :rows="3" animated/>
+    <fct-skeleton v-if="loading" :rows="3" animated/>
 
     <div v-else class="fc_dashboard_onboarding_wrap">
       <h3 class="fc_dashboard_onboarding_title">{{ $t('Getting Started') }}</h3>

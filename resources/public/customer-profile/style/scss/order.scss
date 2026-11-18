@@ -1,7 +1,7 @@
 .order-content-only-mobile-item {
   @apply grid gap-2 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
   .link{
-    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)] no-underline hover:underline !important;
+    @apply text-[var(--fct-customer-dashboard-primary-text-color,#2F3448)]! no-underline! hover:underline!;
   }
   .item-footer-content{
     @apply inline-flex gap-2 items-center justify-between;
@@ -18,7 +18,7 @@
 .subscription-only-mobile-item {
   @apply grid gap-3 p-3 border border-solid border-x-0 border-[color:var(--fct-customer-dashboard-border-color,#D6DAE1)] border-t-0 last:border-b-0;
   .fct-customer-payment-meta-info {
-    @apply items-start mb-1 !important;
+    @apply items-start! mb-1!;
   }
   .fct-customer-orders-items-title {
     @apply text-sm leading-[20px];
@@ -65,7 +65,7 @@
     @apply text-[13px] leading-[20px] text-[var(--fct-customer-dashboard-text-color,#565865)];
   }
   .fct-customer-payment-meta-info {
-    @apply items-start !important;
+    @apply items-start!;
   }
   .fct-expiration-info {
     @apply text-[var(--fct-customer-dashboard-faint-text-color,#9D9FAC)] mb-2;
@@ -203,7 +203,7 @@
     @apply w-4 h-4 flex-none mt-0.5 text-[var(--fct-customer-dashboard-caption-text-color,#8E99AA)] transition-transform duration-150 motion-reduce:transition-none rtl:-scale-x-100;
   }
 
-  &__row--waiting &__title {
+  &__row + &__row--waiting &__title {
     @apply ps-6;
   }
 

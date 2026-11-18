@@ -28,11 +28,6 @@ class ShippingTest extends DatabaseTestCase
     // Spec 1-7: fct_shipping_zones schema
     // =========================================================================
 
-    public function test_fct_shipping_zones_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_shipping_zones'));
-    }
-
     public function test_fct_shipping_zones_has_expected_columns(): void
     {
         $this->assertColumnsExist('fct_shipping_zones', [
@@ -87,11 +82,6 @@ class ShippingTest extends DatabaseTestCase
     // =========================================================================
     // Spec 8-19: fct_shipping_methods schema
     // =========================================================================
-
-    public function test_fct_shipping_methods_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_shipping_methods'));
-    }
 
     public function test_fct_shipping_methods_has_expected_columns(): void
     {
@@ -190,18 +180,6 @@ class ShippingTest extends DatabaseTestCase
     // =========================================================================
     // Spec 20-25: fct_shipping_classes schema
     // =========================================================================
-
-    public function test_fct_shipping_classes_table_exists(): void
-    {
-        $this->assertTrue($this->tableExists('fct_shipping_classes'));
-    }
-
-    public function test_fct_shipping_classes_has_expected_columns(): void
-    {
-        $this->assertColumnsExist('fct_shipping_classes', [
-            'id', 'name', 'cost', 'per_item', 'type', 'created_at', 'updated_at',
-        ]);
-    }
 
     public function test_fct_shipping_classes_cost_is_decimal_default_0(): void
     {

@@ -43,6 +43,7 @@ class PaystackAddon extends AbstractPaymentGateway
             'slug' => 'paystack',
             'description' => __('Pay securely with Paystack - Cards, Bank Transfer, USSD, and Mobile Money', 'fluent-cart'),
             'logo' => Vite::getAssetUrl("images/payment-methods/paystack-logo.svg"),
+            'logo_light' => Vite::getAssetUrl("images/payment-methods/paystack-logo-light.svg"),
             'icon' => Vite::getAssetUrl("images/payment-methods/paystack-logo.svg"),
             'brand_color' => '#0fa958',
             'status' => false,

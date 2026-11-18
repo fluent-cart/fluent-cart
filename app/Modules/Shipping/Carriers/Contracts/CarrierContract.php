@@ -57,6 +57,11 @@ interface CarrierContract
      *                    'city' => string, 'name' => string, 'address_1' => string,
      *                    'phone' => string (all '' until the checkout contact is complete,
      *                    see AddressHelper::quoteContact()), 'items' => cart line items,
+     *                    'form_data' => the checkout form, scalar fields as plain text
+     *                    (AddressHelper::quoteFormData(); [] when none, since 2.4.0),
+     *                    'cart' => the visitor's Cart, or null (since 2.4.0): read it for
+     *                    any detail; 'items' and the address are what is priced, and a
+     *                    saved field may lag the form until checkout saves it,
      *                    'currency' => ISO to quote in, 'base_currency' => store ISO,
      *                    'reuse_quote' => true at Place Order: answer from the last quote
      *                    for these args when one is still fresh, else quote live,

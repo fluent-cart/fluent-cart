@@ -2,27 +2,40 @@
 /**
  * S0 static gates in one WordPress process.
  *
+ * A passing lint prints nothing, so run-static.php passes through whatever a
+ * lint writes and fails the lint when it wrote something yet exited 0. Context
+ * lines print only when a lint fails. With result-file=<path>, the per-lint results go to
+ * that file as key=0|1 lines. It also gets the protected_start and protected_end
+ * counts, and protected_failure=1 after a protected-table change, so callers
+ * read them without parsing stdout.
+ *
  * Usage:
  *   wp eval-file tests/wp-cli/bin/run-static.php
- *   wp eval-file tests/wp-cli/bin/run-static.php -- full-php-lint=1
+ *   wp eval-file tests/wp-cli/bin/run-static.php -- full-php-lint=1 result-file=/tmp/x
  */
 
+require_once dirname(__DIR__) . '/lib/harness.php';
 require_once dirname(__DIR__) . '/lib/protected-tables.php';
 
+$startedAt = microtime(true);
 $pluginDir = dirname(__DIR__, 3);
 $config = require dirname(__DIR__) . '/suite.config.php';
 $protectedTables = array_values($config['protected_tables']);
 $baseline = FcProtectedTables::capture($protectedTables);
 $results = [];
+$report = [];
 
 $fullPhpLint = false;
+$resultFile = '';
 foreach (isset($args) && is_array($args) ? $args : [] as $argument) {
     if ($argument === 'full-php-lint=1' || $argument === '--full-php-lint') {
         $fullPhpLint = true;
+    } elseif (strpos($argument, 'result-file=') === 0) {
+        $resultFile = substr($argument, strlen('result-file='));
     }
 }
 
-$hardAssertProtected = static function ($context) use ($baseline, $protectedTables) {
+$hardAssertProtected = static function ($context) use ($baseline, $protectedTables, $resultFile) {
     try {
         return FcProtectedTables::assertUnchanged(
             $baseline,
@@ -31,13 +44,16 @@ $hardAssertProtected = static function ($context) use ($baseline, $protectedTabl
         );
     } catch (RuntimeException $e) {
         WP_CLI::log('HARD FAILURE — ' . $e->getMessage());
-        WP_CLI::log('FC_PROTECTED_FAILURE=1');
+        if ($resultFile !== '') {
+            file_put_contents($resultFile, "protected_failure=1\n", FILE_APPEND);
+        }
         WP_CLI::halt(97);
     }
 };
 
 $runCommand = static function ($label, $command) use (
     &$results,
+    &$report,
     $hardAssertProtected
 ) {
     $hardAssertProtected('before ' . $label);
@@ -49,7 +65,10 @@ $runCommand = static function ($label, $command) use (
         WP_CLI::log(implode("\n", $output));
     }
 
-    $results[$label] = $code === 0 ? 0 : 1;
+    $results[$label] = $code === 0 && !$output ? 0 : 1;
+    if ($code === 0 && $output) {
+        WP_CLI::log($label . ' exited 0 but wrote the output above; a passing lint prints nothing.');
+    }
     $hardAssertProtected('after ' . $label);
 
     return [$code, $output];
@@ -148,9 +167,10 @@ $collectChangedPhpFiles = static function () use ($pluginDir) {
     return $files;
 };
 
-WP_CLI::log(
-    'protected run-start counts: ' . FcProtectedTables::format($baseline)
-);
+$report[] = 'protected run-start counts: ' . FcProtectedTables::format($baseline);
+if ($resultFile !== '') {
+    file_put_contents($resultFile, 'protected_start=' . FcProtectedTables::format($baseline) . "\n", FILE_APPEND);
+}
 
 $hardAssertProtected('before php -l');
 try {
@@ -158,7 +178,7 @@ try {
         ? $collectFullPhpFiles()
         : $collectChangedPhpFiles();
 } catch (RuntimeException $e) {
-    WP_CLI::log('php -l discovery failed: ' . $e->getMessage());
+    $report[] = 'php -l discovery failed: ' . $e->getMessage();
     $phpFiles = [];
     $results['php-l'] = 1;
 }
@@ -173,20 +193,21 @@ if (!isset($results['php-l'])) {
             $lintOutput,
             $lintCode
         );
-        if ($lintCode !== 0) {
+        // Exit 0 with any text besides the success line is a compile-time diagnostic, so it fails too.
+        if ($lintCode !== 0 || $lintOutput !== ['No syntax errors detected in ' . $phpFile]) {
             $syntaxErrors[] = implode("\n", $lintOutput);
         }
     }
 
     if ($syntaxErrors) {
-        WP_CLI::log(implode("\n", $syntaxErrors));
+        $report[] = implode("\n", $syntaxErrors);
         $results['php-l'] = 1;
     } else {
-        WP_CLI::log(sprintf(
+        $report[] = sprintf(
             'php -l: clean (%s scan, %d files)',
             $fullPhpLint ? 'full' : 'changed',
             count($phpFiles)
-        ));
+        );
         $results['php-l'] = 0;
     }
 }
@@ -223,6 +244,10 @@ $localizedDatesLint = escapeshellarg($pluginDir . '/tests/wp-cli/lint/localized-
 $runCommand(
     'localized-dates',
     $phpBinary . ' ' . $localizedDatesLint
+);
+$runCommand(
+    'no-skip',
+    $phpBinary . ' ' . escapeshellarg($pluginDir . '/tests/wp-cli/lint/no-skip.php')
 );
 
 // This check needs the WordPress runtime because it compares the loaded core
@@ -349,50 +374,48 @@ foreach ($forbiddenLocalizedDatesEvidence as $evidence) {
 }
 
 if ($fixtureProofOk && $nameModeProofOk && $localizedDatesProofOk) {
-    WP_CLI::log(
-        'lint self-test: all raw-prefix, name-mode and localized-date bug shapes fire '
-        . 'and false-positive guards stay clean'
-    );
+    $report[] = 'lint self-test: all raw-prefix, name-mode and localized-date bug shapes fire '
+        . 'and false-positive guards stay clean';
     $results['lint-self-test'] = 0;
 } else {
     if (!$fixtureProofOk) {
-        WP_CLI::log($fixtureText);
+        $report[] = $fixtureText;
     }
     if (!$nameModeProofOk) {
-        WP_CLI::log($nameModeText);
+        $report[] = $nameModeText;
     }
     if (!$localizedDatesProofOk) {
-        WP_CLI::log($localizedDatesText);
+        $report[] = $localizedDatesText;
     }
-    WP_CLI::log(
-        'lint self-test FAILED — fixture coverage or false-positive guards regressed'
-    );
+    $report[] = 'lint self-test FAILED — fixture coverage or false-positive guards regressed';
     $results['lint-self-test'] = 1;
 }
 $hardAssertProtected('after lint-self-test');
 
-$markerKeys = [
-    'php-l',
-    'raw-sql-prefix',
-    'route-coverage',
-    'permission-inventory',
-    'name-mode-forms',
-    'translation-map-integrity',
-    'state-translation-contexts',
-    'localized-dates',
-    'review-layout-preset-contract',
-    'lint-self-test',
-];
-foreach ($markerKeys as $markerKey) {
-    WP_CLI::log(
-        'FC_STATIC_RESULT ' . $markerKey . '=' . $results[$markerKey]
-    );
+if ($resultFile !== '') {
+    $lines = '';
+    foreach ($results as $key => $value) {
+        $lines .= $key . '=' . $value . "\n";
+    }
+    file_put_contents($resultFile, $lines, FILE_APPEND);
 }
 
 $hardAssertProtected('static tier end');
-WP_CLI::log(
-    'protected run-end counts: '
-    . FcProtectedTables::format(FcProtectedTables::capture($protectedTables))
-);
+$endCounts = FcProtectedTables::format(FcProtectedTables::capture($protectedTables));
+$report[] = 'protected run-end counts: ' . $endCounts;
+if ($resultFile !== '') {
+    file_put_contents($resultFile, 'protected_end=' . $endCounts . "\n", FILE_APPEND);
+}
 
-WP_CLI::halt(array_sum($results) === 0 ? 0 : 1);
+$failed = count(array_filter($results));
+if ($failed) {
+    WP_CLI::log(implode("\n", $report));
+}
+WP_CLI::log(FcTest::summaryLine(
+    'STATIC',
+    count($results) - $failed,
+    $failed,
+    round(microtime(true) - $startedAt, 1)
+));
+
+WP_CLI::halt($failed === 0 ? 0 : 1);

@@ -16,6 +16,14 @@ export class FakeNode {
         this.listeners = {};
     }
 
+    // Vue leaves real DOM elements unproxied when they're stored in a ref; so must we,
+    // or `activeEl.value === el` comparisons fail only in tests.
+    get [Symbol.toStringTag]() { return 'HTMLElement'; }
+
+    get classList() {
+        return {contains: (name) => String(this.className).split(/\s+/).includes(name)};
+    }
+
     addEventListener() {}
 
     removeEventListener() {}

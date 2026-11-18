@@ -1,7 +1,7 @@
 
 /*===== save bar =====*/
 .fct-save-bar{
-  @apply py-4 px-5 bg-white fixed top-0 right-0 w-[calc(100%-160px)] z-[2009] transition-all duration-300  dark:bg-dark-600 border border-solid border-x-0 border-t-0 border-gray-divider dark:border-dark-400;
+  @apply py-4 px-5 bg-white fixed top-0 right-0 w-[calc(100%-160px)] z-[2009] transition-all duration-300 dark:bg-dark-600 border border-solid border-x-0 border-t-0 border-gray-divider dark:border-dark-400;
 
   transform: translateY(-100%);
   box-shadow: 0px 4px 16px -2px rgba(27, 37, 51, 0.06);
@@ -20,7 +20,7 @@
   &-left{
     @apply flex items-center gap-2.5;
     .title{
-      @apply m-0 text-system-mid text-sm font-normal dark:text-gray-300;
+      @apply m-0 text-system-mid text-sm leading-5 font-normal dark:text-gray-300;
     }
   }
   + .page-heading-wrap {
@@ -43,7 +43,7 @@ body {
 
 @media (max-width: 782px) {
   .fct-save-bar {
-    @apply w-full #{!important};
+    @apply w-full!;
     &.is-active{
       transform: translateY(46px);
     }

@@ -22,7 +22,7 @@ const pointsSuffix = translate('%1$s pts', '');
     <div class="summary-item" v-for="item in cards" :key="item.key">
       <div class="summary-item-inner">
         <div class="value">
-          <el-skeleton v-if="item.loading" animated :rows="0" class="w-24" :aria-label="translate('Loading')"/>
+          <fct-skeleton v-if="item.loading" animated :rows="0" class="w-24" :aria-label="translate('Loading')"/>
           <!-- A failed request has no figure: never show its fallback 0 -->
           <div v-else-if="item.failed" class="inner-value text-sm text-system-light dark:text-gray-400">{{ translate('Unavailable') }}</div>
           <div v-else class="inner-value">
@@ -40,11 +40,11 @@ const pointsSuffix = translate('%1$s pts', '');
         </div>
         <div class="title">
           <router-link :to="{name: item.route}" class="text-inherit hover:underline">{{ item.title }}</router-link>
-          <el-tooltip :content="item.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+          <fct-tooltip :content="item.info" placement="top" :trigger="['hover', 'focus']">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true"/>
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
       </div>
     </div>

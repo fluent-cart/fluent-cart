@@ -44,7 +44,7 @@
     }
 
     &:focus-visible {
-        @apply outline outline-2 outline-offset-2 outline-blue-500;
+        @apply outline-solid outline-2 outline-offset-2 outline-blue-500;
     }
     .fct-export-format-name {
         @apply text-sm font-medium text-system-dark dark:text-gray-50;
@@ -98,7 +98,7 @@
     &:hover,
     &:focus-visible,
     &.is-selected {
-        @apply bg-gray-25 outline-none dark:bg-dark-500;
+        @apply bg-gray-25 outline-hidden dark:bg-dark-500;
     }
 
     &.is-required {

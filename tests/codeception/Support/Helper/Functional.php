@@ -805,6 +805,8 @@ class Functional extends Module
             // Live carrier rates are held for one request in production.
             \FluentCart\App\Helpers\AddressHelper::resetRateCache();
         }
+        // Shipping-class rows are read once per request in production.
+        \FluentCart\App\Helpers\CartHelper::resetChargeLookupCache();
     }
 
     /**

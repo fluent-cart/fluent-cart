@@ -1,15 +1,13 @@
 <template>
-    <el-button text class="underline-link-button" @click="showActivatedSitesModal" :aria-label="$t('View list of activated sites')">
+    <fct-button text class="underline-link-button" @click="showActivatedSitesModal" :aria-label="$t('View list of activated sites')">
         {{ $t('View List') }}
-    </el-button>
+    </fct-button>
 
-    <el-dialog 
-        v-model="activatedSitesModal" 
-        :append-to-body="true" 
+    <fct-dialog
+        v-model="activatedSitesModal"
+        :append-to-body="true"
         :title="$t('License Activations')"
         modal-class="fct-activated-sites-modal"
-        role="dialog"
-        aria-labelledby="activated-sites-title"
         aria-describedby="activated-sites-description"
     >
 
@@ -25,9 +23,9 @@
             id="activated-sites-description"
             :class="activations?.length > 10 ? 'scrollable' : ''"
         >
-            <el-table :data="activations" stripe role="grid"
+            <fct-table :data="activations" stripe
         :aria-label="$t('Table of activated sites')">
-                <el-table-column :label="$t('Site')" :min-width="270">
+                <fct-table-column :label="$t('Site')" :min-width="270">
                     <template #default="scope">
                         <span class="fct-ltr-isolate">{{ scope.row.site_url }}</span>
                         <span v-if="scope.row.is_local != '0'"
@@ -38,25 +36,25 @@
                             <Badge :status="'warning'" size="small" :hide-icon="true" :text="$t('local')"/>
                         </span>
                     </template>
-                </el-table-column>
+                </fct-table-column>
 
-                <el-table-column :label="$t('Status')" :width="100">
+                <fct-table-column :label="$t('Status')" :width="100">
                     <template #default="scope">
                         <Badge :status="scope.row.status" size="small" :hide-icon="true" :aria-label="`${$t('Status')}: ${$t(scope.row.status)}`"/>
                     </template>
-                </el-table-column>
+                </fct-table-column>
 
-                <el-table-column :width="60">
+                <fct-table-column :width="60">
                     <template #default="scope">
                         <span>
-                          <el-popconfirm
+                          <fct-popover
+                              confirm
                               :width="235"
                               :confirm-button-text="$t('Confirm')"
                               :cancel-button-text="$t('No, Thanks')"
                               icon-color="red"
                               :title="$t('Are you sure to disconnect?')"
                               @confirm="deactivate(scope.row)"
-                              aria-labelledby="delete-confirm-title"
                           >
                             <template #reference>
                               <IconButton 
@@ -64,29 +62,29 @@
                                 size="x-small" 
                                 hover="danger" 
                                 :aria-label="$t('Delete activation for site')"
-                                :aria-describedby="`site-${scope.$index}`"
+                                :aria-describedby="`site-${scope.index}`"
                             >
                                 <DynamicIcon name="TrashIcon"/>
                               </IconButton>
                             </template>
-                          </el-popconfirm>
+                          </fct-popover>
 
-                          <span :id="`site-${scope.$index}`" class="sr-only">{{ scope.row.site_url }}</span>
+                          <span :id="`site-${scope.index}`" class="sr-only">{{ scope.row.site_url }}</span>
                           
                           <span id="delete-confirm-title" class="sr-only">
                             {{ $t('Are you sure to disconnect the site') }} {{ scope.row.site_url }}?
                           </span>
                         </span>
                     </template>
-                </el-table-column>
+                </fct-table-column>
 
                 <template #empty>
                     <span role="alert">{{ $t('No activations found for this license') }}</span>
                 </template>
 
-            </el-table>
+            </fct-table>
         </div>
-    </el-dialog>
+    </fct-dialog>
 </template>
 
 <script>

@@ -16,8 +16,6 @@ use Tests\Support\Traits\BuildsBulkUpdatePayloads;
  * `required_if` condition did not apply, so a one-time variation could carry
  * any string in `repeat_interval` and any number in `signup_fee`. The junk was
  * accepted with a 200 and written to `other_info`.
- *
- * See dev-docs/framework-update-2.12.6-qa.md finding 5.
  */
 class BulkUpdateConditionalValidationCest
 {
@@ -93,8 +91,6 @@ class BulkUpdateConditionalValidationCest
      * saved with no billing interval at all, and the storefront then had nothing
      * to renew on. The requirement is a closure now, and the attribute carries no
      * `nullable`.
-     *
-     * See dev-docs/framework-update-2.12.6-qa.md finding 9.
      */
     public function bulkUpdateRejectsASubscriptionWithNoInterval(FunctionalTester $I): void
     {

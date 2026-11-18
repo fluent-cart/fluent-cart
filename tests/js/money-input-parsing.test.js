@@ -4,9 +4,11 @@ import {
     resolveSeparators,
     normalizeTypingValue,
     parseNormalizedValue,
+    sanitizeInput,
     dollarsToCents,
     csvValueToCents,
     centsToDollarValue,
+    editPriceValue,
 } from '../../resources/admin/Bits/moneyInput.js';
 
 // The shop's thousands separator is the only locale input the parser takes.
@@ -194,5 +196,37 @@ describe('centsToDollarValue', () => {
     it('round-trips with dollarsToCents in both locales', () => {
         expect(dollarsToCents(centsToDollarValue(129900), DOT_DECIMAL)).toBe(129900);
         expect(dollarsToCents(centsToDollarValue(1999), COMMA_DECIMAL)).toBe(1999);
+    });
+});
+
+describe('editPriceValue', () => {
+    it.each([['4,314', ','], ['4.314', '.']])('keeps digits when only formatting disappeared without a native selection snapshot: %s', (shown, thousand) => {
+        expect(editPriceValue('4314', shown, '4314', thousand).normalized).toBe('4314');
+    });
+    it.each([['4,314', ','], ['4.314', '.']])('removes only the last digit of %s', (shown, thousand) => {
+        const edited = editPriceValue(shown.slice(0, -1), shown, '4314', thousand);
+        expect(edited.normalized).toBe('431');
+        expect(dollarsToCents(edited.normalized, thousand)).toBe(43100);
+    });
+    it.each(['4314.', '4314.0', '19.99', ''])('keeps trailing separators, fractions and empty input: %s', value => {
+        expect(editPriceValue(value, '', '', ',').normalized).toBe(value);
+    });
+});
+
+// Parsing authored text must continue to agree with the importer.
+describe('typing a grouped price key by key', () => {
+    it.each([
+        ['1,234.56', DOT_DECIMAL, 123456],
+        ['1.234,56', COMMA_DECIMAL, 123456],
+        ['19,99', COMMA_DECIMAL, 1999],
+        ['4314', DOT_DECIMAL, 431400],
+    ])('"%s" is read as typed', (typed, thousand, cents) => {
+        let shown = '';
+        for (const key of typed) {
+            shown = sanitizeInput(shown + key);
+        }
+
+        expect(shown).toBe(typed);
+        expect(dollarsToCents(normalizeTypingValue(shown, thousand), thousand)).toBe(cents);
     });
 });

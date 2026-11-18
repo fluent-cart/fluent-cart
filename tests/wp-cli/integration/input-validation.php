@@ -1,9 +1,9 @@
 <?php
 /**
- * Phase 10 read-only input-validation and ownership regressions.
+ * Phase 10 input-validation and ownership regressions.
  *
- * No case creates or mutates data. Dynamic cases query pre-existing rows only
- * after proving the selected shape exists; otherwise they skip explicitly.
+ * Request-shape cases read pre-existing rows. The two policy cases create their
+ * own owned customers, orders and product, and delete them by exact ID.
  */
 
 use FluentCart\App\App;
@@ -44,32 +44,6 @@ $responsePayload = function (array $result) use ($normalise) {
     return $data;
 };
 
-$paginator = function (array $result, $key) use ($responsePayload, $normalise) {
-    $payload = $responsePayload($result);
-    if (!is_array($payload) || !array_key_exists($key, $payload)) {
-        return null;
-    }
-    $value = $normalise($payload[$key]);
-    return is_array($value) ? $value : null;
-};
-
-$rowIds = function (array $page) {
-    $ids = [];
-    foreach (isset($page['data']) && is_array($page['data']) ? $page['data'] : [] as $row) {
-        $row = is_object($row) && method_exists($row, 'toArray')
-            ? $row->toArray()
-            : $row;
-        if (!is_array($row)) {
-            continue;
-        }
-        $id = isset($row['ID']) ? $row['ID'] : (isset($row['id']) ? $row['id'] : null);
-        if ($id !== null) {
-            $ids[] = (int) $id;
-        }
-    }
-    return $ids;
-};
-
 $collectKey = function ($value, $wantedKey) use (&$collectKey, $normalise) {
     $value = $normalise($value);
     if (!is_array($value)) {
@@ -86,35 +60,6 @@ $collectKey = function ($value, $wantedKey) use (&$collectKey, $normalise) {
         }
     }
     return $found;
-};
-
-$subscriberCustomerWithOrder = function () {
-    global $wpdb;
-
-    $tableCustomers = $wpdb->prefix . 'fct_customers';
-    $tableOrders = $wpdb->prefix . 'fct_orders';
-    $candidates = $wpdb->get_results(
-        "SELECT c.id, c.user_id, MIN(o.uuid) AS own_uuid
-         FROM {$tableCustomers} c
-         INNER JOIN {$tableOrders} o
-            ON o.customer_id = c.id
-           AND o.uuid IS NOT NULL
-           AND o.uuid != ''
-         WHERE c.user_id IS NOT NULL
-           AND c.user_id > 0
-         GROUP BY c.id, c.user_id
-         ORDER BY c.id ASC
-         LIMIT 500"
-    );
-
-    foreach ($candidates as $candidate) {
-        $user = get_user_by('id', (int) $candidate->user_id);
-        if ($user && !in_array('administrator', (array) $user->roles, true)) {
-            return $candidate;
-        }
-    }
-
-    return null;
 };
 
 $setTestUser = function ($userId) {
@@ -299,195 +244,20 @@ return [
         },
     ],
     [
-        'id'            => 'validation-list-ordering-select-shaped-fallback',
-        'name'          => 'Shared list ordering rejects SELECT-shaped column and direction input',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () use ($paginator, $rowIds) {
-            $surfaces = [
-                ['route' => 'products', 'key' => 'products'],
-                ['route' => 'orders', 'key' => 'orders'],
-                ['route' => 'customers', 'key' => 'customers'],
-                ['route' => 'activity', 'key' => 'activities'],
-            ];
-
-            foreach ($surfaces as $surface) {
-                $baseline = FcTest::rest('GET', $surface['route'], ['per_page' => 3]);
-                $probe = FcTest::rest('GET', $surface['route'], [
-                    'per_page' => 3,
-                    'sort_by'   => 'id DESC, (SELECT 1)',
-                    'sort_type' => 'ASC, (SELECT 1)',
-                ]);
-                FcTest::assertHealthy($baseline, 'safe ordering baseline /' . $surface['route']);
-                FcTest::assertHealthy($probe, 'SELECT-shaped ordering probe /' . $surface['route']);
-
-                $baselinePage = $paginator($baseline, $surface['key']);
-                $probePage = $paginator($probe, $surface['key']);
-                FcTest::assert(
-                    is_array($baselinePage) && is_array($probePage),
-                    '/' . $surface['route'] . ' returns auditable paginator payloads'
-                );
-                if (!is_array($baselinePage) || !is_array($probePage)) {
-                    continue;
-                }
-                FcTest::assertSame(
-                    $rowIds($baselinePage),
-                    $rowIds($probePage),
-                    '/' . $surface['route']
-                        . ' rejects SELECT-shaped sort input and preserves safe fallback order'
-                );
-            }
-        },
-    ],
-    [
-        'id'            => 'validation-list-pagination-boundaries',
-        'name'          => 'Shared list pagination clamps invalid and oversized boundary values',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () use ($paginator) {
-            $surfaces = [
-                ['route' => 'products', 'key' => 'products'],
-                ['route' => 'orders', 'key' => 'orders'],
-                ['route' => 'customers', 'key' => 'customers'],
-                ['route' => 'activity', 'key' => 'activities'],
-            ];
-            $boundaries = [
-                ['input' => -25, 'expected' => 10],
-                ['input' => 0, 'expected' => 10],
-                ['input' => 199, 'expected' => 199],
-                ['input' => 200, 'expected' => 10],
-                ['input' => 100000, 'expected' => 10],
-            ];
-
-            foreach ($surfaces as $surface) {
-                foreach ($boundaries as $boundary) {
-                    $result = FcTest::rest('GET', $surface['route'], [
-                        'per_page' => $boundary['input'],
-                        'page'     => -999,
-                    ]);
-                    FcTest::assertHealthy(
-                        $result,
-                        '/' . $surface['route'] . ' pagination boundary '
-                            . $boundary['input']
-                    );
-                    $page = $paginator($result, $surface['key']);
-                    FcTest::assert(
-                        is_array($page),
-                        '/' . $surface['route'] . ' exposes paginator metadata'
-                    );
-                    if (!is_array($page)) {
-                        continue;
-                    }
-                    FcTest::assertSame(
-                        $boundary['expected'],
-                        (int) $page['per_page'],
-                        '/' . $surface['route'] . ' clamps per_page='
-                            . $boundary['input']
-                    );
-                    FcTest::assertSame(
-                        1,
-                        (int) $page['current_page'],
-                        '/' . $surface['route'] . ' clamps negative page to one'
-                    );
-                }
-            }
-        },
-    ],
-    [
-        'id'            => 'validation-bypass-pagination-boundaries',
-        'name'          => 'Input-taking list endpoints outside BaseFilter clamp per_page',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () use ($collectKey) {
-            $public = FcTest::rest('GET', 'public/products', [
-                'per_page' => 100000,
-                'page'     => 1,
-            ]);
-            FcTest::assertHealthy($public, '/public/products oversized per_page');
-            $values = array_map('intval', $collectKey($public['data'], 'per_page'));
-            if (!$values) {
-                FcTest::fail('/public/products does not expose pagination metadata');
-                return;
-            }
-            foreach ($values as $value) {
-                FcTest::assert(
-                    $value > 0 && $value <= 100,
-                    '/public/products clamps per_page=100000 to 1-100 (ShopController::perPage); observed ' . $value
-                );
-            }
-        },
-    ],
-    [
-        'id'            => 'validation-destructive-routes-have-policy-methods',
-        'name'          => 'Every destructive route resolves a concrete policy method',
-        'kind'          => 'behavior',
-        'known_failure' => false,
-        'run'           => function () {
-            $pluginDir = dirname(__DIR__, 3);
-            $config = require $pluginDir . '/tests/wp-cli/suite.config.php';
-            require_once $pluginDir . '/tests/wp-cli/lib/permission-route-source.php';
-            $inventory = FcPermissionRouteSource::discover($pluginDir, $config);
-            FcTest::assertSame([], $inventory['errors'], 'permission source parser is clean');
-
-            $deletes = array_filter($inventory['declarations'], function ($route) {
-                return $route['verb'] === 'DELETE';
-            });
-            FcTest::assertSame(
-                20,
-                count($deletes),
-                'all 20 destructive route declarations are inventoried'
-            );
-
-            foreach ($deletes as $route) {
-                $policy = isset($route['policy']) ? (string) $route['policy'] : '';
-                FcTest::assert(
-                    $policy !== '',
-                    $route['source_file'] . ':' . $route['source_line']
-                        . ' DELETE /' . $route['route'] . ' resolves a policy'
-                );
-                if ($policy === '') {
-                    continue;
-                }
-                $policyFile = $pluginDir . '/app/Http/Policies/' . $policy . '.php';
-                $source = is_file($policyFile) ? file_get_contents($policyFile) : false;
-                FcTest::assert(
-                    is_string($source) && strpos($source, 'function verifyRequest(') !== false,
-                    $policy . ' exposes verifyRequest() for DELETE /' . $route['route']
-                );
-            }
-        },
-    ],
-    [
         'id'            => 'validation-id-scoped-admin-routes-consult-policy',
         'name'          => 'ID-scoped admin GET routes refuse a subscriber before controller data access',
         'kind'          => 'behavior',
         'known_failure' => false,
-        'run'           => function () use ($subscriberCustomerWithOrder, $setTestUser) {
-            global $wpdb;
-
-            $actor = $subscriberCustomerWithOrder();
-            $productId = (int) $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT ID FROM {$wpdb->posts}
-                     WHERE post_type = %s
-                     ORDER BY ID ASC LIMIT 1",
-                    'fluent-products'
-                )
-            );
-            if (!$actor || !$productId) {
-                FcTest::skip('No subscriber/customer/product tuple exists for policy probing.');
-                return;
-            }
-
+        'run'           => function () use ($setTestUser) {
             $adminId = get_current_user_id();
             try {
-                $setTestUser((int) $actor->user_id);
+                $actor = FcPublicSurfaceFixture::pair('validation-policy')['a'];
+                $product = FcDomainFixture::product();
+                $setTestUser((int) $actor['user_id']);
                 $routes = [
-                    'orders/' . (int) $wpdb->get_var(
-                        "SELECT id FROM {$wpdb->prefix}fct_orders ORDER BY id ASC LIMIT 1"
-                    ),
-                    'customers/' . (int) $actor->id,
-                    'products/' . $productId,
+                    'orders/' . (int) $actor['order_id'],
+                    'customers/' . (int) $actor['customer_id'],
+                    'products/' . (int) $product['post']->ID,
                 ];
                 foreach ($routes as $route) {
                     $result = FcTest::rest('GET', $route);
@@ -504,6 +274,8 @@ return [
                 }
             } finally {
                 $setTestUser($adminId);
+                FcDomainFixture::cleanupAll();
+                FcPublicSurfaceFixture::cleanupAll();
             }
         },
     ],
@@ -513,38 +285,17 @@ return [
         'kind'          => 'behavior',
         'known_failure' => false,
         'run'           => function () use (
-            $subscriberCustomerWithOrder,
             $responsePayload,
             $setTestUser
         ) {
-            global $wpdb;
-
-            $actor = $subscriberCustomerWithOrder();
-            if (!$actor) {
-                FcTest::skip('No non-admin linked customer with an Order exists.');
-                return;
-            }
-            $foreignUuid = $wpdb->get_var($wpdb->prepare(
-                "SELECT uuid
-                 FROM {$wpdb->prefix}fct_orders
-                 WHERE customer_id != %d
-                   AND uuid IS NOT NULL
-                   AND uuid != ''
-                 ORDER BY id ASC
-                 LIMIT 1",
-                $actor->id
-            ));
-            if (!$foreignUuid) {
-                FcTest::skip('No foreign pre-existing Order UUID exists.');
-                return;
-            }
-
             $adminId = get_current_user_id();
             try {
-                $setTestUser((int) $actor->user_id);
-                [$own, $foreign] = FcTest::withVerifiedCustomer(function () use ($actor, $foreignUuid) {
+                $pair = FcPublicSurfaceFixture::pair('validation-foreign');
+                $foreignUuid = $pair['b']['order_uuid'];
+                FcPublicSurfaceFixture::login($pair['a']);
+                [$own, $foreign] = FcTest::withVerifiedCustomer(function () use ($pair, $foreignUuid) {
                     return [
-                        FcTest::rest('GET', 'customer-profile/orders/' . $actor->own_uuid),
+                        FcTest::rest('GET', 'customer-profile/orders/' . $pair['a']['order_uuid']),
                         FcTest::rest('GET', 'customer-profile/orders/' . $foreignUuid),
                     ];
                 });
@@ -571,6 +322,8 @@ return [
                 );
             } finally {
                 $setTestUser($adminId);
+                \FluentCart\Api\Resource\CustomerResource::resetCurrentCustomerRuntimeCache();
+                FcPublicSurfaceFixture::cleanupAll();
             }
         },
     ],

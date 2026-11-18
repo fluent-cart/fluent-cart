@@ -116,7 +116,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                   translate("%s items", filteredOrderItems(order).length)
                 }}
               </component>
-              <el-popover
+              <fct-popover
                   placement="top"
                   :width="360"
                   trigger="click"
@@ -147,7 +147,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                     <DynamicIcon name="ChevronDown"/>
                   </div>
                 </template>
-              </el-popover>
+              </fct-popover>
             </div>
             <div v-if="deliverySummary(order.shipments, order.unshipped_items)" class="fct-order-delivery-summary">
               <Badge :type="deliverySummary(order.shipments, order.unshipped_items).type" :text="deliverySummary(order.shipments, order.unshipped_items).text" size="small"/>
@@ -173,9 +173,9 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
 
 
       <!-- desktop view -->
-        <el-table class="order-content-only-desktop" :empty-text="$t('Your purchases will be shown here!')" :data="orders" :show-header="showTableHeader" role="table"
+        <fct-table class="order-content-only-desktop" :empty-text="$t('Your purchases will be shown here!')" :data="orders" :show-header="showTableHeader"
       :aria-label="$t('Customer order history')">
-            <el-table-column label="#" :width="150">
+            <fct-table-column label="#" :width="150">
                 <template #default="scope">
                   <div class="invoice-id-date">
                     <component :is="orderLinkTag(scope.row.uuid)" v-bind="orderLinkProps(scope.row.uuid)" class="link text-sm">
@@ -186,9 +186,9 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                     </span>
                   </div>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :width="itemsColumnWidth" :label="translate('Items')" :aria-label="$t('Order items')">
+            <fct-table-column :width="itemsColumnWidth" :label="translate('Items')">
                 <template #default="scope">
                     <div class="fct-customer-orders-items" :class="filteredOrderItems(scope.row).length === 1 ? 'grid' : ''">
                         <template v-if="filteredOrderItems(scope.row).length === 1">
@@ -222,7 +222,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                           <!-- translators: %s is the number of items -->
                             {{ translate("%s items", filteredOrderItems(scope.row).length) }}
                         </component>
-                        <el-popover
+                        <fct-popover
                             placement="top"
                             :width="360"
                             trigger="click"
@@ -252,7 +252,7 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                                     <DynamicIcon name="ChevronDown"/>
                                 </div>
                             </template>
-                        </el-popover>
+                        </fct-popover>
                     </div>
 
                   <template v-if="scope.row.order_items">
@@ -264,21 +264,21 @@ const orderLinkProps = (uuid) => uuid ? { to: { name: 'view_order', params: { or
                     <small>{{ deliverySummary(scope.row.shipments, scope.row.unshipped_items).line }}</small>
                   </div>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('Status')" width="120"  :aria-label="$t('Order status')">
+            <fct-table-column :label="translate('Status')" width="120">
                 <template #default="scope">
                     <Badge :type="scope.row.status" size="small">
                         {{ getStatusText(scope.row.status) }}
                     </Badge>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column :label="translate('Amount')" width="90" :aria-label="$t('Total amount')">
+            <fct-table-column :label="translate('Amount')" width="90">
                 <template #default="scope">
                     <span class="text" v-html="formatNumber(scope.row.total_amount, true, false, scope.row.currency)"></span>
                 </template>
-            </el-table-column>
-        </el-table>
+            </fct-table-column>
+        </fct-table>
     </div>
 </template>

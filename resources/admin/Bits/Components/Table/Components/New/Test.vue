@@ -27,7 +27,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <el-popover
+  <fct-popover
       placement="bottom-start"
       :width="300"
       trigger="click"
@@ -68,7 +68,7 @@ onMounted(() => {
         </el-icon>
       </div>
     </template>
-  </el-popover>
+  </fct-popover>
 </template>
 
 <style scoped>

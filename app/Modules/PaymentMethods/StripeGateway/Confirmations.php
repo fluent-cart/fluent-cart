@@ -10,6 +10,7 @@ use FluentCart\App\Models\Order;
 use FluentCart\App\Models\OrderTransaction;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode;
 use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use FluentCart\App\Modules\Subscriptions\Services\SystemChargeService;
 use FluentCart\App\Services\DateTime\DateTime;
@@ -1210,6 +1211,25 @@ class Confirmations
                 'billing_info'      => $billingInfo,
                 'subscription_args' => $subscriptionArgs
             ]);
+
+            $stripeCustomerId = (string) Arr::get($charge, 'customer', '');
+            if ($stripeCustomerId && $intentId && SubscriptionManagementMode::transactionConvertsToSystem($transaction)) {
+                // A retry can confirm an earlier intent made without consent; only the intent proves the card was saved.
+                $intent = (new API())->getStripeObject('payment_intents/' . $intentId, [], StripeHelper::modeFromLivemode(Arr::isTrue($charge, 'livemode')));
+                if (is_wp_error($intent)) {
+                    $subscription->addLog(
+                        __('Auto-charge Conversion Skipped', 'fluent-cart'),
+                        sprintf(
+                            /* translators: %s: error message */
+                            __('Could not read the Stripe payment to confirm the card was saved: %s', 'fluent-cart'),
+                            $intent->get_error_message()
+                        ),
+                        'warning'
+                    );
+                } elseif (Arr::get($intent, 'setup_future_usage') === 'off_session') {
+                    SystemChargeService::promoteToSystem($subscription->fresh(), $billingInfo, $stripeCustomerId, 'stripe');
+                }
+            }
 
         } else {
             $subscription = Subscription::query()->where('id', $transaction->subscription_id)->first();

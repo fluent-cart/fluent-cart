@@ -547,8 +547,8 @@ class WooCommerceMigratorCli
                             'total_stock' => $stockQuantity,
                             'available' => $stockQuantity,
                             'backorders' => $backorders,
-                            'created_at' => current_time('mysql'),
-                            'updated_at' => current_time('mysql'),
+                            'created_at' => current_time('mysql', true),
+                            'updated_at' => current_time('mysql', true),
                             'other_info' => json_encode([
                                 'description' => '',
                                 'payment_type' => 'onetime',
@@ -572,8 +572,8 @@ class WooCommerceMigratorCli
                         'variation_type' => 'simple_variations',
                         'min_price' => $this->convertToCents(min($variationPrices)),
                         'max_price' => $this->convertToCents(max($variationPrices)),
-                        'created_at' => current_time('mysql'),
-                        'updated_at' => current_time('mysql'),
+                        'created_at' => current_time('mysql', true),
+                        'updated_at' => current_time('mysql', true),
                         'manage_stock' => $hasStockManagement ? 1 : 0,
                         'manage_downloadable' => ($fulfillmentType === 'digital') ? 1 : 0,
                         'stock_availability' => 'in-stock',
@@ -614,8 +614,8 @@ class WooCommerceMigratorCli
                     'total_stock' => $stockQuantity,
                     'available' => $stockQuantity,
                     'backorders' => $backorders,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql'),
+                    'created_at' => current_time('mysql', true),
+                    'updated_at' => current_time('mysql', true),
                     'other_info' => json_encode([
                         'description' => '',
                         'payment_type' => 'onetime'
@@ -627,8 +627,8 @@ class WooCommerceMigratorCli
                     'variation_type' => 'simple',
                     'min_price' => $minPriceCents,
                     'max_price' => $maxPriceCents,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql'),
+                    'created_at' => current_time('mysql', true),
+                    'updated_at' => current_time('mysql', true),
                     'manage_stock' => $manageStock ? 1 : 0,
                     'manage_downloadable' => ($fulfillmentType === 'digital') ? 1 : 0,
                     'stock_availability' => $stockStatus === 'instock' ? 'in-stock' : 'out-of-stock',
@@ -755,7 +755,7 @@ class WooCommerceMigratorCli
                 [
                     //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                     'meta_value' => serialize($metaValue),
-                    'updated_at' => current_time('mysql')
+                    'updated_at' => current_time('mysql', true)
                 ],
                 [
                     'object_id' => $variationId,
@@ -776,8 +776,8 @@ class WooCommerceMigratorCli
                     'meta_key' => 'product_thumbnail',
                     //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                     'meta_value' => serialize($metaValue),
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql')
+                    'created_at' => current_time('mysql', true),
+                    'updated_at' => current_time('mysql', true)
                 ]
             );
         }
@@ -952,8 +952,8 @@ class WooCommerceMigratorCli
                 'file_size' => $fileSize,
                 'settings' => $settings,
                 'serial' => 1,
-                'created_at' => current_time('mysql'),
-                'updated_at' => current_time('mysql')
+                'created_at' => current_time('mysql', true),
+                'updated_at' => current_time('mysql', true)
             ];
             
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

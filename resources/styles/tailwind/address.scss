@@ -13,16 +13,16 @@
     .el-input__wrapper {
       @apply max-h-10 min-h-10;
       input {
-        @apply text-[13px] m-0 outline-none shadow-none #{!important};
+        @apply text-[13px]! m-0! outline-hidden! shadow-none!;
         &:focus {
-          @apply outline-none shadow-none #{!important};
+          @apply outline-hidden! shadow-none!;
         }
       }
     }
 
     &.is-focus {
       .el-input__wrapper {
-        @apply pt-[22px] pb-1.5 #{!important};
+        @apply pt-[22px]! pb-1.5!;
       }
     }
   }
@@ -59,33 +59,33 @@
 
 /* fct-compact-form */
 .fct-compact-form {
-  @apply gap-0 !important;
+  @apply gap-0!;
   .fct-material-input,
   .setting-fields-inner {
     @apply m-0 relative;
     &:first-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-t-[1px] rounded-tl rounded-tr;
+        @apply [border-top-width:1px] rounded-tl rounded-tr;
       }
     }
     &:last-child{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-b-[1px] rounded-bl rounded-br;
+        @apply [border-bottom-width:1px] rounded-bl rounded-br;
       }
     }
   }
 
   .fct-material-input#store_state{
     .el-input__wrapper{
-      @apply rounded-none border-b-[0.5px] border-t-[0.5px];
+      @apply rounded-none [border-bottom-width:0.5px] [border-top-width:0.5px];
     }
   }
 
   .el-input__wrapper,
   .el-select__wrapper {
-    @apply min-h-12 rounded-none border-b-[0.5px] border-t-[0.5px];
+    @apply min-h-12 rounded-none [border-bottom-width:0.5px] [border-top-width:0.5px];
   }
 
   .setting-fields-inner{
@@ -98,7 +98,7 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-e-[0.5px] border-b-[1px] border-t-[0.5px] rounded-es rounded-tr-none rounded-tl-none rounded-ee-none;
+        @apply [border-inline-end-width:0.5px] [border-bottom-width:1px] [border-top-width:0.5px] rounded-es rounded-tr-none rounded-tl-none rounded-ee-none;
       }
     }
   }
@@ -106,7 +106,7 @@
     .fct-material-input{
       .el-input__wrapper,
       .el-select__wrapper {
-        @apply border-s-[0.5px] border-b-[1px] border-t-[0.5px] rounded-ee rounded-tr-none rounded-tl-none rounded-es-none;
+        @apply [border-inline-start-width:0.5px] [border-bottom-width:1px] [border-top-width:0.5px] rounded-ee rounded-tr-none rounded-tl-none rounded-es-none;
       }
     }
   }
@@ -118,12 +118,12 @@
 .fct-customer-address-section {
   .el-select__wrapper{
     &:first-child{
-      @apply border-t-[1px] rounded-tl rounded-tr;
+      @apply [border-top-width:1px] rounded-tl rounded-tr;
     }
   }
   .address_locale {
     .el-select__wrapper{
-      @apply border-t-[0.5px] rounded-none;
+      @apply [border-top-width:0.5px] rounded-none;
     }
   }
 }

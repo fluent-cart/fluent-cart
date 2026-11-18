@@ -29,8 +29,8 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <el-drawer append-to-body
-             v-model="modalStates[index]['visible']" :size="drawerSize"
+  <fct-dialog drawer append-to-body
+             v-model="modalStates[index]['visible']" :width="drawerSize"
              :title="translate('Edit Downloadable Asset')"
              @close="() => {
                productDownloadableModel.closeEditModal(index)
@@ -50,15 +50,15 @@ onBeforeMount(() => {
     </div>
 
     <template #footer>
-      <el-button type="primary"
+      <fct-button type="primary"
                  :loading="productDownloadableModel.saving"
                  @click="()=>{
            productDownloadableModel.updateDownloadableFile();
           }">
         {{ translate('Update') }}
-      </el-button>
+      </fct-button>
     </template>
-  </el-drawer>
+  </fct-dialog>
 
 
   <div class="el-dropdown-menu__item w-full"

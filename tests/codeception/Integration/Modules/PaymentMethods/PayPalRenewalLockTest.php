@@ -138,7 +138,7 @@ class PayPalRenewalLockTest extends DatabaseTestCase
                     'charge' => ['id' => $saleId, 'amount' => ['total' => '154.80']],
                 ]);
                 $this->assertFalse($result, 'An unrecorded sale must not be acknowledged');
-                $getError = new \ReflectionMethod(IPN::class, 'getRecurringPaymentError');
+                $getError = new \ReflectionMethod(IPN::class, 'getWebhookRetryError');
                 $getError->setAccessible(true);
                 $error = $getError->invoke(null);
                 $this->assertNotFalse(as_next_scheduled_action('fluent_cart/paypal/subscription_resync_retry', [$subscription->id, 1], 'fluent-cart'), 'The webhook must schedule recovery');

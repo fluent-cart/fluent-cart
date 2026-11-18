@@ -44,8 +44,8 @@
       </div>
 
       <!-- desktop view -->
-        <el-table class="subscription-only-desktop" :data="subscriptions" :show-header="!hideHeader" role="table">
-            <el-table-column :min-width="200" :label="$t('Item')">
+        <fct-table class="subscription-only-desktop" :data="subscriptions" :show-header="!hideHeader">
+            <fct-table-column :min-width="200" :label="$t('Item')">
                 <template #default="scope">
                     <div class="fct-customer-orders-items fct-customer-sub-orders-items cursor-pointer"
                          @click="$router.push({
@@ -76,17 +76,17 @@
                         </div>
                     </div>
                 </template>
-            </el-table-column>
+            </fct-table-column>
 
-            <el-table-column min-width="200" :label="$t('Plan')" align="right">
+            <fct-table-column min-width="200" :label="$t('Plan')" align="right">
                 <template #default="scope">
                     <div class="fct-customer-payment-meta-info">
                       <PaymentInfo :data="scope.row"/>
                       <CardInfo :data="scope.row"/>
                     </div>
                 </template>
-            </el-table-column>
-        </el-table>
+            </fct-table-column>
+        </fct-table>
     </div>
 </template>
 

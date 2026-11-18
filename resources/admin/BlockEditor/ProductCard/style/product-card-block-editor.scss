@@ -1,18 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss/theme.css" theme(reference inline);
 
-@config "./product-card-block-editor.config.js";
-@tailwind utilities;
-@tailwind base;
+@config "./product-card-block-editor.config.mjs";
+@import "tailwindcss/utilities.css" source(none);
+@source inline("{,sm:,md:,lg:,xl:}grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12,none,subgrid,dynamic,sm-dynamic,md-dynamic,lg-dynamic}");
+@source inline("{,sm:,md:,lg:,xl:}col-span-{1,2,3,4,5,6,7,8,9,10,11,12,full,dynamic}");
 
 
 .fct-product-card{
   @apply relative bg-[var(--product-card-bg)] grid grid-cols-1 border border-solid rounded border-[var(--product-card-border-color)] transition-all duration-200 p-1;
   grid-template-areas: 'head' 'body' 'footer';
-  button {
-    @apply text-[var(--button-color)] border-0 flex w-full items-center justify-center relative rounded text-sm font-medium cursor-pointer leading-none py-3 px-4 transition-all focus:outline-none max-h-9 min-h-9 m-0 no-underline gap-1.5 #{!important};
+  // Not in a layout card: Related Products wraps its cards in this class too, and these forced sizes would
+  // override a layout's own buttons and its Quick View room.
+  &:not(:has(.fct-card-layout)) button {
+    @apply text-[var(--button-color)]! border-0! flex! items-center! justify-center! relative! rounded! text-sm! font-medium! cursor-pointer! leading-none! py-3! px-4! transition-all! focus:outline-hidden! max-h-9! min-h-9! no-underline! gap-1.5!;
 
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), var(--button-bg) !important;
     box-shadow: inset 0px 0.5px 0.5px 0.5px  rgba(255, 255, 255, 0.1);
+  }
+  // Full width, except a Classic card's button with the Quick View preview beside it, which needs the room.
+  &:not(:has(.fct-card-layout)) button:not([data-type="fluent-cart/shopapp-product-buttons"]:has(~ .fct-card-quick-view.is-preview-button)) {
+    @apply w-full! m-0!;
   }
   &-head {
     grid-area: head;
@@ -30,7 +38,7 @@
   }
 
   &-title {
-    @apply leading-[18px] mt-0 mb-1.5 pb-0 normal-case font-medium text-[15px] text-[var(--product-card-title-color)] hover:text-[var(--product-card-title-hover-color)] #{!important};
+    @apply leading-[18px]! mt-0! mb-1.5! pb-0! normal-case! font-medium! text-[15px]! text-[var(--product-card-title-color)]! hover:text-[var(--product-card-title-hover-color)]!;
     display: inline-block; /* For Chrome, Safari, Edge */
     -webkit-box-orient: vertical; /* Needed for -webkit-line-clamp */
     -webkit-line-clamp: 2; /* Limit to 2 lines */
@@ -75,4 +83,10 @@
 }
 .components-panel__header.editor-sidebar__panel-tabs{
   z-index: 0;
+}
+
+// In a loop the card's button takes the loop's button style; a card placed on its own has no loop around it.
+.fct-product-block-editor-product-card:not(.fluent-cart-product-loop) .fct-product-block-editor-product-card-primary-button {
+  @apply mt-auto py-3 px-4 bg-[var(--button-bg)] text-[var(--button-color)] border-0 rounded cursor-pointer text-sm font-medium w-full flex items-center justify-center hover:bg-[var(--button-hover-bg)] hover:text-[var(--button-hover-color)];
+  height: max-content;
 }

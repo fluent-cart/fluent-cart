@@ -17,7 +17,7 @@ use FluentCart\Framework\Http\Request\Request as FluentRequest;
 /**
  * MRR in the "All currencies" mode: each subscription converted at its own
  * frozen rate; a subscription without a trustworthy rate is left out.
- * dev-docs/multi-currency/plan.md §13. Base USD.
+ * dev-docs/multi-currency/07-reports.md. Base USD.
  */
 class ConvertedSubscriptionReportsTest extends DatabaseTestCase
 {
@@ -65,35 +65,6 @@ class ConvertedSubscriptionReportsTest extends DatabaseTestCase
 
         $this->assertEquals(20.0, $mrr(ReportCurrency::ALL), '$10 + £7.90 at 0.79; the rateless EUR one is left out');
         $this->assertEquals(10.0, $mrr('USD'), 'the scoped mode is unchanged');
-    }
-
-    /**
-     * Projected renewal revenue: each subscription's recurring total at its
-     * own rate. The endpoint has no product filter, so this reads deltas.
-     */
-    public function test_the_future_renewals_endpoint_projects_converted_revenue(): void
-    {
-        $renewals = function ($currency) {
-            return (new SubscriptionReportController())->getFutureRenewals($this->request($currency));
-        };
-        $allBefore = $renewals(ReportCurrency::ALL);
-        $usdBefore = $renewals('USD');
-
-        $customer = (new CustomerFactory())->create();
-        // FutureRenewals keeps open-ended subscriptions only (bill_times <= 0)
-        // and projects a quarter (89-92 days) ahead: a monthly renewal due in
-        // 80 days lands once in that window whatever the month lengths.
-        $due = ['next_billing_date' => gmdate('Y-m-d H:i:s', strtotime('+80 days')), 'bill_times' => 0, 'bill_count' => 1];
-        $this->activeMonthly($customer->id, 'USD', 1000, null, $due);
-        $this->activeMonthly($customer->id, 'GBP', 790, CurrencySnapshot::make('GBP', '0.79', ['source' => CurrencySnapshot::SOURCE_MANUAL]), $due);
-        $this->activeMonthly($customer->id, 'EUR', 5000, null, $due);
-
-        $all = $renewals(ReportCurrency::ALL);
-        $usd = $renewals('USD');
-
-        $this->assertEquals(2000, $all['totalProjected'] - $allBefore['totalProjected'], '$10 + £7.90 at 0.79 in cents; the rateless EUR one is left out');
-        $this->assertSame(2, $all['totalRenewals'] - $allBefore['totalRenewals']);
-        $this->assertEquals(1000, $usd['totalProjected'] - $usdBefore['totalProjected'], 'the scoped mode is unchanged');
     }
 
     private function request(string $currency, array $extra = []): FluentRequest

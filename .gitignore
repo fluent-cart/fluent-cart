@@ -53,8 +53,6 @@ config/vite_config.php
 /.debug-emails
 /.archon
 *.local.json
-/tests/playwright/.env
-/tests/playwright/_output
 
 test-results/
 

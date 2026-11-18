@@ -32,13 +32,19 @@
     @apply relative pl-6.5 my-1;
     &::before {
       content: '';
-      @apply absolute left-4.5 top-1/2 bg-gray-100 dark:bg-primary-500  h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+      @apply absolute left-4.5 top-1/2 bg-gray-100 h-[calc(100%-16px)] w-[2px] rounded translate-y-[-50%];
+    }
+    .fluent_theme_dark &::before {
+        @apply bg-primary-500;
     }
     .tab-item {
       .fct-tab-link {
         &::before {
           content: "";
-          @apply absolute top-2 left-[-8px] w-0 h-[84%] h-[calc(100%-16px)] bg-primary-500 dark:bg-gray-300 duration-100 transition-all rounded;
+          @apply absolute top-2 left-[-8px] w-0 h-[84%] h-[calc(100%-16px)] bg-primary-500 duration-100 transition-all rounded;
+        }
+        .fluent_theme_dark &::before {
+            @apply bg-gray-300;
         }
         &.router-link-exact-active {
           @apply bg-white font-semibold dark:bg-transparent;
@@ -61,7 +67,7 @@
 }
 
 .fct-tab-link{
-  @apply relative rounded cursor-pointer py-2 px-3 outline-none gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
+  @apply relative rounded cursor-pointer py-2 px-3 outline-hidden gap-2.5 focus:shadow-none flex items-center text-sm font-medium text-system-mid dark:text-gray-300 hover:bg-primary-25 hover:text-primary-500 dark:hover:bg-dark-600 dark:hover:text-gray-50;
   .icon:not(.tab-icon-right) {
     svg{
       @apply w-4.5 h-4.5;

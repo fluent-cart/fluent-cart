@@ -26,7 +26,7 @@ const props = defineProps({
         <IconButton size="x-small" bg="danger" soft v-if="cardOptions.headingIcon">
           <DynamicIcon name="FailedCircle"/>
         </IconButton>
-        <h4 class="title">{{ cardOptions.heading }}</h4>
+        <h2 class="title">{{ cardOptions.heading }}</h2>
       </div>
       <div class="actions">
         <router-link :to="`/${cardOptions.linkButtonUrl}`" class="link" v-if="cardOptions.linkButtonText">

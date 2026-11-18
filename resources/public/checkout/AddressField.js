@@ -433,9 +433,11 @@ export default class AddressField {
 
         if (isHidden) {
             this.form.querySelector(id).style.display = 'none';
+            this.form.querySelector(id).hidden = true;
         } else {
 
             this.form.querySelector(id).style.display = 'block';
+            this.form.querySelector(id).hidden = false;
             this.syncStateLabel(this.form.querySelector(id), response);
             if (this.billingStateSelect !== null) {
                 this.billingStateSelect.destroy();

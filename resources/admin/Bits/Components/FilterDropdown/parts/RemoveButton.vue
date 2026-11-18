@@ -9,7 +9,6 @@
 </template>
 
 <script setup>
-import { defineEmits } from 'vue';
 import DynamicIcon from '@/Bits/Components/Icons/DynamicIcon.vue';
 
 const props = defineProps({

@@ -183,7 +183,7 @@ class AdminOrderProcessor
                 Arr::set($item, 'other_info.signup_discount', $childDiscontTotal);
             }
 
-            if (Arr::get($checkoutItem, 'other_info.is_bundle_product', 'no') == 'yes') {
+            if (Helper::isBundleItem(Arr::get($checkoutItem, 'other_info', []))) {
                 $bundleItems = Arr::get($checkoutItem, 'child_variants', []);
 
                 foreach ($bundleItems as $bundleItem) {
@@ -277,11 +277,18 @@ class AdminOrderProcessor
             'config'                => [
                 'user_tz'                   => Arr::get($this->args, 'user_tz', ''),
                 'source'                    => 'admin',
+                'shipping_source'           => Arr::get($this->args, 'shipping.id') ? 'zone' : 'manual',
             ],
         ];
 
+        if (Arr::get($this->args, 'shipping.id')) {
+            $orderData['config']['shipping_method_id'] = Arr::get($this->args, 'shipping.id');
+            $orderData['config']['shipping_method_title'] = Arr::get($this->args, 'shipping.title');
+            $orderData['config']['shipping_carrier'] = 'manual';
+        }
+
         // Frozen from the rate the admin order was priced at — Order::creating
-        // keeps an explicit snapshot (multi-currency plan §11.7)
+        // keeps an explicit snapshot (dev-docs/multi-currency/06-orders-subscriptions.md)
         $currencySnapshot = Arr::get($this->args, 'currency_snapshot');
         if (is_array($currencySnapshot) && !empty($currencySnapshot['currency'])) {
             $orderData['config']['fx'] = $currencySnapshot;
@@ -346,7 +353,7 @@ class AdminOrderProcessor
                 unset($orderItem['additional_items']);
             }
 
-            if (Arr::get($orderItem, 'other_info.is_bundle_product', 'no') == 'yes') {
+            if (Helper::isBundleItem(Arr::get($orderItem, 'other_info', []))) {
                 $bundleItems = Arr::get($orderItem, 'bundle_items', []);
                 unset($orderItem['bundle_items']);
             }

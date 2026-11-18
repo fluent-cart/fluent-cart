@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 
 /**
  * A cart is priced in exactly one currency at one locked rate
- * (dev-docs/multi-currency/plan.md §2.3 invariant #6, §11.6).
+ * (dev-docs/multi-currency/05-storefront-cart-checkout.md, "The cart").
  *
  * - Every cart item carries its base-currency price in other_info.fx_base;
  *   the price shown and charged is derived from it at the cart's quote.
@@ -141,8 +141,9 @@ class CartCurrency
      * The quote a plan upgrade of $order is priced at. An upgrade is a new
      * order and a new subscription, so it is in the currency the shopper has
      * chosen (switcher / cookie), else the subscription's currency, at
-     * today's rate (plan §15.6). An order whose rate was never known stays
-     * in its own currency — its credit cannot be converted.
+     * today's rate. An order whose rate was never known stays in its own
+     * currency — its credit cannot be converted.
+     * See dev-docs/multi-currency/06-orders-subscriptions.md, "Plan upgrades".
      *
      * Null when the order's own currency cannot be quoted (no rate today and
      * no trusted snapshot): the prorate credit is in that currency, so the
@@ -197,7 +198,8 @@ class CartCurrency
      * Hold a new cart to $currency — e.g. a plan upgrade, which must be
      * priced in the subscription's currency whatever the visitor browses
      * in. Unlike pin(), items are still converted from their base price at
-     * the current rate (plan decision #10). Call after checkout_data is set.
+     * the current rate (dev-docs/multi-currency/06-orders-subscriptions.md,
+     * "Plan upgrades"). Call after checkout_data is set.
      *
      * @return array the quote the cart is priced at
      */

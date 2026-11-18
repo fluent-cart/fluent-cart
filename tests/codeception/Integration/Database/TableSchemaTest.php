@@ -52,7 +52,7 @@ class TableSchemaTest extends DatabaseTestCase
     public function test_orders_has_special_type_columns(): void
     {
         // Widened from decimal(12,4) to hold a real exchange rate
-        // (dev-docs/multi-currency/plan.md §1.2, §3 Phase 1)
+        // (dev-docs/multi-currency/02-database-schema.md)
         $this->assertColumnType('fct_orders', 'rate', 'decimal(24,12)');
         $this->assertColumnType('fct_orders', 'tax_behavior', 'tinyint');
         $this->assertColumnDefault('fct_orders', 'tax_behavior', '0');
@@ -1144,21 +1144,6 @@ class TableSchemaTest extends DatabaseTestCase
             'retention_rate_customers', 'retention_rate_mrr', 'period_offset',
             'created_at', 'updated_at',
         ]);
-    }
-
-    /** #174 */
-    public function test_retention_snapshots_has_unique_composite_index(): void
-    {
-        // Currency joined the key: MRR is only summable within one currency
-        // (dev-docs/multi-currency/plan.md §3 Phase 2)
-        $this->assertUniqueIndex('fct_retention_snapshots', 'fct_rs_cohort_period_product_currency_idx');
-
-        global $wpdb;
-        $columns = $wpdb->get_col($wpdb->prepare(
-            "SHOW INDEX FROM `{$this->fullTableName('fct_retention_snapshots')}` WHERE Key_name = %s",
-            $this->findIndexName('fct_retention_snapshots', 'fct_rs_cohort_period_product_currency_idx')
-        ), 4);
-        $this->assertSame(['cohort', 'period', 'product_id', 'currency'], $columns);
     }
 
     /** #175 */

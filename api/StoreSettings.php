@@ -1650,7 +1650,7 @@ class StoreSettings implements ArrayableInterface
                                                 'note'  => sprintf(
                                                     /* translators: 1: the setting's explanatory note text */
                                                     "<div class='pl-6'>%1\$s</div>",
-                                                    __('In test mode, this site won\'t invoice, charge, or email live subscriptions — so a staging copy can never double-bill customers. Billing from this site resumes when it is live again.', 'fluent-cart')
+                                                    __('In test mode, this site won\'t invoice, charge, email, or expire live subscriptions, so a staging copy can\'t affect real customers. It resumes when the site is live again.', 'fluent-cart')
                                                 )
                                             ],
                                         ]

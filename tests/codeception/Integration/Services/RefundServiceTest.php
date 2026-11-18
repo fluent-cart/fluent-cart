@@ -126,8 +126,6 @@ class RefundServiceTest extends DatabaseTestCase
         $this->assertStringContainsString('net paid amount', $result->get_error_message());
     }
 
-    // OrderPaid's listener calls recountTotalPaid(), which stores total_paid net
-    // of refunds; a cap read from the columns then subtracts the refund twice.
     public function test_process_refund_allows_the_remaining_balance_after_a_paid_recount(): void
     {
         $customer = $this->customerFactory->create();
@@ -451,7 +449,7 @@ class RefundServiceTest extends DatabaseTestCase
 
         $rival = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
         if (!$rival) {
-            $this->markTestSkipped('could not open a second DB connection to hold the order refund lock');
+            $this->fail('could not open a second DB connection to hold the order refund lock');
         }
 
         try {

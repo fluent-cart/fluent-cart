@@ -12,15 +12,16 @@
       {{content}}
     </template>
 
-    <div v-if="closable" class="fct-alert-close" @click="close">
+    <button v-if="closable" type="button" class="fct-alert-close" :aria-label="translate('Dismiss')" @click="close">
       <DynamicIcon name="Cross" />
-    </div>
+    </button>
 
     <slot/>
   </div>
 </template>
 <script setup>
 import DynamicIcon from "@/Bits/Components/Icons/DynamicIcon.vue";
+import translate from "@/utils/translator/Translator";
 import {computed} from "vue";
 
 const props = defineProps({

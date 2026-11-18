@@ -5,14 +5,13 @@
       <Card.Header border_bottom title_size="small">
         <template #title>
           <div class="flex items-center gap-2">
-            <h5 class="fct-card-header-title is-small">{{ config.title }}</h5>
-            <el-tooltip
-              popper-class="fct-tooltip"
+            <h2 class="fct-card-header-title is-small">{{ config.title }}</h2>
+            <fct-tooltip
               :content="config.help"
               placement="top"
               :trigger="['hover', 'focus']">
               <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')"><DynamicIcon name="InformationFill" class="text-gray-500 w-4 h-4" aria-hidden="true"/></button>
-            </el-tooltip>
+            </fct-tooltip>
           </div>
         </template>
         <template #action v-if="!isEmpty">
@@ -31,7 +30,7 @@
         </template>
       </Card.Header>
       <Card.Body class="px-0 pt-0">
-        <el-skeleton v-if="dataLoader" animated :rows="4" class="px-5 pt-5"/>
+        <fct-skeleton v-if="dataLoader" animated :rows="4" class="px-5 pt-5"/>
 
         <template v-else>
           <div v-if="!isEmpty" :class="`fct-report-average-order-${variant}-chart`" ref="chartRef"></div>

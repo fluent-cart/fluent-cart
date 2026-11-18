@@ -45,21 +45,21 @@ class PermissionGate
         if (!self::isEnabled()) {
             return new \WP_Error(
                 'fluent_cart_mcp_disabled',
-                __('The FluentCart MCP server is disabled. Enable it in Settings → MCP.', 'fluent-cart')
+                'The FluentCart MCP server is disabled. Enable it in Settings → MCP.'
             );
         }
 
         if (!is_user_logged_in()) {
             return new \WP_Error(
                 'fluent_cart_mcp_unauthorized',
-                __('Authentication required to access the FluentCart MCP server.', 'fluent-cart')
+                'Authentication required to access the FluentCart MCP server.'
             );
         }
 
         if (!PermissionManager::hasAnyPermission(self::readRoleCaps())) {
             return new \WP_Error(
                 'fluent_cart_mcp_forbidden',
-                __('Your account does not have FluentCart access.', 'fluent-cart')
+                'Your account does not have FluentCart access.'
             );
         }
 

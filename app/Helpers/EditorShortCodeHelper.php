@@ -230,6 +230,7 @@ class EditorShortCodeHelper
                 '{{order.customer_id}}'             => __('Order Customer Id', 'fluent-cart'),
                 '{{order.payment_method}}'          => __('Order Payment Method', 'fluent-cart'),
                 '{{order.payment_method_title}}'    => __('Order Payment Method Title', 'fluent-cart'),
+                '{{order.payment_instructions}}'    => __('Payment Instructions (offline only)', 'fluent-cart'),
                 '{{order.payment_status}}'          => __('Order Payment Status', 'fluent-cart'),
                 '{{order.currency}}'                => __('Order Currency', 'fluent-cart'),
                 '{{order.subtotal}}'                         => __('Order Subtotal', 'fluent-cart'),

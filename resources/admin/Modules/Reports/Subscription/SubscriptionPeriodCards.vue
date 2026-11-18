@@ -84,11 +84,11 @@ const cards = computed(() => {
         </div>
         <div class="title">
           {{ card.title }}
-          <el-tooltip :content="card.info" placement="top" popper-class="fct-tooltip" effect="dark" :trigger="['hover', 'focus']">
+          <fct-tooltip :content="card.info" placement="top" :trigger="['hover', 'focus']">
             <button type="button" class="inline-flex p-0 bg-transparent border-0 cursor-help" :aria-label="translate('About this metric')">
               <DynamicIcon class="text-gray-500 w-4 h-4" name="InformationFill" aria-hidden="true" />
             </button>
-          </el-tooltip>
+          </fct-tooltip>
         </div>
         <div v-if="card.sub" class="text-xs text-system-light dark:text-gray-400 mt-1">{{ card.sub }}</div>
       </div>

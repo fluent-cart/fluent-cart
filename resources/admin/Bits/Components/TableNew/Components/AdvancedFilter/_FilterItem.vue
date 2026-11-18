@@ -8,7 +8,7 @@
 
     <td class="fct-filter-operator w-[190px]">
 
-      <el-select
+      <fct-select
           size="small"
           :placeholder="$t('Select Operator')"
           v-model="item.operator"
@@ -22,34 +22,27 @@
             }
 
           }"
-
+          popper-class="fct-filter-operator-dropdown"
+          :options="Object.entries(operatorOptions).map(([option, optionLabel]) => typeof optionLabel === 'string'
+            ? {label: optionLabel, value: option}
+            : {label: optionLabel.title, value: option, description: optionLabel.description})"
       >
 
-        <template v-for="(optionLabel, option) in operatorOptions" :key="option">
-          <el-option v-if="typeof optionLabel === 'string'"
-                     :value="option"
-                     :label="optionLabel">
-          </el-option>
-
-          <el-option v-else
-                     style="height: auto"
-                     :value="option"
-                     :label="optionLabel.title">
-            <p v-if="optionLabel.description" class="fct-operator-description p-2">
-              <span>
-                {{ optionLabel.title }}
-              <br>
-              <span style="padding-left: 8px;">- {{ optionLabel.description }}</span>
-              </span>
-            </p>
-          </el-option>
+        <template #option="{option}">
+          <p v-if="option.description" class="fct-operator-description p-2">
+            <span>
+              {{ option.label }}
+            <br>
+            <span style="padding-left: 8px;">- {{ option.description }}</span>
+            </span>
+          </p>
+          <template v-else>{{ option.label }}</template>
         </template>
-
-      </el-select>
+      </fct-select>
     </td>
 
     <td class="fct-filter-value">
-      <el-input
+      <fct-input
           size="small"
           v-if="!itemConfig.type || itemConfig.type === 'text'"
           :placeholder="$t('Condition Value')"
@@ -58,32 +51,33 @@
           @keydown.enter="applyFilter"
       />
 
-      <el-input
+      <fct-input
           size="small"
           v-else-if="itemConfig.type === 'numeric'"
           type="number"
+          :controls="false"
           :placeholder="$t('Condition Value')"
           v-model="item.value"
           @keydown.enter="applyFilter"
       />
 
       <template v-else-if="itemConfig.type === 'dates'">
-        <el-input
+        <fct-input
             size="small"
             v-if="item.operator === 'days_before' || item.operator === 'days_within'"
             type="number"
+            :controls="false"
             :placeholder="$t('Days')"
             v-model="item.value"
             @keydown.enter="applyFilter"
         />
-        <el-date-picker
+        <fct-date-picker
             @change="applyFilter"
             v-else-if="item.operator"
             type="datetime"
             value-format="YYYY-MM-DDTHH:mm:ssZ"
             size="small"
-            v-model="item.value">
-        </el-date-picker>
+            v-model="item.value"/>
       </template>
 
       <template v-if="itemConfig.type === 'selections'">

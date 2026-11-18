@@ -72,14 +72,24 @@ return [
                 $sale($dave, Status::ORDER_TYPE_PAYMENT, '2000-12-05 10:00:00', [[$productA, $a1, 200]]);
                 $sale($dave, Status::ORDER_TYPE_PAYMENT, '2001-01-05 10:00:00', [[$productA, $a1, 300]]);
 
-                $result = ProductInsightsService::make()->getProductComparison([
+                $params = [
                     'startDate' => new DateTime('2001-03-01 00:00:00'), 'endDate' => new DateTime('2001-03-31 23:59:59'),
                     'comparePeriod' => [new DateTime('2001-02-01 00:00:00'), new DateTime('2001-02-28 23:59:59')],
                     'currency' => $fcComparisonCurrency, 'paymentStatus' => Status::getReportStatuses(), 'variationIds' => [], 'groupKey' => 'monthly',
-                ], ['p:' . $productA, 'v:' . $b1, 'v:' . $a2, 'v:' . $b1, 'x:9']);
+                ];
+                $keys = ['p:' . $productA, 'v:' . $b1, 'v:' . $a2, 'v:' . $b1, 'x:9'];
+                $result = ProductInsightsService::make()->getProductComparison($params, $keys);
 
                 FcTest::assertSame(['p:' . $productA, 'v:' . $b1, 'v:' . $a2], array_column($result['items'], 'key'),
                     'Items in pick order; a repeat and an unknown kind are dropped');
+                // Subscriptions and overlap have their own reads, so the main one stays light
+                FcTest::assertSame([false, false], [isset($result['overlap']), isset($result['items'][0]['subscriptions'])],
+                    'The main read leaves out overlap and subscriptions');
+
+                $subscriptions = ProductInsightsService::make()->getProductComparisonSubscriptions($params, $keys);
+                FcTest::assertSame([['p:' . $productA, 0], ['v:' . $b1, 0], ['v:' . $a2, 0]], array_map(function ($item) {
+                    return [$item['key'], $item['subscriptions']['subscriptions']];
+                }, $subscriptions['items']), 'Subscriptions per item, in pick order, keyed like the main read');
 
                 $rows = array_map(function ($item) {
                     $s = $item['summary'];
@@ -103,7 +113,7 @@ return [
                 // Overlap: of each item's customers this period, who has ever bought the other, and who bought it first.
                 // A: Alice, Bob, Carol; B1: Alice (bought A first); A2: Bob, Carol
                 $overlap = [];
-                foreach ($result['overlap'] as $pair) {
+                foreach (ProductInsightsService::make()->getProductComparisonOverlap($params, $keys)['overlap'] as $pair) {
                     $overlap[$pair['from'] . '>' . $pair['to']] = [$pair['customers'], $pair['both'], $pair['to_first']];
                 }
                 FcTest::assertSame([3, 1, 0], $overlap['0>1'], 'Of A\'s 3 customers, Alice also bought B1, after A');
@@ -117,6 +127,17 @@ return [
                 ]);
                 FcTest::assertSame([200, ['p:' . $productA]], [$route['status'], array_column((array) ($route['data']['items'] ?? []), 'key')],
                     'Pro active: the route serves the picked item');
+                $routeQuery = [
+                    'params' => ['startDate' => '2001-03-01 00:00:00', 'endDate' => '2001-03-31 23:59:59', 'currency' => $fcComparisonCurrency],
+                    'items'  => ['p:' . $productA, 'v:' . $b1],
+                ];
+                $subscriptionsRoute = FcTest::rest('GET', 'reports/product-comparison-subscriptions', $routeQuery);
+                $overlapRoute = FcTest::rest('GET', 'reports/product-comparison-overlap', $routeQuery);
+                FcTest::assertSame([200, ['p:' . $productA, 'v:' . $b1], 200, ['p:' . $productA, 'v:' . $b1], 2],
+                    [$subscriptionsRoute['status'], array_column((array) ($subscriptionsRoute['data']['items'] ?? []), 'key'),
+                        $overlapRoute['status'], array_column((array) ($overlapRoute['data']['items'] ?? []), 'key'),
+                        count((array) ($overlapRoute['data']['overlap'] ?? []))],
+                    'Pro active: the subscriptions and overlap routes serve the picked items');
 
                 // Since launch: months from each item's first sale, the previous period's sale included
                 $launch = ProductInsightsService::make()->getProductComparisonLaunch([

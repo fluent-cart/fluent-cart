@@ -2,7 +2,7 @@
   <div class="fct-product-chips" ref="rootRef">
     <!-- Chips take keyboard focus; mousedown.prevent keeps a click focusing the select's search input. -->
     <template v-for="chip in shownChips" :key="chip.key">
-      <el-tooltip v-if="chip.variations.length" :disabled="tooltipsDisabled" :trigger="['hover', 'focus']" placement="bottom" popper-class="fct-tooltip">
+      <fct-tooltip v-if="chip.variations.length" :disabled="tooltipsDisabled" :trigger="['hover', 'focus']" placement="bottom">
         <template #content>
           <div class="fct-product-chip-tooltip__title">{{ translate('Picked variations') }}</div>
           <div v-for="variation in chip.variations" :key="variation">{{ variation }}</div>
@@ -10,11 +10,11 @@
         <span class="fct-product-chip" role="button" tabindex="0" :aria-label="variationsLabel(chip)" @mousedown.prevent>
           <el-tag disable-transitions><span class="fct-product-chip__text">{{ chip.text }}</span></el-tag>
         </span>
-      </el-tooltip>
+      </fct-tooltip>
       <el-tag v-else disable-transitions><span class="fct-product-chip__text" :title="chip.text">{{ chip.text }}</span></el-tag>
     </template>
 
-    <el-tooltip v-if="hiddenChips.length" :disabled="tooltipsDisabled" :trigger="['hover', 'focus']" placement="bottom" popper-class="fct-tooltip">
+    <fct-tooltip v-if="hiddenChips.length" :disabled="tooltipsDisabled" :trigger="['hover', 'focus']" placement="bottom">
       <template #content>
         <div class="fct-product-chip-tooltip__title">{{ translate('Also picked') }}</div>
         <div v-for="chip in hiddenChips" :key="chip.key">{{ chip.text }}</div>
@@ -22,7 +22,7 @@
       <span class="fct-product-chip" role="button" tabindex="0" :aria-label="hiddenLabel" @mousedown.prevent>
         <el-tag disable-transitions>+{{ hiddenChips.length }}</el-tag>
       </span>
-    </el-tooltip>
+    </fct-tooltip>
 
     <!-- Off-screen copy of every chip, so the visible count can be fitted to the row width. -->
     <div v-if="fit" class="fct-product-chips__measure" ref="measureRef" aria-hidden="true">

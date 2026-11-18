@@ -59,6 +59,8 @@ echo '<hr />';
     'order' => $order,
 ]);
 
+echo '{{order.payment_instructions}}';
+
 \FluentCart\App\App::make('view')->render('emails.parts.call_to_action_box', [
     'content'     => $formattedDueDate
         ? sprintf(
