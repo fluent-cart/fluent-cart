@@ -36,7 +36,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     // The loops hand each card's product over as block context.
     usesContext: ['detail'],
     edit: ({attributes, setAttributes, context, clientId}) => {
-        // A simple product gets no quick view on the storefront, so its card shows a note instead.
+        // A simple product gets no quick view on the storefront, so the canvas draws nothing for it.
         const isSimple = context?.detail?.variation_type === 'simple';
         // Nor does a card still showing View Options, which opens quick view itself.
         const product = useSingleProductData(true)?.product;
@@ -74,18 +74,6 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             <div {...blockProps}>
                 <ErrorBoundary>
                     <InspectorSettings attributes={attributes} setAttributes={setAttributes} onImage={onImage}/>
-
-                    {isSimple && (
-                        <span className="fct-card-swatch-empty">
-                            {blocktranslate('No quick view for simple products.')}
-                        </span>
-                    )}
-
-                    {besideViewOptions && (
-                        <span className="fct-card-swatch-empty">
-                            {blocktranslate('Hidden while the card shows View Options.')}
-                        </span>
-                    )}
 
                     {/* A preview, not a control: kept out of the accessibility tree. */}
                     {hasPreview && <span

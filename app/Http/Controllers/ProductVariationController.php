@@ -677,11 +677,11 @@ class ProductVariationController extends Controller
         $occurrence = $times >= 2
             /* translators: %1$s: number of installment payments */
             ? sprintf(__('for %1$s Times', 'fluent-cart'), $times)
-            : __('Until Cancel', 'fluent-cart');
+            : __('Until Canceled', 'fluent-cart');
 
         $price = 0 + round(((int) $priceCents) / 100, 2);
 
-        /* translators: %1$s: price, %2$s: billing interval (e.g. monthly), %3$s: occurrence (e.g. Until Cancel) */
+        /* translators: %1$s: price, %2$s: billing interval (e.g. monthly), %3$s: occurrence (e.g. Until Canceled) */
         return sprintf(__('%1$s %2$s %3$s', 'fluent-cart'), $price, $interval, $occurrence);
     }
 

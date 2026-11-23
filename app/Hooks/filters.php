@@ -36,6 +36,19 @@ add_filter('block_categories_all', function ($categories) {
     return $categories;
 });
 
+// Pro's block email shell has no phone rule for core's items table, so core adds it.
+// Always added: smartcodes still render the table later, and the rule is inert without it.
+add_filter('fluent_cart/render_block_email_template', function ($html, $templateData) {
+    $headEnd = is_string($html) ? strpos($html, '</head>') : false;
+    if ($headEnd === false) {
+        return $html;
+    }
+
+    ob_start();
+    include FLUENTCART_PLUGIN_PATH . 'app/Views/emails/parts/items_table_phone_style.php';
+    return substr_replace($html, ob_get_clean(), $headEnd, 0);
+}, 20, 2);
+
 add_filter('fluent_cart/dummy_product_info', function ($info) {
     $infos = [
         'mens-shoes' => [

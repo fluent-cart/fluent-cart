@@ -2,8 +2,10 @@ import {ProductInfo} from "@/BlockEditor/Icons";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductInfo/Components/InspectorSettings.jsx";
+import {productLoadFailure} from "@/BlockEditor/Components/ProductPicker/productLoadFailure";
 import {SingleProductDataProvider} from "@/BlockEditor/ShopApp/Context/SingleProductContext.jsx";
 import ProductInfoPreview from "./ProductInfo.png";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -83,14 +85,14 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const [selectedVariant, setSelectedVariant] = useState({});
         const [selectedProduct, setSelectedProduct] = useState(null);
 
-        const fetchProduct = (productId) => {
+        const fetchProduct = (productId, isStale) => {
             if (!productId) {
                 setSelectedProduct(null);
                 return;
             }
 
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + productId, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(productId), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']
@@ -99,12 +101,24 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     'X-WP-Nonce': rest.nonce
                 },
             }).then((response) => {
-                setSelectedProduct(response.product || null);
+                if (!isStale()) {
+                    setSelectedProduct(response.product || {missing: true});
+                }
+            }).catch((error) => {
+                if (!isStale()) {
+                    setSelectedProduct(productLoadFailure(error));
+                }
             });
         }
 
+        // A slower earlier request must not overwrite the product picked after it.
         useEffect(() => {
-            fetchProduct(attributes.product_id);
+            let stale = false;
+            fetchProduct(attributes.product_id, () => stale);
+
+            return () => {
+                stale = true;
+            };
         }, [attributes.product_id]);
         
         return (
@@ -120,7 +134,8 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                 <div className="product-card-inner"
                      style={{border: '1px solid #eee', padding: '16px', borderRadius: '8px'}}>
                     <SingleProductDataProvider value={{
-                        product: selectedProduct
+                        // Not the missing / loadError markers: the inner blocks read product fields.
+                        product: selectedProduct?.ID ? selectedProduct : null
                     }}>
                         <InnerBlocks
                             template={TEMPLATE}

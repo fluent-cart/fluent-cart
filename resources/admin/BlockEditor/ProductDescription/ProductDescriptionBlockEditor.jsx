@@ -5,6 +5,7 @@ import InspectorSettings from "@/BlockEditor/ProductDescription/Components/Inspe
 import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {Description} from "@/BlockEditor/Icons";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -34,7 +35,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             className: 'fct-product-block-editor-product-description',
         });
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
 
         const singleProductData = useSingleProductData();
 

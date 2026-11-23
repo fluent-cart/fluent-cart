@@ -243,6 +243,76 @@ class EmailNotifications
                     'email_body'      => '',
                 ]
             ],
+            'subscription_payment_method_changed_customer' => [
+                'event'            => 'subscription_payment_method_changed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify customer when the subscription payment method changes', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer after they update their card or switch the payment method of a subscription.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.payment_method_changed.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Your subscription payment method was updated on {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_payment_method_changed_admin' => [
+                'event'            => 'subscription_payment_method_changed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify admin when a subscription payment method changes', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin after a customer updates their card or switches the payment method of a subscription.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.payment_method_changed.admin',
+                'pre_header'       => __('A customer changed the payment method of a subscription.', 'fluent-cart'),
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Subscription payment method changed - {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_plan_changed_customer' => [
+                'event'            => 'subscription_plan_changed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify customer when the subscription plan changes', 'fluent-cart'),
+                'description'      => __('This email will be sent to the customer after a plan upgrade is paid, with the previous and the new plan. The order receipt is sent separately.', 'fluent-cart'),
+                'recipient'        => 'customer',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.plan_changed.customer',
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'yes',
+                    'subject'         => __('Your plan was changed on {{settings.store_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
+            'subscription_plan_changed_admin' => [
+                'event'            => 'subscription_plan_changed',
+                'group'            => 'subscription',
+                'group_label'      => __('Subscription Actions', 'fluent-cart'),
+                'title'            => __('Notify admin when a subscription plan changes', 'fluent-cart'),
+                'description'      => __('This email will be sent to the admin after a customer\'s plan upgrade is paid, with the previous and the new plan.', 'fluent-cart'),
+                'recipient'        => 'admin',
+                'smartcode_groups' => [],
+                'template_path'    => 'subscription.plan_changed.admin',
+                'pre_header'       => __('A customer changed their subscription plan.', 'fluent-cart'),
+                'is_async'         => false,
+                'settings'         => [
+                    'active'          => 'no',
+                    'subject'         => __('Subscription plan changed - {{order.customer.full_name}}', 'fluent-cart'),
+                    'is_default_body' => 'yes',
+                    'email_body'      => '',
+                ]
+            ],
             'order_refunded_admin'          => [
                 'event'            => 'order_refunded',
                 'group'            => 'order',

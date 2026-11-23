@@ -372,10 +372,11 @@
   @apply bg-white;
   box-shadow: 0 2px 5px rgba(0,0,0, 0.3);
 }
-.fct-block-editor-control .components-input-control__container {
+// The number box beside a slider is narrow; a select or other input in the panel is not.
+.fct-block-editor-control .components-range-control .components-input-control__container {
   @apply w-12.5!;
 }
-.fct-block-editor-control .components-input-control__backdrop {
+.fct-block-editor-control .components-range-control .components-input-control__backdrop {
   @apply border-gray-outline! rounded! shadow-none!;
 }
 .fct-block-editor-control .label{
@@ -420,10 +421,11 @@
 .fct-block-editor-control .react-selectrix .rs-toggle::placeholder{
   @apply text-system-dark text-[13px];
 }
-.fct-block-editor-control .components-text-control__input{
+// The pale, rounded look of the old label-left rows; the newer stacked fields keep WordPress's own input.
+.fct-block-editor-control-item .components-text-control__input{
   @apply text-system-dark border-gray-outline rounded;
 }
-.fct-block-editor-control .components-text-control__input:focus{
+.fct-block-editor-control-item .components-text-control__input:focus{
   @apply shadow-none border-gray-400;
 }
 .interface-complementary-area .fluent-cart-product-block-editor .components-panel{
@@ -481,6 +483,441 @@
   &-primary{
     @apply bg-primary-500! text-white! border-primary-500! hover:bg-primary-500!;
   }
+}
+
+@keyframes fct-product-source-pulse {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+// sidebar field label and segmented toggle (shared by the product source and card settings);
+// a select's own label takes the same look, so every sidebar label matches.
+.fct-sidebar-label,
+.fct-sidebar-field .components-input-control__label,
+.fct-sidebar-select .components-input-control__label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #1e1e1e;
+}
+
+// A stack or row already spaces its children; the select's own bottom margin would add to it.
+.fct-sidebar-select.components-base-control {
+    @apply mb-0;
+}
+
+// An option's text stays on one line, so a long translation widens its column instead of wrapping in the box.
+.fct-segmented-toggle__option {
+    @apply whitespace-nowrap;
+}
+
+.fct-segmented-toggle-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.fct-segmented-toggle {
+    display: grid;
+    grid-auto-flow: column;
+    // Equal columns, but none narrower than its own text: a long option such as Default is not clipped.
+    grid-auto-columns: minmax(min-content, 1fr);
+    gap: 2px;
+    padding: 2px;
+    height: 40px;
+    box-sizing: border-box;
+    border: 1px solid #949494;
+    border-radius: 2px;
+
+    &__option {
+        border: 0;
+        border-radius: 1px;
+        background: transparent;
+        color: #1e1e1e;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background-color 0.2s ease, color 0.2s ease;
+
+        @media (prefers-reduced-motion: reduce) {
+            transition: none;
+        }
+
+        &[aria-checked='true'] {
+            background: #1e1e1e;
+            color: #fff;
+            font-weight: 500;
+        }
+        &:focus-visible {
+            outline: 2px solid #3858e9;
+            outline-offset: 1px;
+        }
+    }
+}
+
+// Product Card settings: a divided group per setting, as in the sidebar design
+.fct-inspector-control-row.fct-card-setting {
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+    align-items: stretch;
+}
+
+
+.fct-card-setting__preview {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #6b6b6b;
+
+    strong {
+        font-weight: 500;
+        color: #1e1e1e;
+    }
+}
+
+.fct-inspector-control-row .fct-card-width {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+
+    .fct-card-width__slider {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+
+    .fct-card-width__input {
+        flex: 0 0 96px;
+        width: 96px;
+
+        // One border, drawn by the field's outline; the input inside has none, or it would double up.
+        .components-input-control__backdrop {
+            @apply border border-solid border-gray-600 rounded-sm;
+        }
+
+        .components-input-control__container input:not(.components-checkbox-control__input) {
+            border: 0;
+            box-shadow: none;
+        }
+    }
+
+    .fct-card-width__unit {
+        padding-right: 12px;
+        font-size: 12px;
+        color: #6b6b6b;
+    }
+}
+
+// Sidebar groups with a divider above, used by the Related Product panels.
+// border-0 first: the editor has no Tailwind reset, so a solid style alone would give the other sides a default border.
+.fct-sidebar-section {
+    @apply flex flex-col gap-2 mt-4 pt-4 border-0 border-t border-solid border-gray-divider;
+}
+
+.fct-sidebar-help {
+    @apply m-0 text-xs text-system-mid;
+    line-height: 1.5;
+}
+
+// A stack or a nested group already spaces its children; a WordPress control's own bottom margin would add to it.
+.fct-sidebar-stack .components-base-control,
+.fct-sidebar-nested .components-base-control {
+    @apply mb-0;
+}
+
+// A stack already spaces its sections, so a section in one takes no top margin of its own.
+.fct-sidebar-stack > .fct-sidebar-section {
+    @apply mt-0;
+}
+
+// Fields that belong to the switch above them: set in a step, with a line down the side.
+.fct-sidebar-nested {
+    @apply flex flex-col gap-4 pl-3 border-0 border-l-2 border-solid border-gray-100;
+}
+
+// A labelled field in a sidebar stack: the label above it, in the same uppercase style.
+.fct-sidebar-field {
+    @apply flex flex-col gap-2 w-full m-0;
+}
+
+// A column of sidebar fields; --tight is for a field and the note that belongs to it.
+.fct-sidebar-stack {
+    @apply flex flex-col gap-5 w-full;
+
+    &--tight {
+        @apply gap-2;
+    }
+}
+
+// Range field: a slider whose filled part shows the value, and the value in a box beside it.
+.fct-range-field {
+    @apply flex flex-col gap-2 w-full;
+}
+
+.fct-range-field__row {
+    @apply flex items-center gap-4;
+}
+
+.fct-range-field__slider {
+    --fct-range-fill: 0%;
+    --fct-range-direction: to right;
+    @apply flex-1 min-w-0 h-5 m-0 p-0 bg-transparent cursor-pointer appearance-none;
+
+    &:focus {
+        @apply outline-hidden;
+    }
+
+    // An RTL editor starts the slider on the right, so the fill grows leftward.
+    &:dir(rtl) {
+        --fct-range-direction: to left;
+    }
+
+    // The filled part is a hard stop in a gradient, so one track draws both halves.
+    &::-webkit-slider-runnable-track {
+        @apply h-1 rounded-full;
+        background: linear-gradient(var(--fct-range-direction), theme('colors.system.dark') var(--fct-range-fill), theme('colors.gray.100') var(--fct-range-fill));
+    }
+
+    &::-moz-range-track {
+        @apply h-1 rounded-full;
+        background: linear-gradient(var(--fct-range-direction), theme('colors.system.dark') var(--fct-range-fill), theme('colors.gray.100') var(--fct-range-fill));
+    }
+
+    &::-webkit-slider-thumb {
+        @apply appearance-none w-4 h-4 -mt-1.5 rounded-full bg-system-dark border-2 border-solid border-white;
+        box-shadow: 0 0 0 1px theme('colors.system.dark');
+    }
+
+    &::-moz-range-thumb {
+        @apply w-4 h-4 rounded-full bg-system-dark border-2 border-solid border-white;
+        box-shadow: 0 0 0 1px theme('colors.system.dark');
+    }
+
+    &:focus-visible::-webkit-slider-thumb {
+        box-shadow: 0 0 0 1px theme('colors.system.dark'), 0 0 0 4px theme('colors.blue.500');
+    }
+
+    &:focus-visible::-moz-range-thumb {
+        box-shadow: 0 0 0 1px theme('colors.system.dark'), 0 0 0 4px theme('colors.blue.500');
+    }
+}
+
+.fct-range-field__value {
+    @apply flex items-center justify-center shrink-0 w-16 h-10 px-1 text-sm text-system-dark bg-white border border-solid border-gray-700 rounded-sm;
+}
+
+// A labelled row of checkboxes, each switching on its own.
+.fct-checkbox-group-field {
+    @apply flex flex-col gap-2 w-full;
+}
+
+.fct-checkbox-group {
+    @apply grid grid-cols-2 gap-4;
+}
+
+// Number stepper: a minus button, the value and a plus button in one bordered box.
+.fct-number-stepper-field {
+    @apply flex flex-col gap-2 w-full;
+}
+
+.fct-number-stepper {
+    @apply flex items-stretch h-10 bg-white border border-solid border-gray-700 rounded-sm;
+
+    // The focus ring goes on the whole box, not on the input inside it.
+    &:has(.fct-number-stepper__input:focus) {
+        @apply border-blue-500 ring-1 ring-blue-500;
+    }
+
+    &__button {
+        @apply w-10 shrink-0 bg-white text-base text-system-dark cursor-pointer border-0;
+
+        &:hover:not([disabled]) {
+            @apply bg-gray-25;
+        }
+
+        &[disabled] {
+            @apply cursor-not-allowed opacity-40;
+        }
+
+        &:focus-visible {
+            @apply outline-2 outline-solid outline-blue-500;
+            outline-offset: -2px;
+        }
+    }
+
+    // Two classes, so WordPress's own input styles (rounded corners, blue border and shadow) lose.
+    & &__input {
+        @apply flex-1 min-w-0 m-0 p-0 text-center text-sm text-system-dark bg-transparent border-0 border-x border-solid border-gray-200 rounded-none shadow-none;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        &:focus {
+            @apply border-gray-200 outline-hidden shadow-none;
+        }
+    }
+}
+
+// The note under the stepper when the last row of cards is short.
+.fct-related-hint {
+    @apply m-0 flex flex-col items-start gap-1 text-xs text-warning-dark;
+    line-height: 1.5;
+
+    &__fill {
+        @apply p-0 bg-transparent border-0 text-xs text-blue-700 underline cursor-pointer;
+
+        &:hover {
+            @apply text-blue-800;
+        }
+
+        &:focus-visible {
+            @apply outline-2 outline-solid outline-offset-2 outline-blue-500;
+        }
+    }
+}
+
+// product source control (inspector panel)
+.fct-product-source {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &__note {
+        margin: 0;
+        padding: 10px 12px;
+        background: #f6f7f7;
+        border-radius: 2px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #50575e;
+    }
+
+    &__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 12px;
+        border: 1px dashed #c3c4c7;
+        border-radius: 2px;
+        font-size: 12px;
+        color: #6b6b6b;
+    }
+
+    &__choose {
+        width: 100%;
+        height: 40px;
+        background: #fff;
+        color: #3858e9;
+        border: 1px solid #3858e9;
+        border-radius: 2px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(56, 88, 233, 0.06);
+        }
+        &:focus-visible {
+            outline: 2px solid #3858e9;
+            outline-offset: 1px;
+        }
+    }
+
+    &__card {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 2px;
+    }
+
+    &__card.is-loading {
+        .fct-product-source__tile,
+        .fct-product-source__title,
+        .fct-product-source__meta {
+            background: #f0f0f0;
+            border-radius: 2px;
+            @media (prefers-reduced-motion: no-preference) {
+                animation: fct-product-source-pulse 1.2s ease-in-out infinite;
+            }
+        }
+        .fct-product-source__title {
+            height: 12px;
+            width: 70%;
+        }
+        .fct-product-source__meta {
+            height: 10px;
+            width: 40%;
+        }
+    }
+
+    &__tile {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background: #e0e7ff;
+        color: #1d3f8a;
+        font-size: 16px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    &__summary {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 0;
+        background: none;
+        border: 0;
+        font: inherit;
+        color: #1e1e1e;
+        text-align: start;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid #3858e9;
+            outline-offset: 2px;
+        }
+    }
+
+    &__title,
+    &__meta {
+        display: block;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__title {
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    &__meta {
+        font-size: 12px;
+        line-height: 1.4;
+        color: #6b6b6b;
+    }
 }
 
 // selected product (inspector panel)

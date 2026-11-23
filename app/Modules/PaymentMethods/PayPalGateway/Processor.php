@@ -91,8 +91,8 @@ class Processor
             $title = $item->post_title . ' ' . $item->title;
 
             $formattedItems[] = [
-                'name'        => strlen($title) > 127 ? substr($title, 0, 120) . '...' : $title,
-                'description' => strlen($title) > 4000 ? substr($title, 0, 3997) . '...' : $title,
+                'name'        => PayPalHelper::limitText($title, 127),
+                'description' => PayPalHelper::limitText($title, 2048),
                 'unit_amount' => [
                     'currency_code' => $currency,
                     'value'         => PayPalHelper::formatDecimalAmount($perQuantity, $currency),

@@ -4,7 +4,7 @@ Tags: ecommerce, online store, subscriptions, digital downloads, licensing
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.2
+Stable tag: 2.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -328,6 +328,26 @@ This service is provided by PayPal: [Terms of Service](https://www.paypal.com/le
 8. VAT/TAX Settings
 
 == Changelog ==
+
+= 2.3.3 (Nov 20, 2026) =
+* Adds emails for subscription payment method and plan changes.
+* Adds the `fluent_cart/subscription_payment_method_changed` action.
+* Adds the `fluent_cart/product/append_reviews_to_content` filter.
+* Improves the Products, Related Products, and Product Card block sidebars.
+* Improves the Products, Related Products, and Product Card editor preview.
+* Improves MCP tools.
+* Fixes PayPal checkout failing on product text with accented letters.
+* Fixes a payment retry using a saved address.
+* Fixes Stripe showing the full price on plan upgrades.
+* Fixes download link expiry in purchase emails and on S3 and R2 storage.
+* Fixes cramped item names in order emails on phones.
+* Fixes outdated subscription prices in Add Items.
+* Fixes the file delete prompt hiding behind the upload window.
+* Fixes the invoice print page breaking.
+* Fixes Elementor filters listing empty categories.
+* Fixes the Product Info picker saving after Cancel.
+* Fixes the empty Buy Section preview inside Product Info.
+* Fixes e-invoice PDFs that validators rejected. Pro only.
 
 = 2.3.2 (Nov 17, 2026) =
 * Adds Attribute filters to the shop sidebar, with filter limits.

@@ -596,8 +596,9 @@ class ReceiptRenderer
                         <td style="font-size:15px;padding: 12px 8px;border: none;border-bottom: <?php echo esc_attr($itemBorder); ?>;print-color-adjust: exact;">
                             <?php echo esc_html($item['post_title']); ?>
                             <br>
-                            <?php if (!empty($item['title'])) : ?>
-                                <small style="font-size: 13px;color: #758195;">- <?php echo esc_html(!empty($item['variation_display_title']) ? $item['variation_display_title'] : $item['title']); ?></small>
+                            <?php $variantTitle = !empty($item['variation_display_title']) ? $item['variation_display_title'] : ($item['title'] ?? ''); ?>
+                            <?php if ($variantTitle !== '' && $variantTitle !== $item['post_title']) : ?>
+                                <small style="font-size: 13px;color: #758195;">- <?php echo esc_html($variantTitle); ?></small>
                                 <br>
                             <?php endif; ?>
                             <?php if (!empty($item['payment_info'])) : ?>

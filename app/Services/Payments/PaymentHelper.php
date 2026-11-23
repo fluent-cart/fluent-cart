@@ -374,6 +374,32 @@ class PaymentHelper
         return $billingInfo;
     }
 
+    /**
+     * Customer-facing label of a stored billing info: "Visa •••• 4242", "PayPal (jane@example.com)" or the gateway title.
+     */
+    public static function getPaymentMethodLabel(array $billingInfo): string
+    {
+        $title = static::getMethodTitle(Arr::get($billingInfo, 'method', ''));
+        $brand = Arr::get($billingInfo, 'details.brand');
+        $last4 = Arr::get($billingInfo, 'details.last_4');
+
+        if ($brand && $last4) {
+            return ucfirst($brand) . ' •••• ' . $last4;
+        }
+
+        $type = Arr::get($billingInfo, 'type');
+        if (Arr::get($billingInfo, 'method') === 'stripe' && $type && $type !== 'card') {
+            $label = ucfirst(str_replace('_', ' ', $type));
+            $last4 = Arr::get($billingInfo, 'details.type.last4');
+
+            return $last4 ? $label . ' •••• ' . $last4 : $label;
+        }
+
+        $email = Arr::get($billingInfo, 'details.email');
+
+        return $email ? $title . ' (' . $email . ')' : $title;
+    }
+
 
     /**
      * Days in one billing cycle. Returns 0 when the interval cannot be resolved —

@@ -648,3 +648,10 @@ export const QuickView = () => (
         <circle {...QUICK_VIEW_CIRCLE} style={{fill: 'none'}}/>
     </svg>
 );
+
+// Three dots stacked vertically (the product card's menu). WordPress's own menu icon is horizontal.
+export const MoreVertical = () => {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M13 19h-2v-2h2v2zm0-6h-2v-2h2v2zm0-6h-2V5h2v2z"/>
+    </svg>
+}

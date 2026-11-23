@@ -1194,6 +1194,9 @@ class Order extends Model
 
         $groupedDownload = $productDownloads->groupBy('post_id');
 
+        // Emails promise 7 days; the account page makes fresh links on each visit
+        $validityInMinutes = $scope === 'email' ? 7 * 24 * 60 : 60;
+
         $downloadData = [];
 
         $alreadyAdded = [];
@@ -1218,7 +1221,7 @@ class Order extends Model
                     
                     $authorizedDownloads [] =
                         [
-                            'download_url'        => Helper::generateDownloadFileLink($download, $order->id),
+                            'download_url'        => Helper::generateDownloadFileLink($download, $order->id, $validityInMinutes),
                             'title'               => $download->title,
                             'file_size'           => $download->file_size,
                             'formatted_file_size' => Helper::readableFileSize($download->file_size),

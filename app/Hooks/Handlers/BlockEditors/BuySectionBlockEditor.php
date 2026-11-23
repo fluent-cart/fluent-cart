@@ -46,6 +46,12 @@ class BuySectionBlockEditor extends BlockEditor
         ];
     }
 
+    public function useContext(): array
+    {
+        // The editor previews the product page's own product in Default mode.
+        return ['postId', 'postType'];
+    }
+
     public function render(array $shortCodeAttribute, $block = null)
     {
         AssetLoader::loadSingleProductAssetsWithoutReviews();

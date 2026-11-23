@@ -127,14 +127,6 @@ class ModuleSettingsController extends Controller
     public function installPluginAddon(Request $request): \WP_REST_Response
     {
         $pluginSlug = $request->getSafe('plugin_slug', 'sanitize_text_field');
-        $sourceType = $request->getSafe('source_type', 'sanitize_text_field', 'wordpress');
-        $sourceLink = $request->getSafe('source_link', 'sanitize_url', '');
-        $assetPath = $request->getSafe('asset_path', 'sanitize_text_field', '');
-        $assetPath = trim($assetPath);
-        if(empty($assetPath)){
-            $assetPath = 'zipball_url';
-        }
-
 
         if (!$pluginSlug) {
             return $this->sendError([
@@ -159,13 +151,10 @@ class ModuleSettingsController extends Controller
             ]);
         }
 
-        // Use source from registered addon if not provided
-        if (empty($sourceType) && !empty($allowedAddon['source_type'])) {
-            $sourceType = $allowedAddon['source_type'];
-        }
-        if (empty($sourceLink) && !empty($allowedAddon['source_link'])) {
-            $sourceLink = $allowedAddon['source_link'];
-        }
+        // The download source comes from the add-on's own listing, never from the request.
+        $sourceType = !empty($allowedAddon['source_type']) ? $allowedAddon['source_type'] : 'wordpress';
+        $sourceLink = !empty($allowedAddon['source_link']) ? $allowedAddon['source_link'] : '';
+        $assetPath = !empty($allowedAddon['asset_path']) ? $allowedAddon['asset_path'] : 'zipball_url';
 
         $addonManager = new AddonManager();
         $result = $addonManager->installAddon($sourceType, $sourceLink, $pluginSlug, $assetPath);

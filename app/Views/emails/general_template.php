@@ -67,6 +67,7 @@
             }
         }
     </style>
+    <?php include __DIR__ . '/parts/items_table_phone_style.php'; ?>
 </head>
 <body dir="<?php echo esc_attr($fctEmailDir); ?>">
 <?php if (!empty($preheader)): ?>

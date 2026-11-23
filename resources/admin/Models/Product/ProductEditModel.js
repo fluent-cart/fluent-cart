@@ -337,7 +337,7 @@ class ProductEditModel extends ProductBaseModel {
 
     onChangePricingPayment = (variant, value, index) => {
         if (variant.item_price !== "" && variant.other_info.repeat_interval !== "") {
-            let occurrence = !parseInt(variant.other_info.times) ? translate('Until Cancel') :
+            let occurrence = !parseInt(variant.other_info.times) ? translate('Until Canceled') :
                 /* translators: %s is the number of times */
                 translate('for %s Times', variant?.other_info?.times);
             // item_price is in cents; this string is shown to the merchant and

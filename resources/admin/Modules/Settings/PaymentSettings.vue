@@ -167,9 +167,7 @@ const installAddon = (gateway) => {
   }
   busyRoute.value = gateway.route;
   selfRef.$post('settings/payment-methods/install-addon', {
-    plugin_slug: gateway.addon_source?.slug,
-    source_type: gateway.addon_source?.type,
-    source_link: gateway.addon_source?.link
+    plugin_slug: gateway.addon_source?.slug
   })
       .then(() => Url.reloadAt(router.resolve({name: gateway.route}).path))
       .catch((error) => {

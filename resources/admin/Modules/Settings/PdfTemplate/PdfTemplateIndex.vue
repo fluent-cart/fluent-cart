@@ -79,10 +79,7 @@ const installAddon = () => {
 
     installing.value = true;
     Rest.post('settings/modules/plugin-addons/install', {
-        plugin_slug: addonInfo.value.plugin_slug,
-        source_type: addonInfo.value.source_type || 'wordpress',
-        source_link: addonInfo.value.source_link || '',
-        asset_path: addonInfo.value.asset_path || ''
+        plugin_slug: addonInfo.value.plugin_slug
     })
         .then((response) => {
             Notify.success(response.message || translate('Plugin installed successfully'));

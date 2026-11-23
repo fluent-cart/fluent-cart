@@ -95,16 +95,12 @@ const handleAddonButtonClick = (event) => {
     const button = target.classList.contains('fct-install-addon-btn') ? target : target.closest('.fct-install-addon-btn');
     const addonSlug = button.getAttribute('data-addon-slug');
     const addonFile = button.getAttribute('data-addon-file');
-    const sourceType = button.getAttribute('data-source-type');
-    const sourceLink = button.getAttribute('data-source-link');
     const repoLink = button.getAttribute('data-repo-link');
-    
+
     if (addonSlug && addonFile && repoLink) {
       installAndActivateAddon({
         slug: addonSlug,
         file: addonFile,
-        source_type: sourceType || 'github',
-        source_link: sourceLink || '',
         repo_link:  repoLink || ''
       });
     }
@@ -139,9 +135,7 @@ const installAndActivateAddon = (gateway) => {
   }
   
   selfRef.$post('settings/payment-methods/install-addon', {
-    plugin_slug: gateway.slug,
-    source_type: gateway.source_type,
-    source_link: gateway.source_link
+    plugin_slug: gateway.slug
   })
   .then(response => {
     Notify.success({

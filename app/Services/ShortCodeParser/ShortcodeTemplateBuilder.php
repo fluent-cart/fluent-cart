@@ -33,6 +33,21 @@ class ShortcodeTemplateBuilder
     }
 
     /**
+     * Parse an HTML template: a value inside an attribute is escaped for that
+     * attribute. Use make() for plain text such as subjects and addresses.
+     *
+     * @param string $template
+     * @param array $data
+     * @return string
+     * @throws BindingResolutionException
+     */
+    public static function makeHtml(string $template, array $data = []): string
+    {
+        $instance = new static();
+        return $instance->parser->parseTemplate($template, $data, true);
+    }
+
+    /**
      * Factory method to create an instance of TemplateBuilder and parse the template array.
      *
      * @param array $templates

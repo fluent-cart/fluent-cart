@@ -19,8 +19,8 @@ use Tests\Support\Factory\SubscriptionFactory;
 
 /**
  * SCF-03: the zero-payable trial setup flow — gateway contract defaults, the
- * store-managed gateway-gate matrix for zero-payable carts, and the server-side
- * consent requirement (rejected before any gateway API call).
+ * store-managed gateway-gate matrix for zero-payable carts, and the setup flow
+ * reaching Stripe without a consent checkbox (disclosure only, like paid checkout).
  */
 class TrialSetupAdmissionTest extends DatabaseTestCase
 {
@@ -519,10 +519,10 @@ class TrialSetupAdmissionTest extends DatabaseTestCase
     }
 
     // =========================================================================
-    // Server-side consent requirement (rejected before any gateway API call)
+    // No consent checkbox: the setup flow goes straight to Stripe
     // =========================================================================
 
-    public function test_zero_payable_setup_flow_requires_consent_server_side(): void
+    public function test_zero_payable_setup_flow_needs_no_consent_flag(): void
     {
         $customerFactory = new CustomerFactory();
         $productFactory = new ProductFactory();
@@ -569,17 +569,36 @@ class TrialSetupAdmissionTest extends DatabaseTestCase
             'total'            => 0,
         ]);
 
-        // No consent flag anywhere in the request.
         unset($_REQUEST['_fct_system_consent'], $_POST['_fct_system_consent'], $_GET['_fct_system_consent']);
 
-        $result = (new Processor())->handleSetupOnlyPayment(
-            new PaymentInstance(\FluentCart\App\Models\Order::query()->find($order->id))
+        $stripeCalls = 0;
+        $blockHttp = function ($pre, $args, $url) use (&$stripeCalls) {
+            if (strpos($url, 'api.stripe.com') !== false) {
+                $stripeCalls++;
+            }
+            return new \WP_Error('http_blocked', 'test cause');
+        };
+        $stripeKeys = function ($settings) {
+            $settings['test_secret_key'] = \FluentCart\App\Helpers\Helper::encryptKey('sk_test_consent_regression');
+            $settings['live_secret_key'] = \FluentCart\App\Helpers\Helper::encryptKey('sk_test_consent_regression');
+            return $settings;
+        };
+        add_filter('pre_http_request', $blockHttp, 10, 3);
+        add_filter('fluent_cart/stripe_settings', $stripeKeys);
+
+        try {
+            $result = (new Processor())->handleSetupOnlyPayment(
+                new PaymentInstance(\FluentCart\App\Models\Order::query()->find($order->id))
+            );
+        } finally {
+            remove_filter('pre_http_request', $blockHttp, 10);
+            remove_filter('fluent_cart/stripe_settings', $stripeKeys);
+        }
+
+        $this->assertFalse(
+            is_wp_error($result) && $result->get_error_code() === 'consent_required',
+            'a trial setup checkout must not require a consent checkbox'
         );
-
-        $this->assertTrue(is_wp_error($result), 'a consent-less setup checkout must be rejected');
-        $this->assertSame('consent_required', $result->get_error_code());
-
-        // The rejection happens before any vaulting side effects.
-        $this->assertEmpty(Subscription::query()->find($sub->id)->getMeta('active_payment_method', []));
+        $this->assertGreaterThan(0, $stripeCalls, 'the setup flow must reach Stripe without a consent flag');
     }
 }

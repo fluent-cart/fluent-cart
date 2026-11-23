@@ -424,6 +424,11 @@ class TemplateActions
             return;
         }
 
+        // A page builder template that already places a reviews widget turns this off.
+        if (!apply_filters('fluent_cart/product/append_reviews_to_content', true, ['post_id' => $postId])) {
+            return;
+        }
+
         $renderer = new \FluentCart\App\Services\Renderer\ProductReviewRenderer($postId);
         $renderer->render();
         $renderer->renderForm();

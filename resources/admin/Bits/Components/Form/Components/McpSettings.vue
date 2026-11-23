@@ -7,6 +7,7 @@ import Notify from "@/utils/Notify";
 import ClipBoard from "@/utils/Clipboard";
 import Alert from "@/Bits/Components/Alert.vue";
 import McpHubConnect from "@/Bits/Components/Form/Components/McpHubConnect.vue";
+import { hubLeads } from "@/Bits/Components/Form/Components/mcpHubCard.js";
 
 // MCP's on/off lives under the `mcp.active` key of the shared modules blob.
 // We keep this model in sync with our own status/toggle endpoints so the page's
@@ -71,10 +72,10 @@ const localDevInitialized = ref(false);
 
 const isEnabled = computed(() => mcpEnabled.value === 'yes');
 
-// The FluentHub one-URL connection (null without FluentHub). When it is usable it leads,
-// and the application-password way folds behind a link.
+// The FluentHub one-URL connection (null without FluentHub). When it is usable, or offers
+// to turn on, it leads and the application-password way folds behind a link.
 const hub = computed(() => status.value.hub || null);
-const hubUsable = computed(() => !!hub.value && !!hub.value.ready && !!hub.value.user_can_connect);
+const hubLeading = computed(() => hubLeads(hub.value));
 const showAppPassword = ref(false);
 const enabling = ref('');
 
@@ -374,13 +375,13 @@ onMounted(() => {
                 <template v-if="status.adapter_available && isEnabled">
                 <McpHubConnect v-if="hub" :hub="hub" :enabling="enabling" @enable="enableHub"/>
 
-                <div v-if="hubUsable && !showAppPassword">
+                <div v-if="hubLeading && !showAppPassword">
                     <fct-button text size="small" data-testid="mcp-app-password-toggle" @click="showAppPassword = true">
                         {{ translate('Use an application password instead') }}
                     </fct-button>
                 </div>
 
-                <template v-if="!hubUsable || showAppPassword">
+                <template v-if="!hubLeading || showAppPassword">
                 <div class="fct-mcp-agents-text">
                     <span class="tools-count">
                         {{ status.tools_count }}

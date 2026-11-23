@@ -278,10 +278,10 @@ const formatBillingSummary = (item) => {
 
         if (occurrence === 0 || occurrence === '') {
             //the translations coming from file CanRenderProductPricingViews
-            //_x('%1$s%2$s, billed %3$s until cancel', 'Payment info format', 'fluent-cart')
+            //_x('%1$s%2$s, billed %3$s until canceled', 'Payment info format', 'fluent-cart')
             /* translators: %1$s - item price, %2$s - interval, %3$s - repeat interval */
             paymentInfo = translate(
-                '%1$s%2$s, billed %3$s until cancel',
+                '%1$s%2$s, billed %3$s until canceled',
                 itemPrice , interval , repeatInterval
             );
         }

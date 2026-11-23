@@ -820,19 +820,10 @@ class Stripe extends AbstractPaymentGateway
             // customer must see the same authorization copy before redirecting.
             $hasSubscription = $this->validateSubscriptions($this->getCheckoutItems());
             $systemConsent = '';
-            $consentRequired = false;
             if (!$this->shouldRenderAsSubscriptionMode($hasSubscription)
                 && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutIsSystem($this)
             ) {
                 $systemConsent = __('Your payment method will be saved securely and charged automatically on each renewal date. You can update or replace it any time from your account.', 'fluent-cart');
-
-                // Zero-payable (free trial): handleSetupOnlyPayment REQUIRES
-                // _fct_system_consent=yes — same gate as the onsite setup-mode path.
-                $cart = CartHelper::getCart();
-                $payableNow = \FluentCart\App\Services\OrderService::getItemsAmountTotal($cart->cart_data ?? [], false, false);
-                if ($payableNow <= 0) {
-                    $consentRequired = true;
-                }
             } elseif (!$this->shouldRenderAsSubscriptionMode($hasSubscription)
                 && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutCanConvertToSystem($this)
             ) {
@@ -848,7 +839,7 @@ class Stripe extends AbstractPaymentGateway
                         'checkout_mode' => 'hosted'
                     ],
                     'system_consent'    => $systemConsent,
-                    'consent_required'  => $consentRequired,
+                    'consent_required'  => false,
                 ],
                 200
             );
@@ -877,6 +868,13 @@ class Stripe extends AbstractPaymentGateway
                                      + (int) Arr::get($tax, 'shipping_tax', 0);
             }
         }
+
+        // Plan upgrade: prorate credit and upgrade discount are post-tax adjustments,
+        // same as Cart::getEstimatedTotal(). Without this, Elements (and wallets like
+        // Google Pay / Apple Pay / Link) show the full new-plan price.
+        $totalPrice = max(0, $totalPrice
+            - $checkOutHelper->getProrateCreditAmount()
+            - (int) Arr::get($cart->checkout_data ?? [], 'upgrade_discount.amount', 0));
 
         $items = $this->getCheckoutItems();
 
@@ -935,14 +933,12 @@ class Stripe extends AbstractPaymentGateway
         // also stores an off-session mandate, plus the save-and-auto-charge consent
         // notice rendered under the payment element.
         $systemConsent = '';
-        $consentRequired = false;
         if (!$renderAsSubscription && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutIsSystem($this)) {
             $intentData['setup_future_usage'] = 'off_session';
             $systemConsent = __('Your payment method will be saved securely and charged automatically on each renewal date. You can update or replace it any time from your account.', 'fluent-cart');
 
             // Nothing payable now (free trial): Elements must initialize in SETUP
-            // mode — a zero-amount payment mode is invalid — and consent becomes a
-            // required checkbox: without a saved card the trial can never bill.
+            // mode — a zero-amount payment mode is invalid.
             $payableNow = \FluentCart\App\Services\OrderService::getItemsAmountTotal($cart->cart_data ?? [], false, false);
             if ($payableNow <= 0) {
                 // Match the SetupIntent usage even when the optional save-card flag is set.
@@ -951,7 +947,6 @@ class Stripe extends AbstractPaymentGateway
                     'currency'           => strtolower($storeCurrency),
                     'setup_future_usage' => 'off_session',
                 ];
-                $consentRequired = true;
             }
         } elseif (!$renderAsSubscription
             && \FluentCart\App\Modules\Subscriptions\Services\SubscriptionManagementMode::currentCheckoutCanConvertToSystem($this)
@@ -994,7 +989,7 @@ class Stripe extends AbstractPaymentGateway
                 'appearance'     => $appearance,
                 'fonts'          => $fonts,
                 'system_consent' => $systemConsent,
-                'consent_required' => $consentRequired,
+                'consent_required' => false,
             ],
             200
         );

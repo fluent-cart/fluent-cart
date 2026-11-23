@@ -184,17 +184,9 @@ class CheckoutApi
         // may only come from this cart's own order, never from the request.
         unset($data['order_id']);
 
-        if (empty($data['billing_address_id'])) {
-            if ($prevOrder instanceof Order) {
-                $oldCustomer = $prevOrder->customer;
-                if ($oldCustomer) {
-                    $fallbackAddress = $oldCustomer->billing_address;
-                    if ($fallbackAddress) {
-                        $data['billing_address_id'] = $fallbackAddress->first()->id;
-                    }
-                }
-            }
-        } else if ($prevOrder) {
+        // A saved address applies only when the shopper picked one. A retry after a
+        // failed payment keeps the typed address, as the first attempt does.
+        if (!empty($data['billing_address_id']) && $prevOrder) {
             $data['order_id'] = $prevOrder->id;
         }
 

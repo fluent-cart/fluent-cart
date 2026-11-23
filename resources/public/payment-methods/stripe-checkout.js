@@ -221,12 +221,6 @@ class StripeCheckout {
         // checkout can re-initialize on the same page (cart/payment state changes),
         // so a stale notice from a previous system render must be removed when the
         // current response carries no consent.
-        //
-        // Zero-payable setup flow (free trial, consent_required): the disclosure
-        // becomes a REQUIRED checkbox — without a saved card the trial can never
-        // bill. The checkbox is a named form field so the placed order carries the
-        // consent flag; the server rejects the setup flow without it.
-        this.consentCheckbox = null;
         if (stripeContainer) {
             const staleConsentEl = stripeContainer.parentNode.querySelector('.fct-system-charge-consent');
             if (staleConsentEl) {
@@ -234,37 +228,13 @@ class StripeCheckout {
             }
 
             if (this.data.system_consent) {
-                let consentEl;
-                if (this.data.consent_required) {
-                    consentEl = document.createElement('label');
-                    consentEl.className = 'fct-system-charge-consent';
-                    consentEl.style.cssText = 'display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:12px;opacity:0.85;cursor:pointer;';
-
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.name = '_fct_system_consent';
-                    checkbox.value = 'yes';
-                    checkbox.style.cssText = 'margin-top:2px;flex-shrink:0;';
-                    consentEl.appendChild(checkbox);
-
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = this.data.system_consent;
-                    consentEl.appendChild(textSpan);
-
-                    this.consentCheckbox = checkbox;
-                } else {
-                    consentEl = document.createElement('p');
-                    consentEl.className = 'fct-system-charge-consent';
-                    consentEl.style.cssText = 'margin-top:8px;font-size:12px;opacity:0.75;';
-                    consentEl.textContent = this.data.system_consent;
-                }
+                const consentEl = document.createElement('p');
+                consentEl.className = 'fct-system-charge-consent';
+                consentEl.style.cssText = 'margin-top:8px;font-size:12px;opacity:0.75;';
+                consentEl.textContent = this.data.system_consent;
                 stripeContainer.insertAdjacentElement('afterend', consentEl);
             }
         }
-
-        // Required consent gates the submit button together with element readiness.
-        const consentOk = () => !this.data.consent_required || (this.consentCheckbox && this.consentCheckbox.checked);
-        this.consentOk = consentOk;
 
         const submitButton = window.fluentcart_checkout_vars?.submit_button;
 
@@ -343,10 +313,8 @@ class StripeCheckout {
                 that.paymentLoader.disableCheckoutButton(that.$t('Pay Now'));
             } else {
                 const paymentMethod = that.form.querySelector('input[name="_fct_pay_method"]:checked');
-                if (paymentMethod && paymentMethod.value === 'stripe' && that.consentOk()) {
+                if (paymentMethod && paymentMethod.value === 'stripe') {
                     that.paymentLoader.enableCheckoutButton(submitButton.text);
-                } else if (paymentMethod && paymentMethod.value === 'stripe') {
-                    that.paymentLoader.disableCheckoutButton(submitButton?.text ? submitButton.text : that.$t('Place Order'));
                 }
             }
 
@@ -360,7 +328,7 @@ class StripeCheckout {
                     return;
                 }
 
-                if (window.is_stripe_ready && that.consentOk()) {
+                if (window.is_stripe_ready) {
                     if (button && button.id === 'fluent_cart_custom_checkout_btn') {
                         that.paymentLoader.enableCheckoutButton(that.$t('Pay Now'));
                     } else {
@@ -370,10 +338,6 @@ class StripeCheckout {
                     that.paymentLoader.disableCheckoutButton(submitButton?.text ? submitButton.text : that.$t('Place Order'));
                 }
             };
-
-            if (that.consentCheckbox) {
-                that.consentCheckbox.addEventListener('change', refreshSubmitState);
-            }
 
             paymentElement.addEventListener('change', function (e) {
                 window.is_stripe_ready = e.complete;

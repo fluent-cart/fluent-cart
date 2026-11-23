@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import translate from "@/utils/translator/Translator";
 import Badge from "@/Bits/Components/Badge.vue";
 import ClipBoard from "@/utils/Clipboard";
+import { hubCardMode } from "@/Bits/Components/Form/Components/mcpHubCard.js";
 
 // The "Connect with one URL" block of the MCP drawer. FluentHub serves every Fluent
 // plugin from one endpoint and signs the user in with their WordPress account. `hub` is
@@ -25,10 +26,9 @@ const activeClient = computed(() => {
     return clients.value.find(client => client.key === activeKey.value) || clients.value[0] || { key: '', note: '', snippet: '' };
 });
 
-const isUsable = computed(() => !!props.hub.ready && !!props.hub.user_can_connect);
-
-// Only the server being off is offered as a button. Sign-in switched off on its own was an admin's choice.
-const canTurnOn = computed(() => props.hub.hub_reason === 'off' && !!props.hub.can_manage);
+const mode = computed(() => hubCardMode(props.hub));
+const isUsable = computed(() => mode.value === 'ready');
+const canTurnOn = computed(() => mode.value === 'turn_on');
 
 const hasProductToTurnOn = computed(() => products.value.some(product => !product.served && product.can_enable));
 
@@ -48,23 +48,22 @@ const manageLink = computed(() => {
 const reasonText = computed(() => {
     const hub = props.hub;
 
-    if (hub.hub_reason === 'off') {
+    // For a user without access no other reason matters, and none is theirs to fix.
+    if (!hub.user_can_connect) {
+        return translate("Your account has no access to this plugin's AI tools.");
+    }
+    // sign_in_reason repeats the hub's own state as hub_off and hub_unavailable.
+    if (hub.hub_reason === 'off' || hub.sign_in_reason === 'hub_off') {
         return translate('The FluentHub MCP server is off. A site administrator can turn it on.');
     }
-    if (hub.hub_reason === 'adapter_missing' || hub.hub_reason === 'adapter_outdated') {
+    if (hub.hub_reason === 'adapter_missing' || hub.hub_reason === 'adapter_outdated' || hub.sign_in_reason === 'hub_unavailable') {
         return translate('FluentHub needs a newer MCP adapter for it.');
-    }
-    if (!hub.included) {
-        return translate('FluentCart is switched off in the FluentHub MCP server.');
     }
     if (hub.sign_in_reason === 'plain_permalinks') {
         return translate('Sign-in needs pretty permalinks. Change them in Settings, Permalinks.');
     }
     if (hub.sign_in_reason === 'app_passwords_off') {
         return translate('Mcp_Hub_Reason_App_Passwords');
-    }
-    if (hub.ready && !hub.user_can_connect) {
-        return translate("Your account has no access to this plugin's AI tools.");
     }
     if (hub.sign_in_reason === 'off') {
         return translate('Sign-in is switched off in FluentHub.');
@@ -74,7 +73,7 @@ const reasonText = computed(() => {
 
 // FluentHub has no setting for who connects: access comes from the plugin's own permissions,
 // so a user without access is not sent there.
-const showHubLink = computed(() => !!props.hub.can_manage && !!props.hub.manage_url && !(props.hub.ready && !props.hub.user_can_connect));
+const showHubLink = computed(() => !!props.hub.can_manage && !!props.hub.manage_url && !!props.hub.user_can_connect);
 
 const copyUrl = () => {
     ClipBoard.copy(props.hub.endpoint_url, {

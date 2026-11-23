@@ -2,7 +2,6 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
-use FluentCart\App\App;
 use FluentCart\App\Models\Cart;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
 use FluentCart\App\Services\Payments\PaymentInstance;
@@ -613,9 +612,6 @@ class Processor
      * via a SetupIntent instead; confirmation (Confirmations::confirmSetupIntent)
      * persists the token, completes the $0 order, and activates the trial. The
      * trial-end invoice is then charged off-session like any other system renewal.
-     *
-     * Consent is REQUIRED here (not just disclosed): without a saved card the
-     * trial can never bill, so a checkout without the consent flag is rejected.
      */
     public function handleSetupOnlyPayment(PaymentInstance $paymentInstance, $paymentArgs = [])
     {
@@ -623,14 +619,6 @@ class Processor
         $transaction = $paymentInstance->transaction;
         $fcCustomer = $order->customer;
         $billingAddress = $order->billing_address;
-
-        $consent = sanitize_text_field(App::request()->get('_fct_system_consent', ''));
-        if ($consent !== 'yes') {
-            return new \WP_Error(
-                'consent_required',
-                __('Please agree to save your payment method for automatic renewal charges to start this subscription.', 'fluent-cart')
-            );
-        }
 
         $stripeCustomer = StripeHelper::createOrGetStripeCustomer($fcCustomer);
         if (is_wp_error($stripeCustomer)) {
@@ -703,14 +691,6 @@ class Processor
         $order = $paymentInstance->order;
         $transaction = $paymentInstance->transaction;
         $fcCustomer = $order->customer;
-
-        $consent = sanitize_text_field(App::request()->get('_fct_system_consent', ''));
-        if ($consent !== 'yes') {
-            return new \WP_Error(
-                'consent_required',
-                __('Please agree to save your payment method for automatic renewal charges to start this subscription.', 'fluent-cart')
-            );
-        }
 
         $stripeCustomer = StripeHelper::createOrGetStripeCustomer($fcCustomer);
         if (is_wp_error($stripeCustomer)) {

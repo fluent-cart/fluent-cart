@@ -5,6 +5,7 @@ import InspectorSettings from "@/BlockEditor/PriceRange/Components/InspectorSett
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {PriceRange} from "@/BlockEditor/Icons";
 import {syncInsideProductInfo} from "@/BlockEditor/Components/insideProductInfo";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType, createBlock} = wp.blocks;
@@ -45,7 +46,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
 
         const singleProductData = useSingleProductData();
 

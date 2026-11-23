@@ -103,9 +103,19 @@ describe('MCP hub connect card', () => {
         expect(byTestId(root, 'mcp-hub-not-ready').findAll(node => node.tagName === 'a')).toHaveLength(0);
     });
 
+    it('no access: says so before any other reason, in every state', async () => {
+        const root = await mount(hubState({ready: false, sign_in_reason: 'plain_permalinks', user_can_connect: false}));
+        const notice = byTestId(root, 'mcp-hub-not-ready');
+
+        expect(text(notice)).toContain("Your account has no access to this plugin's AI tools.");
+        expect(text(notice)).not.toContain('permalinks');
+        expect(notice.findAll(node => node.tagName === 'a')).toHaveLength(0);
+    });
+
     it.each([
         [{ready: false, hub_reason: 'adapter_outdated'}, 'FluentHub needs a newer MCP adapter for it.'],
-        [{ready: false, included: false}, 'FluentCart is switched off in the FluentHub MCP server.'],
+        [{ready: false, sign_in_reason: 'hub_unavailable'}, 'FluentHub needs a newer MCP adapter for it.'],
+        [{ready: false, sign_in_reason: 'hub_off', can_manage: false}, 'The FluentHub MCP server is off. A site administrator can turn it on.'],
         [{ready: false, sign_in_reason: 'plain_permalinks'}, 'Sign-in needs pretty permalinks. Change them in Settings, Permalinks.'],
         [{ready: false, sign_in_reason: 'app_passwords_off'}, 'Mcp_Hub_Reason_App_Passwords'],
         [{ready: false, sign_in_reason: 'off'}, 'Sign-in is switched off in FluentHub.'],

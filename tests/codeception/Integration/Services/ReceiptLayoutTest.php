@@ -84,6 +84,54 @@ class ReceiptLayoutTest extends DatabaseTestCase
         $this->assertMatchesRegularExpression('/<p style="[^"]*word-break:break-all;[^"]*">' . $order->uuid . '<\/p>/', $html, 'The order number may break mid-string');
     }
 
+    // A simple product's item title is its product title, so the variant line repeated the name under itself.
+    public function test_a_simple_product_title_is_not_repeated_under_itself(): void
+    {
+        $order = $this->makeOrderWithItem(['post_title' => 'Ceramic Mug', 'title' => 'Ceramic Mug']);
+
+        ob_start();
+        (new ReceiptRenderer(['order' => $order]))->renderOrderItemsTable();
+        $html = (string) ob_get_clean();
+
+        $this->assertSame(1, substr_count($html, 'Ceramic Mug'), 'The product name must appear once, not again as its own variation line.');
+    }
+
+    // A simple product can still carry attributes (e.g. added by a plugin); those must not be hidden with the duplicate.
+    public function test_a_simple_product_keeps_its_attribute_line(): void
+    {
+        $order = $this->makeOrderWithItem([
+            'post_title' => 'Ceramic Mug',
+            'title'      => 'Ceramic Mug',
+            'other_info' => ['payment_type' => 'onetime', 'item_attributes' => ['engraving' => ['value' => 'Hello']]],
+        ]);
+
+        ob_start();
+        (new ReceiptRenderer(['order' => $order]))->renderOrderItemsTable();
+        $html = (string) ob_get_clean();
+
+        $this->assertStringContainsString('engraving: Hello', $html);
+    }
+
+    public function test_a_variation_title_still_shows_under_the_product_title(): void
+    {
+        $order = $this->makeOrderWithItem(['post_title' => 'Cotton T-Shirt', 'title' => 'Large']);
+
+        ob_start();
+        (new ReceiptRenderer(['order' => $order]))->renderOrderItemsTable();
+        $html = (string) ob_get_clean();
+
+        $this->assertStringContainsString('- Large', $html);
+    }
+
+    private function makeOrderWithItem(array $itemOverrides): Order
+    {
+        $customer = (new CustomerFactory())->create();
+        $order = (new OrderFactory())->create(['customer_id' => $customer->id]);
+        (new OrderItemFactory())->create($order->id, array_merge(['unit_price' => 20000, 'subtotal' => 20000, 'line_total' => 20000], $itemOverrides));
+
+        return Order::query()->with(['order_items'])->find($order->id);
+    }
+
     private function makeTaxedOrder(): Order
     {
         $customer = (new CustomerFactory())->create();

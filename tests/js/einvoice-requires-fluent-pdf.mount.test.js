@@ -97,6 +97,6 @@ describe('E-Invoice settings need Fluent PDF', () => {
         button.listeners.click({stopPropagation: () => {}, preventDefault: () => {}});
         await flush();
 
-        expect(rest.post).toHaveBeenCalledWith('settings/modules/plugin-addons/install', {plugin_slug: 'fluentforms-pdf', source_type: 'wordpress'});
+        expect(rest.post).toHaveBeenCalledWith('settings/modules/plugin-addons/install', {plugin_slug: 'fluentforms-pdf'});
     });
 });

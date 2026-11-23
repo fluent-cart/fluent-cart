@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\Integrations\FluentPlugins;
 
+use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\App\Helpers\AddressHelper;
 use FluentCart\App\Modules\Integrations\BaseIntegrationManager;
 use FluentCart\App\Vite;
@@ -272,7 +273,11 @@ class FluentCRMConnect extends BaseIntegrationManager
         }
 
         if ($note) {
-            $note = $this->parseSmartCode($note, $order);
+            // The note is HTML, so a buyer value must not leave its attribute.
+            $note = ShortcodeTemplateBuilder::makeHtml($note, [
+                'order'    => $order,
+                'customer' => $order->customer ? $order->customer : []
+            ]);
             if ($note) {
                 $note = wp_kses_post(wpautop($note));
                 \FluentCrm\App\Models\SubscriberNote::create([

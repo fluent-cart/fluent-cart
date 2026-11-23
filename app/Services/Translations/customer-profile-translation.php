@@ -242,8 +242,6 @@ return [
     'Order Number' => __('Order Number', 'fluent-cart'),
     'Order Type' => __('Order Type', 'fluent-cart'),
     'Order addresses' => __('Order addresses', 'fluent-cart'),
-    'Order items' => __('Order items', 'fluent-cart'),
-    'Order status' => __('Order status', 'fluent-cart'),
     'Order status information' => __('Order status information', 'fluent-cart'),
     /* translators: %s is the order number  */
     'Order summary for order number %s' => __('Order summary for order number %s', 'fluent-cart'),
@@ -387,7 +385,6 @@ return [
     'Total' => __('Total', 'fluent-cart'),
     /* translators: %s - total number of items */
     'Total %s' => __('Total %s', 'fluent-cart'),
-    'Total amount' => __('Total amount', 'fluent-cart'),
     'Total amount for the order' => __('Total amount for the order', 'fluent-cart'),
     'Total payable tax' => __('Total payable tax', 'fluent-cart'),
     'Total tax' => __('Total tax', 'fluent-cart'),

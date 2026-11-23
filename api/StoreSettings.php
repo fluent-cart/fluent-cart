@@ -1455,11 +1455,40 @@ class StoreSettings implements ArrayableInterface
                                 'type'  => 'html',
                                 'value' => '<hr class="settings-divider">'
                             ],
-                            "hide_coupon_field"               => [
-                                "label" => __('Hide coupon field on checkout', 'fluent-cart'),
-                                "type"  => "checkbox",
-                                "value" => "no",
-                                'note'  => "<div class='pl-6'>" . __('Hide the coupon code input field on the checkout page.', 'fluent-cart') . "</div>"
+                            'coupon_field_grid'               => [
+                                'type'            => 'grid',
+                                'columns'         => [
+                                    'default' => 1,
+                                    'md'      => 3
+                                ],
+                                'disable_nesting' => true,
+                                'schema'          => [
+                                    'label'                 => [
+                                        'type'  => 'html',
+                                        'value' => sprintf(
+                                            '<span class="setting-label">%s</span><div class="form-note">%s</div>',
+                                            esc_html__('Coupon Field', 'fluent-cart'),
+                                            esc_html__('Control the coupon code input on the checkout page.', 'fluent-cart')
+                                        )
+                                    ],
+                                    'coupon_field_controls' => [
+                                        'type'            => 'grid',
+                                        'columns'         => [
+                                            'default' => 1,
+                                            'md'      => 1
+                                        ],
+                                        'disable_nesting' => true,
+                                        'wrapperClass'    => 'col-span-2 flex flex-col gap-4',
+                                        'schema'          => [
+                                            'hide_coupon_field' => [
+                                                'label' => __('Hide coupon field on checkout', 'fluent-cart'),
+                                                'type'  => 'checkbox',
+                                                'value' => 'no',
+                                                'note'  => __('Hide the coupon code input field on the checkout page.', 'fluent-cart')
+                                            ],
+                                        ]
+                                    ],
+                                ]
                             ],
                             'hr6'                             => [
                                 'type'  => 'html',

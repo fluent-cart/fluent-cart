@@ -1359,7 +1359,7 @@ class Commands
         }
 
         // Replace shortcodes
-        $rendered = \FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder::make($rendered, $data);
+        $rendered = \FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder::makeHtml($rendered, $data);
 
         // Determine output path
         $outPath = Arr::get($assoc_args, 'out');

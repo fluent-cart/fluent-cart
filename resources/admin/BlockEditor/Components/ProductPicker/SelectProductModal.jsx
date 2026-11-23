@@ -13,6 +13,7 @@ const SelectProductModal = ({
     buttonLabel = blocktranslate('Add Product'),
     selectedProduct = null,
     setSelectedProduct = () => {},
+    renderTrigger = null,
     isMultiple = false}) => {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     // Confirm mode: clicking a product only updates the modal's local draft;
@@ -30,7 +31,7 @@ const SelectProductModal = ({
     // dialog on open, and restore it to the trigger on close.
     useEffect(() => {
         if (isPopupOpen) {
-            restoreFocusRef.current = document.activeElement;
+            restoreFocusRef.current = restoreFocusRef.current || document.activeElement;
             window.requestAnimationFrame(() => {
                 if (dialogRef.current) {
                     dialogRef.current.focus();
@@ -43,6 +44,9 @@ const SelectProductModal = ({
     }, [isPopupOpen]);
 
     const openPopup = (event) => {
+        // The opener can unmount before the open effect runs (a menu item), and Safari
+        // does not focus a clicked button, so remember the trigger now.
+        restoreFocusRef.current = event?.currentTarget || null;
         // Rendered inside the sidebar, Safari clips the fixed overlay to it;
         // the trigger's own document keeps the editor iframe case unchanged.
         setPortalTarget(event?.currentTarget?.ownerDocument?.body || document.body);
@@ -115,9 +119,11 @@ const SelectProductModal = ({
 
     return (
         <>
-            <button className="fct-button fct-button-secondary" onClick={openPopup}>
-                {blocktranslate('Select Product')}
-            </button>
+            {typeof renderTrigger === 'function' ? renderTrigger(openPopup) : (
+                <button className="fct-button fct-button-secondary" onClick={openPopup}>
+                    {blocktranslate('Select Product')}
+                </button>
+            )}
 
             {isPopupOpen && createPortal(
                 <div className="fct-popup-container">

@@ -61,6 +61,9 @@ class MCPInit
         add_filter('wp_ability_validate_input', [AbilitiesRegistrar::class, 'structuredInputError'], 10, 3);
         add_filter('mcp_adapter_tool_call_result', [$this, 'armSingleResultCopy'], 20, 5);
 
+        // A client is shown only the tools its user may run.
+        add_filter('mcp_adapter_tools_list', [self::class, 'listToolsForUser'], 10, 2);
+
         // Server registration (fires only when an adapter is loaded).
         add_action('mcp_adapter_init', [$this, 'registerCustomServer']);
 
@@ -107,6 +110,47 @@ class MCPInit
          * @since 1.0.0
          */
         do_action('fluent_cart/mcp_loaded');
+    }
+
+    /**
+     * Keep only the tools the current user may run on the FluentCart server. Every
+     * FluentCart permission check reads the user alone, so it runs here without input.
+     *
+     * @param mixed $tools  The adapter's Tool records.
+     * @param mixed $server The adapter's server object.
+     * @return mixed
+     */
+    public static function listToolsForUser($tools, $server = null)
+    {
+        $ours = is_object($server) && method_exists($server, 'get_server_id') && $server->get_server_id() === self::SERVER_ID;
+
+        if (!is_array($tools) || !$ours || !function_exists('wp_has_ability')) {
+            return $tools;
+        }
+
+        $prefix = self::SERVER_ID . '-';
+
+        return array_values(array_filter($tools, function ($tool) use ($prefix) {
+            if (!is_object($tool) || !method_exists($tool, 'getName')) {
+                return true;
+            }
+
+            // The adapter names a tool after its ability, with the slash as a dash.
+            $name = (string) $tool->getName();
+            if (strpos($name, $prefix) !== 0) {
+                return true;
+            }
+
+            // Unknown here: leave it listed; the call decides. wp_get_ability() warns on an unknown name.
+            $abilityName = self::SERVER_ID . '/' . substr($name, strlen($prefix));
+            $ability = wp_has_ability($abilityName) ? wp_get_ability($abilityName) : null;
+
+            if (!$ability || !method_exists($ability, 'check_permissions')) {
+                return true;
+            }
+
+            return true === $ability->check_permissions();
+        }));
     }
 
     /**

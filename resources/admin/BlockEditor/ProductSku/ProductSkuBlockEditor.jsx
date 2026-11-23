@@ -5,6 +5,7 @@ import InspectorSettings from "@/BlockEditor/ProductSku/Components/InspectorSett
 import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {Sku} from "@/BlockEditor/Icons";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -93,7 +94,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             if (!attributes.product_id) return;
 
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']

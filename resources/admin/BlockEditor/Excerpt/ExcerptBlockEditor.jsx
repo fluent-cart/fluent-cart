@@ -4,6 +4,7 @@ import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/Excerpt/Components/InspectorSettings";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {Excerpt} from "@/BlockEditor/Icons";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType, createBlock} = wp.blocks;
@@ -42,7 +43,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             className: 'fct-product-block-editor-product-card-excerpt',
         });
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
 
         const singleProductData = useSingleProductData();
 

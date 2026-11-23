@@ -55,11 +55,11 @@ class OrderTools
         return [
             'fluent-cart/list-orders' => [
                 'label'       => 'List Orders',
-                'description' => 'Find and filter orders. Returns compact rows (id, number, customer, total, statuses, date, plus an items list: each line item\'s product, title and quantity) — call get-order for the full money/refund breakdown. All filters optional; combine freely. For one customer\'s orders, pass customer_email or customer_id here. Money filters are in store currency (e.g. 49.99), not cents. For conditions these flat filters cannot express (OR groups, relative dates, transaction/UTM/label/license properties) pass advanced_filters — call get-search-schema entity=orders first (Pro).',
+                'description' => 'Find specific orders by status, customer, product, date or amount; for counts and revenue totals use query-orders. Compact rows with line items (product, title, quantity); get-order has the money and refund breakdown. For OR groups, relative dates or transaction, UTM, label or license properties, pass advanced_filters after get-search-schema entity=orders (Pro).',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
-                        'status'          => ['type' => 'string', 'enum' => $orderStatuses, 'description' => 'Order fulfillment/lifecycle status. To find refunded orders use payment_status (refunded / partially_refunded), NOT this field: refunds are recorded as payment state, and status=refunded only ever appears on stores migrated from WooCommerce. pending here means an unpaid store-managed renewal invoice, which is not the same as payment_status=pending; a COD order sits at status=on-hold with payment_status=pending.'],
+                        'status'          => ['type' => 'string', 'enum' => $orderStatuses, 'description' => 'Order lifecycle status. For refunds use payment_status: status=refunded only appears on stores migrated from WooCommerce. pending here is an unpaid store-managed renewal invoice, not payment_status=pending; a COD order is on-hold with payment_status=pending.'],
                         'payment_status'  => ['type' => 'string', 'enum' => $paymentStatuses, 'description' => 'Money state of the order — this is where refunded, partially_refunded, authorized and payment_scheduled live.'],
                         'shipping_status' => ['type' => 'string', 'enum' => $shippingStatuses],
                         'type'            => ['type' => 'string', 'enum' => $orderTypes, 'description' => 'payment = first purchase, renewal = subscription renewal.'],
@@ -75,10 +75,10 @@ class OrderTools
                         'created_before'  => ['type' => 'string', 'description' => 'YYYY-MM-DD or ISO 8601; store time unless it has an offset.'],
                         'mode'            => ['type' => 'string', 'enum' => ['live', 'test'], 'description' => 'Defaults to all modes.'],
                         'search'          => ['type' => 'string', 'description' => 'Matches invoice/receipt number, order uuid, and customer name/email.'],
-                        'advanced_filters' => ['type' => 'array', 'items' => ['type' => ['object', 'array']], 'description' => 'Pro: condition groups {property, operator, value} — outer array = OR groups, inner = AND. Call get-search-schema entity=orders FIRST for properties/operators/format. AND-combines with the other filters here. An empty array means no advanced filter.'],
+                        'advanced_filters' => ['type' => 'array', 'items' => ['type' => ['object', 'array']], 'description' => 'Pro: condition groups {property, operator, value}; outer array = OR, inner = AND. Call get-search-schema entity=orders first. AND-combines with the other filters. An empty array means no advanced filter.'],
                         'sort_by'         => ['type' => 'string', 'enum' => ['id', 'created_at', 'completed_at', 'total_amount'], 'default' => 'id'],
                         'sort_type'       => ['type' => 'string', 'enum' => ['ASC', 'DESC'], 'default' => 'DESC'],
-                        'fields'          => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Optional: return only these row keys to shrink the payload (order_id is always kept). Available: number, label, status, payment_status, shipping_status, type, total, customer, items, created_at. Omit for the full row.'],
+                        'fields'          => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Return only these row keys (order_id is always kept): number, label, status, payment_status, shipping_status, type, total, customer, items, created_at. Omit for the full row.'],
                         'page'            => ['type' => 'integer', 'default' => 1],
                         'per_page'        => ['type' => 'integer', 'default' => 15, 'description' => 'Max 100.'],
                     ],

@@ -1,9 +1,6 @@
-import SelectProductModal from "@/BlockEditor/Components/ProductPicker/SelectProductModal";
+import ProductSourceControl from "@/BlockEditor/Components/ProductPicker/ProductSourceControl";
 
 const { InspectorControls } = wp.blockEditor;
-const { __experimentalToggleGroupControl, __experimentalToggleGroupControlOption } = wp.components;
-const ToggleGroupControl = __experimentalToggleGroupControl;
-const ToggleGroupControlOption = __experimentalToggleGroupControlOption;
 
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
@@ -18,52 +15,26 @@ const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSele
                 <div className="fct-inspector-control-group">
                     <div className="fct-inspector-control-body">
                         <EditorPanel title={blocktranslate('Product')}>
-
-                            {/* query type */}
-                            <EditorPanelRow>
-                                <ToggleGroupControl
-                                    isBlock
-                                    label={blocktranslate('Query type')}
-                                    value={attributes.query_type}
-                                    onChange={(value) => {
-                                        setAttributes({query_type: value});
+                            <EditorPanelRow className="flex-col">
+                                <ProductSourceControl
+                                    queryType={attributes.query_type}
+                                    onQueryTypeChange={(value) => setAttributes({query_type: value})}
+                                    productId={attributes.product_id ? String(attributes.product_id) : ''}
+                                    selectedProduct={selectedProduct}
+                                    setSelectedProduct={setSelectedProduct}
+                                    onSelectionConfirmed={(product) => {
+                                        // A product that failed to load has no id; confirming it must not clear the saved one.
+                                        if (product && !product.ID) {
+                                            return;
+                                        }
+                                        setAttributes({product_id: product ? String(product.ID) : ''});
                                     }}
-                                >
-                                    <ToggleGroupControlOption value="default" label={blocktranslate('Default')} />
-                                    <ToggleGroupControlOption value="custom" label={blocktranslate('Custom')} />
-                                </ToggleGroupControl>
+                                    onRemove={() => {
+                                        setAttributes({product_id: ''});
+                                        setSelectedProduct(null);
+                                    }}
+                                />
                             </EditorPanelRow>
-
-                            {attributes.query_type === 'custom' && (
-                                <EditorPanelRow className="flex-col">
-                                    <SelectProductModal
-                                        onModalClosed={(selectedProduct) => {
-                                                setAttributes({product_id: selectedProduct?.ID ? String(selectedProduct.ID) : ''});
-                                                setSelectedProduct(selectedProduct);
-                                            }}
-                                        selectedProduct={selectedProduct}
-                                        setSelectedProduct={setSelectedProduct}
-                                        isMultiple={false}
-                                    />
-
-                                    {selectedProduct?.post_title && (
-                                        <div className="fct-selected-products">
-                                            <span className="fct-selected-products__label">
-                                                {blocktranslate('Selected Product')}
-                                            </span>
-                                            <div className="fct-selected-products__list">
-                                                <div className="fct-product-chip-group">
-                                                    <span className="fct-product-chip fct-product-chip--parent">
-                                                        {selectedProduct.post_title}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                </EditorPanelRow>
-                            )}
-
                         </EditorPanel>
                     </div>
                 </div>

@@ -295,6 +295,22 @@ describe('fct-table-column', () => {
     });
 });
 
+describe('fct-popover confirm', () => {
+    // A confirm inside the file-upload dialog (z-index 9999) must be able to sit above it.
+    it('hands its z-index to the tooltip Element Plus renders', async () => {
+        let popconfirm = null;
+        mount({render: () => h(fctComponents.FctPopover, {
+            confirm: true,
+            title: 'Delete?',
+            zIndex: 99999,
+            onVnodeMounted: (vnode) => { popconfirm = vnode.component.subTree.component; },
+        }, {reference: () => h('button', 'Delete')})});
+        await nextTick();
+
+        expect(popconfirm.subTree.component.props.zIndex).toBe(99999);
+    });
+});
+
 describe('fct-* registration', () => {
     it('registers every published name; names may be added, never removed', () => {
         const names = [];

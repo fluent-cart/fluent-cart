@@ -4,6 +4,7 @@ import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -43,7 +44,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
 
         const singleProductData = useSingleProductData();
 

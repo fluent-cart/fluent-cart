@@ -13,6 +13,7 @@
       :disabled="disabled"
       :placement="placement"
       :teleported="teleported"
+      :z-index="zIndex"
       v-bind="popperClass ? {popperClass} : {}"
       @confirm="emit('confirm', $event)"
       @cancel="emit('cancel', $event)"
@@ -75,6 +76,8 @@ defineProps({
   cancelButtonText: {type: String, default: undefined},
   confirmButtonType: {type: String, default: 'primary', validator: (value) => ['primary', 'danger'].includes(value)},
   iconColor: {type: String, default: undefined},
+  // Element Plus overwrites a popconfirm's popper-class, so z-index is the only way to lift it over a high-z dialog.
+  zIndex: {type: Number, default: undefined},
 });
 
 const emit = defineEmits(['confirm', 'cancel', 'update:visible', 'after-leave']);

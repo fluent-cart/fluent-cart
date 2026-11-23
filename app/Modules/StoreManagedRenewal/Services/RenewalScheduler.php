@@ -58,5 +58,14 @@ class RenewalScheduler
             );
         }
 
+        // 3. End access for cancelled subscriptions whose paid time is over
+        $canceledResults = RenewalService::expireCanceledSubscriptions();
+
+        if ($canceledResults['expired'] > 0) {
+            fluent_cart_error_log(
+                'Cancelled Subscription Expiry Results',
+                sprintf('Ended access for %d cancelled subscription(s)', $canceledResults['expired'])
+            );
+        }
     }
 }

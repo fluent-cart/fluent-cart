@@ -1,8 +1,8 @@
-const {__experimentalToggleGroupControl: ToggleGroupControl, __experimentalToggleGroupControlOption: ToggleGroupControlOption, SelectControl} = wp.components;
+const {SelectControl} = wp.components;
 
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
-import SelectProductModal from "@/BlockEditor/Components/ProductPicker/SelectProductModal";
+import ProductSourceControl from "@/BlockEditor/Components/ProductPicker/ProductSourceControl";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import ReviewProductsPicker from "@/BlockEditor/ProductReviews/Components/ReviewProductsPicker";
 import {
@@ -48,17 +48,20 @@ const ReviewProductPanel = ({attributes, setAttributes, selectedProduct, setSele
                         __next40pxDefaultSize
                     />
                 ) : (
-                <ToggleGroupControl
-                    isBlock
-                    label={blocktranslate('Query type')}
-                    value={attributes.query_type}
-                    onChange={(value) => {
-                        setAttributes({query_type: value});
-                    }}
-                >
-                    <ToggleGroupControlOption value="default" label={blocktranslate('Default')} />
-                    <ToggleGroupControlOption value="custom" label={blocktranslate('Custom')} />
-                </ToggleGroupControl>
+                    <ProductSourceControl
+                        queryType={attributes.query_type}
+                        productId={attributes.product_id || ''}
+                        onQueryTypeChange={(value) => setAttributes({query_type: value})}
+                        selectedProduct={selectedProduct}
+                        setSelectedProduct={setSelectedProduct}
+                        onSelectionConfirmed={(product) => {
+                            setAttributes({product_id: product?.ID ? String(product.ID) : ''});
+                        }}
+                        onRemove={() => {
+                            setAttributes({product_id: ''});
+                            setSelectedProduct(null);
+                        }}
+                    />
                 )}
             </EditorPanelRow>
 
@@ -88,35 +91,6 @@ const ReviewProductPanel = ({attributes, setAttributes, selectedProduct, setSele
                             ? blocktranslate('The rating summary combines every product. The Write a Review button and review form need a single product, so they are removed.')
                             : blocktranslate('With two or more products, the rating summary combines them and the Write a Review button and review form are removed.')}
                     </p>
-                </EditorPanelRow>
-            )}
-
-            {!allowMultiProduct && attributes.query_type === 'custom' && (
-                <EditorPanelRow className="flex-col">
-                    <SelectProductModal
-                        onSelectionConfirmed={(product) => {
-                                setAttributes({product_id: product?.ID ? String(product.ID) : ''});
-                            }}
-                        selectedProduct={selectedProduct}
-                        setSelectedProduct={setSelectedProduct}
-                        isMultiple={false}
-                    />
-
-                    {selectedProduct?.post_title && (
-                        <div className="fct-selected-products">
-                            <span className="fct-selected-products__label">
-                                {blocktranslate('Selected Product')}
-                            </span>
-                            <div className="fct-selected-products__list">
-                                <div className="fct-product-chip-group">
-                                    <span className="fct-product-chip fct-product-chip--parent">
-                                        {selectedProduct.post_title}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                 </EditorPanelRow>
             )}
 

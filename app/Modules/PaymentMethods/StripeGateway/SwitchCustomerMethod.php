@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
+use FluentCart\App\Events\Subscription\SubscriptionPaymentMethodChanged;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductVariation;
@@ -131,7 +132,7 @@ class SwitchCustomerMethod
         ];
 
         $this->updateSubscription($subscriptionId, $newSub, $plan, $customerId);
-        $this->updateBillingInfo($subscriptionId, $pm);
+        $billingInfo = $this->updateBillingInfo($subscriptionId, $pm);
 
         if ($oldVendorSubId) {
             $subscriptionModel->cancelReplacedVendorSubscription(
@@ -141,6 +142,13 @@ class SwitchCustomerMethod
             );
         }
         SubscriptionsManager::addOldSubscriptionMeta($subscriptionModel->id, $oldData);
+
+        SubscriptionPaymentMethodChanged::fire(
+            Subscription::query()->find($subscriptionId),
+            $oldData['payment_source'],
+            $billingInfo,
+            (string)$oldPaymentMethod
+        );
 
         wp_send_json([
             'status'  => 'success',
@@ -257,6 +265,8 @@ class SwitchCustomerMethod
             //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
             'meta_value' => json_encode($billingInfo)
         ]);
+
+        return $billingInfo;
     }
 
     public function getSubscriptionItem($subscription, $variation)

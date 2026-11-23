@@ -324,6 +324,11 @@ class AbilitiesRegistrar
                     fluent_cart_error_log('MCP tool query failed: ' . $toolName, $message);
                     $message = 'A database query failed while running this tool. Retrying the same call will fail the same way. Report it to the site administrator.';
                     $details['retryable'] = false;
+                } elseif ($e instanceof \Error) {
+                    // A PHP error message can hold a server file path ("called in /path/x.php").
+                    fluent_cart_error_log('MCP tool error: ' . $toolName, $message);
+                    $message = 'An internal error stopped this tool. Retrying the same call will fail the same way. Report it to the site administrator.';
+                    $details['retryable'] = false;
                 }
 
                 return \FluentCart\App\Modules\MCP\Support\MCPHelper::error('tool_failed', $message, $details);

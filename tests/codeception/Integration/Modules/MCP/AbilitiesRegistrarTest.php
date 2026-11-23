@@ -194,6 +194,24 @@ class AbilitiesRegistrarTest extends WPTestCase
         $this->assertTrue($error['retryable']);
     }
 
+    public function test_a_php_error_hides_its_file_path_and_is_not_retryable(): void
+    {
+        $wrapped = $this->invokePrivateMethod(AbilitiesRegistrar::class, 'wrapExecuteCallback', ['fluent-cart/list-orders', function () {
+            $typed = function (array $rows) {
+                return $rows;
+            };
+            return $typed('not an array');
+        }, []]);
+
+        $out = $wrapped([]);
+        $error = json_decode($out->get_error_message(), true)['error'];
+
+        $this->assertSame('tool_failed', $error['code']);
+        $this->assertFalse($error['retryable'], 'A code error fails the same way on retry');
+        $this->assertStringNotContainsString(basename(__FILE__), $out->get_error_message(), 'No file path reaches the agent');
+        $this->assertStringNotContainsString('.php', $out->get_error_message(), 'No file path reaches the agent');
+    }
+
     // --- clamped per_page warnings -----------------------------------------
 
     public function test_clamped_per_page_appends_warning(): void

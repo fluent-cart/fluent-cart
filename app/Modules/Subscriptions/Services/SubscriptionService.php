@@ -391,7 +391,8 @@ class SubscriptionService
             $subscriptionUpdateArgs['status'] = 'completed';
             $subscriptionUpdateArgs['next_billing_date'] = NULL;
             $subscriptionUpdateArgs['canceled_at'] = NULL;
-        } else if (!$subscriptionModel->next_billing_date && empty($subscriptionUpdateArgs['next_billing_date'])) {
+        } else if (!$subscriptionModel->next_billing_date && empty($subscriptionUpdateArgs['next_billing_date'])
+            && !(Arr::get($subscriptionUpdateArgs, 'status', $oldStatus) === Status::SUBSCRIPTION_CANCELED && $subscriptionModel->hasRecordedExpiry())) {
             $subscriptionUpdateArgs['next_billing_date'] = $subscriptionModel->guessNextBillingDate();
         }
 
@@ -442,8 +443,10 @@ class SubscriptionService
             SystemChargeService::reconcileGatewayCapability($subscriptionModel);
         }
 
-        // validity_expired_at should only exist when status IS expired
-        if ($subscriptionModel->status !== Status::SUBSCRIPTION_EXPIRED) {
+        // validity_expired_at stays only while paid time is over: expired, or cancelled with no date.
+        $expiryStands = $subscriptionModel->status === Status::SUBSCRIPTION_EXPIRED
+            || ($subscriptionModel->status === Status::SUBSCRIPTION_CANCELED && !$subscriptionModel->next_billing_date);
+        if (!$expiryStands) {
             $subscriptionModel->deleteMeta('validity_expired_at');
         }
 
@@ -892,6 +895,7 @@ class SubscriptionService
             }
 
             $subscription->fill($reactivationData)->save();
+            $subscription->deleteMeta('validity_expired_at');
 
             $wpdb->query('COMMIT');
         } catch (\Throwable $e) {
@@ -1150,6 +1154,10 @@ class SubscriptionService
         }
 
         $subscription->save();
+
+        if (in_array(Arr::get($updates, 'status'), [Status::SUBSCRIPTION_ACTIVE, Status::SUBSCRIPTION_TRIALING], true)) {
+            $subscription->deleteMeta('validity_expired_at');
+        }
 
         // Sync pending renewal invoice if amount or due date changed
         $amountChanged      = isset($updates['recurring_total']);

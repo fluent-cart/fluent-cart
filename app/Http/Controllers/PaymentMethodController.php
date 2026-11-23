@@ -230,24 +230,23 @@ public function saveDesign(Request $request)
     public function installAddon(Request $request)
     {
         try {
-            $sourceType = $request->getSafe('source_type', 'sanitize_text_field');
-            $sourceLink = $request->getSafe('source_link', 'sanitize_url');
             $pluginSlug = $request->getSafe('plugin_slug', 'sanitize_text_field');
-            
-            if (empty($pluginSlug) || empty($sourceType)) {
+            if (!$pluginSlug) {
                 return $this->sendError([
-                    'message' => __('Plugin slug, source type are required', 'fluent-cart')
+                    'message' => __('Plugin slug is required.', 'fluent-cart')
                 ], 422);
             }
 
-            if ($sourceType === 'github' && empty($sourceLink)) {
+            // The download source comes from the add-on's own listing, never from the request.
+            $source = PaymentAddonManager::getListedSource($pluginSlug);
+            if (!$source) {
                 return $this->sendError([
-                    'message' => __('Source link is required', 'fluent-cart')
+                    'message' => __('This addon cannot be installed.', 'fluent-cart')
                 ], 422);
             }
 
             $manager = new PaymentAddonManager();
-            $result = $manager->installAddon($sourceType, $sourceLink, $pluginSlug);
+            $result = $manager->installAddon($source['type'], $source['link'], $pluginSlug);
 
             if (is_wp_error($result)) {
                 return $this->sendError([

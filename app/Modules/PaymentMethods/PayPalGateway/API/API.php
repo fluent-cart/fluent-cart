@@ -136,12 +136,17 @@ class API
             $headers[$headerKey] = $headerValue;
         }
 
+        // An empty array encodes to a literal [], which PayPal rejects
+        // with MALFORMED_REQUEST_JSON — it requires a {} body.
+        $body = json_encode($args ?: new \stdClass());
+        if (false === $body) {
+            return new \WP_Error('invalid_request_body', json_last_error_msg());
+        }
+
         $response = wp_remote_post($paypal_api_url, [
             'headers' => $headers,
             'method'  => $method,
-            // An empty array encodes to a literal [], which PayPal rejects
-            // with MALFORMED_REQUEST_JSON — it requires a {} body.
-            'body'    => json_encode($args ?: new \stdClass())
+            'body'    => $body
         ]);
 
         if (is_wp_error($response)) {

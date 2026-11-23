@@ -1,7 +1,9 @@
 import InspectorSettings from './Components/InspectorSettings';
+import {productLoadFailure} from '@/BlockEditor/Components/ProductPicker/productLoadFailure';
 import CardLayoutSettings from '@/BlockEditor/ShopApp/InnerBlocks/Components/CardLayoutSettings';
 import {availableTemplate, cardLayoutName, cardPresets, cardTemplate, layoutOwnedByProducts} from '@/BlockEditor/ShopApp/InnerBlocks/ProductCardLayoutPresets';
 import {SingleProductDataProvider, useSingleProductData} from '@/BlockEditor/ShopApp/Context/SingleProductContext';
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps, useInnerBlocksProps, BlockContextProvider} = wp.blockEditor;
 const {useEffect, useState} = wp.element;
@@ -32,23 +34,26 @@ export default function ProductCardTemplate({attributes, setAttributes, clientId
             setSelectedProduct({});
             return;
         }
-        setSelectedProduct({});
+        // Keep a product the picker just handed over; the fetch below swaps in the full detail.
+        setSelectedProduct((current) => (String(current?.ID) === String(productId) ? current : {}));
         let active = true;
         const rest = window.fluentCartRestVars.rest;
         wp.apiFetch({
-            url: wp.url.addQueryArgs(rest.url + '/products/' + productId, {with: ['block_product_detail']}),
+            url: wp.url.addQueryArgs(rest.url + '/products/' + safeProductId(productId), {with: ['block_product_detail']}),
             headers: {'X-WP-Nonce': rest.nonce},
         }).then(response => {
-            if (active) setSelectedProduct(response.product || {});
-        }).catch(() => {
-            if (active) setSelectedProduct({});
+            if (active) setSelectedProduct(response.product || {missing: true});
+        }).catch((error) => {
+            if (active) setSelectedProduct(productLoadFailure(error));
         });
         return () => { active = false; };
     }, [productId, inLoop, inherited?.product, attributes.query_type]);
 
+    // Not the missing / loadError markers: the inner blocks read product fields.
+    const loadedProduct = selectedProduct?.ID ? selectedProduct : {};
     const product = inLoop || attributes.query_type !== 'custom'
-        ? inherited?.product || selectedProduct
-        : selectedProduct;
+        ? inherited?.product || loadedProduct
+        : loadedProduct;
     const layout = cardLayoutName(attributes);
     const styled = layout !== 'classic';
     const blockProps = useBlockProps({
@@ -65,7 +70,7 @@ export default function ProductCardTemplate({attributes, setAttributes, clientId
     return <>
         {/* Which product first, then how its card looks. */}
         {!inLoop && <InspectorSettings attributes={attributes} setAttributes={setAttributes}
-            selectedProduct={selectedProduct} setSelectedProduct={setSelectedProduct}/>}
+            selectedProduct={selectedProduct} setSelectedProduct={setSelectedProduct} displayedProduct={product}/>}
         {!layoutOnProducts && <CardLayoutSettings
             clientId={clientId}
             layout={layout}

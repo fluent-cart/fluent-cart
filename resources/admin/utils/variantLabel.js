@@ -41,6 +41,15 @@ export const getVariantLabel = (variant, groupOrder = null) => {
 };
 
 /**
+ * The variant line to show under an order item's product name, or '' when it
+ * would only repeat the name (a simple product's variation title is its product title).
+ */
+export const getOrderItemVariantTitle = (item) => {
+    const variantTitle = String(item?.variation_display_title || item?.title || '').trim();
+    return variantTitle === String(item?.post_title || '').trim() ? '' : variantTitle;
+};
+
+/**
  * Pull the merchant-configured group order from a product payload, in the
  * shape `getVariantLabel(variant, groupOrder)` expects.
  */

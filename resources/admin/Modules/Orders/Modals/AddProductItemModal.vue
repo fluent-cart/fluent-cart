@@ -55,7 +55,7 @@
                         <div class="title" @mouseenter="checkTitleTruncated">{{ product.post_title }}</div>
                       </fct-tooltip>
                       <small v-if="product?.other_info?.payment_type === 'subscription' && product.other_info?.billing_summary !== ''" class="text-gray-500 dark:text-gray-400">
-                        {{ priceQuote ? billingSummary(product) : product.other_info?.billing_summary }}
+                        {{ billingSummary(product) }}
                       </small>
                       <div class="text" v-if="isAlreadyAdded(product.object_id)">
                         {{ $t('Item already added') }}
@@ -110,10 +110,7 @@
                           <div class="content-title">
                             <div class="title title--wrap">{{ productChildren.variation_display_title || productChildren.title }}</div>
                             <small v-if="productChildren?.other_info?.payment_type === 'subscription' && productChildren.other_info?.billing_summary !== ''" class="text">
-                              <template v-if="priceQuote">{{ billingSummary(productChildren) }}</template>
-                              <template v-else>
-                                {{CurrencyFormatter.currencySign}} {{productChildren.other_info?.billing_summary}}
-                              </template>
+                              {{ billingSummary(productChildren) }}
 
                               <span v-if="productChildren.other_info?.trial_days > 0">
                                 <br>
@@ -192,7 +189,6 @@ import Asset from "@/utils/support/Asset";
 import translate, {translateNumber} from "@/utils/translator/Translator";
 import Notify from "@/utils/Notify";
 import Rest from "@/utils/http/Rest";
-import CurrencyFormatter from "@/utils/support/CurrencyFormatter";
 import {orderQuote, toPrice} from "@/utils/support/CurrencyPricing";
 import BundleProducts from "@/Bits/Components/BundleProducts.vue";
 
@@ -218,9 +214,6 @@ export default {
     }
   },
   computed: {
-    CurrencyFormatter() {
-      return CurrencyFormatter
-    },
     Asset() {
       return Asset
     },
@@ -262,13 +255,13 @@ export default {
       }
       return this.formatNumberForOrder(toPrice(cents, this.priceQuote), this.priceQuote.code || this.priceQuote.currency);
     },
-    // The stored billing_summary carries the base price, so rebuild it at the quoted rate
+    // The stored billing_summary keeps the price, currency and wording from when the product was saved
     billingSummary(item) {
       const info = item.other_info || {};
       if (!info.repeat_interval) {
         return '';
       }
-      const occurrence = parseInt(info.times) > 0 ? translate('for %s Times', info.times) : translate('Until Cancel');
+      const occurrence = parseInt(info.times) > 0 ? translate('for %s Times', info.times) : translate('Until Canceled');
       return `${this.pickerPrice(item.price)} ${info.repeat_interval} ${occurrence}`;
     },
     translate,

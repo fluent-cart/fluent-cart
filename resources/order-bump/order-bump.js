@@ -20,7 +20,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_order_bum
 
     routes.view_order_bump = {
         name: 'view_order_bump',
-        path: '/order_bump/:id/view',
+        path: '/order_bump/:id(\\d+)/view',
         component: ViewOrderBump,
         props: true,
         meta: {
@@ -44,7 +44,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_order_bum
 
     routes.order_bump_template_edit = {
         name: 'order_bump_template_edit',
-        path: '/order_bump/design/:template/edit',
+        path: '/order_bump/design/:template(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/edit',
         component: OrderBumpTemplateEdit,
         props: true,
         meta: {

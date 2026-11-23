@@ -25,6 +25,27 @@
   @apply h-full flex flex-col justify-between;
 }
 
+// The grid cell is the card's frame. The preview copies render a Product Card outside its loop, so it
+// adds its own standalone frame inside the cell's; drop it, as the editable first card has none.
+.fct-related-product-card .fct-product-block-editor-product-card {
+  @apply p-0 border-0 bg-transparent shadow-none;
+}
+
+// Every card fills its cell, so the cards in a row end at the same line and each card's button can sit
+// at the bottom. The cell is a one-column grid with three named rows from the old card, which gave the
+// card inside it only a share of the spare height; a column lets it take all of it.
+.fct-related-products-grid > .fct-product-card {
+  @apply flex flex-col;
+
+  > .fct-related-product-card {
+    @apply flex-auto;
+  }
+}
+
+.fct-related-product-card > .fct-product-block-editor-product-card {
+  @apply flex-auto;
+}
+
 // The picker above the canvas preview in Custom mode: one line, the search list opening beneath it.
 .fct-related-products-canvas-picker {
   margin-bottom: 1rem;

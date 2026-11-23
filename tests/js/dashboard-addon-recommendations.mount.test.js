@@ -97,9 +97,7 @@ describe('Dashboard add-on recommendations card', () => {
     it('installs with Pro and opens the download page without it', async () => {
         const root = await mountCard();
         await click(buttons(root)[1]);
-        expect(rest.post).toHaveBeenCalledWith('settings/modules/plugin-addons/install', {
-            plugin_slug: 'shipping-for-fluent-cart', source_type: 'cdn', source_link: 'https://addons-cdn.fluentcart.com/shipping.zip', asset_path: '',
-        });
+        expect(rest.post).toHaveBeenCalledWith('settings/modules/plugin-addons/install', {plugin_slug: 'shipping-for-fluent-cart'});
 
         rest.post.mockClear();
         config.pro = false;

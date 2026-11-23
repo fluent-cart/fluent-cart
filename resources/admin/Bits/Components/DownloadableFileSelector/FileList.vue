@@ -222,7 +222,7 @@ const deleteFile = async (file, index) => {
                 :cancel-button-text="translate('Cancel')"
                 @confirm="deleteFile(scope.row, scope.index)"
                 width="250"
-                popper-class="fct-delete-confirm-popover"
+                :z-index="99999"
             >
               <template #reference>
                 <IconButton size="small" tag="button" :disabled="scope.row.deleting">

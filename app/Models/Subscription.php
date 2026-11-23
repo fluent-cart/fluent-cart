@@ -1203,6 +1203,9 @@ class Subscription extends Model
         $nextBillingDate = $this->next_billing_date;
 
         if (!$nextBillingDate) {
+            if ($this->hasRecordedExpiry()) {
+                return false;
+            }
             $nextBillingDate = $this->guessNextBillingDate();
         }
 
@@ -1212,6 +1215,17 @@ class Subscription extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Paid time already ended and was recorded: the cleared next billing date must not be
+     * rebuilt from past payments.
+     *
+     * @return bool
+     */
+    public function hasRecordedExpiry(): bool
+    {
+        return !$this->next_billing_date && (bool) $this->getMeta('validity_expired_at');
     }
 
     public function reSyncFromRemote()
@@ -1540,6 +1554,10 @@ class Subscription extends Model
             return false;
         }
 
+        if ($this->hasRecordedExpiry()) {
+            return false;
+        }
+
         $nextBillingDate = $this->next_billing_date;
 
         if (!$nextBillingDate) {
@@ -1690,8 +1708,8 @@ class Subscription extends Model
             $knownIntervals = array_keys($cutoffDates);
 
             // Include canceled subscriptions to check if validity is yet to expired
-            // Exclude store-billed (manual/system) subscriptions — their expiry is
-            // handled by the invoice-based overdue flow
+            // Exclude store-billed (manual/system) subscriptions — RenewalService expires them:
+            // unpaid ones via processOverdueRenewals(), cancelled ones via expireCanceledSubscriptions().
             $subscriptions = Subscription::query()
                 ->inStoreMode()
                 ->whereIn('status', [

@@ -20,7 +20,12 @@
   }
   // Full width, except a Classic card's button with the Quick View preview beside it, which needs the room.
   &:not(:has(.fct-card-layout)) button:not([data-type="fluent-cart/shopapp-product-buttons"]:has(~ .fct-card-quick-view.is-preview-button)) {
-    @apply w-full! m-0!;
+    @apply w-full! mx-0! mb-0!;
+  }
+  // The top margin is zeroed too, except on the card's own button: its margin-top: auto (below) sits it at
+  // the card's bottom, and a forced zero here left it floating at different heights in a row of cards.
+  &:not(:has(.fct-card-layout)) button:not([data-type="fluent-cart/shopapp-product-buttons"]:has(~ .fct-card-quick-view.is-preview-button)):not(.fct-product-block-editor-product-card-primary-button) {
+    @apply mt-0!;
   }
   &-head {
     grid-area: head;

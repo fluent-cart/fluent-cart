@@ -4,8 +4,10 @@ import {addQueryArgs} from "@wordpress/url";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import RelatedProductInspectorSettings from "@/BlockEditor/RelatedProduct/Components/RelatedProductInspectorSettings";
 import ProductDropdownPicker from "@/BlockEditor/Components/ProductPicker/ProductDropdownPicker.jsx";
+import {productLoadFailure} from "@/BlockEditor/Components/ProductPicker/productLoadFailure";
 import "@/BlockEditor/RelatedProduct/Components/ProductTemplateBlock.jsx";
 import {anyLoopUsesDisplayElements} from "@/BlockEditor/RelatedProduct/Components/productTemplate";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps, InnerBlocks} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -119,9 +121,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             ['fluent-cart/product-template'],
         ];
 
-        const fetchProduct = () => {
+        const fetchProduct = (isStale) => {
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']
@@ -130,16 +132,20 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     'X-WP-Nonce': rest.nonce
                 }
             }).then((response) => {
-                setSelectedProduct(response.product || {});
+                if (!isStale()) {
+                    setSelectedProduct(response.product || {missing: true});
+                }
             }).catch((error) => {
-                console.error('Error fetching product:', error);
+                if (!isStale()) {
+                    setSelectedProduct(productLoadFailure(error));
+                }
             });
         }
 
-        const fetchRelatedProducts = () => {
+        const fetchRelatedProducts = (isStale) => {
             setIsLoading(true);
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + attributes.product_id + '/related-products', {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id) + '/related-products', {
                     related_by_categories: attributes.related_by_categories ? 1 : 0,
                     related_by_brands: attributes.related_by_brands ? 1 : 0,
                     order_by: attributes.order_by,
@@ -149,6 +155,10 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     'X-WP-Nonce': rest.nonce
                 }
             }).then((response) => {
+                // A request for a product that was removed or replaced must not write its items back.
+                if (isStale()) {
+                    return;
+                }
                 const products = response.products || [];
                 setRelatedProducts(products);
 
@@ -160,16 +170,27 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             }).catch((error) => {
                 console.error('Error fetching related products:', error);
             }).finally(() => {
-                setIsLoading(false);
+                if (!isStale()) {
+                    setIsLoading(false);
+                }
             });
         }
 
         // Custom mode: fetch product and related products when product_id or settings change
         useEffect(() => {
+            let stale = false;
             if (attributes.query_type === 'custom' && attributes.product_id) {
-                fetchProduct();
-                fetchRelatedProducts();
+                fetchProduct(() => stale);
+                fetchRelatedProducts(() => stale);
+            } else {
+                // No new request will clear the flag an earlier, now stale one left on.
+                setIsLoading(false);
             }
+
+            // A slower earlier product request must not overwrite the product picked after it.
+            return () => {
+                stale = true;
+            };
         }, [attributes.product_id, attributes.related_by_categories, attributes.related_by_brands, attributes.order_by, attributes.posts_per_page, attributes.query_type]);
 
         // Default mode: clear editor preview data (products come from page context on frontend)

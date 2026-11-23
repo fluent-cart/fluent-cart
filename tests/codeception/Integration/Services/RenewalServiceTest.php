@@ -6,6 +6,7 @@ use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\StoreManagedRenewal\Services\RenewalService;
+use FluentCart\App\Modules\Subscriptions\Services\SubscriptionService;
 use Tests\Support\DatabaseTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\OrderFactory;
@@ -185,6 +186,214 @@ class RenewalServiceTest extends DatabaseTestCase
         $this->assertTrue($this->hasRenewalInvoice($liveOrder->id));
     }
 
+    public function test_expire_canceled_subscriptions_expires_store_billed_once_paid_time_ends(): void
+    {
+        $fired = [];
+        add_action('fluent_cart/subscription_expired_validity', function ($data) use (&$fired) {
+            $fired[] = (int) $data['subscription']->id;
+        });
+
+        $pastDate = gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS);
+        ['subscription' => $manual] = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => $pastDate,
+        ]);
+        ['subscription' => $system] = $this->makeSubscriptionSetup([
+            'collection_method' => 'system',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => $pastDate,
+        ]);
+
+        $result = RenewalService::expireCanceledSubscriptions(20);
+        RenewalService::expireCanceledSubscriptions(20);
+
+        $this->assertSame(2, $result['expired']);
+        $this->assertSame([(int) $manual->id, (int) $system->id], $fired);
+
+        foreach ([$manual, $system] as $subscription) {
+            $fresh = Subscription::query()->find($subscription->id);
+            $this->assertSame(Status::SUBSCRIPTION_CANCELED, $fresh->status);
+            $this->assertNull($fresh->next_billing_date);
+            $this->assertNotEmpty($fresh->getMeta('validity_expired_at'));
+        }
+    }
+
+    public function test_expire_canceled_subscriptions_skips_rows_it_does_not_own(): void
+    {
+        $fired = 0;
+        add_action('fluent_cart/subscription_expired_validity', function () use (&$fired) {
+            $fired++;
+        });
+
+        $pastDate = gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS);
+        $skipped = [
+            // Paid time not over yet.
+            $this->makeSubscriptionSetup([
+                'collection_method' => 'manual',
+                'status'            => Status::SUBSCRIPTION_CANCELED,
+                'next_billing_date' => gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS),
+            ])['subscription'],
+            // The upgraded-to subscription owns validity.
+            $this->makeSubscriptionSetup([
+                'collection_method' => 'manual',
+                'status'            => Status::SUBSCRIPTION_CANCELED,
+                'next_billing_date' => $pastDate,
+                'config'            => ['upgraded_to_sub_id' => 999],
+            ])['subscription'],
+            // Gateway-billed: the automatic sweep owns it.
+            $this->makeSubscriptionSetup([
+                'collection_method' => 'automatic',
+                'status'            => Status::SUBSCRIPTION_CANCELED,
+                'next_billing_date' => $pastDate,
+            ])['subscription'],
+        ];
+
+        $result = RenewalService::expireCanceledSubscriptions(20);
+
+        $this->assertSame(0, $result['expired']);
+        $this->assertSame(0, $fired);
+        foreach ($skipped as $subscription) {
+            $fresh = Subscription::query()->find($subscription->id);
+            $this->assertNotNull($fresh->next_billing_date);
+            $this->assertEmpty($fresh->getMeta('validity_expired_at'));
+        }
+    }
+
+    public function test_expire_canceled_subscriptions_expires_again_after_admin_extends_the_date(): void
+    {
+        $fired = 0;
+        add_action('fluent_cart/subscription_expired_validity', function () use (&$fired) {
+            $fired++;
+        });
+
+        $subscription = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ])['subscription'];
+
+        RenewalService::expireCanceledSubscriptions(20);
+
+        $updated = SubscriptionService::updateSubscription(
+            Subscription::query()->find($subscription->id),
+            ['next_billing_date' => gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS)]
+        );
+        $this->assertNotWPError($updated);
+
+        Subscription::query()->where('id', $subscription->id)->update([
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+
+        $result = RenewalService::expireCanceledSubscriptions(20);
+
+        $this->assertSame(1, $result['expired']);
+        $this->assertSame(2, $fired);
+        $this->assertNull(Subscription::query()->find($subscription->id)->next_billing_date);
+    }
+
+    public function test_expired_cancel_keeps_access_denied_after_the_date_is_cleared(): void
+    {
+        ['subscription' => $subscription, 'order' => $order] = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+        // Paid today, so a date rebuilt from payments lands a month ahead.
+        Order::query()->where('id', $order->id)->update(['payment_status' => Status::PAYMENT_PAID]);
+
+        $this->assertFalse(Subscription::query()->find($subscription->id)->hasAccessValidity());
+
+        $result = RenewalService::expireCanceledSubscriptions(20);
+
+        $this->assertSame(1, $result['expired']);
+        $fresh = Subscription::query()->find($subscription->id);
+        $this->assertNull($fresh->next_billing_date);
+        $this->assertFalse($fresh->hasAccessValidity());
+    }
+
+    public function test_sync_keeps_recorded_expiry_on_a_canceled_subscription(): void
+    {
+        $subscriptionId = $this->makeExpiredCanceledSubscription();
+
+        SubscriptionService::syncSubscriptionStates(Subscription::query()->find($subscriptionId), []);
+
+        $fresh = Subscription::query()->find($subscriptionId);
+        $this->assertNull($fresh->next_billing_date);
+        $this->assertNotEmpty($fresh->getMeta('validity_expired_at'));
+        $this->assertFalse($fresh->hasAccessValidity());
+    }
+
+    public function test_sync_to_active_rebuilds_the_date_and_clears_recorded_expiry(): void
+    {
+        $subscriptionId = $this->makeExpiredCanceledSubscription();
+
+        SubscriptionService::syncSubscriptionStates(Subscription::query()->find($subscriptionId), [
+            'status' => Status::SUBSCRIPTION_ACTIVE,
+        ]);
+
+        $fresh = Subscription::query()->find($subscriptionId);
+        $this->assertNotNull($fresh->next_billing_date);
+        $this->assertEmpty($fresh->getMeta('validity_expired_at'));
+    }
+
+    public function test_recorded_expiry_gives_no_reactivation_trial_credit(): void
+    {
+        $subscriptionId = $this->makeExpiredCanceledSubscription();
+
+        $fresh = Subscription::query()->find($subscriptionId);
+        $this->assertFalse($fresh->hasReactivationTrialCredit());
+        $this->assertSame(0, $fresh->getReactivationTrialDays());
+    }
+
+    public function test_expire_canceled_subscriptions_keeps_expiry_when_delivery_throws(): void
+    {
+        ['subscription' => $subscription] = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+
+        $listener = function () {
+            throw new \RuntimeException('listener down');
+        };
+        add_action('fluent_cart/subscription_expired_validity', $listener);
+
+        try {
+            $first = RenewalService::expireCanceledSubscriptions(20);
+
+            $this->assertSame(0, $first['expired']);
+            $this->assertCount(1, $first['errors']);
+            $fresh = Subscription::query()->find($subscription->id);
+            $this->assertNull($fresh->next_billing_date);
+            $this->assertNotEmpty($fresh->getMeta('validity_expired_at'));
+            $this->assertFalse($fresh->hasAccessValidity());
+
+            $second = RenewalService::expireCanceledSubscriptions(20);
+
+            $this->assertSame(0, $second['expired']);
+            $this->assertCount(0, $second['errors']);
+        } finally {
+            remove_action('fluent_cart/subscription_expired_validity', $listener);
+        }
+    }
+
+    public function test_expire_canceled_subscriptions_skips_other_store_mode(): void
+    {
+        ['subscription' => $subscription] = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+
+        $this->setStoreOrderMode('test');
+
+        $result = RenewalService::expireCanceledSubscriptions(20);
+
+        $this->assertSame(0, $result['expired']);
+        $this->assertNotNull(Subscription::query()->find($subscription->id)->next_billing_date);
+    }
+
     private function makeSubscriptionSetup(array $subscriptionOverrides = []): array
     {
         $customer = $this->customerFactory->create();
@@ -211,6 +420,21 @@ class RenewalServiceTest extends DatabaseTestCase
         ], $subscriptionOverrides));
 
         return compact('customer', 'product', 'variant', 'order', 'subscription');
+    }
+
+    // Paid today, so a date rebuilt from payments would land a month ahead.
+    private function makeExpiredCanceledSubscription(): int
+    {
+        ['subscription' => $subscription, 'order' => $order] = $this->makeSubscriptionSetup([
+            'collection_method' => 'manual',
+            'status'            => Status::SUBSCRIPTION_CANCELED,
+            'next_billing_date' => gmdate('Y-m-d H:i:s', time() - HOUR_IN_SECONDS),
+        ]);
+        Order::query()->where('id', $order->id)->update(['payment_status' => Status::PAYMENT_PAID]);
+
+        $this->assertSame(1, RenewalService::expireCanceledSubscriptions(20)['expired']);
+
+        return (int) $subscription->id;
     }
 
     private function hasRenewalInvoice(int $parentOrderId): bool

@@ -303,12 +303,7 @@ class S3Driver extends BaseDriver
 
     public function getSignedDownloadUrl(string $filePath, $bucket = null, $productDownload = null): string
     {
-        $expirationMinutes = 7 * 24 * 60;
-        apply_filters('fluent_cart/download_expiration_minutes', $expirationMinutes, [
-            'file_path' => $filePath,
-            'bucket'    => $bucket,
-            'driver'    => 's3',
-        ]);
+        $expirationMinutes = $this->downloadExpirationMinutes($filePath, $bucket);
         $fileName = null;
         if($productDownload instanceof ProductDownload){
             $fileName = $productDownload->file_name;
@@ -318,14 +313,22 @@ class S3Driver extends BaseDriver
 
     public function downloadFile(string $filePath, $fileName = null, $bucket = null)
     {
-        $expirationMinutes = 7 * 24 * 60;
-        apply_filters('fluent_cart/download_expiration_minutes', $expirationMinutes, [
+        $expirationMinutes = $this->downloadExpirationMinutes($filePath, $bucket);
+        wp_redirect($this->generatePresignedDownloadUrl($filePath, $expirationMinutes, $bucket, $fileName));
+        exit;
+    }
+
+    // S3 rejects a signed URL that lasts longer than 7 days, so a larger filtered value is capped
+    private function downloadExpirationMinutes(string $filePath, $bucket): int
+    {
+        $maxMinutes = 7 * 24 * 60;
+        $minutes = (int) apply_filters('fluent_cart/download_expiration_minutes', $maxMinutes, [
             'file_path' => $filePath,
             'bucket'    => $bucket,
             'driver'    => 's3',
         ]);
-        wp_redirect($this->generatePresignedDownloadUrl($filePath, $expirationMinutes, $bucket, $fileName));
-        exit;
+
+        return $minutes > 0 ? min($minutes, $maxMinutes) : $maxMinutes;
     }
 
     public function getFilePath(string $filePath, $fileName = null, $bucket = null)

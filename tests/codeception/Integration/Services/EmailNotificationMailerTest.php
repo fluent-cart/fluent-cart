@@ -297,6 +297,28 @@ class EmailNotificationMailerTest extends WPTestCase
         $this->assertStringContainsString('Body marker xyz', $this->sentMail[0]['message']);
     }
 
+    public function test_mail_body_escapes_buyer_values_inside_attributes_but_not_the_subject(): void
+    {
+        $order = $this->makeOrderWithCustomer();
+        $order->customer->first_name = 'Ann" data-injected="1';
+        $order->customer->save();
+        $this->configFactory->withNotificationConfig('order_paid_customer', [
+            'subject'         => 'Hi {{order.customer.first_name}}',
+            'is_default_body' => 'no',
+            'email_body'      => '<p><a href="https://crm.example/?q={{order.customer.first_name}}">Find</a></p>',
+            'active'          => 'yes',
+        ]);
+
+        (new EmailNotificationMailer())->mailEmailsOfEvent('order_paid', ['order' => $order, 'customer' => $order->customer]);
+
+        $this->assertCount(1, $this->sentMail);
+        $this->assertSame('Hi Ann" data-injected="1', $this->sentMail[0]['subject']);
+        $link = new \WP_HTML_Tag_Processor($this->sentMail[0]['message']);
+        $this->assertTrue($link->next_tag(['tag_name' => 'a']));
+        $this->assertSame(['href'], $link->get_attribute_names_with_prefix(''), 'A buyer value must stay inside its attribute.');
+        $this->assertStringStartsWith('https://crm.example/?q=Ann', $link->get_attribute('href'));
+    }
+
     // =========================================================================
     // Spec 78-79: should_send_email_notification filter
     // =========================================================================

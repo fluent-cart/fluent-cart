@@ -5,6 +5,7 @@ import InspectorSettings from "@/BlockEditor/ProductTitle/Components/InspectorSe
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {Title} from "@/BlockEditor/Icons";
 import {syncInsideProductInfo} from "@/BlockEditor/Components/insideProductInfo";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType, createBlock} = wp.blocks;
@@ -49,7 +50,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
     edit: ({attributes, setAttributes, clientId}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState(null);
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
+        const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
         const productUrl = selectedProduct?.view_url || '#';
 
         const singleProductData = useSingleProductData();

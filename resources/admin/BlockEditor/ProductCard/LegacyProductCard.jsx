@@ -2,9 +2,11 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductCard/Components/InspectorSettings";
+import {productLoadFailure} from "@/BlockEditor/Components/ProductPicker/productLoadFailure";
 import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
 import {convertToTemplateCard, convertedCardTemplate} from "./productCardDefaults";
 import {availableTemplate} from "@/BlockEditor/ShopApp/InnerBlocks/ProductCardLayoutPresets";
+import safeProductId from '../Components/safeProductId.js';
 
 
 const { useBlockProps, InspectorControls } = wp.blockEditor;
@@ -26,10 +28,10 @@ export default function LegacyProductCard({attributes, setAttributes, clientId, 
     ));
     const blockProps = useBlockProps();
     const [selectedProduct, setSelectedProduct] = useState({});
-    const fetchUrl = rest.url + '/products/' + attributes.product_id;
+    const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
 
 
-    const fetchProduct = () => {
+    const fetchProduct = (isStale) => {
         if (!attributes.product_id) {
             return;
         }
@@ -43,9 +45,13 @@ export default function LegacyProductCard({attributes, setAttributes, clientId, 
                 'X-WP-Nonce': rest.nonce
             }
         }).then((response) => {
-            setSelectedProduct(response.product || {});
-        }).finally(() => {
-
+            if (!isStale()) {
+                setSelectedProduct(response.product || {missing: true});
+            }
+        }).catch((error) => {
+            if (!isStale()) {
+                setSelectedProduct(productLoadFailure(error));
+            }
         });
     }
 
@@ -55,8 +61,14 @@ export default function LegacyProductCard({attributes, setAttributes, clientId, 
 
     const isOutOfStock = selectedProduct?.detail?.stock_availability === 'out-of-stock';
 
+    // A slower earlier request must not overwrite the product picked after it.
     useEffect(() => {
-        fetchProduct();
+        let stale = false;
+        fetchProduct(() => stale);
+
+        return () => {
+            stale = true;
+        };
     }, [attributes.product_id]);
 
     return (

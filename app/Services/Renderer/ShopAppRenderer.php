@@ -214,6 +214,7 @@ class ShopAppRenderer
                         "label"       => ucfirst(str_replace('-', ' ', $taxonomy)),
                         "enabled"     => true,
                         "multiple"    => false,
+                        "show_empty"  => Arr::get($configFilters, $taxonomy . '.show_empty', true),
                     ];
                 }
             }

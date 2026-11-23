@@ -76,6 +76,23 @@ class EmailPreviewService
                 $previewData['reason'] = __('canceled on customer request', 'fluent-cart');
                 $previewData['subscription'] = $this->getDummySubscription($previewData['order']);
             }
+
+            if (Str::contains($template, 'payment_method_changed')) {
+                $previewData['old_payment_method'] = ['method' => 'stripe', 'details' => ['brand' => 'mastercard', 'last_4' => '1111']];
+                $previewData['new_payment_method'] = ['method' => 'stripe', 'details' => ['brand' => 'visa', 'last_4' => '4242']];
+            }
+
+            if (Str::contains($template, 'plan_changed')) {
+                $oldSubscription = clone $subscription;
+                $oldSubscription->display_item_name = 'Sample Subscription - Monthly';
+                $oldSubscription->billing_interval = 'monthly';
+                $oldSubscription->recurring_total = 900;
+                $oldSubscription->payment_info = '$9.00 per month until canceled';
+
+                $previewData['old_subscription'] = $oldSubscription;
+                $previewData['old_variation'] = null;
+                $previewData['new_variation'] = null;
+            }
         }
 
         return $previewData;
@@ -322,6 +339,7 @@ class EmailPreviewService
             public $billing_interval = 'yearly';
             public $next_billing_date;
             public $recurring_total = 4900;
+            public $payment_info = '$49.00 per year until canceled';
             public $status = 'active';
             public $trial_ends_at;
             public $customer;

@@ -75,7 +75,7 @@ class SubscriptionTextI18nTest extends WPTestCase
         $this->assertStringEndsWith('per month, for 4 months', $info);
 
         $info = Helper::generateSubscriptionInfo(['repeat_interval' => 'yearly', 'times' => 0], 1000, 'USD');
-        $this->assertStringEndsWith('per year until cancel', $info);
+        $this->assertStringEndsWith('per year until canceled', $info);
     }
 
     public function test_trial_info_has_singular_and_plural_forms(): void
@@ -92,7 +92,7 @@ class SubscriptionTextI18nTest extends WPTestCase
             1000,
             'USD'
         );
-        $this->assertStringContainsString('per month on the 2nd until cancel', $monthly);
+        $this->assertStringContainsString('per month on the 2nd until canceled', $monthly);
 
         $this->contextFilter = static function ($translation, $text, $context) {
             if ($context === 'ordinal day of month') {
@@ -108,7 +108,7 @@ class SubscriptionTextI18nTest extends WPTestCase
             1000,
             'USD'
         );
-        $this->assertStringContainsString('on the 2. until cancel', $monthly);
+        $this->assertStringContainsString('on the 2. until canceled', $monthly);
     }
 
     public function test_schedule_anchor_month_day_follows_store_date_format(): void
@@ -122,7 +122,7 @@ class SubscriptionTextI18nTest extends WPTestCase
             );
         };
 
-        $this->assertStringContainsString('on Aug 19 until cancel', $yearly(8, 19));
+        $this->assertStringContainsString('on Aug 19 until canceled', $yearly(8, 19));
 
         add_filter('fluent_cart/date_time_strings', function ($strings) {
             $strings['formats']['date'] = 'j. F Y';
@@ -130,7 +130,7 @@ class SubscriptionTextI18nTest extends WPTestCase
         });
         TransStrings::dateTimeStrings(true);
 
-        $this->assertStringContainsString('on 19. Aug until cancel', $yearly(8, 19));
-        $this->assertStringContainsString('on 29. Feb until cancel', $yearly(2, 29));
+        $this->assertStringContainsString('on 19. Aug until canceled', $yearly(8, 19));
+        $this->assertStringContainsString('on 29. Feb until canceled', $yearly(2, 29));
     }
 }

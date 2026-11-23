@@ -119,7 +119,7 @@ const setupFluentPdf = () => {
     settingUpPdf.value = true;
     Rest.post(installed ? 'settings/modules/plugin-addons/activate' : 'settings/modules/plugin-addons/install', installed
         ? {plugin_file: addonInfo.value.plugin_file}
-        : {plugin_slug: addonInfo.value.plugin_slug, source_type: addonInfo.value.source_type || 'wordpress'})
+        : {plugin_slug: addonInfo.value.plugin_slug})
         .then((response) => {
             Notify.success(response.message || translate('Plugin activated successfully'));
             hasFluentPdf.value = true;

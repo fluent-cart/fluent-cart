@@ -21,7 +21,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_all_subsc
             },
             {
                 name: 'view_subscription',
-                path: ':subscription_id/view',
+                path: ':subscription_id(\\d+)/view',
                 component: SingleSubscription,
                 props: true,
                 meta: {

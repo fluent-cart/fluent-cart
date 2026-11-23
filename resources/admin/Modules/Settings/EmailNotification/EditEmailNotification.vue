@@ -1,6 +1,6 @@
 <script setup>
 import Section from "@/Bits/Components/Layout/Section.vue";
-import {onMounted, ref, watch, nextTick} from "vue";
+import {onMounted, ref, watch} from "vue";
 import Rest from "@/utils/http/Rest";
 import Notify from "@/utils/Notify";
 import translate from "@/utils/translator/Translator";
@@ -86,7 +86,6 @@ const previewVisible = ref(false);
 const previewLoading = ref(false);
 const previewHtml = ref('');
 const previewMode = ref('desktop');
-const previewIframe = ref(null);
 
 const onPreviewRequest = () => {
     previewVisible.value = true;
@@ -100,33 +99,12 @@ const onPreviewRequest = () => {
         .then((response) => {
             previewHtml.value = response.html;
             previewLoading.value = false;
-            nextTick(() => loadPreviewIframe());
         })
         .catch((error) => {
             Notify.error(error.data?.message || 'Failed to generate preview');
             previewVisible.value = false;
             previewLoading.value = false;
         });
-};
-
-const loadPreviewIframe = () => {
-    const iframe = previewIframe.value;
-    if (!iframe || !previewHtml.value) return;
-
-    const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-    if (!doc) return;
-
-    doc.open();
-    doc.write(previewHtml.value);
-    doc.close();
-};
-
-const onPreviewDrawerOpen = () => {
-    nextTick(() => {
-        if (previewHtml.value) {
-            loadPreviewIframe();
-        }
-    });
 };
 
 const closePreview = () => {
@@ -342,6 +320,7 @@ onMounted(() => {
                     />
                     <iframe
                         :srcdoc="defaultTemplateHtml"
+                        sandbox=""
                         frameborder="0"
                         scrolling="auto"
                         style="width: 100%; height: 600px; border: 1px solid #e4e7ed; border-radius: 6px; display: block;"
@@ -420,7 +399,6 @@ onMounted(() => {
           :title="translate('Email Preview')"
           :append-to-body="true"
           :close-on-click-modal="true"
-          @open="onPreviewDrawerOpen"
       >
         <div v-if="previewLoading" v-loading="true" style="height: 300px;"></div>
 
@@ -465,8 +443,10 @@ onMounted(() => {
 
           <div class="fct-preview-stage" :class="'fct-preview-stage--' + previewMode">
             <div :class="['fct-device-frame', 'fct-device-frame--' + previewMode]">
+              <!-- The preview holds buyer data from a real order; sandbox keeps it out of the admin origin. -->
               <iframe
-                  ref="previewIframe"
+                  :srcdoc="previewHtml"
+                  sandbox=""
                   frameborder="0"
                   scrolling="auto"
                   style="width: 100%; height: 80vh; border: none; display: block;"

@@ -6,6 +6,7 @@ use FluentCart\App\App;
 use FluentCart\App\Models\Model;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductReview;
+use FluentCart\App\Models\ProductVariation;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Modules\MultiCurrency\Services\CurrencyContext;
 use FluentCart\App\Services\OrderService;
@@ -126,6 +127,27 @@ class EmailNotificationMailer
 
         add_action('fluent_cart/subscription_period_skipped', function ($data) {
             $this->mailEmailsOfEvent('subscription_period_skipped', $data);
+        }, 999, 1);
+
+        add_action('fluent_cart/subscription_payment_method_changed', function ($data) {
+            $this->mailEmailsOfEvent('subscription_payment_method_changed', $data);
+        }, 999, 1);
+
+        // PlanChanged hands its listeners arrays; the templates need models.
+        add_action('fluent_cart/plan_changed', function ($data) {
+            $order = Order::query()->with('customer')->find(Arr::get($data, 'order.id'));
+            if (!$order) {
+                return;
+            }
+
+            $this->mailEmailsOfEvent('subscription_plan_changed', [
+                'order'            => $order,
+                'customer'         => $order->customer,
+                'subscription'     => Subscription::query()->find(Arr::get($data, 'other_info.subscription_id')),
+                'old_subscription' => Subscription::query()->find(Arr::get($data, 'other_info.from_subscription_id')),
+                'old_variation'    => ProductVariation::query()->with('product')->find(Arr::get($data, 'old_variation.id')),
+                'new_variation'    => ProductVariation::query()->with('product')->find(Arr::get($data, 'new_variation.id')),
+            ]);
         }, 999, 1);
 
         add_action('fluent_cart/subscription_past_due', function ($data) {
@@ -593,7 +615,7 @@ class EmailNotificationMailer
             ]);
         }
 
-        $body = ShortcodeTemplateBuilder::make($body, $data);
+        $body = ShortcodeTemplateBuilder::makeHtml($body, $data);
 
         $subject = ShortcodeTemplateBuilder::make(Arr::get($notification, 'subject', ''), $data);
         // A notification may declare an array of recipients — wp_mail() accepts

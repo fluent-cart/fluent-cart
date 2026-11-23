@@ -2,8 +2,8 @@
 
 namespace FluentCart\App\Services;
 
-use FluentCart\Api\Resource\OrderResource;
 use FluentCart\App\Models\Meta;
+use FluentCart\App\Models\Order;
 use FluentCart\App\Services\ShortCodeParser\ShortcodeTemplateBuilder;
 use FluentCart\Framework\Support\Arr;
 use FluentCart\Framework\Support\Str;
@@ -43,9 +43,22 @@ class PrintService
         } else {
             $template = TemplateService::getInvoicePackingTemplateByPathName($key);
         }
-        $order = OrderResource::view($orderId)['order'];
+        // Templates call Order model methods, so pass the model, not OrderResource::view()'s array.
+        // Print links use the order uuid, like the receipt links.
+        $order = is_scalar($orderId)
+            ? Order::query()->where('uuid', sanitize_text_field((string) $orderId))->first()
+            : null;
+        if (!$order) {
+            status_header(404);
+            FrontendView::renderNotFoundPage(
+                __('Order not found', 'fluent-cart'),
+                __('Order not found', 'fluent-cart'),
+                __('This print link is not valid, or the order no longer exists.', 'fluent-cart')
+            );
+            return false;
+        }
 
-        $renderedTemplate = ShortcodeTemplateBuilder::make($template ?? '', [
+        $renderedTemplate = ShortcodeTemplateBuilder::makeHtml($template ?? '', [
             'order' => $order
         ]);
 

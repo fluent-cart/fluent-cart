@@ -3,6 +3,7 @@
 namespace FluentCart\App\Modules\PaymentMethods\PayPalGateway;
 
 use FluentCart\App\App;
+use FluentCart\App\Events\Subscription\SubscriptionPaymentMethodChanged;
 use FluentCart\App\Helpers\Status;
 use FluentCart\App\Models\Order;
 use FluentCart\App\Models\ProductVariation;
@@ -301,6 +302,13 @@ class SubscriptionManager
         }
 
         self::addOldSubscriptionMeta($subscription, $oldSubData);
+
+        SubscriptionPaymentMethodChanged::fire(
+            Subscription::query()->find($subscription->id),
+            $oldSubData['payment_source'],
+            $billingInfo,
+            (string)$oldPaymentMethod
+        );
 
         return $newVendorSubscriptionId;
     }

@@ -167,6 +167,8 @@ class Helper
             'nonce'     => wp_create_nonce('wp_rest'),
             'namespace' => $ns,
             'version'   => $ver,
+            // Rest.js refuses these in a URL: PHP splits the query on each one, the browser only on "&"
+            'query_separators' => (string)ini_get('arg_separator.input'),
         ];
     }
 
@@ -1331,11 +1333,11 @@ class Helper
 
         if (empty($occurrence)) {
             $paymentInfo = sprintf(
-            /* translators: %1$s is the price, %2$s is the interval, %3$s is "until cancel" text */
+            /* translators: %1$s is the price, %2$s is the interval, %3$s is "until canceled" text */
                 __('%1$s %2$s %3$s', 'fluent-cart'),
                 $price,
                 $interval,
-                __('until cancel', 'fluent-cart')
+                __('until canceled', 'fluent-cart')
             );
         }
 
@@ -1402,11 +1404,11 @@ class Helper
 
         if (empty($occurrence)) {
             return sprintf(
-            /* translators: %1$s is the price, %2$s is the interval, %3$s is "until cancel" text */
+            /* translators: %1$s is the price, %2$s is the interval, %3$s is "until canceled" text */
                 __('%1$s %2$s %3$s', 'fluent-cart'),
                 $price,
                 $interval,
-                __('until cancel', 'fluent-cart')
+                __('until canceled', 'fluent-cart')
             );
         }
 

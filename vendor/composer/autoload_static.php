@@ -131,6 +131,7 @@ class ComposerStaticInitb2eff533900bbaf3c7b668b284ce4755
         'FluentCart\\App\\Events\\Subscription\\SubscriptionCanceled' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionCanceled.php',
         'FluentCart\\App\\Events\\Subscription\\SubscriptionEOT' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionEOT.php',
         'FluentCart\\App\\Events\\Subscription\\SubscriptionPaused' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionPaused.php',
+        'FluentCart\\App\\Events\\Subscription\\SubscriptionPaymentMethodChanged' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionPaymentMethodChanged.php',
         'FluentCart\\App\\Events\\Subscription\\SubscriptionPeriodSkipped' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionPeriodSkipped.php',
         'FluentCart\\App\\Events\\Subscription\\SubscriptionReactivated' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionReactivated.php',
         'FluentCart\\App\\Events\\Subscription\\SubscriptionRenewalFailed' => __DIR__ . '/../..' . '/app/Events/Subscription/SubscriptionRenewalFailed.php',

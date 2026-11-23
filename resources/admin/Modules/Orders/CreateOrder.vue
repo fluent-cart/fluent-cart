@@ -147,7 +147,7 @@
                           }"
                           >
                             {{ scope.row.post_title }}
-                            <span class="product-sub-name product-sub-name--wrap">- {{ scope.row.variation_display_title || scope.row.title }}</span>
+                            <span v-if="getOrderItemVariantTitle(scope.row)" class="product-sub-name product-sub-name--wrap">- {{ getOrderItemVariantTitle(scope.row) }}</span>
                           </router-link>
                         </div>
 
@@ -487,6 +487,7 @@ import SaveBar from "@/Bits/Components/SaveBar.vue";
 import NumberInput from "@/Bits/Components/Inputs/NumberInput.vue";
 import Labels from "@/Modules/Parts/Labels/Label.vue";
 import translate, {translateNumber} from "@/utils/translator/Translator";
+import {getOrderItemVariantTitle} from "@/utils/variantLabel";
 
 // import {getCurrentInstance} from "vue";
 // import {useSaveShortcut} from "@/mixin/saveButtonShortcutMixin";

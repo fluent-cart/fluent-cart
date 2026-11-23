@@ -8,6 +8,7 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import {ParentDataProvider} from "@/BlockEditor/ShopApp/Context/ProductContext";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {normalizeVariations} from "./utils/variationUtils";
+import safeProductId from '../Components/safeProductId.js';
 
 const {
   InnerBlocks,
@@ -216,7 +217,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             if (!attributes.product_id || !attributes.variation_ids.length) return;
 
             const fetchVariations = () => {
-                const fetchUrl = rest.url + '/products/' + attributes.product_id;
+                const fetchUrl = rest.url + '/products/' + safeProductId(attributes.product_id);
                 apiFetch({
                     path: addQueryArgs(fetchUrl, {
                         // Screen key, not a relation name — ProductController::allowedWiths()

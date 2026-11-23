@@ -1,6 +1,10 @@
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
+import {productLoadFailure} from "@/BlockEditor/Components/ProductPicker/productLoadFailure";
+import safeProductId from '../../Components/safeProductId.js';
+
+export {productLoadFailure};
 
 const {useEffect, useState} = wp.element;
 const {useSelect} = wp.data;
@@ -63,7 +67,7 @@ export const useReviewBlockProduct = (attributes, insideParent, withSummary = fa
         if (isCustom) {
             if (attributes.product_id && rest.url) {
                 apiFetch({
-                    path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
+                    path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id), {
                         // Screen key, not a relation name — ProductController::allowedWiths()
                         // owns what it resolves to (detail + variants).
                         with: ['block_product_detail']
@@ -73,15 +77,15 @@ export const useReviewBlockProduct = (attributes, insideParent, withSummary = fa
                     }
                 }).then((response) => {
                     if (!isStale()) {
-                        setSelectedProduct(response.product || {});
+                        setSelectedProduct(response.product || {missing: true});
                     }
-                }).catch(() => {
+                }).catch((error) => {
                     if (!isStale()) {
-                        setSelectedProduct({});
+                        setSelectedProduct(productLoadFailure(error));
                     }
                 });
             } else {
-                setSelectedProduct({});
+                setSelectedProduct(attributes.product_id ? {loadError: true} : {});
             }
         } else {
             setSelectedProduct(contextProduct || {});
@@ -98,7 +102,7 @@ export const useReviewBlockProduct = (attributes, insideParent, withSummary = fa
 
         if (withSummary && effectiveProductId && rest.url) {
             apiFetch({
-                path: rest.url + '/public/reviews/' + effectiveProductId + '/summary',
+                path: rest.url + '/public/reviews/' + safeProductId(effectiveProductId) + '/summary',
                 headers: {
                     'X-WP-Nonce': rest.nonce
                 }

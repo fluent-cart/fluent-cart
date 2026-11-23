@@ -5,6 +5,7 @@ import InspectorSettings from "@/BlockEditor/SaleBadge/Components/InspectorSetti
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {Tag} from "@/BlockEditor/Icons";
 import ErrorBoundary from "@/BlockEditor/Components/ErrorBoundary";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -132,7 +133,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         const fetchProduct = () => {
             if (!rest?.url) return;
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']

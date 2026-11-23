@@ -2,9 +2,11 @@ import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/BuySection/Components/InspectorSettings";
-import {useSingleProductData} from "@/BlockEditor/ProductInfo/Context/SingleProductContext";
+import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
+import {productLoadFailure} from "@/BlockEditor/Components/ProductPicker/productLoadFailure";
 import {BuySection} from "@/BlockEditor/Icons";
 import BuySectionPreview from "./BuySection.png";
+import safeProductId from '../Components/safeProductId.js';
 
 
 const {useBlockProps} = wp.blockEditor;
@@ -44,6 +46,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         ],
     },
     category: "fluent-cart",
+    usesContext: ['postId', 'postType'],
     attributes: {
         product_id: {
             type: ['string', 'number'],
@@ -58,12 +61,11 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             default: '-',
         }
     },
-    edit: ({attributes, setAttributes, clientId}) => {
+    edit: ({attributes, setAttributes, clientId, context = {}}) => {
         const blockProps = useBlockProps();
         const [selectedProduct, setSelectedProduct] = useState({});
-        const fetchUrl = rest.url + '/products/' + attributes.product_id;
 
-        const singleProductData = useSingleProductData();
+        const singleProductData = useSingleProductData(true);
 
         const isInsideProductInfo = useSelect((select) => {
             const { getBlockParents, getBlockName } = select(blockEditorStore);
@@ -84,9 +86,9 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         setAttributes({inside_product_info: isInsideProductInfo ? 'yes' : 'no'});
 
 
-        const fetchProduct = () => {
+        const fetchProduct = (productId, isStale) => {
             apiFetch({
-                path: addQueryArgs(fetchUrl, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(productId), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']
@@ -95,24 +97,39 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                     'X-WP-Nonce': rest.nonce
                 }
             }).then((response) => {
-                setSelectedProduct(response.product || {});
-            }).finally(() => {
-
+                if (!isStale()) {
+                    setSelectedProduct(response.product || {missing: true});
+                }
+            }).catch((error) => {
+                if (!isStale()) {
+                    setSelectedProduct(productLoadFailure(error));
+                }
             });
         }
 
-        useEffect(() => {
-            if (singleProductData?.product) {
-                setSelectedProduct(singleProductData.product);
-            }
-        }, [singleProductData?.product]);
+        // Inside Product Info or a carousel: the parent's product. Custom: the saved one.
+        // Default: the product a card, loop or Product Info provides, else the product page's own.
+        const providedProduct = singleProductData?.product?.ID ? singleProductData.product : null;
+        const isCustom = attributes.query_type === 'custom';
+        const pageProductId = context.postType === 'fluent-products' ? context.postId : null;
+        const productIdToLoad = isInsideProductInfo
+            ? null
+            : (isCustom ? attributes.product_id : (providedProduct ? null : pageProductId));
 
+        // A slower earlier request must not overwrite the product picked after it.
         useEffect(() => {
-            if (isInsideProductInfo) {
-                return;
+            let stale = false;
+            if (productIdToLoad) {
+                fetchProduct(productIdToLoad, () => stale);
+            } else {
+                setSelectedProduct(isInsideProductInfo || !isCustom ? (providedProduct || {}) : {});
             }
-            fetchProduct();
-        }, [attributes.product_id]);
+
+            return () => {
+                stale = true;
+            };
+        // The whole product, not its id: a parent swaps the picker's copy for the full record.
+        }, [productIdToLoad, isCustom, isInsideProductInfo, providedProduct]);
 
 
         return (

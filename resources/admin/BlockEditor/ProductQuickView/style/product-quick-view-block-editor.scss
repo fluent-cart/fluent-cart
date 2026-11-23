@@ -227,9 +227,3 @@ body:not(.fluent-cart-no-colors) {
   @apply m-0 text-xs;
   color: #565865;
 }
-
-// Editor canvas only: the note on a simple product's card.
-.fct-card-quick-view > .fct-card-swatch-empty {
-  @apply text-xs italic;
-  color: var(--fct-card-text-color, #565865);
-}

@@ -55,25 +55,11 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
         // For hosted mode, just show a message and enable the button.
         // system_consent (system/auto-charge subscriptions) must be shown here —
         // this handler redirects to Stripe next, so it's the only place the
-        // save-and-auto-charge disclosure can be seen before checkout. When
-        // consent_required (zero-payable trial), handleSetupOnlyPayment rejects
-        // the order without _fct_system_consent=yes — same required checkbox as
-        // the onsite flow, gating the submit button until checked.
-        let hostedConsentCheckbox = null;
+        // save-and-auto-charge disclosure can be seen before checkout.
         if (stripeContainer) {
-            let consentMessage = '';
-            if (response?.system_consent) {
-                if (response?.consent_required) {
-                    consentMessage = `
-                        <label style="display:flex;gap:6px;align-items:flex-start;margin-top:8px;font-size:12px;opacity:0.85;cursor:pointer;">
-                            <input type="checkbox" name="_fct_system_consent" value="yes" style="margin-top:2px;flex-shrink:0;" />
-                            <span>${response.system_consent}</span>
-                        </label>
-                    `;
-                } else {
-                    consentMessage = `<p style="margin:8px 0 0;color:#495057;font-size:12px;opacity:0.85;">${response.system_consent}</p>`;
-                }
-            }
+            const consentMessage = response?.system_consent
+                ? `<p style="margin:8px 0 0;color:#495057;font-size:12px;opacity:0.85;">${response.system_consent}</p>`
+                : '';
             const infoMessage = `
                 <div class="stripe-hosted-checkout-info" style="padding: 15px; background: #f8f9fa; border-radius: 4px; margin: 10px 0;">
                     <p style="margin: 0; color: #495057; font-size: 14px;">
@@ -83,7 +69,6 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
                 </div>
             `;
             stripeContainer.innerHTML = infoMessage;
-            hostedConsentCheckbox = stripeContainer.querySelector('input[name="_fct_system_consent"]');
         }
 
         // Remove loading message
@@ -103,22 +88,9 @@ window.addEventListener("fluent_cart_load_payments_stripe", function (e) {
         const submitButton = window.fluentcart_checkout_vars?.submit_button;
         const paymentMethod = e.detail.form.querySelector('input[name="_fct_pay_method"]:checked');
 
-        const maybeToggleCheckoutButton = () => {
-            if (isStale() || !paymentMethod || paymentMethod.value !== 'stripe') {
-                return;
-            }
-            const consentOk = !hostedConsentCheckbox || hostedConsentCheckbox.checked;
-            if (consentOk) {
-                e.detail.paymentLoader?.enableCheckoutButton(submitButton?.text || $t('Place Order'));
-            } else {
-                e.detail.paymentLoader?.disableCheckoutButton();
-            }
-        };
-
-        if (hostedConsentCheckbox) {
-            hostedConsentCheckbox.addEventListener('change', maybeToggleCheckoutButton);
+        if (paymentMethod && paymentMethod.value === 'stripe') {
+            e.detail.paymentLoader?.enableCheckoutButton(submitButton?.text || $t('Place Order'));
         }
-        maybeToggleCheckoutButton();
 
     }).catch(error => {
         if (isStale()) {

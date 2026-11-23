@@ -178,12 +178,12 @@ class ReportTools
 
             'fluent-cart/query-orders' => [
                 'label'       => 'Query Orders (flexible aggregate)',
-                'description' => 'Order analytics: pick metrics and dimensions when a fixed report does not fit. Group by payment_status, month, order_type, country or state, with filters. order_type is one-time payment, new subscription or renewal. Counts orders that captured payment only (paid, partially_paid, partially_refunded, refunded; echoed as meta.payment_statuses): pending and failed orders are left out, and a payment_status grouping says how many in meta.warnings. product_id or variation_id limits to orders containing that product. This is the tool for revenue BY GEOGRAPHY: group by country/state, which read each order\'s own billing address, falling back to the buyer\'s primary billing address. Window on created_at.',
+                'description' => 'Order counts and revenue grouped by month, order type, status or country; to find specific orders use list-orders. Counts only orders that captured payment (paid, partially_paid, partially_refunded, refunded; meta.payment_statuses): pending and failed orders are left out, and a payment_status grouping says how many in meta.warnings. Group by country or state for revenue by geography. Window on created_at.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
                         'limit'      => ['type' => 'integer', 'description' => 'view=coupons: rows to return (default 25, max 200).'],
-                        'view'       => ['type' => 'string', 'enum' => ['query', 'payment_methods', 'coupons'], 'default' => 'query', 'description' => 'payment_methods / coupons: the admin Payment Methods or Coupons report for the range (sales, success and decline rates per gateway; uses, discount and net per coupon). Coupon customer value needs Pro. coupons returns the top 25 unless limit is set. mode applies to coupons only.'],
+                        'view'       => ['type' => 'string', 'enum' => ['query', 'payment_methods', 'coupons'], 'default' => 'query', 'description' => 'payment_methods / coupons: the admin Payment Methods or Coupons report for the range (per gateway: sales, success and decline rates; per coupon: uses, discount, net). Coupon customer value needs Pro. mode applies to coupons only.'],
                         'metrics'    => [
                             'type'        => 'array',
                             'description' => 'One or more. Defaults to order_count and gross_revenue. gross_revenue = item sales before discounts and refunds (gross_sales in get-sales-report); paid_revenue = payments captured, after discounts, with tax and shipping, before refunds; refunded_amount = refunds on these orders; aov = net sales / orders (aov in get-sales-report).',
@@ -191,10 +191,10 @@ class ReportTools
                         ],
                         'dimensions' => [
                             'type'        => 'array',
-                            'description' => 'Group by these. Empty means a single total row. order_type splits sales by payment (one-time purchase), subscription (first subscription order) and renewal (recurring charge); combine with a time dimension for e.g. order_type x month. country/state come from each order\'s own billing address, falling back to the buyer\'s primary billing address when the order has no address row of its own (common for digital goods) — this is the right basis for revenue by geography. Orders neither source can place land in an explicit "unknown" bucket so the rows still sum to total revenue; see meta.geo_source. state needs FluentCart Pro.',
+                            'description' => 'Group by these. Empty means a single total row. order_type: payment (one-time purchase), subscription (first subscription order), renewal (recurring charge). country/state read the order\'s billing address, then the buyer\'s primary billing address; orders with neither land in "unknown", so rows still sum to the total (meta.geo_source). state needs FluentCart Pro.',
                             'items'       => ['type' => 'string', 'enum' => ['day', 'week', 'month', 'status', 'payment_status', 'order_type', 'country', 'state']],
                         ],
-                        'country'      => ['type' => 'string', 'description' => 'ISO-2 code. Limit to orders billed to this country, resolved the same way as the country dimension (order address, then the buyer\'s primary billing address).'],
+                        'country'      => ['type' => 'string', 'description' => 'ISO-2 code. Limit to orders billed to this country, resolved like the country dimension.'],
                         'product_id'   => ['type' => 'integer', 'description' => 'Limit to orders CONTAINING this product. Order-level metrics (revenue, count) reflect the whole order, not just this product\'s lines — for per-product line revenue use query-products.'],
                         'variation_id' => ['type' => 'integer', 'description' => 'Limit to orders containing this variation.'],
                         'range'      => $rangeProp,
@@ -204,7 +204,7 @@ class ReportTools
                         'date_to'    => $dateTo,
                         'since'      => $since,
                         'currency'   => ['type' => 'string', 'description' => 'ISO 4217 code, default the store currency.'],
-                        'sort_desc'  => ['type' => 'boolean', 'default' => true, 'description' => 'Sort by the first metric descending. When grouping by a time dimension (day/week/month), rows default to chronological order unless you set this explicitly.'],
+                        'sort_desc'  => ['type' => 'boolean', 'default' => true, 'description' => 'Sort by the first metric, descending. With a day, week or month dimension, rows are in date order unless you set this.'],
                     ],
                 ],
                 'execute_callback'    => [self::class, 'queryOrders'],
@@ -216,7 +216,7 @@ class ReportTools
 
             'fluent-cart/query-products' => [
                 'label'       => 'Query Products (flexible aggregate)',
-                'description' => 'Product analytics over sold items, grouped by product or variation. Pick metrics; an optional split by order_type. order_type is one-time payment, new subscription or renewal; one period and one currency. Rows self-describe: product_name always, plus variation_label when grouped by variation, so no follow-up lookup. For a time series use get-sales-report with interval. Window on the parent order created_at.',
+                'description' => 'Sales per product or variation: units, revenue and refunds for a period; to find products in the catalog use list-products. Optional split by order_type; one currency. Rows self-describe: product_name always, plus variation_label when grouped by variation, so no follow-up lookup. For a time series use get-sales-report with interval. Window on the parent order created_at.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -242,7 +242,7 @@ class ReportTools
 
             'fluent-cart/query-customers' => [
                 'label'       => 'Query Customers (flexible aggregate)',
-                'description' => 'Customer analytics: pick metrics and group by country, state, status or purchase month. Purchase month is the first or the last one; filters are optional. LTV is in store currency. Returns up to 200 rows. country/state resolve from the customer\'s primary billing address, falling back to their profile location, then "unknown" — this is where a customer is REGISTERED, captured at their first purchase and not refreshed since. To attribute revenue to where each order was actually billed, group query-orders by country instead.',
+                'description' => 'Customer counts and LTV grouped by country, state, status or first or last purchase month; to find specific customers use list-customers. Returns up to 200 rows. country/state resolve from the customer\'s primary billing address, falling back to their profile location, then "unknown" — this is where a customer is REGISTERED, captured at their first purchase and not refreshed since. To attribute revenue to where each order was actually billed, group query-orders by country instead.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [
@@ -268,7 +268,7 @@ class ReportTools
 
             'fluent-cart/query-subscriptions' => [
                 'label'       => 'Query Subscriptions (flexible aggregate)',
-                'description' => 'Subscription analytics: MRR and churn (view=overview), or counts and contract value by group. view=overview is the admin Subscriptions page. Overview: MRR now, active/canceling/failing/paused, and the period\'s new, churned, churn rate, MRR change and renewals. Default view: grouped by month/plan_type/status/billing_interval; date_basis=next_billing_date lists upcoming renewals.',
+                'description' => 'MRR, churn and subscription counts or contract value by group; to find specific subscriptions use list-subscriptions. view=overview is the admin Subscriptions page: MRR now, active/canceling/failing/paused, and the period\'s new, churned, churn rate, MRR change and renewals. Default view: grouped by month/plan_type/status/billing_interval; date_basis=next_billing_date lists upcoming renewals.',
                 'input_schema' => [
                     'type'       => 'object',
                     'properties' => [

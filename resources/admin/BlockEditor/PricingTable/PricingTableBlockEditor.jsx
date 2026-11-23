@@ -9,6 +9,7 @@ import {colorConfig} from "@/BlockEditor/PricingTable/colorConfig";
 import CustomSelect from "@/BlockEditor/Components/CustomSelect";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import PricingTablePreview from "./PricingTable.png";
+import safeProductId from '../Components/safeProductId.js';
 
 const {InspectorControls} = wp.editor;
 const {registerBlockType} = wp.blocks;
@@ -160,8 +161,13 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             wp.data.dispatch('core/editor').savePost();
 
 
+            const variationId = safeProductId(key);
+            if (variationId === '0') {
+                return;
+            }
+
             apiFetch({
-                path: fetchUrl + key + '/pricing-table',
+                path: fetchUrl + variationId + '/pricing-table',
                 method: 'PUT',
                 data: {description: variation.other_info.description},
                 headers: {

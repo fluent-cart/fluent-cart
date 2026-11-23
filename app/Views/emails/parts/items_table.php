@@ -50,7 +50,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
         <th style="background-color:rgb(243,244,246);padding:10px 16px;border-radius:<?php echo esc_attr($fctHeadStartRadius); ?>;text-align:<?php echo esc_attr($startSide); ?>;">
             <p style="<?php echo esc_attr($fctHeadLabelStyle); ?>text-align:<?php echo esc_attr($startSide); ?>;"><?php echo esc_html__('Item', 'fluent-cart'); ?></p>
         </th>
-        <th style="background-color:rgb(243,244,246);padding:10px 8px;width:60px;text-align:center;">
+        <th class="fct_items_qty" style="background-color:rgb(243,244,246);padding:10px 8px;width:60px;text-align:center;">
             <p style="<?php echo esc_attr($fctHeadLabelStyle); ?>text-align:center;"><?php echo esc_html__('Qty', 'fluent-cart'); ?></p>
         </th>
         <th style="background-color:rgb(243,244,246);padding:10px 16px;border-radius:<?php echo esc_attr($fctHeadEndRadius); ?>;width:1%;white-space:nowrap;text-align:<?php echo esc_attr($endSide); ?>;">
@@ -72,13 +72,28 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php $itemVariantTitle = !empty($item['variation_display_title']) ? $item['variation_display_title'] : $item['title']; ?>
                 <?php if ($itemVariantTitle && $itemVariantTitle !== $item['post_title']): ?>
                 <p style="margin: 0 0 6px; line-height: 20px;">
-                    <span style="display:inline-block;background-color:rgb(241,243,246);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(55,65,81);line-height:18px;"><?php echo esc_html($itemVariantTitle); ?></span>
+                    <?php // Phones hide the Qty column and show "Qty: N ·" here; hidden where <style> is not read. ?>
+                    <span class="fct_items_qty_prefix" style="display:none;mso-hide:all;font-size:13px;color:rgb(107,114,128);line-height:18px;">
+                        <?php
+                            /* translators: 1: item quantity */
+                            echo esc_html(sprintf(__('Qty: %1$s', 'fluent-cart'), $item['quantity']));
+                        ?> &middot;
+                    </span>
+                    <span class="fct_items_label" style="display:inline-block;background-color:rgb(241,243,246);border-radius:11px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(55,65,81);line-height:18px;"><?php echo esc_html($itemVariantTitle); ?></span>
+                </p>
+                <?php else: ?>
+                <?php // Phones hide the Qty column and show this instead; hidden where <style> is not read. ?>
+                <p class="fct_items_qty_inline" style="display:none;mso-hide:all;font-size:13px;color:rgb(107,114,128);line-height:18px;margin:0 0 6px 0;">
+                    <?php
+                        /* translators: 1: item quantity */
+                        echo esc_html(sprintf(__('Qty: %1$s', 'fluent-cart'), $item['quantity']));
+                    ?>
                 </p>
                 <?php endif; ?>
 
                 <?php if ($item['payment_type'] === 'subscription' && !empty($item['payment_info'])): ?>
                     <p style="margin: 2px 0 0 0; line-height: 20px;">
-                        <span style="display:inline-block;background-color:rgb(238,242,255);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(67,56,202);line-height:18px;"><?php echo wp_kses_post($item['payment_info']) ?></span>
+                        <span style="display:inline-block;background-color:rgb(238,242,255);border-radius:11px;padding:2px 10px;font-size:12px;font-weight:600;color:rgb(67,56,202);line-height:18px;"><?php echo wp_kses_post($item['payment_info']) ?></span>
                     </p>
                 <?php endif; ?>
 
@@ -98,7 +113,7 @@ use FluentCart\App\Services\Renderer\Receipt\TaxSummaryHelper;
                 <?php endif; ?>
                 </p>
             </td>
-            <td style="padding:16px 8px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;text-align:center;">
+            <td class="fct_items_qty" style="padding:16px 8px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;text-align:center;">
                 <p style="font-size:15px;color:rgb(55,65,81);margin:0;line-height:20px;"><?php echo esc_html($item['quantity']); ?></p>
             </td>
             <td style="padding:16px;<?php echo esc_attr($fctItemBorder); ?>vertical-align:top;text-align:<?php echo esc_attr($endSide); ?>;">

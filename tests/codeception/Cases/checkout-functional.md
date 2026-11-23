@@ -141,3 +141,11 @@ to and never changes the cart, so placement taxes the shipping it charges.
 - [x] 70. With ship-to-different on, the payment amount's shipping comes from the shipping address: a complete one is charged its method, and an empty one is not filled in from the billing address.
 - [x] 71. With ship-to-different off, shipping fields left over from an earlier toggle do not decide the payment amount's shipping; the billing address does, the same address placement validates.
 - [x] 72. Loading the payment method never changes the cart, even when the saved method does not serve the address; it only leaves shipping out of the payment amount.
+
+## Retrying after a failed payment — the address on the form (Functional) — ticket #5548 `PlaceOrderRetryAddressCest`
+A retry submits the same form as the first attempt, so it must be checked and saved with the
+address the shopper submitted. A saved address is used only when the shopper picked one.
+- [x] 81. A signed-in customer whose saved billing address has a country but no state can retry after a failed payment; the retry is accepted and the order carries the address they typed.
+- [x] 82. A signed-in customer who typed an address keeps it on the order after a failed payment and a retry, even with a complete saved address in another country on their profile.
+- [x] 83. A signed-in customer who picked a saved address keeps that saved address on the order after a failed payment and a retry.
+- [x] 84. A guest using a saved customer's email keeps the address they typed after a failed payment and a retry; the saved customer's street and phone never reach the order.

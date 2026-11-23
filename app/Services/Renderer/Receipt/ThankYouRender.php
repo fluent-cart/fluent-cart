@@ -464,7 +464,7 @@ class ThankYouRender
 
             <div style="max-width: 620px; margin: 15px auto 0; font-family: Arial, Helvetica, sans-serif;">
                 <div style="font-size: 14px; color: var(--fct-primary-text-color, currentColor); padding: 12px 0; border-top: 1px solid var(--fct-divider-color, #e7eaee);">
-                    <?php echo wp_kses_post(ShortcodeTemplateBuilder::make($thankYouPageInstructions, ['order' => $order])); ?>
+                    <?php echo wp_kses_post(ShortcodeTemplateBuilder::makeHtml($thankYouPageInstructions, ['order' => $order])); ?>
                 </div>
             </div>
         <?php endif;

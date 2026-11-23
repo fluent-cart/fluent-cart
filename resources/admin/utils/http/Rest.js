@@ -16,9 +16,113 @@ function recursiveFlatten(obj, prefix = '') {
     return newObj;
 }
 
+// Params that change how WordPress REST handles a request. A GET with ?_method=DELETE runs as a DELETE.
+const OVERRIDE_PARAMS = ['_method', '_jsonp', '_envelope'];
+
+const parsedBases = {};
+
+function parseBase(raw) {
+    if (!parsedBases[raw]) {
+        const url = new URL(raw, window.location?.href);
+        const route = url.searchParams.get('rest_route'); // set on sites with plain permalinks
+        parsedBases[raw] = {
+            origin: url.origin,
+            pathname: url.pathname,
+            plain: route !== null,
+            prefix: (route !== null ? route : url.pathname).replace(/\/$/, '') + '/'
+        };
+    }
+
+    return parsedBases[raw];
+}
+
+// PHP: stop at NUL and drop leading spaces. A "[" with a matching "]" after it starts an array
+// (the name is what comes before it). Otherwise every " ", "." and "[" becomes "_".
+function phpParamName(key) {
+    const name = key.split('\0')[0].replace(/^ +/, '');
+    const open = name.indexOf('[');
+    if (open !== -1 && name.indexOf(']', open) !== -1) {
+        return name.slice(0, open).replace(/[ .]/g, '_');
+    }
+    return name.replace(/[ .[]/g, '_');
+}
+
+/**
+ * Route params come from the page URL, so a crafted link reaches this helper.
+ * A safe URL stays inside the REST base and has no param that changes the method or the route.
+ */
+export function isSafeRestUrl(fullUrl, baseUrl = window.fluentCartRestVars.rest.url) {
+    // "#" cuts off the rest of the URL, browsers and servers read "\" differently,
+    // the URL parser strips tabs and newlines (".\t." becomes ".."), and PHP can be set to split
+    // query params on ";" as well as "&", which URLSearchParams does not do. Data values are
+    // encoded, so a legitimate URL holds none of these.
+    if (/[#\\;\u0000-\u001F\u007F]/.test(fullUrl)) {
+        return false;
+    }
+
+    // The route as written: new URL() resolves "." and ".." before pathname is read, so check it here.
+    // An encoded slash or backslash leaves its segment once the server decodes it.
+    if (!fullUrl.startsWith(baseUrl)) {
+        return false;
+    }
+    const base = parseBase(baseUrl);
+    const rest = fullUrl.slice(baseUrl.length);
+
+    // PHP splits the query on every character of arg_separator.input (sent as query_separators);
+    // URLSearchParams splits only on "&". On plain permalinks the route itself is in the query.
+    const query = base.plain ? rest : rest.split('?').slice(1).join('?');
+    for (const separator of String(window.fluentCartRestVars?.rest?.query_separators || '')) {
+        if (separator !== '&' && query.includes(separator)) {
+            return false;
+        }
+    }
+
+    // On pretty permalinks "&" is part of the path; on plain ones the route ends at the next query param
+    const routePath = rest.split(base.plain ? '&' : '?')[0];
+    let decodedPath;
+    try {
+        decodedPath = decodeURIComponent(routePath);
+    } catch (e) {
+        return false;
+    }
+    if (/%2f|%5c/i.test(routePath) || decodedPath.split('/').some(part => part === '.' || part === '..')) {
+        return false;
+    }
+
+    const url = new URL(fullUrl, window.location?.href);
+
+    let routeParams = 0;
+    for (const key of url.searchParams.keys()) {
+        // how PHP names the key: see phpParamName()
+        const name = phpParamName(key);
+        if (OVERRIDE_PARAMS.includes(name)) {
+            return false;
+        }
+        if (name === 'rest_route') {
+            routeParams++;
+        }
+    }
+
+    const path = (base.plain ? url.searchParams.get('rest_route') : url.pathname) || '';
+
+    return url.origin === base.origin
+        && routeParams === (base.plain ? 1 : 0)
+        && (!base.plain || url.pathname === base.pathname)
+        && path.startsWith(base.prefix)
+        && !path.split('/').some(part => part === '.' || part === '..');
+}
+
+// A fixed message: error notices render HTML, so the route (from the page URL) must not appear in it.
+// Same shape as every other failure here ({data, status_code}), so notices read error.data.message.
+const invalidRoute = () => ({
+    data: {message: 'Invalid REST route.', code: 'fcart_invalid_rest_route'},
+    status_code: 0
+});
+
 const request = function (baseURL = null, method, route, data = {}, options = {}) {
     const cleanRoute = route.startsWith('/') ? route.slice(1) : route;
-    const baseUrl = `${baseURL ? baseURL : window.fluentCartRestVars.rest.url}/${cleanRoute}`;
+    const restBase = baseURL ? baseURL : window.fluentCartRestVars.rest.url;
+    const baseUrl = `${restBase}/${cleanRoute}`;
 
     const headers = {
         'X-WP-Nonce': window.fluentCartRestVars.rest.nonce
@@ -32,7 +136,6 @@ const request = function (baseURL = null, method, route, data = {}, options = {}
     data.query_timestamp = Date.now();
 
     return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
         const signal = options.signal;
 
         let url = baseUrl;
@@ -65,6 +168,12 @@ const request = function (baseURL = null, method, route, data = {}, options = {}
             }
         }
 
+        if (!isSafeRestUrl(url, restBase)) {
+            reject(invalidRoute());
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
         Object.keys(headers).forEach(key => {
             xhr.setRequestHeader(key, headers[key]);
@@ -146,6 +255,9 @@ export default {
     },
     upload(route, data = {}) {
         const url = `${window.fluentCartRestVars.rest.url}/${route}`;
+        if (!isSafeRestUrl(url)) {
+            return Promise.reject(invalidRoute());
+        }
         const headers = {'X-WP-Nonce': window.fluentCartRestVars.rest.nonce};
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();

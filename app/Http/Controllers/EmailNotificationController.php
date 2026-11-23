@@ -177,7 +177,7 @@ class EmailNotificationController extends Controller
         ]);
 
         // Resolve shortcodes (e.g., {{ settings.store_brand }}, {{order.created_at}})
-        $view = ShortcodeTemplateBuilder::make($view, $data);
+        $view = ShortcodeTemplateBuilder::makeHtml($view, $data);
 
         // Disable all links/buttons in the preview so they are not clickable
         $view .= '<style>a, button, [role="button"] { pointer-events: none !important; cursor: default !important; }</style>';

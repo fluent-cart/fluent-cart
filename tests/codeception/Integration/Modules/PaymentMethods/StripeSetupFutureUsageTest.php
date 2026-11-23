@@ -66,7 +66,8 @@ class StripeSetupFutureUsageTest extends WPTestCase
             $this->assertSame( $expectedUsage, $result['json']['intent']['setup_future_usage'] ?? null, 'Elements must match the intent usage regardless of optional card-saving consent.' );
             if ( $expectedMode === 'setup' ) {
                 $this->assertArrayNotHasKey( 'amount', $result['json']['intent'], 'Setup mode must not contain a payment amount.' );
-                $this->assertTrue( $result['json']['consent_required'], 'The free trial must still require automatic-renewal consent.' );
+                $this->assertFalse( $result['json']['consent_required'], 'The free trial shows the renewal disclosure without a consent checkbox.' );
+                $this->assertNotEmpty( $result['json']['system_consent'], 'The free trial must still show the automatic-renewal disclosure.' );
             }
         } finally {
             remove_filter( 'fluent_cart/stripe_settings', $stripeSettings );

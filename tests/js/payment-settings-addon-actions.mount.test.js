@@ -113,9 +113,7 @@ describe('Payment Settings add-on actions', () => {
         const root = await mountPage();
 
         await click(rowButton(rows(root)[1]));
-        expect(post).toHaveBeenCalledWith('settings/payment-methods/install-addon', {
-            plugin_slug: 'paystack', source_type: 'cdn', source_link: 'https://addons-cdn.fluentcart.com/paystack.zip',
-        });
+        expect(post).toHaveBeenCalledWith('settings/payment-methods/install-addon', {plugin_slug: 'paystack'});
         expect(window.history.replaceState).toHaveBeenCalledWith(null, '', '#/settings/payments/paystack');
         expect(window.location.reload).toHaveBeenCalled();
     });

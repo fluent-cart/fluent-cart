@@ -95,6 +95,7 @@ return array(
     'FluentCart\\App\\Events\\Subscription\\SubscriptionCanceled' => $baseDir . '/app/Events/Subscription/SubscriptionCanceled.php',
     'FluentCart\\App\\Events\\Subscription\\SubscriptionEOT' => $baseDir . '/app/Events/Subscription/SubscriptionEOT.php',
     'FluentCart\\App\\Events\\Subscription\\SubscriptionPaused' => $baseDir . '/app/Events/Subscription/SubscriptionPaused.php',
+    'FluentCart\\App\\Events\\Subscription\\SubscriptionPaymentMethodChanged' => $baseDir . '/app/Events/Subscription/SubscriptionPaymentMethodChanged.php',
     'FluentCart\\App\\Events\\Subscription\\SubscriptionPeriodSkipped' => $baseDir . '/app/Events/Subscription/SubscriptionPeriodSkipped.php',
     'FluentCart\\App\\Events\\Subscription\\SubscriptionReactivated' => $baseDir . '/app/Events/Subscription/SubscriptionReactivated.php',
     'FluentCart\\App\\Events\\Subscription\\SubscriptionRenewalFailed' => $baseDir . '/app/Events/Subscription/SubscriptionRenewalFailed.php',

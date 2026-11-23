@@ -2,10 +2,11 @@ import apiFetch from "@wordpress/api-fetch";
 import {addQueryArgs} from "@wordpress/url";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import InspectorSettings from "@/BlockEditor/WriteAReviewButton/Components/InspectorSettings";
-import {useHiddenByReviewContainer, useInsideProductReviews} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
+import {productLoadFailure, useHiddenByReviewContainer, useInsideProductReviews} from "@/BlockEditor/ProductReviews/Components/reviewBlockShared";
 import SingleProductOnlyNotice from "@/BlockEditor/ProductReviews/Components/SingleProductOnlyNotice";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import {WriteAReviewButton, AddReview} from "@/BlockEditor/Icons";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -84,11 +85,12 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
         // overwrite the preview for the current selection.
         const fetchSelectedProduct = (isStale) => {
             if (!rest.url) {
+                setSelectedProduct({loadError: true});
                 return;
             }
 
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + attributes.product_id, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(attributes.product_id), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']
@@ -98,11 +100,11 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
                 }
             }).then((response) => {
                 if (!isStale()) {
-                    setSelectedProduct(response.product || {});
+                    setSelectedProduct(response.product || {missing: true});
                 }
-            }).catch(() => {
+            }).catch((error) => {
                 if (!isStale()) {
-                    setSelectedProduct({});
+                    setSelectedProduct(productLoadFailure(error));
                 }
             });
         };

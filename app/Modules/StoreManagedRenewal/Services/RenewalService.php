@@ -907,6 +907,113 @@ class RenewalService
     }
 
     /**
+     * End access for cancelled store-billed subscriptions whose paid time is over.
+     * Mirrors the cancelled branch of Subscription::checkAndExpireSubscriptions(),
+     * which covers gateway-billed ones: status stays canceled, next_billing_date
+     * is cleared, validity_expired_at is set and SubscriptionValidityExpired fires.
+     * Unlike the sweep, an old validity_expired_at does not skip the row: an admin
+     * edit can extend a store-billed subscription without clearing it.
+     *
+     * @param int $batchSize Rows read per query
+     * @return array{expired: int, errors: array}
+     */
+    public static function expireCanceledSubscriptions(int $batchSize = 50): array
+    {
+        $results = [
+            'expired' => 0,
+            'errors'  => []
+        ];
+
+        if (!self::hasStoreManagedSubscriptions()) {
+            return $results;
+        }
+
+        global $wpdb;
+        $lastId = 0;
+
+        do {
+            $currentTime = time();
+            $now = gmdate('Y-m-d H:i:s', $currentTime);
+
+            $subscriptions = Subscription::query()
+                ->inStoreMode()
+                ->whereIn('collection_method', ['manual', 'system'])
+                ->where('status', Status::SUBSCRIPTION_CANCELED)
+                ->whereNotNull('next_billing_date')
+                ->where('next_billing_date', '>', '0000-00-00 00:00:00')
+                ->where('next_billing_date', '<', $now)
+                ->where('id', '>', $lastId)
+                ->orderBy('id', 'ASC')
+                ->limit($batchSize)
+                ->get();
+
+            if ($subscriptions->isEmpty()) {
+                break;
+            }
+
+            foreach ($subscriptions as $subscription) {
+                try {
+                    if (Arr::get($subscription->config ?: [], 'upgraded_to_sub_id') !== null) {
+                        continue;
+                    }
+
+                    // Date clear and expiry record land together, or neither does.
+                    $wpdb->query('START TRANSACTION');
+                    try {
+                        $updated = Subscription::query()
+                            ->where('id', $subscription->id)
+                            ->where('status', Status::SUBSCRIPTION_CANCELED)
+                            ->where('next_billing_date', '<', $now)
+                            ->update([
+                                'next_billing_date' => null,
+                                'updated_at'        => $now,
+                            ]);
+
+                        if ($updated) {
+                            $subscription->updateMeta('validity_expired_at', $now);
+                        }
+
+                        $wpdb->query('COMMIT');
+                    } catch (\Throwable $e) {
+                        $wpdb->query('ROLLBACK');
+                        throw $e;
+                    }
+
+                    if (!$updated) {
+                        continue;
+                    }
+
+                    $subscription = Subscription::query()
+                        ->with(['order', 'customer'])
+                        ->find($subscription->id);
+
+                    (new \FluentCart\App\Events\Subscription\SubscriptionValidityExpired(
+                        $subscription,
+                        $subscription->order,
+                        $subscription->customer
+                    ))->dispatch();
+
+                    $results['expired']++;
+                } catch (\Throwable $e) {
+                    $results['errors'][] = [
+                        'subscription_id' => $subscription->id,
+                        'error'           => $e->getMessage()
+                    ];
+
+                    fluent_cart_error_log(
+                        'Cancelled subscription expiry failed for subscription: ' . $subscription->id,
+                        $e->getMessage()
+                    );
+                }
+            }
+
+            $lastId = $subscriptions->last()->id;
+        } while (true);
+
+        return $results;
+    }
+
+    /**
      * Advance next_billing_date one (or more, if overdue) whole intervals ahead,
      * keeping day-of-cycle alignment. Pure — no persistence, no side effects.
      *

@@ -27,7 +27,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
             },
             {
                 name: 'view_shipping_zone',
-                path: 'shipping/zone/:zone_id/edit',
+                path: 'shipping/zone/:zone_id(\\d+)/edit',
                 component: SingleShippingZone,
                 props: true,
                 meta: {
@@ -58,7 +58,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
             },
             {
                 name: 'view_shipping_class',
-                path: 'shipping/shipping_classes/:class_id/edit',
+                path: 'shipping/shipping_classes/:class_id(\\d+)/edit',
                 component: SingleShippingClass,
                 props: true,
                 meta: {
@@ -102,7 +102,7 @@ window.fluent_cart_admin.hooks.addFilter('fluent_cart_routes', 'fluent_shipping'
             },
             {
                 name: 'carrier_settings',
-                path: 'shipping/carriers/:slug',
+                path: 'shipping/carriers/:slug(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',
                 component: SingleCarrier,
                 meta: {
                     active_menu: 'shipping',

@@ -131,7 +131,7 @@ describe('Payment method settings page while the add-on is missing', () => {
             await mount(Renderer, {fields: [], settings: {}, routeName: 'flutterwave'});
             listeners.click(addonButtonClick('fct-install-addon-btn', {
                 'data-addon-slug': 'flutterwave-for-fluent-cart', 'data-addon-file': 'flutterwave/flutterwave.php',
-                'data-source-type': 'cdn', 'data-source-link': 'https://addons-cdn.fluentcart.com/flutterwave.zip', 'data-repo-link': 'https://fluentcart.com/addons',
+                'data-repo-link': 'https://fluentcart.com/addons',
             }));
             await flush();
         });

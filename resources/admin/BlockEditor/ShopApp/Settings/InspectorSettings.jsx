@@ -1,40 +1,54 @@
 import PaginatorSettings from "@/BlockEditor/ShopApp/Settings/PaginatorSettings";
 import FilterSettings from "./FilterSettings";
-import DefaultData from "@/BlockEditor/ShopApp/Data/Data";
-import {log10} from "chart.js/helpers";
 import BlockEditorControl from "@/BlockEditor/Components/BlockEditorControl";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
 import CustomSelect from "@/BlockEditor/Components/CustomSelect";
+import SegmentedToggle from "@/BlockEditor/Components/SegmentedToggle";
+import RangeField from "@/BlockEditor/Components/RangeField";
 
 const {InspectorControls} = wp.blockEditor
 
 const {
     TextControl,
-    Card,
-    CardHeader,
-    CardBody,
     ToggleControl,
-    Button,
-    Tooltip,
-    __experimentalRadio: Radio,
-    __experimentalRadioGroup: RadioGroup,
-    RangeControl
+    SelectControl
 } = wp.components
+
+// 0 leaves the block's own default; 1 to 6 are the sizes the server accepts
+// (ShopAppHandler::handelGridSizes). Raise GRID_SIZE_MAX only with that limit.
+const GRID_SIZE_MAX = 6;
+const GRID_SIZE_CHOICES = Array.from({length: GRID_SIZE_MAX + 1}, (unused, size) => size);
 
 const InspectorSettings = (props) => {
     const {attributes, setAttributes, blockEditorData, hideViewMode = false} = props;
 
-    const setSearchGridSize = (size) => {
-        setAttributes({search_grid_size: size});
-    };
+    const defaultFilters = attributes.default_filters || {};
+    const taxonomies = window.fluent_cart_shop_app_block_editor_data?.taxonomies || {};
+    // Saves a copy with the change, never the saved object edited in place.
+    const setDefaultFilters = (change) => setAttributes({default_filters: {...defaultFilters, ...change}});
 
-    const setProductGridSize = (size) => {
-        setAttributes({product_grid_size: size});
-    };
+    // How many of the layout's columns the filter or the products take: a slider, Default at 0.
+    const gridSpanField = (label, attribute) => (
+        <RangeField
+            label={label}
+            value={Number(attributes[attribute]) || 0}
+            min={0}
+            max={GRID_SIZE_MAX}
+            zeroLabel={blocktranslate('Default')}
+            onChange={(size) => setAttributes({[attribute]: size})}
+        />
+    );
 
-    const setBoxGridSize = (size) => {
-        setAttributes({product_box_grid_size: size});
-    };
+    // A grid size toggle: Default for 0, then 1 to 6. A missing value counts as the default.
+    const gridSizeToggle = (label, attribute, help) => (
+        <SegmentedToggle
+            label={label}
+            help={help}
+            options={GRID_SIZE_CHOICES.map((size) => ({value: size, label: size === 0 ? blocktranslate('Default') : String(size)}))}
+            value={Number(attributes[attribute]) || 0}
+            onChange={(size) => setAttributes({[attribute]: size})}
+        />
+    );
 
     return (
 
@@ -48,115 +62,43 @@ const InspectorSettings = (props) => {
                     />
 
                     <BlockEditorControl title={blocktranslate('Product Grid Option')}>
-                        {!hideViewMode && (
-                            <div className="fct-block-editor-control-item">
-                                <div className="fct-inspector-control-row">
-                                    <span className="label">{blocktranslate('View Mode')}</span>
-                                    <div className="actions">
-                                        <CustomSelect
-                                            customKeys={{
-                                                key: 'value',
-                                                label: 'label'
-                                            }}
-                                            defaultValue={attributes.view_mode}
-                                            options={[
-                                                // {label: blocktranslate('Default'), value: 'default'},
-                                                {label: blocktranslate('Grid'), value: 'grid'},
-                                                {label: blocktranslate('List'), value: 'list'},
-                                            ]}
-                                            onChange={function (value) {
-                                                // if (typeof value === "object") {
-                                                //     setAttributes({view_mode: value});
-                                                // } else {
-                                                //     // setAttributes({view_mode: 'default'});
-                                                // }
-                                                setAttributes({view_mode: value});
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <div className="fct-sidebar-stack">
+                            {!hideViewMode && (
+                                <SegmentedToggle
+                                    label={blocktranslate('View Mode')}
+                                    options={[
+                                        {value: 'grid', label: blocktranslate('Grid')},
+                                        {value: 'list', label: blocktranslate('List')},
+                                    ]}
+                                    value={attributes.view_mode}
+                                    onChange={(viewMode) => setAttributes({view_mode: viewMode})}
+                                />
+                            )}
 
-                        <div className="fct-block-editor-control-item">
-                            <div className="fct-inspector-control-row">
-                                <span className="label">{blocktranslate('Price Format')}</span>
-                                <div className="actions">
-                                    <CustomSelect
-                                        customKeys={{
-                                            key: 'value',
-                                            label: 'label'
-                                        }}
-                                        defaultValue={attributes.price_format}
-                                        options={[
-                                            // {label: blocktranslate('Default'), value: 'default'},
-                                            {label: blocktranslate('Starts From'), value: 'starts_from'},
-                                            {label: blocktranslate('Range'), value: 'range'},
-                                        ]}
-                                        onChange={function (value) {
-                                            // if (typeof value === "object") {
-                                            //
-                                            //     setAttributes({price_format: value});
-                                            // } else {
-                                            //     // setAttributes({view_mode: 'default'});
-                                            //     setAttributes({price_format: 'starts_from'});
-                                            // }
-                                            setAttributes({price_format: value});
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                            <SelectControl
+                                label={blocktranslate('Price Format')}
+                                labelPosition="top"
+                                className="fct-sidebar-select"
+                                value={attributes.price_format}
+                                options={[
+                                    {label: blocktranslate('Starts from'), value: 'starts_from'},
+                                    {label: blocktranslate('Range'), value: 'range'},
+                                ]}
+                                onChange={(priceFormat) => setAttributes({price_format: priceFormat})}
+                                __nextHasNoMarginBottom
+                                __next40pxDefaultSize
+                            />
+
+                            {gridSizeToggle(
+                                blocktranslate("Product Per Row"),
+                                'product_box_grid_size',
+                                blocktranslate("Layout cards show fewer per row where each would be under 220px wide.")
+                            )}
+
+                            {attributes.enable_filter && gridSpanField(blocktranslate("Search Grid Size"), 'search_grid_size')}
+
+                            {attributes.enable_filter && gridSpanField(blocktranslate("Product Grid Size"), 'product_grid_size')}
                         </div>
-
-                        <div className="fct-block-editor-control-item">
-                            <div className="fct-inspector-control-row">
-                                <span className="label">{blocktranslate("Product Per Row")}</span>
-                                <div className="actions">
-                                    <RangeControl
-                                        value={attributes.product_box_grid_size}
-                                        onChange={setBoxGridSize}
-                                        min={0}
-                                        max={5}
-                                        help={blocktranslate("Layout cards show fewer per row where each would be under 220px wide.")}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {
-                            attributes.enable_filter &&
-                            <div className="fct-block-editor-control-item">
-                                <div className="fct-inspector-control-row">
-                                    <span className="label">{blocktranslate("Search Grid Size")}</span>
-                                    <div className="actions">
-                                        <RangeControl
-                                            value={attributes.search_grid_size}
-                                            onChange={setSearchGridSize}
-                                            min={0}
-                                            max={5}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
-                        {
-                            attributes.enable_filter &&
-                            <div className="fct-block-editor-control-item">
-                                <div className="fct-inspector-control-row">
-                                    <span className="label">{blocktranslate("Product Grid Size")}</span>
-                                    <div className="actions">
-                                        <RangeControl
-                                            value={attributes.product_grid_size}
-                                            onChange={setProductGridSize}
-                                            min={0}
-                                            max={5}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        }
-
                     </BlockEditorControl>
 
                     <FilterSettings
@@ -166,104 +108,48 @@ const InspectorSettings = (props) => {
                     />
 
                     <BlockEditorControl title={blocktranslate('Default Filter')}>
-                        <div>
-                            <div className="fct-block-editor-control-item">
-                                <div className="fct-inspector-control-row">
-                                    <span className="label">{blocktranslate("Enable Filtering")}</span>
-                                    <div className="actions">
-                                        <ToggleControl
-                                            checked={attributes.default_filters.enabled}
-                                            onChange={(checked) => {
-                                                let default_filters = attributes.default_filters;
-                                                default_filters.enabled = checked;
-                                                setAttributes({
-                                                    default_filters: {...default_filters}
-                                                });
-                                            }}
-                                        />
-                                    </div>
+                        <div className="fct-sidebar-stack">
+                            <ToggleControl
+                                label={blocktranslate('Enable Filtering')}
+                                checked={!!defaultFilters.enabled}
+                                onChange={(checked) => setDefaultFilters({enabled: checked})}
+                                __nextHasNoMarginBottom
+                            />
+
+                            {defaultFilters.enabled && (
+                                <div className="fct-sidebar-nested">
+                                    <ToggleControl
+                                        label={blocktranslate('Allow Out Of Stock')}
+                                        checked={!!defaultFilters.allow_out_of_stock}
+                                        onChange={(checked) => setDefaultFilters({allow_out_of_stock: checked})}
+                                        __nextHasNoMarginBottom
+                                    />
+
+                                    <TextControl
+                                        label={blocktranslate('Search')}
+                                        labelPosition="top"
+                                        className="fct-sidebar-field"
+                                        value={defaultFilters.wildcard || ''}
+                                        onChange={(value) => setDefaultFilters({wildcard: value})}
+                                        __nextHasNoMarginBottom
+                                        __next40pxDefaultSize
+                                    />
+
+                                    {Object.keys(taxonomies).map((key) => (
+                                        <div className="fct-sidebar-field" key={key}>
+                                            <span className="fct-sidebar-label">{taxonomies[key].label}</span>
+                                            <CustomSelect
+                                                placeholder={blocktranslate('Select')}
+                                                isMulti={true}
+                                                customKeys={{key: 'value', label: 'label'}}
+                                                defaultValue={defaultFilters[key]}
+                                                options={taxonomies[key].terms}
+                                                onChange={(selectedFilters) => setDefaultFilters({[key]: selectedFilters})}
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
-
-                            {
-
-                                attributes.default_filters.enabled && <>
-                                    <div className="fct-block-editor-control-item">
-                                        <div className="fct-inspector-control-row">
-                                            <span className="label">{blocktranslate("Allow Out Of Stock")}</span>
-                                            <div className="actions">
-                                                <ToggleControl
-                                                    checked={attributes.default_filters.allow_out_of_stock}
-                                                    onChange={(checked) => {
-                                                        let default_filters = attributes.default_filters;
-                                                        default_filters.allow_out_of_stock = checked
-                                                        setAttributes({default_filters: {...default_filters}});
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="fct-block-editor-control-item">
-                                        <div className="fct-inspector-control-row">
-                                            <span className="label">{blocktranslate("Search")}</span>
-                                            <div className="actions">
-                                                <TextControl
-                                                    value={attributes.default_filters.wildcard}
-                                                    onChange={(value) => {
-                                                        let filters = attributes.default_filters;
-                                                        filters.wildcard = value
-                                                        setAttributes({default_filters: {...filters}});
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {
-                                        Object.keys(window.fluent_cart_shop_app_block_editor_data.taxonomies).map((key, index) => {
-                                            let filter = window.fluent_cart_shop_app_block_editor_data.taxonomies[key];
-                                            return <div className="fct-block-editor-control-item" key={index}>
-                                                <div className="fct-inspector-control-row">
-                                                    <span className="label">{filter.label}</span>
-                                                    <div className="actions">
-                                                        <CustomSelect
-                                                            placeholder={blocktranslate("Select")}
-                                                            isMulti={true}
-                                                            customKeys={{
-                                                                key: 'value',
-                                                                label: 'label'
-                                                            }}
-                                                            defaultValue={attributes.default_filters[key]}
-                                                            options={filter.terms}
-                                                            onChange={function (selectedFilters) {
-                                                                let data = [];
-                                                                // if (selectedFilters.length > 0) {
-                                                                //     for (filter of selectedFilters) {
-                                                                //         if (filter.hasOwnProperty('key')) {
-                                                                //             data.push(filter.key);
-                                                                //         } else if (filter.hasOwnProperty('value')) {
-                                                                //             data.push(filter.value);
-                                                                //         }
-                                                                //     }
-                                                                // }
-
-                                                                let filters = { ...attributes.default_filters };
-                                                                filters[key] = selectedFilters;
-                                                                setAttributes({
-                                                                    default_filters: filters
-                                                                });
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                            </div>
-                                        })
-                                    }
-
-                                </>
-                            }
+                            )}
                         </div>
                     </BlockEditorControl>
                 </div>

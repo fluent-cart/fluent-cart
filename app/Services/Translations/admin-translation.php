@@ -143,7 +143,7 @@ return [
     /* translators: %1$s - item price, %2$s - interval, %3$s - repeat interval, %4$s - occurrence, %5$s - time */
     '%1$s%2$s, billed %3$s for %4$s %5$s' => __('%1$s%2$s, billed %3$s for %4$s %5$s', 'fluent-cart'),
     /* translators: %1$s - item price, %2$s - interval, %3$s - repeat interval */
-    '%1$s%2$s, billed %3$s until cancel' => __('%1$s%2$s, billed %3$s until cancel', 'fluent-cart'),
+    '%1$s%2$s, billed %3$s until canceled' => __('%1$s%2$s, billed %3$s until canceled', 'fluent-cart'),
     /* translators: %1$s - retention percent, %2$s - cohorts that reached this year, %3$s - all monthly cohorts of the row */
     '%1$s, from the %2$s of %3$s monthly cohorts that have reached this point' => __('%1$s, from the %2$s of %3$s monthly cohorts that have reached this point', 'fluent-cart'),
     /* translators: %1$s: field label, %2$s: field hint */
@@ -1673,7 +1673,6 @@ return [
     'Fluent PDF Required' => __('Fluent PDF Required', 'fluent-cart'),
     'Fluent PDF is required.' => __('Fluent PDF is required.', 'fluent-cart'),
     'Fluent plugins on this URL' => __('Fluent plugins on this URL', 'fluent-cart'),
-    'FluentCart is switched off in the FluentHub MCP server.' => __('FluentCart is switched off in the FluentHub MCP server.', 'fluent-cart'),
     'FluentCart will send admin notification to this email address.' => __('FluentCart will send admin notification to this email address.', 'fluent-cart'),
     'FluentHub is active' => __('FluentHub is active', 'fluent-cart'),
     'FluentHub is required' => __('FluentHub is required', 'fluent-cart'),
@@ -4010,7 +4009,7 @@ return [
     'Unshipped' => __('Unshipped', 'fluent-cart'),
     /* translators: %1$s: end date */
     'Until %1$s' => __('Until %1$s', 'fluent-cart'),
-    'Until Cancel' => __('Until Cancel', 'fluent-cart'),
+    'Until Canceled' => __('Until Canceled', 'fluent-cart'),
     'Untitled Media' => __('Untitled Media', 'fluent-cart'),
     'Untitled option' => __('Untitled option', 'fluent-cart'),
     'Untitled product' => __('Untitled product', 'fluent-cart'),

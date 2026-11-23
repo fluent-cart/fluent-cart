@@ -6,6 +6,7 @@ import {addQueryArgs} from "@wordpress/url";
 import InspectorSettings from "@/BlockEditor/ProductGallery/Components/InspectorSettings";
 import {useSingleProductData} from "@/BlockEditor/ShopApp/Context/SingleProductContext";
 import ProductGalleryPreview from "./ProductGallery.png";
+import safeProductId from '../Components/safeProductId.js';
 
 const {useBlockProps} = wp.blockEditor;
 const {registerBlockType} = wp.blocks;
@@ -108,7 +109,7 @@ registerBlockType(blockEditorData.slug + '/' + blockEditorData.name, {
             }
 
             apiFetch({
-                path: addQueryArgs(rest.url + '/products/' + productId, {
+                path: addQueryArgs(rest.url + '/products/' + safeProductId(productId), {
                     // Screen key, not a relation name — ProductController::allowedWiths()
                     // owns what it resolves to (detail + variants).
                     with: ['block_product_detail']

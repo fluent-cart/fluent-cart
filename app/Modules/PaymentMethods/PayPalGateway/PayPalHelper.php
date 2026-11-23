@@ -187,7 +187,7 @@ class PayPalHelper
 
         $reason = Arr::get($args, 'reason', '');
         if ($reason) {
-            $refundData['note_to_payer'] = substr($reason, 0, 255);
+            $refundData['note_to_payer'] = mb_substr($reason, 0, 255, 'UTF-8');
         }
 
         $vendorRefund = (new API())->makeRequest('payments/captures/' . $chargeId . '/refund', 'v2', 'POST', $refundData);
@@ -201,6 +201,17 @@ class PayPalHelper
         }
 
         return Arr::get($vendorRefund, 'id');
+    }
+
+    // PayPal field limits count characters; a byte cut can split one and make json_encode() fail.
+    public static function limitText($text, $max)
+    {
+        $text = (string) $text;
+        if (mb_strlen($text, 'UTF-8') <= $max) {
+            return $text;
+        }
+
+        return mb_substr($text, 0, $max - 3, 'UTF-8') . '...';
     }
 
     private static function getRemoteProductByData($productData = [])
@@ -230,15 +241,8 @@ class PayPalHelper
             $formattedData['type'] = 'DIGITAL'; // Default to PHYSICAL if type is not valid
         }
 
-        // name should be under 127 characters, add '...' if it is more than 127 characters
-        if ($formattedData['name'] && strlen($formattedData['name']) > 127) {
-            $formattedData['name'] = substr($formattedData['name'], 0, 120) . '...';
-        }
-
-        // description should be under 256 characters, add '...' if it is more than 256 characters
-        if ($formattedData['description'] && strlen($formattedData['description']) > 256) {
-            $formattedData['description'] = substr($formattedData['description'], 0, 250) . '...';
-        }
+        $formattedData['name'] = self::limitText($formattedData['name'], 127);
+        $formattedData['description'] = self::limitText($formattedData['description'], 256);
 
         $formattedData = array_filter($formattedData);
 
@@ -316,8 +320,8 @@ class PayPalHelper
         ]);
 
         // Base plan structure
-        $plan_name = $data['plan_name'];
-        $plan_description = $data['plan_description'];
+        $plan_name = self::limitText($data['plan_name'], 127);
+        $plan_description = self::limitText($data['plan_description'], 127);
 
         $paypal_plan = [
             'product_id'          => $data['product_id'],

@@ -201,27 +201,27 @@ class SmartCodeParser
      * @return string
      * @throws BindingResolutionException
      */
-    public function parseTemplate(string $template, array $data): string
+    public function parseTemplate(string $template, array $data, bool $isHtml = false): string
     {
         // An order's amounts render in its own currency (multi-currency)
-        return CurrencyContext::withCurrencyOf($data, function () use ($template, $data) {
+        return CurrencyContext::withCurrencyOf($data, function () use ($template, $data, $isHtml) {
+            if ($isHtml) {
+                return $this->parseHtmlTemplate($template, $data);
+            }
             return $this->parseOrderTemplate($template, $data);
         });
     }
 
-    private function parseOrderTemplate(string $template, array $data): string
+    private function parseOrderTemplate(string $template, array $data, ?callable $wrapValue = null): string
     {
         $templateParts = $this->getTemplateWrapper();
-
 
         $start = preg_quote($templateParts['start'], '/');
         $end = preg_quote($templateParts['end'], '/');
 
         $pattern = '/(' . $start . '|##)+(.*?)(' . $end . '|##)/';
-//        $pattern = '/(' . $start . '|##)((?:[^' . $end[0] . '#]|(?R))*)(' . $end . '|##)/';
 
-
-        return preg_replace_callback($pattern, function ($matches) use ($data) {
+        return preg_replace_callback($pattern, function ($matches) use ($data, $wrapValue) {
             if (empty($matches[2])) {
                 return apply_filters($this->hookPrefix . 'smartcode_fallback', $matches[0], $data);
             }
@@ -232,9 +232,149 @@ class SmartCodeParser
                 return $matches[0];
             }
 
-            return $transformed;
+            return $wrapValue ? $wrapValue((string)$transformed) : $transformed;
 
         }, $template);
+    }
+
+    /**
+     * Parse SmartCodes in HTML, escaping each value for its position.
+     *
+     * Buyer fields keep a bare `"` (sanitize_text_field), so a raw value inside an
+     * attribute could close it and add an event handler. Text positions stay raw.
+     */
+    private function parseHtmlTemplate(string $template, array $data): string
+    {
+        // Random per call, so a buyer value cannot forge a marker.
+        $marker = 'fctsc' . bin2hex(random_bytes(8));
+        $markerPattern = '/' . $marker . '(\d+)e/';
+        $values = [];
+
+        $marked = $this->parseOrderTemplate($template, $data, function ($value) use ($marker, &$values) {
+            $values[] = $value;
+            return $marker . (count($values) - 1) . 'e';
+        });
+
+        if (!$values) {
+            return $marked;
+        }
+
+        // The HTML API tokenizes for real; a regex split ends a tag at a quoted `>`.
+        $processor = new \WP_HTML_Tag_Processor($marked);
+        $urls = [];
+        while ($processor->next_tag()) {
+            foreach ((array)$processor->get_attribute_names_with_prefix('') as $name) {
+                $this->fillAttribute($processor, $name, $marker, $markerPattern, $values, $urls);
+            }
+        }
+
+        // URL attributes hold a fragment token, which esc_url() keeps; the real URL goes in only now.
+        $html = $processor->get_updated_html();
+        foreach ($urls as $index => $url) {
+            $html = str_replace('="#' . $marker . 'u' . $index . '"', '="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"', $html);
+        }
+        $textMarkers = $this->markersInText($html, $markerPattern);
+
+        $html = preg_replace_callback($markerPattern, function ($matches) use ($values, $textMarkers) {
+            // Not in text, so still inside a tag (e.g. a duplicate attribute the API never exposes).
+            if (!isset($textMarkers[$matches[0]])) {
+                return '';
+            }
+            return $this->neutralizeSmartCodes($values[$matches[1]]);
+        }, $html);
+
+        // set_attribute() would encode the entity's `&`, so attributes carry a marker until now.
+        return str_replace([$marker . 'o', $marker . 'h'], ['&#123;&#123;', '&#35;&#35;'], $html);
+    }
+
+    /**
+     * Encode SmartCode openers in a value. Pro loop blocks parse a value, then the
+     * mailer parses the body again; a buyer's `{{...}}` must stay literal text.
+     */
+    private function neutralizeSmartCodes(string $value): string
+    {
+        return str_replace(['{{', '##'], ['&#123;&#123;', '&#35;&#35;'], $value);
+    }
+
+    /**
+     * Markers in text, comments or RCDATA, keyed by marker text. The HTML API
+     * tokenizes as browsers do, so `<!-->` and `<textarea>` content are handled.
+     */
+    private function markersInText(string $html, string $markerPattern): array
+    {
+        $found = [];
+        $scan = new \WP_HTML_Tag_Processor($html);
+        while ($scan->next_token()) {
+            if (preg_match_all($markerPattern, (string)$scan->get_modifiable_text(), $matches)) {
+                foreach ($matches[0] as $markerText) {
+                    $found[$markerText] = true;
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    private function fillAttribute(\WP_HTML_Tag_Processor $processor, string $name, string $marker, string $markerPattern, array $values, array &$urls): void
+    {
+        // A SmartCode in an attribute name could write any attribute.
+        if (strpos($name, $marker) !== false) {
+            $processor->remove_attribute($name);
+            return;
+        }
+
+        $template = $processor->get_attribute($name);
+        if (!is_string($template) || strpos($template, $marker) === false) {
+            return;
+        }
+
+        // set_attribute() takes plain text and escapes it, so decode entities first.
+        $value = preg_replace_callback($markerPattern, function ($matches) use ($values) {
+            return html_entity_decode(wp_strip_all_tags($values[$matches[1]]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }, $template);
+
+        $value = str_replace(['{{', '##'], [$marker . 'o', $marker . 'h'], $value);
+
+        if (!in_array($name, array_merge(wp_kses_uri_attributes(), ['xlink:href', 'ping']), true)) {
+            if (!$processor->set_attribute($name, $value)) {
+                $processor->remove_attribute($name);
+            }
+            return;
+        }
+
+        $scheme = $this->urlScheme($value);
+        if ($scheme !== '') {
+            // A scheme the template wrote before the first SmartCode is the host's choice.
+            $hostScheme = $this->urlScheme(substr($template, 0, strpos($template, $marker)));
+            if (in_array($scheme, ['javascript', 'vbscript'], true)
+                || ($scheme !== $hostScheme && !in_array($scheme, wp_allowed_protocols(), true))) {
+                $processor->remove_attribute($name);
+                return;
+            }
+        }
+
+        $urls[] = $value;
+        if (!$processor->set_attribute($name, '#' . $marker . 'u' . (count($urls) - 1))) {
+            $processor->remove_attribute($name);
+        }
+    }
+
+    /**
+     * Lowercase scheme of a URL as a browser reads it: entities fully decoded,
+     * whitespace and control characters dropped. Empty when the URL has none.
+     */
+    private function urlScheme(string $url): string
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $decoded = html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decoded === $url) {
+                break;
+            }
+            $url = $decoded;
+        }
+        $url = preg_replace('/[\x00-\x20]+/', '', $url);
+
+        return preg_match('/^([a-z][a-z0-9+.\-]*):/i', $url, $matches) ? strtolower($matches[1]) : '';
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace FluentCart\App\Modules\PaymentMethods\StripeGateway;
 
+use FluentCart\App\Events\Subscription\SubscriptionPaymentMethodChanged;
 use FluentCart\App\Models\Subscription;
 use FluentCart\App\Models\SubscriptionMeta;
 use FluentCart\App\Modules\PaymentMethods\StripeGateway\API\API;
@@ -106,6 +107,7 @@ class UpdateCustomerPaymentMethod
         }
 
         $billingInfo = PaymentHelper::parsePaymentMethodDetails('stripe', $newPaymentMethod);
+        $oldBillingInfo = $subscription->getMeta('active_payment_method', []);
 
         SubscriptionMeta::updateOrCreate([
             'subscription_id' => $subscription->id,
@@ -131,6 +133,8 @@ class UpdateCustomerPaymentMethod
             'subscription'   => $subscription,
             'payment_method' => $billingInfo,
         ]);
+
+        SubscriptionPaymentMethodChanged::fire($subscription, $oldBillingInfo, $billingInfo, 'stripe');
 
         wp_send_json([
             'status'  => 'success',
@@ -168,6 +172,8 @@ class UpdateCustomerPaymentMethod
 
         // update active payment method subscription meta
         $billingInfo = PaymentHelper::parsePaymentMethodDetails('stripe', $paymentMethod);
+        $subscription = Subscription::query()->find($subscriptionId);
+        $oldBillingInfo = $subscription ? $subscription->getMeta('active_payment_method', []) : [];
 
         SubscriptionMeta::updateOrCreate([
             'subscription_id' => $subscriptionId,
@@ -177,6 +183,10 @@ class UpdateCustomerPaymentMethod
             //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
             'meta_value' => json_encode($billingInfo)
         ]);
+
+        if ($subscription) {
+            SubscriptionPaymentMethodChanged::fire($subscription, $oldBillingInfo, $billingInfo, 'stripe');
+        }
 
         wp_send_json([
             'status'  => 'success',

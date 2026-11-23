@@ -2,8 +2,7 @@ const { InspectorControls } = wp.blockEditor;
 import EditorPanel from "@/BlockEditor/Components/EditorPanel";
 import EditorPanelRow from "@/BlockEditor/Components/EditorPanelRow";
 import blocktranslate from "@/BlockEditor/BlockEditorTranslator";
-import CustomSelect from "@/BlockEditor/Components/CustomSelect";
-import SelectProductModal from "@/BlockEditor/Components/ProductPicker/SelectProductModal.jsx";
+import ProductSourceControl from "@/BlockEditor/Components/ProductPicker/ProductSourceControl";
 
 
 const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSelectedProduct }) => {
@@ -15,54 +14,26 @@ const InspectorSettings = ({ attributes, setAttributes, selectedProduct, setSele
                     <div className="fct-inspector-control-body">
                         <EditorPanel title={blocktranslate('Product')}>
 
-                            {/* query type */}
-                            <EditorPanelRow>
-                                <span className="fct-inspector-control-label">
-                                    {blocktranslate('Query type')}
-                                </span>
-                                <div className="actions">
-                                    <CustomSelect
-                                        customKeys={{
-                                            key: 'value',
-                                            label: 'label'
-                                        }}
-                                        defaultValue={attributes.query_type}
-                                        options={[
-                                            {label: blocktranslate('Default'), value: 'default'},
-                                            {label: blocktranslate('Custom'), value: 'custom'},
-                                        ]}
-                                        onChange={function (value) {
-                                            setAttributes({query_type: value});
-                                        }}
-                                    />
-                                </div>
+                            <EditorPanelRow className="flex-col">
+                                <ProductSourceControl
+                                    queryType={attributes.query_type}
+                                    onQueryTypeChange={(value) => setAttributes({query_type: value})}
+                                    productId={attributes.product_id ? String(attributes.product_id) : ''}
+                                    selectedProduct={selectedProduct}
+                                    setSelectedProduct={setSelectedProduct}
+                                    onSelectionConfirmed={(product) => {
+                                        // A product that failed to load has no id; confirming it must not clear the saved one.
+                                        if (product && !product.ID) {
+                                            return;
+                                        }
+                                        setAttributes({product_id: product ? String(product.ID) : ''});
+                                    }}
+                                    onRemove={() => {
+                                        setAttributes({product_id: ''});
+                                        setSelectedProduct({});
+                                    }}
+                                />
                             </EditorPanelRow>
-
-                            {attributes.query_type === 'custom' && (
-                                <EditorPanelRow className="flex-col">
-
-                                    <SelectProductModal
-                                       onModalClosed={(selectedProduct) => {
-                                            setAttributes({product_id: selectedProduct.ID || ''});
-                                            setSelectedProduct(selectedProduct);
-                                        }}
-                                        selectedProduct={selectedProduct}
-                                        setSelectedProduct={setSelectedProduct}
-                                        isMultiple={false}
-                                    />
-
-                                    
-                                    {selectedProduct && (
-                                        <div className="fct-selected-variation-info w-full">
-                                            <strong>{blocktranslate('Selected product:')}</strong>
-                                            <p>
-                                                {selectedProduct.post_title}
-                                            </p>
-                                        </div>
-                                    )}
-                                
-                                </EditorPanelRow>
-                            )}
 
                             
                         

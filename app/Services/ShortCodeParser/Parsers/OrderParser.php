@@ -605,7 +605,7 @@ class OrderParser extends BaseParser
 
         $rendering = true;
         try {
-            return wp_kses_post(ShortcodeTemplateBuilder::make($instructions, ['order' => $this->order]));
+            return wp_kses_post(ShortcodeTemplateBuilder::makeHtml($instructions, ['order' => $this->order]));
         } finally {
             $rendering = false;
         }

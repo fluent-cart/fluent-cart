@@ -2,14 +2,19 @@
 
 namespace Tests\Integration\Services;
 
+use FluentCart\App\Events\PlanChanged;
+use FluentCart\App\Events\Subscription\SubscriptionPaymentMethodChanged;
 use FluentCart\App\Models\Meta;
 use FluentCart\App\Models\Order;
+use FluentCart\App\Models\ProductVariation;
+use FluentCart\App\Models\Subscription;
 use FluentCart\App\Services\Cache;
 use FluentCart\App\Services\Email\EmailNotifications;
 use lucatume\WPBrowser\TestCase\WPTestCase;
 use Tests\Support\Factory\CustomerFactory;
 use Tests\Support\Factory\EmailNotificationConfigFactory;
 use Tests\Support\Factory\OrderFactory;
+use Tests\Support\Factory\ProductFactory;
 use Tests\Support\Factory\SubscriptionFactory;
 
 class EmailNotificationsTest extends WPTestCase
@@ -100,7 +105,11 @@ class EmailNotificationsTest extends WPTestCase
             'subscription_canceled_customer',
             'subscription_past_due_admin',
             'subscription_past_due_customer',
+            'subscription_payment_method_changed_admin',
+            'subscription_payment_method_changed_customer',
             'subscription_period_skipped_customer',
+            'subscription_plan_changed_admin',
+            'subscription_plan_changed_customer',
             'subscription_renewal_admin',
             'subscription_renewal_customer',
             'subscription_renewal_failed_admin',
@@ -246,6 +255,199 @@ class EmailNotificationsTest extends WPTestCase
         $this->assertStringContainsString('Skipped Plan Fixture', $formatted['body']);
         $this->assertStringNotContainsString($reasonMarker, $formatted['body']);
         $this->assertStringNotContainsString($actorMarker, $formatted['body']);
+    }
+
+    // =========================================================================
+    // Payment method changed / plan changed: customer on, admin off
+    // =========================================================================
+
+    public function test_subscription_change_notifications_shape(): void
+    {
+        $defaults = EmailNotifications::getDefaultNotifications();
+
+        foreach (['payment_method_changed', 'plan_changed'] as $name) {
+            foreach (['customer' => 'yes', 'admin' => 'no'] as $recipient => $active) {
+                $notification = $defaults['subscription_' . $name . '_' . $recipient];
+                $this->assertSame('subscription_' . $name, $notification['event']);
+                $this->assertSame($recipient, $notification['recipient']);
+                $this->assertSame('subscription.' . $name . '.' . $recipient, $notification['template_path']);
+                $this->assertSame($active, $notification['settings']['active']);
+            }
+        }
+    }
+
+    public function test_payment_method_changed_email_shows_masked_old_and_new_methods_only(): void
+    {
+        ['order' => $order] = $this->makeOrderFixture();
+        $subscription = (new SubscriptionFactory())->create([
+            'customer_id'     => $order->customer_id,
+            'parent_order_id' => $order->id,
+            'product_id'      => 1,
+            'variation_id'    => 1,
+            'item_name'       => 'Card Plan Fixture',
+        ]);
+
+        $notifications = EmailNotifications::getNotifications();
+        foreach (['customer', 'admin'] as $recipient) {
+            $formatted = EmailNotifications::formatNotification(
+                $notifications['subscription_payment_method_changed_' . $recipient],
+                [
+                    'subscription'       => $subscription,
+                    'order'              => $order,
+                    'old_payment_method' => ['method' => 'paypal', 'details' => ['email' => 'buyer@example.com', 'payer_id' => 'PAYER9F3']],
+                    'new_payment_method' => ['method' => 'stripe', 'details' => ['brand' => 'visa', 'last_4' => '4242', 'fingerprint' => 'FP9F3', 'payment_method_id' => 'pm_9f3']],
+                ]
+            );
+
+            $body = html_entity_decode($formatted['body']);
+            $this->assertStringContainsString('Card Plan Fixture', $body);
+            $this->assertStringContainsString('Visa •••• 4242', $body);
+            $this->assertStringContainsString('(buyer@example.com)', $body);
+            foreach (['FP9F3', 'pm_9f3', 'PAYER9F3'] as $secret) {
+                $this->assertStringNotContainsString($secret, $body);
+            }
+        }
+    }
+
+    public function test_payment_method_changed_event_decodes_stored_meta_and_names_the_change(): void
+    {
+        ['order' => $order] = $this->makeOrderFixture();
+        $subscription = (new SubscriptionFactory())->create([
+            'customer_id'     => $order->customer_id,
+            'parent_order_id' => $order->id,
+            'product_id'      => 1,
+            'variation_id'    => 1,
+        ]);
+
+        $payloads = [];
+        $capture = function ($data) use (&$payloads) {
+            $payloads[] = $data;
+        };
+        add_action('fluent_cart/subscription_payment_method_changed', $capture, 1);
+        add_filter('pre_wp_mail', '__return_true');
+
+        try {
+            $new = ['method' => 'stripe', 'details' => ['brand' => 'visa', 'last_4' => '4242']];
+            SubscriptionPaymentMethodChanged::fire($subscription, json_encode(['method' => 'stripe', 'details' => ['last_4' => '1111']]), $new, 'stripe');
+            SubscriptionPaymentMethodChanged::fire($subscription, '', $new, 'paypal');
+        } finally {
+            remove_action('fluent_cart/subscription_payment_method_changed', $capture, 1);
+            remove_filter('pre_wp_mail', '__return_true');
+        }
+
+        $this->assertCount(2, $payloads);
+        $this->assertSame('update', $payloads[0]['change']);
+        $this->assertSame('1111', $payloads[0]['old_payment_method']['details']['last_4']);
+        $this->assertSame('switch', $payloads[1]['change']);
+        $this->assertSame(['method' => 'paypal'], $payloads[1]['old_payment_method']);
+    }
+
+    public function test_plan_changed_event_sends_one_customer_email_with_previous_and_new_plan(): void
+    {
+        ['order' => $order] = $this->makeOrderFixture();
+        $product = (new ProductFactory())->createWithVariants([
+            ['variation_title' => 'Monthly Tier 9f3'],
+            ['variation_title' => 'Yearly Tier 9f3'],
+        ], ['post_title' => 'Plan Product 9f3']);
+        [$oldVariation, $newVariation] = ProductVariation::query()->where('post_id', $product->ID)->orderBy('serial_index')->get()->all();
+
+        $oldSubscription = (new SubscriptionFactory())->create([
+            'customer_id'      => $order->customer_id,
+            'parent_order_id'  => $order->id,
+            'product_id'       => $product->ID,
+            'variation_id'     => $oldVariation->id,
+            'billing_interval' => 'monthly',
+            'recurring_total'  => 900,
+        ]);
+        $newSubscription = (new SubscriptionFactory())->create([
+            'customer_id'      => $order->customer_id,
+            'parent_order_id'  => $order->id,
+            'product_id'       => $product->ID,
+            'variation_id'     => $newVariation->id,
+            'billing_interval' => 'yearly',
+            'recurring_total'  => 9900,
+        ]);
+
+        $sent = [];
+        $capture = function ($null, array $atts) use (&$sent) {
+            $sent[] = $atts;
+            return true;
+        };
+        add_filter('pre_wp_mail', $capture, 10, 2);
+
+        try {
+            (new PlanChanged($order, $newVariation, $oldVariation, [
+                'from_order_id'        => $order->id,
+                'from_subscription_id' => $oldSubscription->id,
+                'subscription_id'      => $newSubscription->id,
+            ]))->dispatch();
+        } finally {
+            remove_filter('pre_wp_mail', $capture, 10);
+        }
+
+        $planMails = array_values(array_filter($sent, function ($mail) {
+            return strpos(html_entity_decode($mail['message']), 'Yearly Tier 9f3') !== false;
+        }));
+        $this->assertCount(1, $planMails, 'admin copy is off by default, so only the customer gets the plan email');
+        $this->assertStringContainsString($order->customer->email, implode(',', (array) $planMails[0]['to']));
+
+        $body = html_entity_decode($planMails[0]['message']);
+        $this->assertStringContainsString('Plan Product 9f3 - Monthly Tier 9f3', $body);
+        $this->assertStringContainsString('Plan Product 9f3 - Yearly Tier 9f3', $body);
+        $this->assertStringContainsString(html_entity_decode(wp_kses_post($oldSubscription->payment_info)), $body);
+        $this->assertStringContainsString(html_entity_decode(wp_kses_post($newSubscription->payment_info)), $body);
+    }
+
+    public function test_plan_changed_summary_uses_billing_schedule_text_and_order_timezone(): void
+    {
+        $originalDateFormat = get_option('date_format');
+        $originalSettings = get_option('fluent_cart_store_settings', []);
+
+        try {
+            update_option('date_format', 'Y-m-d');
+            $settings = $originalSettings;
+            $settings['timezone_source'] = 'fluent_cart';
+            update_option('fluent_cart_store_settings', $settings);
+            \FluentCart\Api\StoreSettings::clearCache();
+            \FluentCart\App\Services\Translations\TransStrings::dateTimeStrings(true);
+
+            ['order' => $order] = $this->makeOrderFixture();
+            $order->config = ['user_tz' => 'America/Los_Angeles'];
+
+            $newSubscription = (new SubscriptionFactory())->create([
+                'customer_id'       => $order->customer_id,
+                'parent_order_id'   => $order->id,
+                'product_id'        => 1,
+                'variation_id'      => 1,
+                'billing_interval'  => 'yearly',
+                'bill_times'        => 3,
+                'recurring_total'   => 10000,
+                'next_billing_date' => '2027-01-01 03:00:00',
+                'config'            => ['billing_schedule' => ['period' => 'year', 'interval' => 3]],
+            ]);
+
+            $formatted = EmailNotifications::formatNotification(
+                EmailNotifications::getNotifications()['subscription_plan_changed_customer'],
+                [
+                    'order'            => $order,
+                    'subscription'     => $newSubscription,
+                    'old_subscription' => null,
+                    'old_variation'    => null,
+                    'new_variation'    => null,
+                ]
+            );
+            $body = html_entity_decode($formatted['body']);
+
+            $this->assertStringContainsString(html_entity_decode(wp_kses_post($newSubscription->payment_info)), $body);
+            $this->assertStringNotContainsString('(yearly)', $body);
+            $this->assertStringContainsString('2026-12-31', $body, 'next payment renders in the order timezone');
+            $this->assertStringNotContainsString('2027-01-01', $body);
+        } finally {
+            update_option('date_format', $originalDateFormat);
+            update_option('fluent_cart_store_settings', $originalSettings);
+            \FluentCart\Api\StoreSettings::clearCache();
+            \FluentCart\App\Services\Translations\TransStrings::dateTimeStrings(true);
+        }
     }
 
     // =========================================================================

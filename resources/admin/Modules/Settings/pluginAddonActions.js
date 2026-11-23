@@ -17,10 +17,7 @@ export const installPluginAddon = (addon, hasPro) => {
     }
 
     return Rest.post('settings/modules/plugin-addons/install', {
-        plugin_slug: addon.plugin_slug,
-        source_type: addon.source_type || 'wordpress',
-        source_link: addon.source_link || '',
-        asset_path: addon.asset_path || ''
+        plugin_slug: addon.plugin_slug
     })
         .then((response) => {
             if (response.action === 'copy' && response.url) {

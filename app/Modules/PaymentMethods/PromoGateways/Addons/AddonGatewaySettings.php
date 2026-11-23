@@ -5,7 +5,6 @@ namespace FluentCart\App\Modules\PaymentMethods\PromoGateways\Addons;
 use FluentCart\App\Helpers\Helper;
 use FluentCart\App\Modules\PaymentMethods\Core\BaseGatewaySettings;
 use FluentCart\App\Services\PluginInstaller\PaymentAddonManager;
-use FluentCart\Framework\Support\Arr;
 
 class AddonGatewaySettings extends BaseGatewaySettings
 {
@@ -169,9 +168,7 @@ class AddonGatewaySettings extends BaseGatewaySettings
             style="display: inline-flex; align-items: center; background: ' . $styles['button_primary_bg'] . '; color: ' . $styles['button_primary_text'] . '; padding: 10px 24px; border-radius: 6px; border: none; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);"
             data-addon-slug="' . esc_attr($addonSlug) . '" 
             data-addon-file="' . esc_attr($addonFile) . '" 
-            data-repo-link="' . esc_attr($repoLink) . '" 
-            data-source-type="' . esc_attr(Arr::get($addonSource, 'type', 'github')) . '" 
-            data-source-link="' . esc_attr($addonSource['link'] ?? '') . '">'
+            data-repo-link="' . esc_attr($repoLink) . '">'
             . $this->renderIcon($downloadIcon, 'width: 16px; height: 16px; margin-right: 6px; fill: ' . $styles['button_primary_text'] . ';')
             . $buttonLabel
             . '</button>';

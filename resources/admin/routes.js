@@ -201,7 +201,7 @@ export var routes = {
             },
             {
                 name: 'product_integration_feed_editor',
-                path: 'integrations/:integration_id/:integration_name',  // Fixed: removed the leading '/'
+                path: 'integrations/:integration_id(\\d+)/:integration_name(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',  // Fixed: removed the leading '/'
                 component: FeedEditor,
                 meta: {
                     active_menu: 'products',
@@ -211,7 +211,7 @@ export var routes = {
             },
             {
                 name: 'SingleIntegration',
-                path: 'integrations/:integration_id',
+                path: 'integrations/:integration_id(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',
                 props: true,
                 component: SingleIntegration,
                 meta: {
@@ -627,7 +627,7 @@ export var routes = {
                 }
             },
             {
-                path: 'email_notifications/:name/',  // Fixed: removed the leading '/'
+                path: 'email_notifications/:name(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/',  // Fixed: removed the leading '/'
                 name: 'email_notifications/edit',
                 component: EditEmailNotification,
                 meta: {
@@ -720,7 +720,7 @@ export var routes = {
                     },
                     {
                         name: 'edit-pdf-template',
-                        path: ':template/edit',
+                        path: ':template(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/edit',
                         component: PdfTemplateEdit,
                         props: true,
                         meta: {
@@ -775,7 +775,7 @@ export var routes = {
             },
             {
                 name: 'payment-design',
-                path: 'payments/:method/design',
+                path: 'payments/:method(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/design',
                 component: PaymentDesign,
                 meta: {
                     active_menu: 'settings',
@@ -826,14 +826,14 @@ export var routes = {
                     },
                     {
                         name: 'eu_country_tax_rates',
-                        path: 'eu/:country/:group',
+                        path: 'eu/:country(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/:group(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',
                         component: TaxRatesCountrySingle,
                         props: true,
                         meta: {}
                     },
                     {
                         name: 'tax-rates-country-single',
-                        path: 'tax_rates_country_single/:country/:group', // Fixed: removed the leading '/'
+                        path: 'tax_rates_country_single/:country(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)/:group(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)', // Fixed: removed the leading '/'
                         component: TaxRatesCountrySingle,
                         props: true,
                         meta: {}
@@ -856,7 +856,7 @@ export var routes = {
 
     global_feed_editor: {
         name: 'feed_editor',
-        path: '/global_integrations/:integration_id/:integration_name',
+        path: '/global_integrations/:integration_id(\\d+)/:integration_name(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',
         component: FeedEditor,
         meta: {
             active_menu: 'integrations',
@@ -867,7 +867,7 @@ export var routes = {
 
     integration_editor: {
         name: 'integration_editor',
-        path: '/integrations/:integration_name',
+        path: '/integrations/:integration_name(\\.*[^./?#\\\\%&;][^/?#\\\\%&;]*)',
         component: IntegrationEditor,
         meta: {
             active_menu: 'integrations',
@@ -950,7 +950,7 @@ export var routes = {
 
     dynamic_pricing_edit: {
         name: 'dynamic_pricing_edit',
-        path: '/dynamic_pricing/:id/edit',
+        path: '/dynamic_pricing/:id(\\d+)/edit',
         component: EditPricingRule,
         meta: {
             active_menu: 'dynamic_pricing',
@@ -982,7 +982,7 @@ export var routes = {
 
     add_or_edit_coupon_route: {
         name: "add_or_edit_coupon",
-        path: "/coupons/add_or_edit_coupon/:coupon_id?",
+        path: "/coupons/add_or_edit_coupon/:coupon_id(\\d+)?",
         component: AddOrEditCoupon,
         props: true,
         meta: {

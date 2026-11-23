@@ -40,3 +40,20 @@ namespace {
         }
     }
 }
+
+namespace FluentCrm\App\Models {
+    if (!class_exists(SubscriberNote::class, false)) {
+        class SubscriberNote
+        {
+            /** @var array|null last data passed to create() */
+            public static $lastData = null;
+
+            public static function create($data)
+            {
+                self::$lastData = $data;
+
+                return (object)$data;
+            }
+        }
+    }
+}

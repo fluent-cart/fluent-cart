@@ -147,4 +147,27 @@ class FluentCRMConnectTest extends WPTestCase
         $this->assertSame('Sylhet', \FluentCrmContactsStub::$lastData['state'] ?? null);
         $this->assertSame('BD', \FluentCrmContactsStub::$lastData['country'] ?? null);
     }
+
+    public function test_a_buyer_value_cannot_add_an_attribute_to_the_contact_note(): void
+    {
+        $this->assertFalse(defined('FLUENTCRM'), 'FluentCRM must not be loaded in the Integration suite');
+        require_once dirname(__DIR__, 3) . '/Support/Stubs/FluentCrmStubs.php';
+        \FluentCrm\App\Models\SubscriberNote::$lastData = null;
+
+        $customer = (new \Tests\Support\Factory\CustomerFactory())->create([
+            'first_name' => 'Ann" href="https://example.com/x',
+            'email'      => 'crm-note-' . wp_generate_password(6, false) . '@example.com',
+        ]);
+        $order = (new \Tests\Support\Factory\OrderFactory())->create(['customer_id' => $customer->id]);
+        $order = \FluentCart\App\Models\Order::query()->with(['customer'])->find($order->id);
+
+        (new FluentCRMConnect())->processAction($order, ['feed' => [
+            'double_opt_in' => 'no',
+            'note'          => '<a title="{{order.customer.first_name}}">Customer</a>',
+        ]]);
+
+        $link = new \WP_HTML_Tag_Processor((string) (\FluentCrm\App\Models\SubscriberNote::$lastData['description'] ?? ''));
+        $this->assertTrue($link->next_tag(['tag_name' => 'a']), 'The note must be saved.');
+        $this->assertSame(['title'], $link->get_attribute_names_with_prefix(''));
+    }
 }
